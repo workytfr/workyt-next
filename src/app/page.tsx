@@ -11,6 +11,7 @@ import { BannerWithButton } from "@/components/ui/notificationHome";
 import NosServices from "@/components/home/nos-services";
 import { WobbleCardDemo } from "@/components/home/notre-mission";
 import { FeedCard } from "@/components/home/news";
+import Footer from '@/components/home/footer';
 import * as React from "react";
 
 export default function Home() {
@@ -44,8 +45,8 @@ export default function Home() {
                         </span>
                     </PageHeaderHeading>
                     <PageHeaderDescription>
-                        Les ressources d&amp;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons
-                        que les principaux obstacles au début de l&amp;éducation sont l&amp;accès, le manque de confiance et
+                        Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons
+                        que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et
                         le coût.
                     </PageHeaderDescription>
                 </PageHeader>
@@ -53,6 +54,7 @@ export default function Home() {
             <NosServices />
             <WobbleCardDemo />
             <FeedCard />
+            <Footer />
         </div>
     );
 }
