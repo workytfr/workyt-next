@@ -13,10 +13,26 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <html lang="fr">
         <Head>
             {/* Meta Tags pour SEO */}
-            <meta charSet="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-            <meta name="description" content="Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et le coût." />
+            <meta charSet="UTF-8"/>
+            <meta name="viewport" content="initial-scale=1.0"/>
             <title>Workyt - La plate-forme d&apos;apprentissage gratuite</title>
+            <meta name="description"
+                  content="Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et le coût."/>
+
+            {/* Open Graph Meta Tags */}
+            <meta property="og:type" content="website"/>
+            <meta property="og:title" content="Workyt - La plateforme d&apos;apprentissage"/>
+            <meta property="og:description"
+                  content="Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et le coût."/>
+            <meta name="twitter:image" content="/zDKvjW3h_400x400.jpg"/>
+            <meta property="og:url" content="https://www.workyt.fr"/>
+            <meta property="og:locale" content="fr_FR"/>
+            <meta name="twitter:card" content="summary_large_image"/>
+            <meta name="twitter:title" content="Workyt - La plateforme d&apos;apprentissage"/>
+            <meta name="twitter:description"
+                  content="Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et le coût."/>
+            <meta name="twitter:image" content="/zDKvjW3h_400x400.jpg"/>
+            <meta name="twitter:url" content="https://www.workyt.fr"/>
         </Head>
         <body>
         <ThemeProvider

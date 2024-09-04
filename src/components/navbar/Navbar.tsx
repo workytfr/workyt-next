@@ -4,13 +4,10 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Image from "next/image";
 import Link from "next/link";
 import '@radix-ui/themes/styles.css';
-import { useState } from "react";
 import { InstagramLogoIcon, TwitterLogoIcon, DiscordLogoIcon, ChevronDownIcon , VideoIcon, LinkedInLogoIcon }  from "@radix-ui/react-icons";
 import { HoverBorderGradient } from "@/components/ui/hover-border-gradient";
 
 export default function Navbar() {
-    const [isDarkMode, setIsDarkMode] = useState(false);
-
     return (
         <nav className="bg-white border-b border-gray-200 py-4">
             <div className="container mx-auto px-4 flex justify-between items-center">
