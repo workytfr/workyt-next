@@ -49,7 +49,8 @@ export default function Home() {
                 </div>
                 <PageHeader>
                     <PageHeaderHeading>
-                        <Cover>Plongez et commencez</Cover> à apprendre,
+                        <Cover>Plongez et commencez</Cover>
+                        <span className="text-black"> à apprendre, </span>
                         <span className="bg-gradient-to-r from-orange-500 to-teal-300 bg-clip-text text-transparent">
                             {"Workyt la plate-forme d'apprentissage gratuite"}
                         </span>
