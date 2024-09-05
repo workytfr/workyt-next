@@ -70,7 +70,26 @@ export default function Navbar() {
                                         Mathématiques
                                     </Link>
                                 </DropdownMenu.Item>
-                                {/* Add more dropdown items as necessary */}
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://workyt.fr/forum/t/fran-ais" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Français
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://workyt.fr/forum/t/physique-et-chimie" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Physique-Chimie
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://workyt.fr/forum/t/svt" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        SVT
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://workyt.fr/forum/t/histoire-et-geographie" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Histoire-Géographie
+                                    </Link>
+                                </DropdownMenu.Item>
                             </DropdownMenu.Content>
                         </DropdownMenu.Portal>
                     </DropdownMenu.Root>
@@ -91,7 +110,36 @@ export default function Navbar() {
                                         Actualités
                                     </Link>
                                 </DropdownMenu.Item>
-                                {/* Add more dropdown items as necessary */}
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://blog.workyt.fr/category/conseils-methodes/" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Conseils & Méthodes
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://blog.workyt.fr/category/culture/" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Culture
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://blog.workyt.fr/category/test-produit/" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Nos Tests
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://blog.workyt.fr/category/orientation-scolaire/" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Orientation scolaire
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://blog.workyt.fr/category/le-bon-plan/" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Le Bon Plan
+                                    </Link>
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Item asChild>
+                                    <Link href="https://blog.workyt.fr/category/nos-interviews/" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
+                                        Nos Interviews
+                                    </Link>
+                                </DropdownMenu.Item>
                             </DropdownMenu.Content>
                         </DropdownMenu.Portal>
                     </DropdownMenu.Root>
