@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
     return (
-        <div className="grid">
+        <div className="grid bg-white">
             <Navbar />
             <BannerWithButton
                 tTitle="🎉 Bienvenue sur Workyt v3.beta !"
