@@ -58,10 +58,11 @@ export function FeedCard() {
     }, []);
 
     return (
-        <div className="container mx-auto py-8">
+        <div className="container mx-auto py-8 bg-white dark:bg-white">
             {/* Header Section */}
             <div className="text-center mb-6">
-                <h1 className="text-3xl font-bold mb-4">Voici nos 3 derniers articles sortis tout chaud du pôle rédaction</h1>
+                {/* Color gradient text orange to pink */}
+                <h1 className="text-3xl font-bold mb-4" style={{ background: "linear-gradient(90deg, #FFA500, #FF1493)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Voici nos 3 derniers articles sortis tout chaud du pôle rédaction</h1>
                 <p className="text-gray-600 max-w-2xl mx-auto">
                     Écrits et sources vérifiées par des correcteurs, et par deux rédacteurs en chef, la qualité de nos articles est une priorité. Nous voulons donner la plume à nos jeunes pour qu&apos;ils puissent apprendre et partager leurs connaissances avec le monde des Workeurs .
                 </p>
@@ -109,7 +110,7 @@ export function FeedCard() {
                             </div>
                             <a
                                 href={article.link}
-                                className="placebid price text-white hover:underline"
+                                className="placebid price text-white hover:underline z-20"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
