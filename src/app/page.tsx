@@ -14,8 +14,10 @@ import { FeedCard } from "@/components/home/news";
 import Footer from '@/components/home/footer';
 import { Avis } from '@/components/home/avis';
 import PartenairesView from "@/components/home/partenaires";
+import OrgChart from "@/components/home/OrgChart";
 import * as React from "react";
 import { Metadata } from 'next'
+
 
 export const metadata: Metadata = {
     title: 'Workyt - La plate-forme d\'apprentissage gratuite',
@@ -73,6 +75,7 @@ export default function Home() {
                 <Avis/>
                 <PartenairesView/>
             </div>
+            <OrgChart/>
             <Footer/>
         </div>
     );
