@@ -71,6 +71,11 @@ const config = {
           "0%": { transform: "translateX(-200px)" },
           "100%": { transform: "translateX(200px)" },
         },
+        scroll: {
+          to: {
+            transform: "translate(calc(-50% - 0.5rem))",
+          },
+        },
         "accordion-down": {
           from: { height: "0" },
           to: { height: "var(--radix-accordion-content-height)" },
@@ -79,11 +84,14 @@ const config = {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         move: "move 5s linear infinite",
+        scroll:
+            "scroll var(--animation-duration, 60s) var(--animation-direction, forwards) linear infinite",
       },
     },
   },

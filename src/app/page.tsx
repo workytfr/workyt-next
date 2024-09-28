@@ -12,6 +12,8 @@ import NosServices from "@/components/home/nos-services";
 import { WobbleCardDemo } from "@/components/home/notre-mission";
 import { FeedCard } from "@/components/home/news";
 import Footer from '@/components/home/footer';
+import { Avis } from '@/components/home/avis';
+import PartenairesView from "@/components/home/partenaires";
 import * as React from "react";
 import { Metadata } from 'next'
 
@@ -27,7 +29,7 @@ export const metadata: Metadata = {
 export default function Home() {
     return (
         <div className="grid bg-white">
-            <Navbar />
+            <Navbar/>
             <BannerWithButton
                 tTitle="🎉 Bienvenue sur Workyt v3.beta !"
                 tDetails="Découvrez notre plateforme d'apprentissage gratuite."
@@ -56,16 +58,22 @@ export default function Home() {
                         </span>
                     </PageHeaderHeading>
                     <PageHeaderDescription>
-                        Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons
-                        que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et
+                        Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous
+                        pensons
+                        que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de
+                        confiance et
                         le coût.
                     </PageHeaderDescription>
                 </PageHeader>
             </div>
-            <NosServices />
-            <WobbleCardDemo />
-            <FeedCard />
-            <Footer />
+            <NosServices/>
+            <WobbleCardDemo/>
+            <FeedCard/>
+            <div className="px-4 md:px-8 lg:px-16 py-8 w-full max-w-full overflow-x-hidden">
+                <Avis/>
+                <PartenairesView/>
+            </div>
+            <Footer/>
         </div>
     );
 }
