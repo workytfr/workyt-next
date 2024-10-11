@@ -15,16 +15,26 @@ interface Article {
 
 export function FeedCard() {
     const [articles, setArticles] = useState<Article[]>([]);
-    const feedUrl = "https://blog.workyt.fr/feed/";
-    const corsUrl = "https://proxy.cors.sh/";
+    const [error, setError] = useState<string | null>(null);
+
+    // Récupération des variables d'environnement
+    const feedUrl = process.env.NEXT_PUBLIC_FEED_URL ?? "";
+    const corsUrl = process.env.NEXT_PUBLIC_CORS_URL ?? "";
+    const apiKey = process.env.NEXT_PUBLIC_CORS_API_KEY ?? "";
 
     useEffect(() => {
         const fetchArticles = async () => {
+            // Si les variables d'environnement ne sont pas définies, gérer l'erreur
+            if (!feedUrl || !corsUrl || !apiKey) {
+                setError("Les variables d'environnement ne sont pas correctement définies.");
+                return;
+            }
+
             try {
-                const response = await fetch(corsUrl + feedUrl, {
+                const response = await fetch(`${corsUrl}${feedUrl}`, {
                     mode: "cors",
                     headers: {
-                        "x-cors-api-key": "temp_fcda5fa196375b68d40ef5b181d97d33",
+                        "x-cors-api-key": apiKey,
                     },
                 });
 
@@ -51,20 +61,31 @@ export function FeedCard() {
                 setArticles(fetchedArticles);
             } catch (error) {
                 console.error("Failed to fetch articles:", error);
+                setError("Une erreur est survenue lors de la récupération des articles.");
             }
         };
 
         fetchArticles();
-    }, []);
+    }, [feedUrl, corsUrl, apiKey]);
+
+    // Si une erreur est présente, afficher un message d'erreur
+    if (error) {
+        return (
+            <div className="container mx-auto py-8 bg-white dark:bg-white">
+                <p className="text-red-500 text-center">{error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto py-8 bg-white dark:bg-white">
             {/* Header Section */}
             <div className="text-center mb-6">
-                {/* Color gradient text orange to pink */}
-                <h1 className="text-3xl font-bold mb-4" style={{ background: "linear-gradient(90deg, #FFA500, #FF1493)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Voici nos 3 derniers articles sortis tout chaud du pôle rédaction</h1>
+                <h1 className="text-3xl font-bold mb-4" style={{ background: "linear-gradient(90deg, #FFA500, #FF1493)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    Voici nos 3 derniers articles sortis tout chaud du pôle rédaction
+                </h1>
                 <p className="text-gray-600 max-w-2xl mx-auto">
-                    Écrits et sources vérifiées par des correcteurs, et par deux rédacteurs en chef, la qualité de nos articles est une priorité. Nous voulons donner la plume à nos jeunes pour qu&apos;ils puissent apprendre et partager leurs connaissances avec le monde des Workeurs .
+                    Écrits et sources vérifiées par des correcteurs, et par deux rédacteurs en chef, la qualité de nos articles est une priorité. Nous voulons donner la plume à nos jeunes pour qu&apos;ils puissent apprendre et partager leurs connaissances avec le monde des Workeurs.
                 </p>
             </div>
 
