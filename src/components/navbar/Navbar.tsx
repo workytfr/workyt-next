@@ -94,7 +94,7 @@ export default function Navbar() {
                         </DropdownMenu.Portal>
                     </DropdownMenu.Root>
 
-                    <Link href="/cours" className="text-gray-700 font-semibold">
+                    <Link href="https://cours.workyt.fr/" className="text-gray-700 font-semibold">
                         Cours
                     </Link>
 

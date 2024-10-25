@@ -19,11 +19,6 @@ const partenairesList = [
         logo: "/ShiftekHosting.png",
         website: "https://shiftek.fr/hosting/",
     },
-    {
-        name: "Le Max de Culture",
-        logo: "le-max-de-culture.png",
-        website: "https://www.le-max-de-culture.fr",
-    }
 ];
 
 const PartenairesView = () => {
