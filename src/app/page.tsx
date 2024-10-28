@@ -36,7 +36,7 @@ export default function Home() {
                 tTitle="🎉 Bienvenue sur Workyt v3.beta !"
                 tDetails="Découvrez notre plateforme d'apprentissage gratuite."
                 tButton="Commencer"
-                linkHref="/cours"
+                linkHref="https://cours.workyt.fr/"
                 tDismiss="Masquer"
             />
             <div

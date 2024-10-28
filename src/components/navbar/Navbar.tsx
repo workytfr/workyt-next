@@ -181,7 +181,7 @@ export default function Navbar() {
                         Forum
                     </Link>
                     <Link
-                        href="/cours"
+                        href="https://cours.workyt.fr/"
                         className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
                     >
                         Cours

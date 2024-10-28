@@ -20,7 +20,7 @@ const Footer: React.FC = () => {
                     <div className="space-y-2">
                         <h3 className="font-semibold text-lg">Nos Services</h3>
                         <ul className="space-y-1">
-                            <li><Link href="/cours" className="hover:text-blue-600">Cours</Link></li>
+                            <li><Link href="https://cours.workyt.fr/" className="hover:text-blue-600">Cours</Link></li>
                             <li><Link href="/forum" className="hover:text-blue-600">Forum</Link></li>
                             <li><Link href="https://blog.workyt.fr/" className="hover:text-blue-600">Blog</Link></li>
                             <li><Link href="https://dc.gg/workyt" className="hover:text-blue-600">Discord</Link></li>
