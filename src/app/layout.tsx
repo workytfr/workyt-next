@@ -45,7 +45,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         </ThemeProvider>
 
         {/* Tidio Script */}
-        <Script src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js" strategy="lazyOnload" />
+        <Script src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js" strategy="lazyOnload"/>
 
         {/* Cookie Consent Scripts */}
         <Script
@@ -64,7 +64,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         />
 
         {/* Google Ads Scripts */}
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=AW-10979332706" strategy="lazyOnload" />
+        <Script async src="https://www.googletagmanager.com/gtag/js?id=AW-10979332706" strategy="lazyOnload"/>
         <Script
             id="google-analytics"
             strategy="lazyOnload"
@@ -75,6 +75,22 @@ export default function RootLayout({ children }: RootLayoutProps) {
                             gtag('js', new Date());
                             gtag('config', 'AW-10979332706');
                             gtag('event', 'conversion', {'send_to': 'AW-10979332706/HSH7CP-6g9sDEOKkrfMo'});
+                        `,
+            }}
+        />
+        {/* Mailchimp Script */}
+        <Script
+            id="mcjs"
+            strategy="lazyOnload"
+            dangerouslySetInnerHTML={{
+                __html: `
+                            (function(c,h,i,m,p){
+                                m = c.createElement(h),
+                                p = c.getElementsByTagName(h)[0],
+                                m.async = 1;
+                                m.src = i;
+                                p.parentNode.insertBefore(m,p);
+                            })(document,"script","https://chimpstatic.com/mcjs-connected/js/users/7e5e31a95d8d924397deba535/7bee0dc79cb596b3ac1a6081a.js");
                         `,
             }}
         />
