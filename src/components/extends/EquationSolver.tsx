@@ -126,7 +126,7 @@ const EquationSolver: React.FC = () => {
             </h1>
             <p className="text-gray-700 text-center">Saisissez une équation pour voir les étapes et le graphique.</p>
 
-            <div className="w-3/4">
+            <div className="w-3/4" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px' }}>
                 <input
                     className="w-full p-2 border rounded text-gray-700"
                     placeholder="Entrez une équation (e.g. 2x + 3 = 7)"
@@ -136,7 +136,6 @@ const EquationSolver: React.FC = () => {
             </div>
 
             <div className="w-3/4 flex space-x-4">
-                {/* xMin */}
                 <div className="w-1/3">
                     <label className="block text-sm font-semibold text-gray-700">Valeur minimale de x</label>
                     <input
@@ -152,7 +151,6 @@ const EquationSolver: React.FC = () => {
                     <p className="text-xs text-gray-500">Définit la valeur minimale de x pour le graphique.</p>
                 </div>
 
-                {/* xMax */}
                 <div className="w-1/3">
                     <label className="block text-sm font-semibold text-gray-700">Valeur maximale de x</label>
                     <input
@@ -168,7 +166,6 @@ const EquationSolver: React.FC = () => {
                     <p className="text-xs text-gray-500">Définit la valeur maximale de x pour le graphique.</p>
                 </div>
 
-                {/* Step */}
                 <div className="w-1/3">
                     <label className="block text-sm font-semibold text-gray-700">Incrément (pas)</label>
                     <input
@@ -191,8 +188,7 @@ const EquationSolver: React.FC = () => {
                 Résoudre
             </button>
 
-            {/* Étapes */}
-            <div className="w-3/4">
+            <div className="w-3/4" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px' }}>
                 <h2 className="text-2xl font-semibold">Étapes :</h2>
                 <ul className="list-decimal list-inside space-y-2 text-gray-800">
                     {steps.map((step, index) => (
@@ -203,13 +199,11 @@ const EquationSolver: React.FC = () => {
                 </ul>
             </div>
 
-            {/* Solution */}
-            <div className="w-3/4">
+            <div className="w-3/4" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px' }}>
                 <h2 className="text-2xl font-semibold">Solution :</h2>
                 <BlockMath math={solution}/>
             </div>
 
-            {/* Graphique */}
             {graphData && (
                 <div className="w-3/4">
                     <h2 className="text-2xl font-semibold">Graphique :</h2>
