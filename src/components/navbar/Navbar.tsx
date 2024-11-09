@@ -143,6 +143,9 @@ export default function Navbar() {
                             </DropdownMenu.Content>
                         </DropdownMenu.Portal>
                     </DropdownMenu.Root>
+                    <Link href="https://workyt.fr/kits/" className="text-gray-700 font-semibold">
+                        Nos Kits
+                    </Link>
                 </div>
 
                 {/* Social Icons and Donation for Large Screens */}
@@ -191,6 +194,12 @@ export default function Navbar() {
                         className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
                     >
                         Blog
+                    </Link>
+                    <Link
+                        href="https://workyt.fr/kits/"
+                        className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
+                    >
+                        Nos Kits
                     </Link>
                     <Link
                         href="https://www.helloasso.com/associations/workyt/formulaires/1"

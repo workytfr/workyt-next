@@ -50,7 +50,7 @@ export default function Home() {
                         <Link href="https://workyt.fr/forum/" className="bg-white text-black px-4 py-2 rounded-full">
                             Notre Forum
                         </Link>
-=                        <Link href="https://dc.gg/workyt"
+                        <Link href="https://dc.gg/workyt"
                               className="text-white px-4 py-2 rounded-full flex items-center space-x-2">
                             <DiscordLogoIcon/>
                             <span>Rejoindre la communauté Discord</span>

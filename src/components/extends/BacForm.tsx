@@ -101,10 +101,10 @@ export default function FormBac2024() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                    <h2 className="text-lg font-semibold mb-4 text-center">Matières du Tronc Commun</h2>
+                    <h2 className="text-lg font-semibold mb-4 text-black text-center">Matières du Tronc Commun</h2>
                     {coreSubjects.map((subject, index) => (
                         <div key={index} className="mb-4 flex items-center">
-                            <Label.Root htmlFor={`core-${index}`} className="flex-1 text-sm font-medium mr-2">
+                            <Label.Root htmlFor={`core-${index}`} className="flex-1 text-sm text-black font-medium mr-2">
                                 {subject.name} (Coef: {subject.coef})
                             </Label.Root>
                             <input
@@ -122,10 +122,10 @@ export default function FormBac2024() {
                 </div>
 
                 <div>
-                    <h2 className="text-lg font-semibold mb-4 text-center">Spécialités (2 matières au choix)</h2>
+                    <h2 className="text-lg font-semibold mb-4 text-black text-center">Spécialités (2 matières au choix)</h2>
                     {specialties.map((subject, index) => (
                         <div key={index} className="mb-4 flex items-center">
-                            <Label.Root htmlFor={`specialty-${index}`} className="flex-1 text-sm font-medium mr-2">
+                            <Label.Root htmlFor={`specialty-${index}`} className="flex-1 text-sm text-black font-medium mr-2">
                                 {subject.name} (Coef: {subject.coef})
                             </Label.Root>
                             <input
@@ -144,10 +144,10 @@ export default function FormBac2024() {
                 </div>
 
                 <div>
-                    <h2 className="text-lg font-semibold mb-4 text-center">Options Facultatives</h2>
+                    <h2 className="text-lg font-semibold mb-4 text-black text-center">Options Facultatives</h2>
                     {optionalSubjects.map((subject, index) => (
                         <div key={index} className="mb-4 flex items-center">
-                            <Label.Root htmlFor={`optional-${index}`} className="flex-1 text-sm font-medium mr-2">
+                            <Label.Root htmlFor={`optional-${index}`} className="flex-1 text-sm text-black font-medium mr-2">
                                 {subject.name} (Coef: {subject.coef})
                             </Label.Root>
                             <input

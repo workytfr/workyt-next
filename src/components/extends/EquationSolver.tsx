@@ -128,7 +128,7 @@ const EquationSolver: React.FC = () => {
 
             <div className="w-3/4" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px' }}>
                 <input
-                    className="w-full p-2 border rounded text-gray-700"
+                    className="w-full p-2 border rounded"
                     placeholder="Entrez une équation (e.g. 2x + 3 = 7)"
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
@@ -189,7 +189,7 @@ const EquationSolver: React.FC = () => {
             </button>
 
             <div className="w-3/4" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px' }}>
-                <h2 className="text-2xl font-semibold">Étapes :</h2>
+                <h2 className="text-2xl text-black font-semibold">Étapes :</h2>
                 <ul className="list-decimal list-inside space-y-2 text-gray-800">
                     {steps.map((step, index) => (
                         <li key={index}>
@@ -200,13 +200,15 @@ const EquationSolver: React.FC = () => {
             </div>
 
             <div className="w-3/4" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px' }}>
-                <h2 className="text-2xl font-semibold">Solution :</h2>
-                <BlockMath math={solution}/>
+                <h2 className="text-2xl text-black font-semibold">Solution :</h2>
+                <div className="text-gray-800">
+                    <BlockMath  math={solution}/>
+                </div>
             </div>
 
             {graphData && (
                 <div className="w-3/4">
-                    <h2 className="text-2xl font-semibold">Graphique :</h2>
+                    <h2 className="text-2xl text-black font-semibold">Graphique :</h2>
                     <Line
                         data={graphData}
                         options={{
