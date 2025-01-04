@@ -1,9 +1,10 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
 
 /**
  * Interface représentant un utilisateur
  */
 export interface IUser extends Document {
+    _id: ObjectId; // Ajout explicite du type pour _id
     name: string;
     email: string;
     username: string;
@@ -36,8 +37,10 @@ const UserSchema: Schema = new Schema({
     },
     password: {
         type: String,
-        required: true
-    }, // Mot de passe (haché avec bcrypt)
+        required: false, // Non obligatoire pour Google
+        default: "", // Vide par défaut
+        select: false, // Exclu par défaut lors des requêtes pour des raisons de sécurité
+    },
     role: {
         type: String,
         enum: ['Apprenti', 'Rédacteur', 'Correcteur', 'Admin'], // Limite les valeurs possibles

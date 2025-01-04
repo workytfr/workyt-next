@@ -1,6 +1,6 @@
 {
   "name": "workyt",
-  "version": "0.1.0",
+  "version": "0.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -21,6 +21,7 @@
     "@tsparticles/engine": "^3.5.0",
     "@tsparticles/react": "^3.0.0",
     "@tsparticles/slim": "^3.5.0",
+    "bcryptjs": "^2.4.3",
     "chart.js": "^4.4.6",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
@@ -28,12 +29,14 @@
     "embla-carousel-react": "^8.2.0",
     "framer-motion": "^11.11.11",
     "googleapis": "^143.0.0",
+    "jsonwebtoken": "^9.0.2",
     "katex": "^0.16.11",
     "lucide-react": "^0.436.0",
     "mini-svg-data-uri": "^1.4.4",
     "mongoose": "^8.9.3",
     "nerdamer": "^1.1.13",
     "next": "14.2.7",
+    "next-auth": "^4.24.11",
     "next-themes": "^0.3.0",
     "react": "^18",
     "react-chartjs-2": "^5.2.0",
@@ -48,6 +51,8 @@
     "uuid": "^11.0.3"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.7",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20",
     "@types/react": "^18",
