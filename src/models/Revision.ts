@@ -1,9 +1,11 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid'; // Import de la bibliothèque UUID
 
 /**
  * Interface représentant une fiche de révision
  */
 export interface IRevision extends Document {
+    revisionId: string; // Identifiant unique de la fiche
     title: string; // Titre de la fiche
     content: string; // Contenu textuel de la fiche
     likes: number; // Nombre total de likes
@@ -21,6 +23,11 @@ export interface IRevision extends Document {
  * Schéma Mongoose pour les fiches de révision
  */
 const RevisionSchema: Schema = new Schema({
+    revisionId: {
+        type: String,
+        default: uuidv4, // Génération automatique d'un UUID pour chaque fiche
+        unique: true, // Assure l'unicité de l'identifiant
+    },
     title: {
         type: String,
         required: true,
