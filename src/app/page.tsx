@@ -15,6 +15,7 @@ import Footer from '@/components/home/footer';
 import { Avis } from '@/components/home/avis';
 import PartenairesView from "@/components/home/partenaires";
 import OrgChart from "@/components/home/OrgChart";
+import SessionWrapper from "@/components/SessionWrapper";
 import * as React from "react";
 import { Metadata } from 'next'
 
@@ -30,6 +31,7 @@ export const metadata: Metadata = {
 
 export default function Home() {
     return (
+        <SessionWrapper>
         <div className="grid bg-white">
             <Navbar/>
             <BannerWithButton
@@ -78,5 +80,6 @@ export default function Home() {
             <OrgChart/>
             <Footer/>
         </div>
+        </SessionWrapper>
     );
 }

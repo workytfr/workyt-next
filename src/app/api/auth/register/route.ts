@@ -4,9 +4,9 @@ import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
 export async function POST(req: Request) {
-    const { name, email, password } = await req.json();
+    const { name, email, password, username } = await req.json();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !username) {
         return NextResponse.json({ message: "All fields are required" }, { status: 400 });
     }
 
@@ -26,9 +26,10 @@ export async function POST(req: Request) {
         const newUser = new User({
             name,
             email,
+            username,
             password: hashedPassword,
-            role: "Apprenti", // Rôle par défaut
-            points: 0, // Points par défaut
+            role: "Apprenti",
+            points: 0,
             badges: [],
             isAdmin: false,
             bio: "",

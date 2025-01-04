@@ -3,12 +3,20 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Image from "next/image";
 import Link from "next/link";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import AuthPage from "@/components/forms/RegisterForm";
 import { useState } from "react";
 import { InstagramLogoIcon, TwitterLogoIcon, DiscordLogoIcon, ChevronDownIcon , VideoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+    const [isAuthOpen, setIsAuthOpen] = useState(false); // Contrôle du popup Auth
     return (
         <nav className="bg-white border-b border-gray-200 py-4">
             <div className="container mx-auto px-4 flex justify-between items-center">
@@ -170,6 +178,32 @@ export default function Navbar() {
                         <DiscordLogoIcon />
                         <span>Rejoindre la communauté</span>
                     </Link>
+                    {/* Bouton d'authentification */}
+                    <button
+                        onClick={() => setIsAuthOpen(true)}
+                        className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition"
+                    >
+                        Connexion / Inscription
+                    </button>
+
+                    {/* Popup Auth */}
+                    {/* Popup Auth */}
+                    {isAuthOpen && (
+                        <Dialog open={isAuthOpen} onOpenChange={(open) => setIsAuthOpen(open)}>
+                            <DialogContent>
+                                {/* Titre du Modal */}
+                                <DialogHeader>
+                                    <DialogTitle>Connexion / Inscription</DialogTitle>
+                                    <DialogDescription>
+                                        Veuillez entrer vos identifiants pour accéder à votre compte.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                {/* Formulaire d'authentification */}
+                                <AuthPage />
+                            </DialogContent>
+                        </Dialog>
+                    )}
                 </div>
             </div>
 
