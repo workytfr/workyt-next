@@ -3,6 +3,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
 import {
     Dialog,
     DialogContent,
@@ -13,10 +14,14 @@ import {
 import AuthPage from "@/components/forms/RegisterForm";
 import { useState } from "react";
 import { InstagramLogoIcon, TwitterLogoIcon, DiscordLogoIcon, ChevronDownIcon , VideoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
+import ProfileAvatar from "@/components/ui/profile";
+import { GiBerriesBowl } from "react-icons/gi";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false); // Contrôle du popup Auth
+    const { data: session } = useSession(); // Hook to get session data
+    console.log("username" + session?.user);
     return (
         <nav className="bg-white border-b border-gray-200 py-4">
             <div className="container mx-auto px-4 flex justify-between items-center">
@@ -179,14 +184,51 @@ export default function Navbar() {
                         <span>Rejoindre la communauté</span>
                     </Link>
                     {/* Bouton d'authentification */}
-                    <button
-                        onClick={() => setIsAuthOpen(true)}
-                        className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition"
-                    >
-                        Connexion / Inscription
-                    </button>
-
-                    {/* Popup Auth */}
+                    {session ? (
+                        <DropdownMenu.Root>
+                            <DropdownMenu.Trigger className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer">
+                                <ProfileAvatar
+                                    username={session.user?.username || "Utilisateur"}
+                                />
+                                <span>{session.user?.username || "Utilisateur"}</span>
+                                <ChevronDownIcon className="w-5 h-5" />
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                    className="bg-white border border-gray-200 rounded-md shadow-lg mt-2 py-2 z-50 w-48"
+                                    align="end"
+                                >
+                                    <DropdownMenu.Item
+                                        asChild
+                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                    >
+                                        <span>Email: {session.user?.email}</span>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="border-t my-1" />
+                                    <DropdownMenu.Item
+                                        asChild
+                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Link href="/account">Mon Compte</Link>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="border-t my-1" />
+                                    <DropdownMenu.Item
+                                        asChild
+                                        className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
+                                    >
+                                        <button onClick={() => signOut()}>Déconnexion</button>
+                                    </DropdownMenu.Item>
+                                </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
+                    ) : (
+                        <button
+                            onClick={() => setIsAuthOpen(true)}
+                            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition"
+                        >
+                            Connexion
+                        </button>
+                    )}
                     {/* Popup Auth */}
                     {isAuthOpen && (
                         <Dialog open={isAuthOpen} onOpenChange={(open) => setIsAuthOpen(open)}>
@@ -206,7 +248,6 @@ export default function Navbar() {
                     )}
                 </div>
             </div>
-
             {/* Mobile Menu */}
             {isMenuOpen && (
                 <div className="lg:hidden mt-4 space-y-6 flex flex-col items-center">
