@@ -20,14 +20,25 @@ import * as React from "react";
 import { Metadata } from 'next'
 
 
-export const metadata: Metadata = {
-    title: 'Workyt - La plate-forme d\'apprentissage gratuite',
-    description: 'Les ressources d\'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l\'éducation sont l\'accès, le manque de confiance et le coût.',
-    twitter: {
-        card: 'summary_large_image',
-        site: '@workyt',
+export const metadata = {
+    title: "Workyt - La plate-forme d'apprentissage gratuite",
+    description:
+        "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+    openGraph: {
+        type: "website",
+        title: "Workyt - La plateforme d'apprentissage",
+        description:
+            "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+        url: "https://www.workyt.fr",
+        locale: "fr_FR",
     },
-}
+    twitter: {
+        card: "summary_large_image",
+        title: "Workyt - La plateforme d'apprentissage",
+        description:
+            "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+    },
+};
 
 export default function Home() {
     return (

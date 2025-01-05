@@ -1,23 +1,9 @@
+"use client";
+
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SessionProvider } from "next-auth/react"; // Import du SessionProvider
 import { ReactNode } from "react";
-
-export const metadata = {
-    title: "Workyt - La plate-forme d'apprentissage gratuite",
-    description: "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
-    openGraph: {
-        type: "website",
-        title: "Workyt - La plateforme d'apprentissage",
-        description: "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
-        url: "https://www.workyt.fr",
-        locale: "fr_FR",
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "Workyt - La plateforme d'apprentissage",
-        description: "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
-    },
-};
 
 interface RootLayoutProps {
     children: ReactNode;
@@ -27,16 +13,24 @@ export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html lang="fr">
         <body>
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-        >
-            {children}
-        </ThemeProvider>
+        {/* Enveloppe avec le SessionProvider */}
+        <SessionProvider>
+            <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+            >
+                {children}
+            </ThemeProvider>
+        </SessionProvider>
+
         {/* Tidio Script */}
-        <script src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js" async></script>
+        <script
+            src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
+            async
+        ></script>
+
         {/* Cookie Consent Scripts */}
         <script
             type="text/javascript"
@@ -52,6 +46,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             charSet="utf-8"
             async
         ></script>
+
         {/* Google Ads Scripts */}
         <script
             async
@@ -69,6 +64,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         `,
             }}
         ></script>
+
         {/* Mailchimp Script */}
         <script
             id="mcjs"

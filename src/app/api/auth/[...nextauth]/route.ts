@@ -42,9 +42,15 @@ export const authOptions: NextAuthOptions = {
 
                 // Return user data for the session
                 return {
-                    id: user._id.toString(), // Convert ObjectId to string
+                    id: user._id.toString(),
                     name: user.name,
                     email: user.email,
+                    username: user.username, // Include additional fields
+                    role: user.role,
+                    points: user.points,
+                    badges: user.badges,
+                    bio: user.bio,
+                    isAdmin: user.isAdmin,
                 };
             },
         }),

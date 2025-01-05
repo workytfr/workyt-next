@@ -188,7 +188,8 @@ export default function Navbar() {
                         <DropdownMenu.Root>
                             <DropdownMenu.Trigger className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer">
                                 <ProfileAvatar
-                                    username={session.user?.username || "Utilisateur"}
+                                    username={session.user.username}
+                                    points={session.user.points}
                                 />
                                 <span>{session.user?.username || "Utilisateur"}</span>
                                 <ChevronDownIcon className="w-5 h-5" />
@@ -202,14 +203,14 @@ export default function Navbar() {
                                         asChild
                                         className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
                                     >
-                                        <span>Email: {session.user?.email}</span>
+                                        <span>{session.user?.email}</span>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item
                                         asChild
                                         className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                     >
-                                        <Link href="/account">Mon Compte</Link>
+                                        <Link href={`/compte/${session.user.id}`}>Mon Compte</Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item
