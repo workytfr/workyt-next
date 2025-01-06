@@ -4,12 +4,17 @@ import { v4 as uuidv4 } from 'uuid'; // Import de la bibliothèque UUID
 /**
  * Interface représentant une fiche de révision
  */
+interface ILikedBy {
+    userId: mongoose.Types.ObjectId;
+    likedAt: Date;
+}
+
 export interface IRevision extends Document {
     revisionId: string; // Identifiant unique de la fiche
     title: string; // Titre de la fiche
     content: string; // Contenu textuel de la fiche
     likes: number; // Nombre total de likes
-    likedBy: mongoose.Types.ObjectId[]; // Liste des utilisateurs ayant liké
+    likedBy: ILikedBy[]; // Tableau des utilisateurs ayant liké la fiche
     status: 'Non Certifiée' | 'Certifiée' | 'Vérifiée'; // Statut de la fiche
     author: mongoose.Types.ObjectId; // Référence à l'auteur (User)
     comments: mongoose.Types.ObjectId[]; // Références aux commentaires (Comment)
@@ -39,10 +44,16 @@ const RevisionSchema: Schema = new Schema({
     }, // Nombre de likes, par défaut 0
     likedBy: [
         {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'User', // Référence aux utilisateurs ayant liké
+            userId: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'User', // Référence au modèle User
+            },
+            likedAt: {
+                type: Date, // Timestamp du dernier like
+                default: Date.now,
+            },
         },
-    ], // Liste des utilisateurs ayant liké
+    ],
     status: {
         type: String,
         enum: ['Non Certifiée', 'Certifiée', 'Vérifiée'], // Statuts autorisés
