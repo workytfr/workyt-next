@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import connectDB from '@/lib/mongodb';
 import Revision from '@/models/Revision';
+import User from '@/models/User';
 import authMiddleware from '@/middlewares/authMiddleware';
 import adminMiddleware from '@/middlewares/adminMiddleware';
 
@@ -30,8 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // PUT : Accessible à Admin, Correcteur, Rédacteur ou Auteur de la fiche
     if (method === 'PUT') {
-        return authMiddleware(req, res, async () => {
-            const user = (req as any).user;
+        return authMiddleware(req, res, async (user: any) => {
             try {
                 const fiche = await Revision.findById(id);
                 if (!fiche) {
@@ -69,6 +69,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 if (!fiche) {
                     return res.status(404).json({ success: false, message: "Fiche non trouvée." });
                 }
+
+                // Déduire 10 points de l'auteur de la fiche
+                await User.findByIdAndUpdate(fiche.author, { $inc: { points: -10 } });
+
                 return res.status(200).json({ success: true, message: "Fiche supprimée avec succès." });
             } catch (error) {
                 console.error('Erreur DELETE:', error);
