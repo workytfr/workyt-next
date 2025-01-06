@@ -54,7 +54,7 @@ export async function GET(req: NextRequest) {
         }
 
         if (dateFrom || dateTo) {
-            filter.createdAt = {};
+            filter.createdAt = filter.createdAt || {};
             if (dateFrom) {
                 filter.createdAt.$gte = new Date(dateFrom); // Date de début
             }
@@ -63,10 +63,16 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Exécuter la requête
-        const fiches = await Revision.find(filter);
+        // Exécuter la requête et sélectionner les champs nécessaires
+        const fiches = await Revision.find(filter).select("title subject level status createdAt files");
 
-        return NextResponse.json({ success: true, data: fiches }, { status: 200 });
+        // Transformer les résultats pour inclure un seul fichier
+        const transformedFiches = fiches.map(fiche => ({
+            ...fiche.toObject(),
+            files: fiche.files.length > 0 ? fiche.files[0] : null, // Garde uniquement le premier fichier
+        }));
+
+        return NextResponse.json({ success: true, data: transformedFiches }, { status: 200 });
     } catch (error) {
         console.error("Erreur lors de la recherche :", error);
         return NextResponse.json({ success: false, message: "Erreur lors de la recherche." }, { status: 500 });

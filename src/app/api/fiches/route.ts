@@ -7,17 +7,6 @@ import { getToken } from "next-auth/jwt"; // Pour récupérer l'utilisateur via 
 // Connexion à la base de données
 connectDB();
 
-// Gestionnaire pour les opérations sur toutes les fiches
-export async function GET(req: NextRequest) {
-    try {
-        const fiches = await Revision.find(); // Récupérer toutes les fiches
-        return NextResponse.json(fiches, { status: 200 });
-    } catch (error) {
-        console.error("Erreur lors de la récupération des fiches:", error);
-        return NextResponse.json({ error: "Erreur lors de la récupération des fiches." }, { status: 500 });
-    }
-}
-
 export async function POST(req: NextRequest) {
     try {
         const token = await getToken({ req, secret: process.env.JWT_SECRET });
