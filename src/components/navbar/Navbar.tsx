@@ -215,6 +215,13 @@ export default function Navbar() {
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item
                                         asChild
+                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Link href={`/fiche/create`}>Partager une fiche</Link>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="border-t my-1" />
+                                    <DropdownMenu.Item
+                                        asChild
                                         className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
                                     >
                                         <button onClick={() => signOut()}>Déconnexion</button>
@@ -236,7 +243,7 @@ export default function Navbar() {
                             <DialogContent>
                                 {/* Titre du Modal */}
                                 <DialogHeader>
-                                    <DialogTitle>Connexion / Inscription</DialogTitle>
+                                    <DialogTitle className="text-black">Connexion / Inscription</DialogTitle>
                                     <DialogDescription>
                                         Veuillez entrer vos identifiants pour accéder à votre compte.
                                     </DialogDescription>

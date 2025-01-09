@@ -44,7 +44,7 @@ export default function AuthPage() {
     };
 
     return (
-        <div className="p-6 flex flex-col space-y-4">
+        <div className="p-6 flex flex-col space-y-4 bg-white text-black">
             <div className="flex justify-center space-x-4">
                 <button
                     className={`text-lg font-semibold ${
@@ -98,7 +98,7 @@ export default function AuthPage() {
                         onChange={(e) => setPassword(e.target.value)}
                         required
                     />
-                    <Button type="submit">S'inscrire</Button>
+                    <Button type="submit">S&apos;inscrire</Button>
                 </form>
             ) : (
                 <form onSubmit={handleLogin} className="flex flex-col space-y-4">
