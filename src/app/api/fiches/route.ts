@@ -3,6 +3,7 @@ import { S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { v4 as uuidv4 } from "uuid";
 import Revision from "@/models/Revision";
+import User from "@/models/User";
 import authMiddleware from "@/middlewares/authMiddleware";
 
 // Initialisation du client S3 pour Backblaze B2
@@ -66,6 +67,7 @@ export async function POST(req: NextRequest) {
                 fileURLs.push(fileUrl);
             }
         }
+
         // Création de la fiche
         const revisionData = {
             title,
@@ -78,6 +80,9 @@ export async function POST(req: NextRequest) {
         };
 
         const newRevision = await Revision.create(revisionData);
+
+        // Ajout de 10 points à l'utilisateur
+        await User.findByIdAndUpdate(user._id, { $inc: { points: 10 } });
 
         return NextResponse.json(newRevision, { status: 201 });
     } catch (error: any) {

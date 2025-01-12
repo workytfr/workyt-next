@@ -1,16 +1,21 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react"; // Hook pour gérer la session
-import { useRouter } from "next/navigation"; // Pour rediriger l'utilisateur
+import dynamic from "next/dynamic";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/navbar/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/Textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
+import { Skeleton } from "@/components/ui/skeleton";
 import { educationData } from "@/data/educationData";
 
+// Import dynamique pour éviter les problèmes de rendu côté serveur
+const MdEditor = dynamic(() => import("md-editor-rt").then((mod) => mod.MdEditor), { ssr: false });
+
 export default function UploadForm() {
-    const { data: session, status } = useSession(); // Récupération de la session
+    const { data: session, status } = useSession();
     const router = useRouter();
 
     const [title, setTitle] = useState("");
@@ -18,19 +23,22 @@ export default function UploadForm() {
     const [subject, setSubject] = useState("");
     const [level, setLevel] = useState("");
     const [files, setFiles] = useState<File[]>([]);
+    const [alertMessage, setAlertMessage] = useState<string | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false); // Indicateur de soumission
 
-    // Redirection si l'utilisateur n'est pas connecté
     useEffect(() => {
         if (status === "unauthenticated") {
-            router.push("/"); // Redirige vers la page de connexion
+            router.push("/");
         }
     }, [status, router]);
 
-    // Ne rien afficher tant que l'état de la session n'est pas déterminé
     if (status === "loading") {
         return (
-            <div className="min-h-screen flex items-center justify-center">
-                <p>Chargement...</p>
+            <div className="min-h-screen flex flex-col items-center justify-center space-y-6 bg-white">
+                <Skeleton className="w-48 h-8 rounded" />
+                <Skeleton className="w-full max-w-2xl h-16 rounded" />
+                <Skeleton className="w-full max-w-2xl h-72 rounded" />
+                <Skeleton className="w-32 h-10 rounded" />
             </div>
         );
     }
@@ -38,11 +46,12 @@ export default function UploadForm() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Validation des champs
         if (!title || !subject || !level) {
-            alert("Veuillez remplir tous les champs obligatoires.");
+            setAlertMessage("Veuillez remplir tous les champs obligatoires.");
             return;
         }
+
+        setIsSubmitting(true); // Active l'indicateur de soumission
 
         const formData = new FormData();
         formData.append("title", title);
@@ -53,86 +62,116 @@ export default function UploadForm() {
         files.forEach((file) => formData.append("file", file));
 
         try {
-            const token = (session as any)?.accessToken || ""; // Assurez-vous que `accessToken` contient le JWT
-            console.log("Token JWT :", token);
-            console.log("Données de session :", session);
+            const token = (session as any)?.accessToken || "";
             const response = await fetch("/api/fiches", {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${token}`, // Ajoutez le token JWT ici
+                    Authorization: `Bearer ${token}`,
                 },
                 body: formData,
             });
-
 
             if (!response.ok) {
                 throw new Error(`Erreur : ${response.statusText}`);
             }
 
             const result = await response.json();
-            console.log("Fiche publiée :", result);
-            alert("Fiche publiée avec succès !");
-            router.push("/success-page"); // Redirection après succès
+            setAlertMessage("Fiche publiée avec succès !");
+            router.push("/success-page");
         } catch (error) {
             console.error("Erreur lors de la publication :", error);
-            alert("Une erreur est survenue lors de la publication de la fiche.");
+            setAlertMessage("Une erreur est survenue lors de la publication de la fiche.");
+        } finally {
+            setIsSubmitting(false); // Désactive l'indicateur de soumission
         }
     };
 
     return (
-        <div className="min-h-screen bg-white text-black">
+        <div className="min-h-screen flex flex-col bg-white text-black">
             <Navbar />
-            <div className="container mx-auto mt-8 px-4 sm:px-6 lg:px-8 space-y-6">
-                <h1 className="text-2xl font-bold text-center">Publier une fiche</h1>
+            <div className="flex-grow container mx-auto mt-8 px-4 sm:px-6 lg:px-8">
                 <form
                     onSubmit={handleSubmit}
-                    className="space-y-4 max-w-2xl mx-auto p-6 border border-black rounded bg-white"
+                    className="flex flex-col space-y-6 p-8 bg-white shadow-lg rounded-lg w-full max-w-6xl mx-auto"
                 >
+                    <h1 className="text-3xl font-bold text-center">Publier une fiche</h1>
+
+                    {/* Alert Component */}
+                    {alertMessage && (
+                        <Alert
+                            className="bg-red-100 text-red-800 p-4 rounded border border-red-200"
+                            role="alert"
+                        >
+                            <div>
+                                <AlertTitle>Notification</AlertTitle>
+                                <AlertDescription>{alertMessage}</AlertDescription>
+                            </div>
+                        </Alert>
+                    )}
+
                     <Input
                         type="text"
                         placeholder="Titre"
                         value={title}
                         onChange={(e) => setTitle(e.target.value)}
-                        className="w-full p-2 border border-black rounded bg-white text-black"
+                        className="w-full p-4 border border-gray-300 rounded bg-white text-black"
                     />
-                    <Textarea
-                        placeholder="Contenu"
-                        value={content}
-                        onChange={(e) => setContent(e.target.value)}
-                        className="w-full p-2 border border-black rounded bg-white text-black"
-                    />
-                    <select
-                        value={subject}
-                        onChange={(e) => setSubject(e.target.value)}
-                        className="w-full p-2 border border-black rounded bg-white text-black"
-                    >
-                        <option value="" disabled>Choisir une matière</option>
-                        {educationData.subjects.map((subject, index) => (
-                            <option key={index} value={subject}>
-                                {subject}
+                    <div className="flex-grow">
+                        <MdEditor
+                            modelValue={content}
+                            onChange={setContent}
+                            previewTheme="github"
+                            theme="light"
+                            language="fr"
+                            style={{ height: "400px", width: "100%" }}
+                        />
+                    </div>
+                    <div className="flex space-x-4">
+                        <select
+                            value={subject}
+                            onChange={(e) => setSubject(e.target.value)}
+                            className="flex-1 p-4 border border-gray-300 rounded bg-white text-black"
+                        >
+                            <option value="" disabled>
+                                Choisir une matière
                             </option>
-                        ))}
-                    </select>
-                    <select
-                        value={level}
-                        onChange={(e) => setLevel(e.target.value)}
-                        className="w-full p-2 border border-black rounded bg-white text-black"
-                    >
-                        <option value="" disabled>Choisir un niveau</option>
-                        {educationData.levels.map((level, index) => (
-                            <option key={index} value={level}>
-                                {level}
+                            {educationData.subjects.map((subject, index) => (
+                                <option key={index} value={subject}>
+                                    {subject}
+                                </option>
+                            ))}
+                        </select>
+                        <select
+                            value={level}
+                            onChange={(e) => setLevel(e.target.value)}
+                            className="flex-1 p-4 border border-gray-300 rounded bg-white text-black"
+                        >
+                            <option value="" disabled>
+                                Choisir un niveau
                             </option>
-                        ))}
-                    </select>
+                            {educationData.levels.map((level, index) => (
+                                <option key={index} value={level}>
+                                    {level}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <Input
                         type="file"
                         multiple
                         onChange={(e) => setFiles(Array.from(e.target.files || []))}
-                        className="w-full p-2 border border-black rounded bg-white text-black"
+                        className="w-full p-4 border border-gray-300 rounded bg-white text-black"
                     />
-                    <Button type="submit" className="w-full bg-black text-white hover:bg-gray-800">
-                        Publier
+
+                    {/* Submit Button with Loading State */}
+                    <Button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className={`w-full py-4 ${
+                            isSubmitting ? "bg-gray-500 cursor-not-allowed" : "bg-black hover:bg-gray-800"
+                        } text-white`}
+                    >
+                        {isSubmitting ? "Envoi en cours..." : "Publier"}
                     </Button>
                 </form>
             </div>
