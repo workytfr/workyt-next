@@ -1,36 +1,90 @@
 import { NextRequest, NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
+import { S3Client } from "@aws-sdk/client-s3";
+import { Upload } from "@aws-sdk/lib-storage";
+import { v4 as uuidv4 } from "uuid";
 import Revision from "@/models/Revision";
-import User from "@/models/User";
-import { getToken } from "next-auth/jwt"; // Pour récupérer l'utilisateur via un JWT
+import authMiddleware from "@/middlewares/authMiddleware";
 
-// Connexion à la base de données
-connectDB();
+// Initialisation du client S3 pour Backblaze B2
+const s3 = new S3Client({
+    region: "eu-central-003",
+    endpoint: process.env.B2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.B2_KEY_ID!,
+        secretAccessKey: process.env.B2_APPLICATION_KEY!,
+    },
+});
 
+// Fonction pour téléverser un fichier dans S3
+async function uploadFileToS3(file: File, bucketName: string) {
+    const fileKey = `uploads/${uuidv4()}-${file.name}`;
+    const upload = new Upload({
+        client: s3,
+        params: {
+            Bucket: bucketName,
+            Key: fileKey,
+            Body: Buffer.from(await file.arrayBuffer()),
+            ContentType: file.type,
+        },
+    });
+    await upload.done();
+    return `${process.env.B2_ENDPOINT}/${bucketName}/${fileKey}`;
+}
+
+// Route pour créer une fiche de révision
 export async function POST(req: NextRequest) {
     try {
-        const token = await getToken({ req, secret: process.env.JWT_SECRET });
-
-        if (!token) {
+        // Authentification
+        const user = await authMiddleware(req);
+        if (!user || !user._id) {
             return NextResponse.json(
-                { error: "Non autorisé. Veuillez vous connecter." },
+                { error: "Non autorisé. Utilisateur non trouvé." },
                 { status: 401 }
             );
         }
 
-        const data = await req.json();
+        // Récupération des données du formulaire
+        const formData = await req.formData();
+        const title = formData.get("title") as string;
+        const content = formData.get("content") as string;
+        const subject = formData.get("subject") as string;
+        const level = formData.get("level") as string;
 
-        // Ajouter l'auteur à la fiche (utilisateur connecté)
-        data.author = token.sub; // `sub` contient l'ID utilisateur
+        // Vérifications
+        if (!title || !subject || !level) {
+            return NextResponse.json(
+                { error: "Titre, matière ou niveau manquant." },
+                { status: 400 }
+            );
+        }
 
-        const newFiche = await Revision.create(data); // Création d'une nouvelle fiche
+        // Téléversement des fichiers
+        const fileURLs: string[] = [];
+        for (const [key, value] of formData.entries()) {
+            if (key === "file" && value instanceof File) {
+                const fileUrl = await uploadFileToS3(value, process.env.B2_BUCKET_NAME!);
+                fileURLs.push(fileUrl);
+            }
+        }
+        // Création de la fiche
+        const revisionData = {
+            title,
+            content,
+            subject,
+            level,
+            author: user._id, // Utilisation directe de l'ID utilisateur
+            files: fileURLs,
+            createdAt: new Date(),
+        };
 
-        // Ajouter 10 points à l'utilisateur
-        await User.findByIdAndUpdate(token.sub, { $inc: { points: 10 } });
+        const newRevision = await Revision.create(revisionData);
 
-        return NextResponse.json(newFiche, { status: 201 });
-    } catch (error) {
-        console.error("Erreur lors de la création de la fiche:", error);
-        return NextResponse.json({ error: "Erreur lors de la création de la fiche." }, { status: 400 });
+        return NextResponse.json(newRevision, { status: 201 });
+    } catch (error: any) {
+        console.error("Erreur lors de la création de la fiche :", error.message);
+        return NextResponse.json(
+            { error: "Impossible de créer la fiche de révision.", details: error.message },
+            { status: 500 }
+        );
     }
 }

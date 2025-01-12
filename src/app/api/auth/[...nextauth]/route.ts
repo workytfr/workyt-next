@@ -4,15 +4,23 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import User, { IUser } from "@/models/User";
+import jwt from "jsonwebtoken";
+
+// Fonction pour générer un token JWT
+function generateJWT(user: any) {
+    return jwt.sign(
+        { id: user.id || user._id?.toString(), email: user.email, role: user.role , points: user.points, badges: user.badges, bio: user.bio, isAdmin: user.isAdmin },
+        process.env.JWT_SECRET!,
+        { expiresIn: "30d" } // Expiration dans 30 jours
+    );
+}
 
 export const authOptions: NextAuthOptions = {
     providers: [
-        // Google OAuth Provider
         GoogleProvider({
             clientId: process.env.GOOGLE_CLIENT_ID || "",
             clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
         }),
-        // Credentials Provider (Email and Password)
         CredentialsProvider({
             name: "Email and Password",
             credentials: {
@@ -25,111 +33,65 @@ export const authOptions: NextAuthOptions = {
                     throw new Error("Email and password are required");
                 }
 
-                // Connect to MongoDB
                 await connectDB();
 
-                // Find user in MongoDB
                 const user = await User.findOne({ email }).select("+password");
                 if (!user) {
                     throw new Error("No user found with this email");
                 }
 
-                // Validate password
                 const isValidPassword = await bcrypt.compare(password, user.password);
                 if (!isValidPassword) {
                     throw new Error("Invalid password");
                 }
 
-                // Return user data for the session
                 return {
                     id: user._id.toString(),
                     name: user.name,
                     email: user.email,
-                    username: user.username, // Include additional fields
+                    username: user.username || "",
                     role: user.role,
-                    points: user.points,
-                    badges: user.badges,
-                    bio: user.bio,
-                    isAdmin: user.isAdmin,
+                    points: user.points || 0,
+                    badges: user.badges || [],
+                    bio: user.bio || "",
+                    isAdmin: user.isAdmin || false,
                 };
             },
         }),
     ],
     callbacks: {
-        async session({ session, token }: { session: any; token: any }) {
-            try {
-                // Connect to MongoDB
-                await connectDB();
-
-                // Find user by email in MongoDB
-                const user = await User.findOne({ email: session.user.email }) as IUser;
-
-                if (user) {
-                    session.user = {
-                        id: user._id.toString(),
-                        username: user.username,
-                        role: user.role,
-                        points: user.points,
-                        badges: user.badges,
-                        bio: user.bio,
-                        isAdmin: user.isAdmin,
-                        name: user.name,
-                        email: user.email,
-                        image: session.user.image,
-                    };
-                }
-
-                return session;
-            } catch (error) {
-                console.error("Error in session callback:", (error as Error).message);
-                return {
-                    ...session,
-                    error: "Failed to retrieve user data",
-                };
+        async jwt({ token, user }) {
+            if (user) {
+                token.id = user.id || (user as IUser)._id?.toString();
+                token.sub = token.id as string;
+                token.email = user.email || "";
+                token.username = user.username || "Anonymous";
+                token.role = user.role || "user";
+                token.accessToken = generateJWT(user); // Vous pouvez aussi utiliser un token fourni par un provider
             }
+            return token;
         },
-
-        async signIn({ user, account }: any) {
-            if (account.provider === "google") {
-                const { email, name, image } = user;
-                const username = email.split("@")[0];
-
-                try {
-                    await connectDB();
-
-                    // Check if the user already exists in the database
-                    const existingUser = await User.findOne({ email });
-
-                    if (!existingUser) {
-                        // Create a new user
-                        const newUser = new User({
-                            name,
-                            email,
-                            username,
-                            password: "", // Empty password for OAuth users
-                            role: "Apprenti",
-                            points: 0,
-                            badges: [],
-                            isAdmin: false,
-                            bio: "",
-                        });
-
-                        await newUser.save();
-                    }
-
-                    return true;
-                } catch (error) {
-                    console.error("Error in signIn callback:", (error as Error).message);
-                    return false;
-                }
-            }
-            return true;
+        async session({ session, token }) {
+            session.user = {
+                ...session.user,
+                id: token.sub || "unknown-id",
+                username: token.username as string || "Anonymous",
+                points: token.points as number || 0,
+            };
+            (session as any).accessToken = token.accessToken as string;
+            return session;
         },
     },
     pages: {
-        signIn: "/signin", // Custom sign-in page
+        signIn: "/",
     },
-    secret: process.env.NEXTAUTH_SECRET, // Secret for signing JWTs and sessions
+    secret: process.env.NEXTAUTH_SECRET,
+    session: {
+        strategy: "jwt",
+    },
+    jwt: {
+        secret: process.env.NEXTAUTH_SECRET, // ou JWT_SECRET
+    },
 };
 
 const authHandler = NextAuth(authOptions);

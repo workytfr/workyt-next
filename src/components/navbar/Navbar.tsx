@@ -21,7 +21,6 @@ export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false); // Contrôle du popup Auth
     const { data: session } = useSession(); // Hook to get session data
-    console.log("username" + session?.user);
     return (
         <nav className="bg-white border-b border-gray-200 py-4">
             <div className="container mx-auto px-4 flex justify-between items-center">

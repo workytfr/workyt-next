@@ -1,32 +1,33 @@
-import { NextApiRequest, NextApiResponse } from 'next';
-import jwt from 'jsonwebtoken';
-import User from '../models/User';
+import { NextRequest } from "next/server";
+import jwt from "jsonwebtoken";
+import User from "@/models/User";
 
-const authMiddleware = async (req: NextApiRequest, res: NextApiResponse, next: Function) => {
+const authMiddleware = async (req: NextRequest) => {
     try {
-        // Vérifier si le token est présent dans l'en-tête
-        const token = req.headers.authorization?.split(' ')[1];
+        const authHeader = req.headers.get("authorization");
+        if (!authHeader) {
+            throw new Error("Non autorisé. Aucun token fourni.");
+        }
+
+        const token = authHeader.split(" ")[1];
         if (!token) {
-            return res.status(401).json({ success: false, message: 'Non autorisé. Aucun token fourni.' });
-        }
-        // Vérification du token
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET as string);
-        if (!decoded) {
-            return res.status(401).json({ success: false, message: 'Token invalide.' });
+            throw new Error("Non autorisé. Aucun token valide.");
         }
 
-        // Optionnel : Récupérer l'utilisateur à partir du modèle User
-        const user = await User.findById(decoded.id).select('-password'); // Exclure le mot de passe
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!); // Décodage avec la clé secrète
+        if (!decoded || !decoded.id) {
+            throw new Error("Token invalide ou champ sub manquant.");
+        }
+
+        const user = await User.findById(decoded.id).select("-password");
         if (!user) {
-            return res.status(404).json({ success: false, message: 'Utilisateur non trouvé.' });
+            throw new Error("Utilisateur non trouvé.");
         }
 
-        // Ajouter l'utilisateur à la requête
-        (req as any).user = user;
-        next();
+        return user;
     } catch (error: any) {
-        console.error('Erreur de middleware Auth:', error.message);
-        return res.status(401).json({ success: false, message: 'Non autorisé.' });
+        console.error("Erreur dans authMiddleware :", error.message);
+        throw error;
     }
 };
 
