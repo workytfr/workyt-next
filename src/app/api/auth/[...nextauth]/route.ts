@@ -11,7 +11,7 @@ function generateJWT(user: any) {
     return jwt.sign(
         { id: user.id || user._id?.toString(), email: user.email, role: user.role , points: user.points, badges: user.badges, bio: user.bio, isAdmin: user.isAdmin },
         process.env.JWT_SECRET!,
-        { expiresIn: "30d" } // Expiration dans 30 jours
+        { expiresIn: "15d" } // Expiration dans 15 jours
     );
 }
 
@@ -77,6 +77,7 @@ export const authOptions: NextAuthOptions = {
                 id: token.sub || "unknown-id",
                 username: token.username as string || "Anonymous",
                 points: token.points as number || 0,
+                role: token.role as string || "user",
             };
             (session as any).accessToken = token.accessToken as string;
             return session;

@@ -69,20 +69,16 @@ export const PUT = async (req: NextRequest, { params }: { params: { id: string }
     try {
         const user = await authMiddleware(req); // Authentification de l'utilisateur
 
+        if (!["Admin", "Correcteur", "Rédacteur"].includes(user.role)) {
+            return NextResponse.json(
+                { success: false, message: "Accès refusé. Vous n'avez pas les permissions nécessaires pour modifier cette fiche." },
+                { status: 403 }
+            );
+        }
+
         const fiche = await Revision.findById(id);
         if (!fiche) {
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
-        }
-
-        // Vérification des permissions
-        const canEdit =
-            user.role === "Admin" ||
-            user.role === "Correcteur" ||
-            user.role === "Rédacteur" ||
-            fiche.author.toString() === user._id.toString();
-
-        if (!canEdit) {
-            return NextResponse.json({ success: false, message: "Accès refusé. Permissions insuffisantes." }, { status: 403 });
         }
 
         const updatedData = await req.json(); // Données de la mise à jour
@@ -109,7 +105,10 @@ export const DELETE = async (req: NextRequest, { params }: { params: { id: strin
         const user = await authMiddleware(req); // Authentification de l'utilisateur
 
         if (user.role !== "Admin") {
-            return NextResponse.json({ success: false, message: "Accès refusé. Seuls les administrateurs peuvent supprimer." }, { status: 403 });
+            return NextResponse.json(
+                { success: false, message: "Accès refusé. Seuls les administrateurs peuvent supprimer cette fiche." },
+                { status: 403 }
+            );
         }
 
         const fiche = await Revision.findByIdAndDelete(id);
@@ -117,7 +116,6 @@ export const DELETE = async (req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
 
-        // Déduire 10 points de l'auteur
         await User.findByIdAndUpdate(fiche.author, { $inc: { points: -10 } });
 
         return NextResponse.json({ success: true, message: "Fiche supprimée avec succès." }, { status: 200 });

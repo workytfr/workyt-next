@@ -1,22 +1,24 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { pdfjs } from "react-pdf";
+import ReactMarkdown from "react-markdown";
+import rehypeSanitize from "rehype-sanitize";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 import Image from "next/image";
 import ProfileAvatar from "@/components/ui/profile";
 import { fetchPdfAsBlob } from "@/utils/fetchPdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import {TokensIcon , CalendarIcon, MixIcon } from "@radix-ui/react-icons";
+import {TokensIcon , CalendarIcon, MixIcon, LockClosedIcon } from "@radix-ui/react-icons";
 import CommentForm from "@/app/fiches/_components/CommentForm";
 import FileViewer from "@/app/fiches/_components/FileViewer";
 import LikedByList from "@/app/fiches/_components/LikedByList";
 import CommentsList from "@/app/fiches/_components/CommentsList";
+import StatusChanger from "@/app/fiches/_components/StatusChanger";
+
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs"
@@ -28,13 +30,10 @@ interface FicheViewProps {
 export default function FicheView({ id }: FicheViewProps) {
     const { data: session } = useSession(); // Récupérer la session
     const currentUser = session?.user || null; // Extraire l'utilisateur
-    const router = useRouter();
-    const params = useParams();
 
     const [fiche, setFiche] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [isDeleting, setIsDeleting] = useState(false);
     const [pdfCover, setPdfCover] = useState<string | null>(null);
 
     useEffect(() => {
@@ -111,28 +110,24 @@ export default function FicheView({ id }: FicheViewProps) {
         }
     };
 
-    const handleDelete = async () => {
-        setIsDeleting(true);
-        try {
-            const response = await fetch(`/api/fiches/${id}`, { method: "DELETE" });
-            if (!response.ok) {
-                setError("Erreur lors de la suppression de la fiche.");
-                return;
-            }            alert("Fiche supprimée avec succès !");
-            router.push("/fiches");
-        } catch (err) {
-            setError((err as Error).message);
-        } finally {
-            setIsDeleting(false);
-        }
-    };
-
     if (loading) {
         return (
             <div className="p-8 space-y-6">
-                <Skeleton className="h-8 w-1/2 rounded bg-gray-300" />
-                <Skeleton className="h-6 w-full rounded bg-gray-300" />
-                <Skeleton className="h-64 w-full rounded bg-gray-300" />
+                <div className="flex flex-col gap-4">
+                    <Skeleton className="h-10 w-3/4 rounded-lg bg-gray-300 animate-pulse" />
+                    <Skeleton className="h-6 w-1/2 rounded-lg bg-gray-300 animate-pulse" />
+                </div>
+                <div className="h-64 w-full bg-gray-300 rounded-lg animate-pulse" />
+                <div className="space-y-4">
+                    <Skeleton className="h-6 w-full rounded-lg bg-gray-300 animate-pulse" />
+                    <Skeleton className="h-6 w-11/12 rounded-lg bg-gray-300 animate-pulse" />
+                    <Skeleton className="h-6 w-10/12 rounded-lg bg-gray-300 animate-pulse" />
+                </div>
+                <div className="flex gap-4">
+                    <Skeleton className="h-8 w-16 rounded-full bg-gray-300 animate-pulse" />
+                    <Skeleton className="h-8 w-16 rounded-full bg-gray-300 animate-pulse" />
+                    <Skeleton className="h-8 w-16 rounded-full bg-gray-300 animate-pulse" />
+                </div>
             </div>
         );
     }
@@ -146,12 +141,31 @@ export default function FicheView({ id }: FicheViewProps) {
         );
     }
 
+    const allowedRoles = ["Rédacteur", "Correcteur", "Admin"];
+    const userHasPermission = allowedRoles.includes(currentUser?.role ?? "");
+
+    // Définir la classe CSS pour la couleur de la couverture en fonction du statut
+    const getStatusBackgroundColor = (status: string) => {
+        switch (status) {
+            case "Vérifiée":
+                return "bg-green-100";
+            case "Certifiée":
+                return "bg-blue-100";
+            default:
+                return "bg-gray-100";
+        }
+    };
+
     return (
         <div className="min-h-screen flex flex-col bg-white text-black">
             <div className="max-w-4xl mx-auto p-8 space-y-6 bg-white text-black relative">
 
                 {/* Couverture */}
-                <div className="relative bg-gray-100 shadow rounded-lg p-4 border border-gray-300">
+                <div
+                    className={`relative shadow rounded-lg p-4 border border-gray-300 ${getStatusBackgroundColor(
+                        fiche.status
+                    )}`}
+                >
                     {pdfCover ? (
                         <Image
                             src={pdfCover}
@@ -212,7 +226,9 @@ export default function FicheView({ id }: FicheViewProps) {
                 <div className="bg-white shadow rounded-lg p-6 border border-gray-300 space-y-4">
                     <h1 className="text-2xl font-bold">{fiche.title}</h1>
                     <p className="text-gray-600">Auteur : {fiche.author?.username || "Inconnu"}</p>
-                    <div className="prose max-w-none">{fiche.content}</div>
+                    <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
+                        {fiche.content}
+                    </ReactMarkdown>
                 </div>
 
                 {/* Badges */}
@@ -232,18 +248,21 @@ export default function FicheView({ id }: FicheViewProps) {
                         <FileViewer files={fiche.files}/>
                     </div>
                 )}
-
-                {/* Actions utilisateur */}
-                <div className="flex justify-between">
-                    <Button onClick={() => router.push(`/fiches/${id}/edit`)}>Modifier</Button>
-                    <Button
-                        variant="destructive"
-                        disabled={isDeleting}
-                        onClick={handleDelete}
-                    >
-                        {isDeleting ? "Suppression..." : "Supprimer"}
-                    </Button>
-                </div>
+                {/* Ajouter le composant StatusChanger */}
+                {userHasPermission && (
+                    <div className="bg-white shadow rounded-lg p-6 border border-gray-300">
+                        <h2 className="text-xl font-semibold mb-4">
+                            Changer le statut <LockClosedIcon className="inline-block ml-2" />
+                        </h2>
+                        <StatusChanger
+                            ficheId={fiche._id}
+                            currentStatus={fiche.status}
+                            onStatusChange={(newStatus) => {
+                                setFiche((prev: any) => ({ ...prev, status: newStatus }));
+                            }}
+                        />
+                    </div>
+                )}
                 <div className="bg-white shadow rounded-lg p-6 border border-gray-300">
                     <h2 className="text-xl font-semibold">Commentaires</h2>
                     {currentUser ? (
