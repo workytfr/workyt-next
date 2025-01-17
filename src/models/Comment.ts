@@ -1,5 +1,7 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
+import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid'; // Bibliothèque pour générer un UUID
+import { IUser } from './User'; // Import de l'interface IUser
+
 
 /**
  * Interface représentant un commentaire
@@ -7,7 +9,7 @@ import { v4 as uuidv4 } from 'uuid'; // Bibliothèque pour générer un UUID
 export interface IComment extends Document {
     commentId: string; // Identifiant unique du commentaire
     content: string; // Contenu du commentaire
-    author: mongoose.Types.ObjectId; // Référence à l'auteur du commentaire (User)
+    author: ObjectId | IUser; // Le champ peut être un ObjectId ou un utilisateur peuplé
     revision: mongoose.Types.ObjectId; // Référence à la fiche de révision associée (Revision)
     createdAt: Date; // Date de création du commentaire
 }
@@ -21,7 +23,7 @@ const CommentSchema: Schema = new Schema({
     author: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User', // Référence au modèle User
-        required: true,
+        required: [true, "L'auteur du commentaire est obligatoire"],
     },
     revision: {
         type: mongoose.Schema.Types.ObjectId,
