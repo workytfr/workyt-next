@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/navbar/Navbar";
 import ProfileAvatar from "@/components/ui/profile";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/Badge";
@@ -115,7 +114,6 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
     if (!user) {
         return (
             <div className="bg-white">
-                <Navbar />
                 <div className="container mx-auto mt-6 space-y-6">
                     <Card>
                         <CardHeader>
@@ -146,7 +144,6 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
 
     return (
         <div className="bg-white">
-            <Navbar />
             <div className="container mx-auto mt-6 space-y-6">
                 <Card>
                     <CardHeader>

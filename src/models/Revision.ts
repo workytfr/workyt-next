@@ -27,7 +27,7 @@ export interface IRevision extends Document {
 /**
  * Schéma Mongoose pour les fiches de révision
  */
-const RevisionSchema: Schema = new Schema({
+const RevisionSchema: Schema<IRevision> = new Schema({
     revisionId: {
         type: String,
         default: uuidv4, // Génération automatique d'un UUID pour chaque fiche
@@ -40,13 +40,14 @@ const RevisionSchema: Schema = new Schema({
     content: { type: String }, // Contenu textuel (optionnel si des fichiers sont fournis)
     likes: {
         type: Number,
-        default: 0,
-    }, // Nombre de likes, par défaut 0
+        default: 0, // Nombre de likes initialisé à 0
+    },
     likedBy: [
         {
             userId: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'User', // Référence au modèle User
+                required: true, // Assure qu'un utilisateur est spécifié
             },
             likedAt: {
                 type: Date, // Timestamp du dernier like

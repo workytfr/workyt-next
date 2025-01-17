@@ -24,27 +24,29 @@ function formatPoints(points: number): string {
 interface ProfileAvatarProps {
     username: string;
     image?: string;
-    points: number; // Nombre de points
+    points?: number; // Points sont optionnels
+    showPoints?: boolean; // Prop pour afficher ou masquer les points
 }
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                                                          username,
                                                          image,
-                                                         points,
+                                                         points = 0,
+                                                         showPoints = true, // Par défaut, les points sont affichés
                                                      }) => {
     const firstLetter = username.charAt(0).toUpperCase();
     const bgColor = hashStringToColor(username);
 
     return (
         <div className="relative w-10 h-10">
-            {/* Badge */}
-            <Badge
-                variant="default"
-                className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1"
-            >
-                {formatPoints(points)}
-            </Badge>
-            {/* Avatar */}
+            {showPoints && (
+                <Badge
+                    variant="default"
+                    className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1"
+                >
+                    {formatPoints(points)}
+                </Badge>
+            )}
             <div
                 className="w-10 h-10 rounded-full flex items-center justify-center text-white text-base font-bold overflow-hidden"
                 style={{

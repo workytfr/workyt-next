@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import Navbar from "@/components/navbar/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
@@ -88,7 +87,6 @@ export default function UploadForm() {
 
     return (
         <div className="min-h-screen flex flex-col bg-white text-black">
-            <Navbar />
             <div className="flex-grow container mx-auto mt-8 px-4 sm:px-6 lg:px-8">
                 <form
                     onSubmit={handleSubmit}

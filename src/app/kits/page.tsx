@@ -1,5 +1,4 @@
 import '@radix-ui/themes/styles.css';
-import Navbar from "@/components/navbar/Navbar";
 import Footer from '@/components/home/footer';
 import { Vortex } from  '@/components/ui/vortex'
 import PomodoroTimer from '@/components/extends/PomodoroTimer';
@@ -24,7 +23,6 @@ export const metadata: Metadata = {
 export default function Home() {
     return (
         <div className=" bg-white">
-            <Navbar/>
             <div className="w-full rounded-md h-screen overflow-hidden">
                 <Vortex
                     backgroundColor="black"

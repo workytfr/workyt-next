@@ -68,6 +68,12 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // Définir le statut en fonction du rôle
+        const status =
+            ['Rédacteur', 'Correcteur', 'Admin'].includes(user.role)
+                ? 'Certifiée'
+                : 'Non Certifiée';
+
         // Création de la fiche
         const revisionData = {
             title,
@@ -77,6 +83,7 @@ export async function POST(req: NextRequest) {
             author: user._id, // Utilisation directe de l'ID utilisateur
             files: fileURLs,
             createdAt: new Date(),
+            status, // Ajout du statut
         };
 
         const newRevision = await Revision.create(revisionData);

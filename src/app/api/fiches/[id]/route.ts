@@ -20,12 +20,19 @@ export const GET = async (req: NextRequest, { params }: { params: { id: string }
     }
 
     try {
+        // Récupérer la fiche et peupler les données nécessaires
+        const fiche = await Revision.findById(id)
+            .populate("author", "username points") // Inclure le champ "points" avec "username"
+            .populate({
+                path: "likedBy.userId",
+                select: "username",
+            }); // Peupler les utilisateurs ayant liké
 
-        const fiche = await Revision.findById(id).populate("author comments"); // Les commentaires sont populés
         if (!fiche) {
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
-        // Générer des URLs signées pour les fichiers associés
+
+        // Générer des URLs signées pour les fichiers
         const signedFileURLs = await Promise.all(
             (fiche.files || []).map(async (fileUrl: string) => {
                 try {
@@ -36,8 +43,7 @@ export const GET = async (req: NextRequest, { params }: { params: { id: string }
                     return null;
                 }
             })
-        ).then((results) => results.filter(Boolean)); // Supprimer les fichiers pour lesquels une URL n'a pas pu être générée// Supprimer les fichiers pour lesquels une URL n'a pas pu être générée
-
+        ).then((results) => results.filter(Boolean)); // Supprimer les fichiers pour lesquels une URL n'a pas pu être générée
 
         const data = {
             ...fiche.toObject(),

@@ -5,7 +5,6 @@ import {
     PageHeaderDescription,
     PageHeaderHeading,
 } from "@/components/ui/pageHeader";
-import Navbar from "@/components/navbar/Navbar";
 import { Cover } from "@/components/ui/cover";
 import { BannerWithButton } from "@/components/ui/notificationHome";
 import NosServices from "@/components/home/nos-services";
@@ -44,7 +43,6 @@ export default function Home() {
     return (
         <SessionWrapper>
         <div className="grid bg-white">
-            <Navbar/>
             <BannerWithButton
                 tTitle="🎉 Bienvenue sur Workyt v3.beta !"
                 tDetails="Découvrez notre plateforme d'apprentissage gratuite."
