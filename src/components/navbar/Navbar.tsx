@@ -216,7 +216,7 @@ export default function Navbar() {
                                         asChild
                                         className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                                     >
-                                        <Link href={`/fiche/creer`}>Partager une fiche</Link>
+                                        <Link href={`/fiches/creer`}>Partager une fiche</Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item

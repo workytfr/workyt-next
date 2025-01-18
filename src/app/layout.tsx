@@ -3,6 +3,7 @@
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { SessionProvider } from "next-auth/react"; // Import du SessionProvider
+import { TooltipProvider } from "@/components/ui/Tooltip";
 import { ReactNode } from "react";
 import Navbar from "@/components/navbar/Navbar";
 
@@ -23,7 +24,9 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 disableTransitionOnChange
             >
                 <Navbar />
+                <TooltipProvider>
                 {children}
+                </TooltipProvider>
             </ThemeProvider>
         </SessionProvider>
 

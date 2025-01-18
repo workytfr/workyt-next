@@ -59,7 +59,8 @@
     "simplex-noise": "^4.0.3",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
-    "uuid": "^11.0.3"
+    "uuid": "^11.0.3",
+    "vaul": "^1.1.2"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

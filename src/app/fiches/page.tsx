@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import {
     Pagination,
     PaginationContent,
@@ -14,8 +17,9 @@ import {
 } from "@/components/ui/Pagination";
 import { PiFireSimpleFill } from "react-icons/pi";
 import { MdSearch, MdInsertComment } from "react-icons/md";
-import { FaBook, FaGraduationCap } from "react-icons/fa";
+import { MdInfoOutline } from "react-icons/md";
 import ProfileAvatar from "@/components/ui/profile";
+import InfoDrawer from "@/app/fiches/_components/InfoDrawer";
 import { educationData, subjectColors, levelColors } from "@/data/educationData";
 
 interface Fiche {
@@ -119,12 +123,25 @@ export default function SearchPage() {
 
     return (
         <div className="bg-white text-black min-h-screen max-w-7xl mx-auto p-8 space-y-6">
-            <h1 className="text-3xl font-bold">Trouvez des fiches</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold">Trouvez des fiches</h1>
+                <div className="flex gap-4">
+                    {/* Bouton pour déposer une fiche */}
+                        <Link href="/fiches/creer">
+                            <Button variant="outline" className="text-sm">
+                                Déposer une fiche
+                            </Button>
+                        </Link>
+
+                    {/* Bouton d'information */}
+                    <InfoDrawer/>
+                </div>
+            </div>
 
             {/* Filtres */}
             <div className="space-y-4 bg-white p-4 rounded-lg shadow-md border border-gray-200">
                 <div className="flex items-center gap-2 border border-gray-300 rounded px-3 py-2">
-                    <MdSearch className="text-gray-500" size={20} />
+                    <MdSearch className="text-gray-500" size={20}/>
                     <input
                         type="text"
                         placeholder="Rechercher par mot-clé"
@@ -139,7 +156,7 @@ export default function SearchPage() {
                     onValueChange={(value) => handleFilterChange("level", value === "Tous les niveaux" ? "" : value)}
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="Tous les niveaux" />
+                        <SelectValue placeholder="Tous les niveaux"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="Tous les niveaux">Tous les niveaux</SelectItem>
@@ -156,7 +173,7 @@ export default function SearchPage() {
                     onValueChange={(value) => handleFilterChange("subject", value === "Toutes les matières" ? "" : value)}
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="Toutes les matières" />
+                        <SelectValue placeholder="Toutes les matières"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="Toutes les matières">Toutes les matières</SelectItem>
@@ -173,7 +190,7 @@ export default function SearchPage() {
                     onValueChange={handleDateRangeChange}
                 >
                     <SelectTrigger>
-                        <SelectValue placeholder="Filtrer par date" />
+                        <SelectValue placeholder="Filtrer par date"/>
                     </SelectTrigger>
                     <SelectContent>
                         {dateRangeOptions.map((option) => (
@@ -202,22 +219,57 @@ export default function SearchPage() {
                     {fiches.map((fiche) => (
                         <div
                             key={fiche.id}
-                            className="flex gap-4 p-4 bg-gray-50 border rounded-lg shadow items-center"
+                            className="relative flex gap-4 p-4 bg-gray-50 border rounded-lg shadow items-center"
                         >
-                            <ProfileAvatar username={fiche.authors?.username || "Inconnu"} points={fiche.authors?.points || 0} />
+                            {/* Icône de statut dans le coin supérieur droit */}
+                            {fiche.status !== "Non Certifiée" && (
+                                <div className="absolute top-2 right-2">
+                                    <Tooltip>
+                                        <TooltipTrigger>
+                                            <div className="relative group">
+                                                <Image
+                                                    src={`/badge/${fiche.status}.svg`}
+                                                    alt={`Statut: ${fiche.status}`}
+                                                    width={30}
+                                                    height={30}
+                                                    className="rounded cursor-pointer"
+                                                />
+                                            </div>
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                            <div className="flex items-center gap-2">
+                                                <MdInfoOutline className="text-blue-500" size={16}/>
+                                                <span>
+                  Ce badge indique que cette fiche est <strong>{fiche.status}</strong>.
+                </span>
+                                            </div>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </div>
+                            )}
+
+                            {/* Contenu de la carte */}
+                            <ProfileAvatar username={fiche.authors?.username || "Inconnu"}
+                                           points={fiche.authors?.points || 0}/>
                             <div className="flex-1">
-                                <h2 className="text-lg font-semibold text-gray-800">{fiche.title}</h2>
-                                <p className="text-sm text-gray-600 break-words line-clamp-2">{fiche.content}</p>
+                                {/* Titre cliquable */}
+                                <Link href={`/fiches/${fiche.id}`}>
+                                    <h2 className="text-lg font-semibold text-gray-800 hover:underline cursor-pointer">
+                                        {fiche.title}
+                                    </h2>
+                                    <p className="text-sm text-gray-600 break-words line-clamp-2">{fiche.content}</p>
+                                </Link>
                                 <div className="mt-2 flex items-center gap-2">
                                     <Badge className={levelColors[fiche.level] || "bg-gray-200"}>{fiche.level}</Badge>
-                                    <Badge className={subjectColors[fiche.subject] || "bg-gray-200"}>{fiche.subject}</Badge>
+                                    <Badge
+                                        className={subjectColors[fiche.subject] || "bg-gray-200"}>{fiche.subject}</Badge>
                                 </div>
                             </div>
                             <div className="flex flex-col items-end">
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <PiFireSimpleFill className="text-red-500" />
+                                    <PiFireSimpleFill className="text-red-500"/>
                                     {fiche.likes}
-                                    <MdInsertComment className="text-blue-500" />
+                                    <MdInsertComment className="text-blue-500"/>
                                     {fiche.comments}
                                 </div>
                                 <p className="text-xs text-gray-500">{new Date(fiche.createdAt).toLocaleDateString("fr-FR")}</p>
