@@ -121,6 +121,23 @@ export default function SearchPage() {
         }
     };
 
+    const SkeletonCard = () => (
+        <div className="flex gap-4 p-4 bg-gray-50 border rounded-lg shadow items-center animate-pulse">
+            <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+            <div className="flex-1">
+                <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
+                <div className="h-3 bg-gray-300 rounded w-full mb-1"></div>
+                <div className="h-3 bg-gray-300 rounded w-5/6"></div>
+                <div className="flex gap-2 mt-2">
+                    <div className="h-6 w-16 bg-gray-300 rounded"></div>
+                    <div className="h-6 w-16 bg-gray-300 rounded"></div>
+                </div>
+            </div>
+            <div className="w-12 h-4 bg-gray-300 rounded"></div>
+        </div>
+    );
+
+
     return (
         <div className="bg-white text-black min-h-screen max-w-7xl mx-auto p-8 space-y-6">
             <div className="flex justify-between items-center">
@@ -211,7 +228,11 @@ export default function SearchPage() {
 
             {/* Liste des fiches */}
             {loading ? (
-                <p>Chargement des données...</p>
+                <div className="space-y-6">
+                    {[...Array(3)].map((_, index) => (
+                        <SkeletonCard key={index} />
+                    ))}
+                </div>
             ) : error ? (
                 <p className="text-red-500">{error}</p>
             ) : (
