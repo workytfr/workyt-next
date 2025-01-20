@@ -24,6 +24,7 @@ export default function AuthPage() {
         const data = await res.json();
         if (res.ok) {
             setMessage("Inscription réussie !");
+            window.location.reload(); // Rafraîchit la page
         } else {
             setMessage(data.message || "L'inscription a échoué.");
         }
@@ -34,6 +35,7 @@ export default function AuthPage() {
         const result = await signIn("credentials", { email, password, redirect: false });
         if (result?.ok) {
             setMessage("Connexion réussie !");
+            window.location.reload(); // Rafraîchit la page
         } else {
             setMessage("Email ou mot de passe incorrect.");
         }
