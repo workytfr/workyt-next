@@ -84,7 +84,7 @@ export default function UploadForm() {
 
             const result = await response.json();
             setAlertMessage("Fiche publiée avec succès !");
-            router.push("/success-page");
+            router.push("/fiches");
         } catch (error) {
             console.error("Erreur lors de la publication :", error);
             setAlertMessage("Une erreur est survenue lors de la publication de la fiche.");

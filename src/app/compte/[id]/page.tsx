@@ -13,17 +13,20 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Separator } from "@/components/ui/Separator";
 import { Toast } from "@/components/ui/UseToast";
 import { Label } from "@/components/ui/Label";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import Image from "next/image";
 
 export default function UserAccountPage({ params }: { params: { id: string } }) {
-    const { id } = params; // ID de l'utilisateur cible
-    const { data: session } = useSession(); // Session utilisateur connecté
+    const { id } = params;
+    const { data: session } = useSession();
     const router = useRouter();
 
     const [user, setUser] = useState<any>(null);
     const [revisions, setRevisions] = useState<any[]>([]);
+    const [pagination, setPagination] = useState({ page: 1, totalPages: 1 }); // Pagination état
     const [isEditing, setIsEditing] = useState(false);
-    const [loading, setLoading] = useState(true); // Ajout de l'état de chargement
+    const [loading, setLoading] = useState(true);
+
     const [formData, setFormData] = useState({
         name: "",
         username: "",
@@ -36,12 +39,16 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
     useEffect(() => {
         async function fetchUser() {
             try {
-                setLoading(true); // Début du chargement
-                const res = await fetch(`/api/user/${id}`);
+                setLoading(true);
+                const res = await fetch(`/api/user/${id}?page=${pagination.page}&limit=5`); // Ajout des paramètres de pagination
                 const data = await res.json();
                 if (res.ok) {
                     setUser(data.data.user);
                     setRevisions(data.data.revisions);
+                    setPagination({
+                        page: data.data.pagination.currentPage,
+                        totalPages: data.data.pagination.totalPages,
+                    });
                     setFormData({
                         name: data.data.user.name,
                         username: data.data.user.username,
@@ -63,14 +70,19 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
                 });
                 router.push("/");
             } finally {
-                setLoading(false); // Fin du chargement
+                setLoading(false);
             }
         }
 
         fetchUser();
-    }, [id, router]);
+    }, [id, pagination.page, router]);
 
-    // Fonction pour annuler l'édition
+    const handlePageChange = (newPage: number) => {
+        if (newPage >= 1 && newPage <= pagination.totalPages) {
+            setPagination((prev) => ({ ...prev, page: newPage }));
+        }
+    };
+
     const handleCancel = () => {
         setIsEditing(false);
         setFormData({
@@ -250,6 +262,41 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
                         <p className="text-sm text-gray-500">Aucune fiche de révision publiée.</p>
                     )}
                 </div>
+
+                {/* Pagination */}
+                <Pagination>
+                    <PaginationContent>
+                        <PaginationItem>
+                            <PaginationPrevious
+                                href="#"
+                                onClick={() => handlePageChange(pagination.page - 1)}
+                                className={pagination.page === 1 ? "opacity-50 pointer-events-none" : ""}
+                            >
+                                Précédent
+                            </PaginationPrevious>
+                        </PaginationItem>
+                        {Array.from({ length: pagination.totalPages }, (_, index) => (
+                            <PaginationItem key={index}>
+                                <PaginationLink
+                                    href="#"
+                                    isActive={pagination.page === index + 1}
+                                    onClick={() => handlePageChange(index + 1)}
+                                >
+                                    {index + 1}
+                                </PaginationLink>
+                            </PaginationItem>
+                        ))}
+                        <PaginationItem>
+                            <PaginationNext
+                                href="#"
+                                onClick={() => handlePageChange(pagination.page + 1)}
+                                className={pagination.page === pagination.totalPages ? "opacity-50 pointer-events-none" : ""}
+                            >
+                                Suivant
+                            </PaginationNext>
+                        </PaginationItem>
+                    </PaginationContent>
+                </Pagination>
             </div>
         </div>
     );

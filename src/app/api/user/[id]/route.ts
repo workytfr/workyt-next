@@ -6,22 +6,32 @@ import User from "@/models/User";
 import Revision from "@/models/Revision";
 
 // Récupère un utilisateur et ses fiches de révision
-export const GET = async (_req: Request, { params }: { params: { id: string } }) => {
+export const GET = async (req: Request, { params }: { params: { id: string } }) => {
     const { id } = params;
 
     try {
         await connectDB();
 
-        // Trouver l'utilisateur
+        // Récupération des paramètres de requête pour la pagination
+        const url = new URL(req.url);
+        const page = parseInt(url.searchParams.get("page") || "1", 10);
+        const limit = parseInt(url.searchParams.get("limit") || "10", 10);
+
+        // Vérifier si l'utilisateur existe
         const user = await User.findById(id).select("-password -email");
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Trouver les fiches de révision créées par l'utilisateur
+        // Calcul des fiches paginées
+        const skip = (page - 1) * limit;
+
+        const totalRevisions = await Revision.countDocuments({ author: id }); // Compte total des fiches
         const revisions = await Revision.find({ author: id })
             .sort({ createdAt: -1 })
-            .select("title content likes status subject level createdAt comments") // Exclure des champs inutiles
+            .skip(skip)
+            .limit(limit)
+            .select("title content likes status subject level createdAt comments") // Sélectionne les champs nécessaires
             .lean(); // Convertit en objet JS pur
 
         // Ajouter le nombre de commentaires dans chaque fiche
@@ -42,8 +52,16 @@ export const GET = async (_req: Request, { params }: { params: { id: string } })
             createdAt: user.createdAt,
         };
 
+        // Ajouter les données de pagination
+        const pagination = {
+            totalRevisions,
+            totalPages: Math.ceil(totalRevisions / limit),
+            currentPage: page,
+            limit,
+        };
+
         return NextResponse.json(
-            { data: { user: userResponse, revisions: revisionsWithCommentCount } },
+            { data: { user: userResponse, revisions: revisionsWithCommentCount, pagination } },
             { status: 200 }
         );
     } catch (error) {
@@ -54,6 +72,7 @@ export const GET = async (_req: Request, { params }: { params: { id: string } })
         );
     }
 };
+
 
 // Met à jour un utilisateur par son ID
 export const PATCH = async (req: Request, { params }: { params: { id: string } }) => {
