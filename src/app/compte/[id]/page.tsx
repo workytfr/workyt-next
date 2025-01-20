@@ -4,29 +4,26 @@ import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "@/components/ui/profile";
+import FicheCard from "@/components/fiches/FicheCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/Badge";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-} from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Separator } from "@/components/ui/Separator";
 import { Toast } from "@/components/ui/UseToast";
 import { Label } from "@/components/ui/Label";
+import Image from "next/image";
 
 export default function UserAccountPage({ params }: { params: { id: string } }) {
-    const { id } = params;
-    const { data: session } = useSession();
+    const { id } = params; // ID de l'utilisateur cible
+    const { data: session } = useSession(); // Session utilisateur connecté
     const router = useRouter();
 
     const [user, setUser] = useState<any>(null);
+    const [revisions, setRevisions] = useState<any[]>([]);
     const [isEditing, setIsEditing] = useState(false);
+    const [loading, setLoading] = useState(true); // Ajout de l'état de chargement
     const [formData, setFormData] = useState({
         name: "",
         username: "",
@@ -39,10 +36,12 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
     useEffect(() => {
         async function fetchUser() {
             try {
+                setLoading(true); // Début du chargement
                 const res = await fetch(`/api/user/${id}`);
                 const data = await res.json();
                 if (res.ok) {
                     setUser(data.data.user);
+                    setRevisions(data.data.revisions);
                     setFormData({
                         name: data.data.user.name,
                         username: data.data.user.username,
@@ -63,16 +62,15 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
                     variant: "destructive",
                 });
                 router.push("/");
+            } finally {
+                setLoading(false); // Fin du chargement
             }
         }
 
         fetchUser();
     }, [id, router]);
 
-    const handleEdit = () => {
-        setIsEditing(true);
-    };
-
+    // Fonction pour annuler l'édition
     const handleCancel = () => {
         setIsEditing(false);
         setFormData({
@@ -111,55 +109,83 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
         }
     };
 
-    if (!user) {
+    const isOwner = session?.user?.id === id;
+    const isAdmin = session?.user?.role === "Admin";
+
+    if (loading) {
         return (
             <div className="bg-white">
                 <div className="container mx-auto mt-6 space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <div className="flex items-center space-x-4">
-                                <Skeleton className="w-10 h-10 rounded-full" />
-                                <div>
-                                    <Skeleton className="w-24 h-6 mb-2" />
-                                    <Skeleton className="w-16 h-4" />
-                                </div>
-                            </div>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-4">
-                                <Skeleton className="w-full h-10" />
-                                <Skeleton className="w-full h-10" />
-                                <Skeleton className="w-full h-24" />
-                                <Skeleton className="w-full h-10" />
-                            </div>
-                        </CardContent>
-                    </Card>
+                    <Skeleton className="w-full h-48 rounded-md mb-4" />
+                    <div className="flex items-center space-x-4">
+                        <Skeleton className="w-24 h-24 rounded-full" />
+                        <div>
+                            <Skeleton className="w-48 h-6 mb-2" />
+                            <Skeleton className="w-32 h-4" />
+                        </div>
+                    </div>
+                    <Separator className="my-4" />
+                    <div className="space-y-4">
+                        <Skeleton className="w-full h-10" />
+                        <Skeleton className="w-full h-10" />
+                        <Skeleton className="w-full h-24" />
+                    </div>
                 </div>
             </div>
         );
     }
 
-    const isOwner = session?.user?.email === user.email;
-    const isAdmin = session?.user?.role === "Admin";
-
     return (
-        <div className="bg-white">
-            <div className="container mx-auto mt-6 space-y-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center space-x-4">
-                            <ProfileAvatar
-                                username={formData.username}
-                                points={formData.points}
-                            />
-                            <div>
-                                <CardTitle>{formData.username}</CardTitle>
-                                <CardDescription>{formData.points} points</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
+        <div className="bg-white text-black">
+            {/* Cover Section */}
+            <div className="relative w-full h-48 bg-blue-500">
+                <Image
+                    src="/avatars/background.png"
+                    alt="Cover Image"
+                    fill
+                    className="object-cover"
+                />
+                <div className="absolute top-16 left-8 flex items-center">
+                    <ProfileAvatar
+                        username={formData.username}
+                        size="large"
+                    />
+                </div>
+            </div>
+
+            {/* User Details Section */}
+            <div className="container mx-auto mt-16 space-y-6 px-4">
+                <div className="flex flex-col items-center text-center">
+                    <h1 className="text-2xl font-bold">{formData.username}</h1>
+                    <p className="text-gray-700">{formData.points} points</p>
+                    <p className="text-gray-700 mt-2 max-w-lg">{formData.bio}</p>
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Badges Section */}
+                <div>
+                    <h2 className="text-lg font-bold">Badges</h2>
+                    <div className="flex gap-2 flex-wrap mt-4">
+                        {formData.badges.length > 0 ? (
+                            formData.badges.map((badge: string, idx: number) => (
+                                <Badge key={idx} variant="secondary">
+                                    {badge}
+                                </Badge>
+                            ))
+                        ) : (
+                            <p className="text-sm text-gray-500">Aucun badge obtenu.</p>
+                        )}
+                    </div>
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Editable Fields - Only for owner or admin */}
+                {(isOwner || isAdmin) && (
+                    <div>
+                        <h2 className="text-lg font-bold">Modifier votre profil</h2>
+                        <div className="mt-4 space-y-4">
                             <div>
                                 <Label htmlFor="name">Nom</Label>
                                 <Input
@@ -193,42 +219,37 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
                                     disabled={!isEditing}
                                 />
                             </div>
-                            <Separator className="my-4" />
-                            <div className="flex items-start gap-4">
-                                <div>
-                                    <Label>Badges</Label>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {formData.badges.length > 0 ? (
-                                            formData.badges.map((badge: string, idx: number) => (
-                                                <Badge key={idx} variant="secondary">
-                                                    {badge}
-                                                </Badge>
-                                            ))
-                                        ) : (
-                                            <p className="text-sm text-muted-foreground">
-                                                Aucun badge obtenu.
-                                            </p>
-                                        )}
-                                    </div>
-                                </div>
+                            <div className="flex justify-end gap-4">
+                                {isEditing ? (
+                                    <>
+                                        <Button variant="outline" onClick={handleCancel}>
+                                            Annuler
+                                        </Button>
+                                        <Button onClick={handleSave}>Sauvegarder</Button>
+                                    </>
+                                ) : (
+                                    <Button onClick={() => setIsEditing(true)}>Modifier</Button>
+                                )}
                             </div>
-                            {(isOwner || isAdmin) && (
-                                <div className="flex justify-end gap-2">
-                                    {isEditing ? (
-                                        <>
-                                            <Button variant="outline" onClick={handleCancel}>
-                                                Annuler
-                                            </Button>
-                                            <Button onClick={handleSave}>Sauvegarder</Button>
-                                        </>
-                                    ) : (
-                                        <Button onClick={handleEdit}>Modifier</Button>
-                                    )}
-                                </div>
-                            )}
                         </div>
-                    </CardContent>
-                </Card>
+                    </div>
+                )}
+
+                <Separator className="my-6" />
+
+                {/* User Revisions */}
+                <div>
+                    <h2 className="text-lg font-bold mb-4">Fiches de révision</h2>
+                    {revisions.length > 0 ? (
+                        <div className="space-y-4">
+                            {revisions.map((fiche) => (
+                                <FicheCard key={fiche._id} fiche={fiche} username={formData.username} />
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">Aucune fiche de révision publiée.</p>
+                    )}
+                </div>
             </div>
         </div>
     );

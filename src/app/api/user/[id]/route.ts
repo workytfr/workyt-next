@@ -5,7 +5,7 @@ import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import Revision from "@/models/Revision";
 
-// Récupère un utilisateur par son ID et ses fiches de révision
+// Récupère un utilisateur et ses fiches de révision
 export const GET = async (_req: Request, { params }: { params: { id: string } }) => {
     const { id } = params;
 
@@ -13,13 +13,22 @@ export const GET = async (_req: Request, { params }: { params: { id: string } })
         await connectDB();
 
         // Trouver l'utilisateur
-        const user = await User.findById(id).select("-password -email"); // Exclure le mot de passe et l'email
+        const user = await User.findById(id).select("-password -email");
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
         // Trouver les fiches de révision créées par l'utilisateur
-        const revisions = await Revision.find({ author: id }).sort({ createdAt: -1 });
+        const revisions = await Revision.find({ author: id })
+            .sort({ createdAt: -1 })
+            .select("title content likes status subject level createdAt comments") // Exclure des champs inutiles
+            .lean(); // Convertit en objet JS pur
+
+        // Ajouter le nombre de commentaires dans chaque fiche
+        const revisionsWithCommentCount = revisions.map((revision) => ({
+            ...revision,
+            comments: revision.comments.length, // Compte le nombre de commentaires
+        }));
 
         // Préparer une réponse sans email
         const userResponse = {
@@ -34,7 +43,7 @@ export const GET = async (_req: Request, { params }: { params: { id: string } })
         };
 
         return NextResponse.json(
-            { data: { user: userResponse, revisions } },
+            { data: { user: userResponse, revisions: revisionsWithCommentCount } },
             { status: 200 }
         );
     } catch (error) {

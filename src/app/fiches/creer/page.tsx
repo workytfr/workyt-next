@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -9,21 +8,30 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { educationData } from "@/data/educationData";
-
-// Import dynamique pour éviter les problèmes de rendu côté serveur
-const MdEditor = dynamic(() => import("md-editor-rt").then((mod) => mod.MdEditor), { ssr: false });
+import MDEditor from "@uiw/react-md-editor";
 
 export default function UploadForm() {
     const { data: session, status } = useSession();
     const router = useRouter();
 
     const [title, setTitle] = useState("");
-    const [content, setContent] = useState("");
+    const [content, setContent] = useState<string | undefined>("");
     const [subject, setSubject] = useState("");
     const [level, setLevel] = useState("");
     const [files, setFiles] = useState<File[]>([]);
     const [alertMessage, setAlertMessage] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false); // Indicateur de soumission
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const selectedFiles = Array.from(e.target.files || []);
+        const validFiles = selectedFiles.filter(
+            (file) => file.type === "application/pdf" || file.type.startsWith("image/")
+        );
+        setFiles(validFiles);
+        if (validFiles.length < selectedFiles.length) {
+            setAlertMessage("Certains fichiers non valides ont été ignorés.");
+        }
+    };
 
     useEffect(() => {
         if (status === "unauthenticated") {
@@ -50,11 +58,11 @@ export default function UploadForm() {
             return;
         }
 
-        setIsSubmitting(true); // Active l'indicateur de soumission
+        setIsSubmitting(true);
 
         const formData = new FormData();
         formData.append("title", title);
-        formData.append("content", content);
+        formData.append("content", content || "");
         formData.append("subject", subject);
         formData.append("level", level);
 
@@ -115,13 +123,10 @@ export default function UploadForm() {
                         className="w-full p-4 border border-gray-300 rounded bg-white text-black"
                     />
                     <div className="flex-grow">
-                        <MdEditor
-                            modelValue={content}
+                        <MDEditor
+                            value={content}
                             onChange={setContent}
-                            previewTheme="github"
-                            theme="light"
-                            language="fr"
-                            style={{ height: "400px", width: "100%" }}
+                            height={300}
                         />
                     </div>
                     <div className="flex space-x-4">
@@ -157,7 +162,8 @@ export default function UploadForm() {
                     <Input
                         type="file"
                         multiple
-                        onChange={(e) => setFiles(Array.from(e.target.files || []))}
+                        accept="application/pdf,image/*"
+                        onChange={handleFileChange}
                         className="w-full p-4 border border-gray-300 rounded bg-white text-black"
                     />
 

@@ -15,7 +15,6 @@ import AuthPage from "@/components/forms/RegisterForm";
 import { useState } from "react";
 import { InstagramLogoIcon, TwitterLogoIcon, DiscordLogoIcon, ChevronDownIcon , VideoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
 import ProfileAvatar from "@/components/ui/profile";
-import { GiBerriesBowl } from "react-icons/gi";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -106,8 +105,8 @@ export default function Navbar() {
                         </DropdownMenu.Portal>
                     </DropdownMenu.Root>
 
-                    <Link href="https://cours.workyt.fr/" className="text-gray-700 font-semibold">
-                        Cours
+                    <Link href="/fiches" className="text-gray-700 font-semibold">
+                        Fiches
                     </Link>
 
                     {/* Blog Dropdown */}
@@ -266,10 +265,10 @@ export default function Navbar() {
                         Forum
                     </Link>
                     <Link
-                        href="https://cours.workyt.fr/"
+                        href="/fiches"
                         className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
                     >
-                        Cours
+                        Fiches
                     </Link>
                     <Link
                         href="https://blog.workyt.fr/"
