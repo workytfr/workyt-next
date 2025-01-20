@@ -44,6 +44,16 @@ const EquationSolver: React.FC = () => {
     const minLimit = -50;
     const maxLimit = 50;
     const stepLimit = 0.1; // Step can't be smaller than 0.1
+    const MAX_INPUT_LENGTH = 50; // Limite de caractères pour l'équation
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.value.length <= MAX_INPUT_LENGTH) {
+            setInput(e.target.value);
+        } else {
+            setError(`La saisie est limitée à ${MAX_INPUT_LENGTH} caractères.`);
+        }
+    };
+
 
     const solveEquation = () => {
         // Check if the values are within the allowed limits
@@ -127,12 +137,14 @@ const EquationSolver: React.FC = () => {
             <p className="text-gray-700 text-center">Saisissez une équation pour voir les étapes et le graphique.</p>
 
             <div className="w-3/4" style={{ overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px' }}>
-                <input
-                    className="w-full p-2 border rounded"
-                    placeholder="Entrez une équation (e.g. 2x + 3 = 7)"
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                />
+                <div className="w-3/4" style={{overflowWrap: 'break-word', wordBreak: 'break-word', maxWidth: '800px'}}>
+                    <input
+                        className="w-full p-2 border rounded"
+                        placeholder="Entrez une équation (e.g. 2x + 3 = 7)"
+                        value={input}
+                        onChange={handleInputChange} // Utilisation de la fonction avec limite de caractères
+                    />
+                </div>
             </div>
 
             <div className="w-3/4 flex space-x-4">

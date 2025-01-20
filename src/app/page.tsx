@@ -5,7 +5,6 @@ import {
     PageHeaderDescription,
     PageHeaderHeading,
 } from "@/components/ui/pageHeader";
-import Navbar from "@/components/navbar/Navbar";
 import { Cover } from "@/components/ui/cover";
 import { BannerWithButton } from "@/components/ui/notificationHome";
 import NosServices from "@/components/home/nos-services";
@@ -15,28 +14,40 @@ import Footer from '@/components/home/footer';
 import { Avis } from '@/components/home/avis';
 import PartenairesView from "@/components/home/partenaires";
 import OrgChart from "@/components/home/OrgChart";
+import SessionWrapper from "@/components/SessionWrapper";
 import * as React from "react";
 import { Metadata } from 'next'
 
 
-export const metadata: Metadata = {
-    title: 'Workyt - La plate-forme d\'apprentissage gratuite',
-    description: 'Les ressources d\'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l\'éducation sont l\'accès, le manque de confiance et le coût.',
-    twitter: {
-        card: 'summary_large_image',
-        site: '@workyt',
+export const metadata = {
+    title: "Workyt - La plate-forme d'apprentissage gratuite",
+    description:
+        "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+    openGraph: {
+        type: "website",
+        title: "Workyt - La plateforme d'apprentissage",
+        description:
+            "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+        url: "https://www.workyt.fr",
+        locale: "fr_FR",
     },
-}
+    twitter: {
+        card: "summary_large_image",
+        title: "Workyt - La plateforme d'apprentissage",
+        description:
+            "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+    },
+};
 
 export default function Home() {
     return (
+        <SessionWrapper>
         <div className="grid bg-white">
-            <Navbar/>
             <BannerWithButton
-                tTitle="🎉 Bienvenue sur Workyt v3.beta !"
-                tDetails="Découvrez notre plateforme d'apprentissage gratuite."
+                tTitle="🎉 Bienvenue sur Workyt v3.5 !"
+                tDetails="Découvrez le nouveau kit Fiches de révision"
                 tButton="Commencer"
-                linkHref="https://cours.workyt.fr/"
+                linkHref="/fiches"
                 tDismiss="Masquer"
             />
             <div
@@ -78,5 +89,6 @@ export default function Home() {
             <OrgChart/>
             <Footer/>
         </div>
+        </SessionWrapper>
     );
 }

@@ -1,8 +1,11 @@
-import Script from "next/script";
+"use client";
+
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { SessionProvider } from "next-auth/react"; // Import du SessionProvider
+import { TooltipProvider } from "@/components/ui/Tooltip";
 import { ReactNode } from "react";
-import Head from "next/head";
+import Navbar from "@/components/navbar/Navbar";
 
 interface RootLayoutProps {
     children: ReactNode;
@@ -11,63 +14,51 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html lang="fr">
-        <Head>
-            {/* Meta Tags pour SEO */}
-            <meta charSet="UTF-8"/>
-            <meta name="viewport" content="initial-scale=1.0"/>
-            <title>Workyt - La plate-forme d&apos;apprentissage gratuite</title>
-            <meta name="description"
-                  content="Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et le coût."/>
-
-            {/* Open Graph Meta Tags */}
-            <meta property="og:type" content="website"/>
-            <meta property="og:title" content="Workyt - La plateforme d&apos;apprentissage"/>
-            <meta property="og:description"
-                  content="Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et le coût."/>
-            <meta name="twitter:image" content="/zDKvjW3h_400x400.jpg"/>
-            <meta property="og:url" content="https://www.workyt.fr"/>
-            <meta property="og:locale" content="fr_FR"/>
-            <meta name="twitter:card" content="summary_large_image"/>
-            <meta name="twitter:title" content="Workyt - La plateforme d&apos;apprentissage"/>
-            <meta name="twitter:description"
-                  content="Les ressources d&apos;apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l&apos;éducation sont l&apos;accès, le manque de confiance et le coût."/>
-            <meta name="twitter:image" content="/zDKvjW3h_400x400.jpg"/>
-            <meta name="twitter:url" content="https://www.workyt.fr"/>
-        </Head>
         <body>
-        <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-        >
-            {children}
-        </ThemeProvider>
+        {/* Enveloppe avec le SessionProvider */}
+        <SessionProvider>
+            <ThemeProvider
+                attribute="class"
+                defaultTheme="system"
+                enableSystem
+                disableTransitionOnChange
+            >
+                <Navbar />
+                <TooltipProvider>
+                {children}
+                </TooltipProvider>
+            </ThemeProvider>
+        </SessionProvider>
 
         {/* Tidio Script */}
-        <Script src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js" strategy="lazyOnload"/>
+        <script
+            src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
+            async
+        ></script>
 
         {/* Cookie Consent Scripts */}
-        <Script
+        <script
             type="text/javascript"
             src="https://cache.consentframework.com/js/pa/28806/c/pjmlS/stub"
             referrerPolicy="unsafe-url"
             charSet="utf-8"
-            strategy="lazyOnload"
-        />
-        <Script
+            async
+        ></script>
+        <script
             type="text/javascript"
             src="https://choices.consentframework.com/js/pa/28806/c/pjmlS/cmp"
             referrerPolicy="unsafe-url"
             charSet="utf-8"
-            strategy="lazyOnload"
-        />
+            async
+        ></script>
 
         {/* Google Ads Scripts */}
-        <Script async src="https://www.googletagmanager.com/gtag/js?id=AW-10979332706" strategy="lazyOnload"/>
-        <Script
+        <script
+            async
+            src="https://www.googletagmanager.com/gtag/js?id=AW-10979332706"
+        ></script>
+        <script
             id="google-analytics"
-            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
                 __html: `
                             window.dataLayer = window.dataLayer || [];
@@ -77,11 +68,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
                             gtag('event', 'conversion', {'send_to': 'AW-10979332706/HSH7CP-6g9sDEOKkrfMo'});
                         `,
             }}
-        />
+        ></script>
+
         {/* Mailchimp Script */}
-        <Script
+        <script
             id="mcjs"
-            strategy="lazyOnload"
             dangerouslySetInnerHTML={{
                 __html: `
                             (function(c,h,i,m,p){
@@ -93,7 +84,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                             })(document,"script","https://chimpstatic.com/mcjs-connected/js/users/7e5e31a95d8d924397deba535/7bee0dc79cb596b3ac1a6081a.js");
                         `,
             }}
-        />
+        ></script>
         </body>
         </html>
     );

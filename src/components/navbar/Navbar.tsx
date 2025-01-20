@@ -3,12 +3,23 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Image from "next/image";
 import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+} from "@/components/ui/dialog";
+import AuthPage from "@/components/forms/RegisterForm";
 import { useState } from "react";
 import { InstagramLogoIcon, TwitterLogoIcon, DiscordLogoIcon, ChevronDownIcon , VideoIcon, LinkedInLogoIcon } from "@radix-ui/react-icons";
+import ProfileAvatar from "@/components/ui/profile";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-
+    const [isAuthOpen, setIsAuthOpen] = useState(false); // Contrôle du popup Auth
+    const { data: session } = useSession(); // Hook to get session data
     return (
         <nav className="bg-white border-b border-gray-200 py-4">
             <div className="container mx-auto px-4 flex justify-between items-center">
@@ -94,8 +105,8 @@ export default function Navbar() {
                         </DropdownMenu.Portal>
                     </DropdownMenu.Root>
 
-                    <Link href="https://cours.workyt.fr/" className="text-gray-700 font-semibold">
-                        Cours
+                    <Link href="/fiches" className="text-gray-700 font-semibold">
+                        Fiches
                     </Link>
 
                     {/* Blog Dropdown */}
@@ -170,9 +181,79 @@ export default function Navbar() {
                         <DiscordLogoIcon />
                         <span>Rejoindre la communauté</span>
                     </Link>
+                    {/* Bouton d'authentification */}
+                    {session ? (
+                        <DropdownMenu.Root>
+                            <DropdownMenu.Trigger className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer">
+                                <ProfileAvatar
+                                    username={session.user.username}
+                                    points={session.user.points}
+                                />
+                                <span>{session.user?.username || "Utilisateur"}</span>
+                                <ChevronDownIcon className="w-5 h-5" />
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Portal>
+                                <DropdownMenu.Content
+                                    className="bg-white border border-gray-200 rounded-md shadow-lg mt-2 py-2 z-50 w-48"
+                                    align="end"
+                                >
+                                    <DropdownMenu.Item
+                                        asChild
+                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                                    >
+                                        <span>{session.user?.email}</span>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="border-t my-1" />
+                                    <DropdownMenu.Item
+                                        asChild
+                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Link href={`/compte/${session.user.id}`}>Mon Compte</Link>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="border-t my-1" />
+                                    <DropdownMenu.Item
+                                        asChild
+                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Link href={`/fiches/creer`}>Partager une fiche</Link>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="border-t my-1" />
+                                    <DropdownMenu.Item
+                                        asChild
+                                        className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
+                                    >
+                                        <button onClick={() => signOut()}>Déconnexion</button>
+                                    </DropdownMenu.Item>
+                                </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                        </DropdownMenu.Root>
+                    ) : (
+                        <button
+                            onClick={() => setIsAuthOpen(true)}
+                            className="bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary-dark transition"
+                        >
+                            Connexion
+                        </button>
+                    )}
+                    {/* Popup Auth */}
+                    {isAuthOpen && (
+                        <Dialog open={isAuthOpen} onOpenChange={(open) => setIsAuthOpen(open)}>
+                            <DialogContent>
+                                {/* Titre du Modal */}
+                                <DialogHeader>
+                                    <DialogTitle className="text-black">Connexion / Inscription</DialogTitle>
+                                    <DialogDescription>
+                                        Veuillez entrer vos identifiants pour accéder à votre compte.
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                {/* Formulaire d'authentification */}
+                                <AuthPage />
+                            </DialogContent>
+                        </Dialog>
+                    )}
                 </div>
             </div>
-
             {/* Mobile Menu */}
             {isMenuOpen && (
                 <div className="lg:hidden mt-4 space-y-6 flex flex-col items-center">
@@ -184,10 +265,10 @@ export default function Navbar() {
                         Forum
                     </Link>
                     <Link
-                        href="https://cours.workyt.fr/"
+                        href="/fiches"
                         className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
                     >
-                        Cours
+                        Fiches
                     </Link>
                     <Link
                         href="https://blog.workyt.fr/"

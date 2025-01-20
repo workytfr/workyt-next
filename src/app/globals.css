@@ -1,6 +1,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+@import "md-editor-rt/lib/style.css";
 
 @layer base {
   :root {
