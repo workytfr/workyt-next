@@ -10,11 +10,20 @@ declare module "next-auth" {
         bio: string;
         isAdmin: boolean;
         name?: string | null;
-        email?: string | null;
-        image?: string | null;
+        email: string;
     }
 
     interface Session {
         user: User;
+        accessToken?: string;
+    }
+
+    interface JWT {
+        id: string;
+        username: string;
+        email: string;
+        role: string;
+        points: number;
+        accessToken: string;
     }
 }
