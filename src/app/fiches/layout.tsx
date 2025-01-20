@@ -27,3 +27,7 @@ export const metadata: Metadata = {
         images: ["/workytfiche.png"],
     },
 }
+
+export default function Layout({ children }: { children: React.ReactNode }) {
+    return <>{children}</>;
+}
