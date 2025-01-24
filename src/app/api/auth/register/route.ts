@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import nodemailer from "nodemailer";
 
 export async function POST(req: Request) {
     const { name, email, password, username } = await req.json();
@@ -37,7 +38,39 @@ export async function POST(req: Request) {
 
         await newUser.save();
 
-        return NextResponse.json({ message: "User registered successfully" }, { status: 201 });
+        // Envoi de l'email de confirmation
+        const transporter = nodemailer.createTransport({
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT),
+            secure: process.env.SMTP_SECURE === "true",
+            auth: {
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASSWORD,
+            },
+        });
+
+
+        const mailOptions = {
+            from: '"Workyt" <noreply@workyt.fr>', // Expéditeur
+            to: email, // Destinataire
+            subject: "Bienvenue sur Workyt!",
+            html: `
+                <h1>Bienvenue, ${name} !</h1>
+                <p>Merci de vous être inscrit sur Workyt. Nous sommes ravis de vous accueillir parmi nous.</p>
+                <p>Voici vos informations :</p>
+                <ul>
+                    <li><b>Nom:</b> ${name}</li>
+                    <li><b>Email:</b> ${email}</li>
+                    <li><b>Nom d'utilisateur:</b> ${username}</li>
+                </ul>
+                <p>Nous espérons que vous apprécierez votre expérience d'apprentissage avec nous.</p>
+                <p>À bientôt,<br>L'équipe Workyt</p>
+            `,
+        };
+
+        await transporter.sendMail(mailOptions);
+
+        return NextResponse.json({ message: "User registered successfully and email sent" }, { status: 201 });
     } catch (error) {
         console.error("Error during registration:", error);
         return NextResponse.json({ message: "Internal server error" }, { status: 500 });

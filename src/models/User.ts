@@ -15,6 +15,8 @@ export interface IUser extends Document {
     isAdmin: boolean;
     bio: string;
     createdAt: Date; // Date de création de l'utilisateur
+    resetPasswordToken?: string; // Jeton pour la réinitialisation du mot de passe
+    resetPasswordExpiry?: Date; // Expiration du jeton
 }
 
 /**
@@ -65,6 +67,14 @@ const UserSchema: Schema = new Schema({
         type: Date,
         default: Date.now
     }, // Date de création automatique
+    resetPasswordToken: {
+        type: String,
+        select: false, // Exclu des requêtes par défaut pour des raisons de sécurité
+    },
+    resetPasswordExpiry: {
+        type: Date,
+        select: false, // Exclu des requêtes par défaut pour des raisons de sécurité
+    },
 });
 
 /**
