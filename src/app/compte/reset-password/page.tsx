@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export default function ResetPasswordPage() {
+// Désactiver le prérendu statique
+export const dynamic = "force-dynamic";
+
+function ResetPasswordForm() {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const token = searchParams.get("token"); // Récupérer le jeton depuis l'URL
+    const token = searchParams.get("token");
 
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -29,8 +32,10 @@ export default function ResetPasswordPage() {
         }
 
         setIsSubmitting(true);
+        setMessage("");
+
         try {
-            const res = await fetch("/api/auth/update", {
+            const res = await fetch("/api/auth/update-password", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ token, password }),
@@ -40,7 +45,7 @@ export default function ResetPasswordPage() {
             if (res.ok) {
                 setMessage("Mot de passe réinitialisé avec succès !");
                 setTimeout(() => {
-                    router.push("/"); // Redirection vers la page principale
+                    router.push("/compte/login");
                 }, 2000);
             } else {
                 setMessage(data.error || "Une erreur est survenue.");
@@ -79,5 +84,13 @@ export default function ResetPasswordPage() {
             </form>
             {message && <p className="text-center text-sm text-red-500">{message}</p>}
         </div>
+    );
+}
+
+export default function ResetPasswordPage() {
+    return (
+        <Suspense fallback={<p>Chargement...</p>}>
+            <ResetPasswordForm />
+        </Suspense>
     );
 }
