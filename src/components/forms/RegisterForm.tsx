@@ -8,6 +8,8 @@ import { FcGoogle } from "react-icons/fc";
 
 export default function AuthPage() {
     const [isRegister, setIsRegister] = useState(false);
+    const [isForgotPassword, setIsForgotPassword] = useState(false); // Ajout de l'état "Mot de passe oublié"
+    const [isLoading, setIsLoading] = useState(false); // Nouveau : état pour gérer si une requête est en cours
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
     const [email, setEmail] = useState("");
@@ -41,32 +43,87 @@ export default function AuthPage() {
         }
     };
 
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+
+        // Bloquer les requêtes multiples si une requête est déjà en cours
+        if (isLoading) return;
+
+        setIsLoading(true); // Début de la requête
+        setMessage(""); // Réinitialiser le message
+
+        try {
+            const res = await fetch("/api/auth/reset", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email }),
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                setMessage(data.message || "Un email de réinitialisation a été envoyé.");
+            } else {
+                const errorData = await res.json();
+                setMessage(errorData.error || "Une erreur est survenue.");
+            }
+        } catch (error) {
+            console.error(error);
+            setMessage("Impossible de se connecter au serveur.");
+        } finally {
+            setIsLoading(false); // Fin de la requête
+        }
+    };
+
     const handleGoogleSignIn = async () => {
         await signIn("google", { callbackUrl: "/" });
     };
 
     return (
         <div className="p-6 flex flex-col space-y-4 bg-white text-black">
-            <div className="flex justify-center space-x-4">
-                <button
-                    className={`text-lg font-semibold ${
-                        !isRegister ? "text-primary border-b-2 border-primary" : "text-gray-500"
-                    }`}
-                    onClick={() => setIsRegister(false)}
-                >
-                    Connexion
-                </button>
-                <button
-                    className={`text-lg font-semibold ${
-                        isRegister ? "text-primary border-b-2 border-primary" : "text-gray-500"
-                    }`}
-                    onClick={() => setIsRegister(true)}
-                >
-                    Inscription
-                </button>
-            </div>
+            {!isForgotPassword && (
+                <div className="flex justify-center space-x-4">
+                    <button
+                        className={`text-lg font-semibold ${
+                            !isRegister ? "text-primary border-b-2 border-primary" : "text-gray-500"
+                        }`}
+                        onClick={() => setIsRegister(false)}
+                    >
+                        Connexion
+                    </button>
+                    <button
+                        className={`text-lg font-semibold ${
+                            isRegister ? "text-primary border-b-2 border-primary" : "text-gray-500"
+                        }`}
+                        onClick={() => setIsRegister(true)}
+                    >
+                        Inscription
+                    </button>
+                </div>
+            )}
 
-            {isRegister ? (
+            {isForgotPassword ? (
+                <form onSubmit={handleForgotPassword} className="flex flex-col space-y-4">
+                    <Input
+                        id="email"
+                        type="email"
+                        placeholder="Votre email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        disabled={isLoading} // Désactive l'input si une requête est en cours
+                    />
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Envoi en cours..." : "Envoyer un email de réinitialisation"}
+                    </Button>
+                    <button
+                        className="text-sm text-gray-500 underline"
+                        onClick={() => setIsForgotPassword(false)}
+                        disabled={isLoading} // Bloque l'interaction si une requête est en cours
+                    >
+                        Retour à la connexion
+                    </button>
+                </form>
+            ) : isRegister ? (
                 <form onSubmit={handleRegister} className="flex flex-col space-y-4">
                     <Input
                         id="name"
@@ -121,6 +178,12 @@ export default function AuthPage() {
                         required
                     />
                     <Button type="submit">Se connecter</Button>
+                    <button
+                        className="text-sm text-gray-500 underline"
+                        onClick={() => setIsForgotPassword(true)}
+                    >
+                        Mot de passe oublié ?
+                    </button>
                 </form>
             )}
 
