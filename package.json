@@ -42,6 +42,7 @@
     "lucide-react": "^0.436.0",
     "md-editor-rt": "^5.2.0",
     "mini-svg-data-uri": "^1.4.4",
+    "mongodb": "^6.12.0",
     "mongoose": "^8.9.3",
     "nerdamer": "^1.1.13",
     "next": "^14.2.23",

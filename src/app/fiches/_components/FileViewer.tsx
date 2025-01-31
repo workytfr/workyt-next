@@ -18,12 +18,21 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
     const [numPages, setNumPages] = useState<number | null>(null); // Nombre de pages d'un PDF
     const [currentPage, setCurrentPage] = useState(1); // Page actuelle d'un PDF
     const [isPdf, setIsPdf] = useState<boolean | null>(null); // Détecter si le fichier courant est un PDF
+    const [isLoading, setIsLoading] = useState<boolean>(true); // Indique si le fichier est en cours de chargement
     const [containerWidth, setContainerWidth] = useState(0); // Largeur du conteneur
 
     const containerRef = useRef<HTMLDivElement>(null); // Référence pour le conteneur
     const currentFile = files[currentFileIndex];
 
-    // Vérifier le type MIME
+    // Réinitialiser les états liés au fichier quand il change
+    useEffect(() => {
+        setIsPdf(null); // Réinitialiser le type du fichier
+        setNumPages(null); // Réinitialiser le nombre de pages (si PDF)
+        setCurrentPage(1); // Réinitialiser à la première page
+        setIsLoading(true); // Indiquer que le fichier est en cours de chargement
+    }, [currentFile]);
+
+    // Vérifier le type MIME du fichier
     useEffect(() => {
         const fetchFileType = async () => {
             try {
@@ -32,7 +41,9 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
                 setIsPdf(contentType?.includes("pdf") || false);
             } catch (error) {
                 console.error("Erreur lors de la vérification du type MIME :", error);
-                setIsPdf(null); // En cas d'erreur, définir comme inconnu
+                setIsPdf(null); // Définir comme inconnu en cas d'erreur
+            } finally {
+                setIsLoading(false); // Terminer le chargement
             }
         };
 
@@ -69,16 +80,12 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
     const handleNextFile = () => {
         if (currentFileIndex < files.length - 1) {
             setCurrentFileIndex(currentFileIndex + 1);
-            setNumPages(null);
-            setCurrentPage(1);
         }
     };
 
     const handlePreviousFile = () => {
         if (currentFileIndex > 0) {
             setCurrentFileIndex(currentFileIndex - 1);
-            setNumPages(null);
-            setCurrentPage(1);
         }
     };
 
@@ -97,7 +104,7 @@ const FileViewer: React.FC<FileViewerProps> = ({ files }) => {
     return (
         <div className="space-y-4" ref={containerRef}>
             <div className="relative border p-4 rounded shadow max-w-full">
-                {isPdf === null ? (
+                {isLoading ? (
                     <p>Chargement du fichier...</p>
                 ) : isPdf ? (
                     <div className="flex flex-col items-center relative">
