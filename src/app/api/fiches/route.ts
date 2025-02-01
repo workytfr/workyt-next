@@ -35,19 +35,21 @@ function sanitizeFileName(fileName: string): string {
 // Fonction pour téléverser un fichier dans Backblaze B2
 async function uploadFileToB2(file: File) {
     try {
-        // Authentifier avec Backblaze
+        console.log("Authentification avec Backblaze B2...");
         await b2.authorize();
+        console.log("Authentification réussie.");
 
         const bucketId = process.env.B2_BUCKET_ID!;
         const sanitizedFileName = sanitizeFileName(file.name);
         const fileKey = `uploads/${uuidv4()}-${sanitizedFileName}`;
 
-
-        // Convertir le fichier (ReadableStream) en Buffer
+        console.log("Conversion du fichier en buffer...");
         const fileBuffer = await streamToBuffer(file.stream());
+        console.log("Buffer créé.");
 
         // Obtenir l'URL d'upload
         const uploadUrlResponse = await b2.getUploadUrl({ bucketId });
+        console.log("URL d'upload obtenue.", uploadUrlResponse.data);
 
         // Téléverser le fichier
         const uploadResponse = await b2.uploadFile({
@@ -58,29 +60,35 @@ async function uploadFileToB2(file: File) {
             contentType: file.type,
         });
 
+        console.log("Téléversement réussi.", uploadResponse.data);
         return `${process.env.B2_ENDPOINT}/file/${bucketId}/${fileKey}`;
     } catch (error: any) {
         console.error("Erreur lors du téléversement :", error.response?.data || error.message);
         throw new Error("Échec du téléversement du fichier.");
     }
 }
-
 // Route POST pour créer une fiche de révision
 export async function POST(req: NextRequest) {
     try {
-        // Connexion à MongoDB
+        console.log("Connexion à MongoDB...");
         await dbConnect();
+        console.log("Connexion réussie.");
 
-        // Authentification de l'utilisateur
+        console.log("Vérification de l'utilisateur...");
         const user = await authMiddleware(req);
         if (!user || !user._id) {
+            console.error("Utilisateur non trouvé ou non authentifié.");
             return NextResponse.json(
                 { error: "Non autorisé. Utilisateur non trouvé." },
                 { status: 401 }
             );
         }
-        // Récupération des données du formulaire
+        console.log("Utilisateur authentifié :", user);
+
+        console.log("Lecture des données du formulaire...");
         const formData = await req.formData();
+        console.log("FormData reçu.", Array.from(formData.entries()));
+
         const title = formData.get("title") as string;
         const content = formData.get("content") as string;
         const subject = formData.get("subject") as string;
@@ -88,18 +96,21 @@ export async function POST(req: NextRequest) {
 
         // Vérifications
         if (!title || !subject || !level) {
+            console.error("Données obligatoires manquantes.");
             return NextResponse.json(
                 { error: "Titre, matière ou niveau manquant." },
                 { status: 400 }
             );
         }
 
-        // Téléversement des fichiers
+        console.log("Début du téléversement des fichiers...");
         const fileURLs: string[] = [];
         for (const [key, value] of formData.entries()) {
             if (key === "file" && value instanceof File) {
+                console.log("Téléversement du fichier :", value.name);
                 const fileUrl = await uploadFileToB2(value);
                 fileURLs.push(fileUrl);
+                console.log("Fichier téléversé :", fileUrl);
             }
         }
 
@@ -109,8 +120,17 @@ export async function POST(req: NextRequest) {
                 ? "Certifiée"
                 : "Non Certifiée";
 
-        // Création de la fiche
-        const revisionData = {
+        console.log("Création de la fiche avec les données :", {
+            title,
+            content,
+            subject,
+            level,
+            author: user._id,
+            files: fileURLs,
+            status,
+        });
+
+        const newRevision = await Revision.create({
             title,
             content,
             subject,
@@ -119,12 +139,13 @@ export async function POST(req: NextRequest) {
             files: fileURLs,
             createdAt: new Date(),
             status,
-        };
+        });
 
-        const newRevision = await Revision.create(revisionData);
+        console.log("Fiche créée avec succès :", newRevision);
 
-        // Ajout de 10 points à l'utilisateur
+        console.log("Mise à jour des points de l'utilisateur...");
         await User.findByIdAndUpdate(user._id, { $inc: { points: 10 } });
+        console.log("Points mis à jour.");
 
         return NextResponse.json(newRevision, { status: 201 });
     } catch (error: any) {
