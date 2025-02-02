@@ -12,19 +12,10 @@ const b2 = new B2({
     applicationKey: process.env.B2_APPLICATION_KEY!,
 });
 
-// Fonction pour convertir un ReadableStream en Buffer
-async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
-    const reader = stream.getReader();
-    const chunks: Uint8Array[] = [];
-    let done = false;
-
-    while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        if (value) chunks.push(value);
-        done = readerDone;
-    }
-
-    return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+// Fonction pour convertir un File en Buffer à partir d'un ArrayBuffer
+async function fileToBuffer(file: File): Promise<Buffer> {
+    const arrayBuffer = await file.arrayBuffer();
+    return Buffer.from(arrayBuffer);
 }
 
 // Fonction pour nettoyer le nom des fichiers
@@ -44,7 +35,7 @@ async function uploadFileToB2(file: File) {
         const fileKey = `uploads/${uuidv4()}-${sanitizedFileName}`;
 
         console.log("Conversion du fichier en buffer...");
-        const fileBuffer = await streamToBuffer(file.stream());
+        const fileBuffer = await fileToBuffer(file);
         console.log("Buffer créé.");
 
         // Obtenir l'URL d'upload
@@ -61,9 +52,14 @@ async function uploadFileToB2(file: File) {
         });
 
         console.log("Téléversement réussi.", uploadResponse.data);
+
+        // Vérifiez bien si votre endpoint B2 attend le bucketName ou le bucketId dans l'URL
         return `${process.env.B2_ENDPOINT}/file/${bucketId}/${fileKey}`;
     } catch (error: any) {
-        console.error("Erreur lors du téléversement :", error.response?.data || error.message);
+        console.error(
+            "Erreur lors du téléversement :",
+            error.response?.data || error.message
+        );
         throw new Error("Échec du téléversement du fichier.");
     }
 }
@@ -151,7 +147,10 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la création de la fiche :", error.message);
         return NextResponse.json(
-            { error: "Impossible de créer la fiche de révision.", details: error.message },
+            {
+                error: "Impossible de créer la fiche de révision.",
+                details: error.message,
+            },
             { status: 500 }
         );
     }
