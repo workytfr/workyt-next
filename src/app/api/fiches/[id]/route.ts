@@ -37,8 +37,8 @@ export const GET = async (req: NextRequest, { params }: { params: { id: string }
             (fiche.files || []).map(async (fileUrl: string) => {
                 try {
                     const rawKey = fileUrl.split("/").slice(-1)[0]; // Extraire le nom brut
-                    const fileKey = `uploads/${decodeURIComponent(rawKey)}`; // Ajouter le chemin et corriger l'encodage
-                    return await generateSignedUrl(process.env.B2_BUCKET_NAME!, fileKey);
+                    const fileKey = `fiches/${decodeURIComponent(rawKey)}`; // Ajouter le chemin et corriger l'encodage
+                    return await generateSignedUrl(process.env.S3_BUCKET_NAME!, fileKey); // Générer l'URL signée
                 } catch (err) {
                     return null;
                 }
