@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import B2 from "backblaze-b2";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import Question from "@/models/Question";
 import User from "@/models/User";
@@ -7,82 +7,86 @@ import PointTransaction from "@/models/PointTransaction";
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 
-//  Désactiver `bodyParser` pour gérer `multipart/form-data`
+// Désactiver bodyParser pour gérer multipart/form-data
 export const config = {
     api: {
         bodyParser: false,
     },
 };
 
-//  Initialisation de Backblaze B2
-const b2 = new B2({
-    applicationKeyId: process.env.B2_KEY_ID!,
-    applicationKey: process.env.B2_APPLICATION_KEY!,
+// Initialiser le client S3 pour Cloudflare R2
+const s3Client = new S3Client({
+    region: process.env.S3_REGION,
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+    },
 });
 
-//  Fonction pour convertir un `ReadableStream` en `Buffer`
-async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
-    const reader = stream.getReader();
-    const chunks: Uint8Array[] = [];
-    let done = false;
-
-    while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        if (value) chunks.push(value);
-        done = readerDone;
-    }
-
-    return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+// Convertir un File en Buffer
+async function fileToBuffer(file: File): Promise<Buffer> {
+    const arrayBuffer = await file.arrayBuffer();
+    return Buffer.from(arrayBuffer);
 }
 
-//  Fonction pour nettoyer le nom des fichiers
+// Nettoyer le nom du fichier (enlever les caractères spéciaux)
 function sanitizeFileName(fileName: string): string {
     return fileName.replace(/[<>:"/\\|?*]+/g, "_");
 }
 
-//  Fonction pour téléverser un fichier dans Backblaze B2
-async function uploadFileToB2(file: File) {
+// Fonction pour téléverser un fichier dans Cloudflare R2
+async function uploadFileToR2(file: File): Promise<string> {
     try {
-        await b2.authorize();
-
-        const bucketId = process.env.B2_BUCKET_ID!;
         const sanitizedFileName = sanitizeFileName(file.name);
+        // On génère un chemin unique
         const fileKey = `uploads/${uuidv4()}-${sanitizedFileName}`;
 
-        //  Convertir le fichier en Buffer
-        const fileBuffer = await streamToBuffer(file.stream());
+        // Conversion en Buffer
+        const fileBuffer = await fileToBuffer(file);
 
-        //  Obtenir l'URL d'upload
-        const uploadUrlResponse = await b2.getUploadUrl({ bucketId });
-
-        //  Téléverser le fichier
-        await b2.uploadFile({
-            uploadUrl: uploadUrlResponse.data.uploadUrl,
-            uploadAuthToken: uploadUrlResponse.data.authorizationToken,
-            fileName: fileKey,
-            data: fileBuffer,
-            contentType: file.type,
+        // On envoie le fichier à R2 via la commande PutObject
+        const putCommand = new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME!,
+            Key: fileKey,
+            Body: fileBuffer,
+            ContentType: file.type,
         });
 
-        return `${process.env.B2_ENDPOINT}/file/${bucketId}/${fileKey}`;
+        await s3Client.send(putCommand);
+
+        // Construire l'URL finale (selon votre configuration)
+        // - Si vous avez un "Public Bucket" ou un domaine perso, adaptez ici.
+        // - Exemple générique avec un endpoint public R2:
+        const publicUrl = process.env.R2_PUBLIC_URL
+            ? process.env.R2_PUBLIC_URL
+            : `${process.env.R2_ENDPOINT?.replace("https://", "")}`;
+
+        // Exemple d'URL retournée
+        return `https://${publicUrl}/${process.env.R2_BUCKET_NAME}/${fileKey}`;
     } catch (error: any) {
-        console.error("Erreur lors du téléversement :", error.response?.data || error.message);
-        throw new Error("Échec du téléversement du fichier.");
+        console.error("Erreur lors du téléversement :", error.message || error);
+        throw new Error("Échec du téléversement du fichier sur R2.");
     }
 }
 
-//  Route POST pour créer une question
+// Route POST pour créer une question
 export async function POST(req: NextRequest) {
     try {
         await dbConnect();
+
+        // Vérifier l'authentification
         const user = await authMiddleware(req);
         if (!user || !user._id) {
-            return NextResponse.json({ error: "Non autorisé. Utilisateur non trouvé." }, { status: 401 });
+            return NextResponse.json(
+                { error: "Non autorisé. Utilisateur non trouvé." },
+                { status: 401 }
+            );
         }
 
-        //  Récupération des données du formulaire
+        // Récupération des données du formulaire
         const formData = await req.formData();
-        console.log(" FormData reçu :", formData);
+        console.log("FormData reçu :", formData);
 
         const title = formData.get("title") as string;
         const classLevel = formData.get("classLevel") as string;
@@ -91,31 +95,32 @@ export async function POST(req: NextRequest) {
         const whatINeed = formData.get("whatINeed") as string;
         const points = parseInt(formData.get("points") as string, 10);
 
+        // Vérifications basiques
         if (!title || !classLevel || !subject || !whatIDid || !whatINeed || isNaN(points)) {
             return NextResponse.json({ error: "Champs obligatoires manquants." }, { status: 400 });
         }
-
         if (points < 1 || points > 15) {
             return NextResponse.json({ error: "Les points doivent être entre 1 et 15." }, { status: 400 });
         }
-
         if (user.points < points) {
-            return NextResponse.json({ error: "Vous n'avez pas assez de points pour poser cette question." }, { status: 400 });
+            return NextResponse.json(
+                { error: "Vous n'avez pas assez de points pour poser cette question." },
+                { status: 400 }
+            );
         }
 
-        //  Téléversement des fichiers
+        // Téléversement des fichiers sur R2
         const fileURLs: string[] = [];
         for (const [key, value] of formData.entries()) {
             if (value instanceof File) {
-                console.log(" Téléversement du fichier :", value.name);
-                const fileUrl = await uploadFileToB2(value);
+                console.log("Téléversement du fichier :", value.name);
+                const fileUrl = await uploadFileToR2(value);
                 fileURLs.push(fileUrl);
             }
         }
+        console.log("Fichiers téléversés :", fileURLs);
 
-        console.log(" Fichiers téléversés :", fileURLs);
-
-        //  Création de la question
+        // Création de la question
         const questionData = {
             user: user._id,
             title,
@@ -130,24 +135,26 @@ export async function POST(req: NextRequest) {
             status: "Non validée",
             createdAt: new Date(),
         };
-
         const newQuestion = await Question.create(questionData);
 
-        //  Déduire les points de l'utilisateur
+        // Déduire les points de l'utilisateur
         await User.findByIdAndUpdate(user._id, { $inc: { points: -points } });
 
-        //  Enregistrer la transaction
+        // Enregistrer la transaction de points
         await PointTransaction.create({
             user: user._id,
             question: newQuestion._id,
             type: "perte",
-            points: points,
+            points,
             createdAt: new Date(),
         });
 
         return NextResponse.json(newQuestion, { status: 201 });
     } catch (error: any) {
         console.error("Erreur lors de la création de la question :", error.message);
-        return NextResponse.json({ error: "Impossible de créer la question.", details: error.message }, { status: 500 });
+        return NextResponse.json(
+            { error: "Impossible de créer la question.", details: error.message },
+            { status: 500 }
+        );
     }
 }

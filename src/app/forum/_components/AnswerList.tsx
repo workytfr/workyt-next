@@ -4,6 +4,10 @@ import React from "react";
 import ProfileAvatar from "@/components/ui/profile";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { FaThumbsUp, FaReply } from "react-icons/fa";
+import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import "katex/dist/katex.min.css";
 
 interface AnswerListProps {
     answers: any[];
@@ -25,7 +29,13 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers }) => {
                                 <TimeAgo date={answer.createdAt} />
                             </div>
                         </div>
-                        <p className="mt-2 text-gray-800">{answer.content}</p>
+                        <ReactMarkdown
+                            className="mt-2 text-gray-800"
+                            remarkPlugins={[remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                        >
+                            {answer.content}
+                        </ReactMarkdown>
                         <div className="flex items-center gap-4 text-sm text-gray-600 mt-2">
                             <span className="flex items-center gap-1 cursor-pointer hover:text-blue-600">
                                 <FaThumbsUp /> {answer.likes} J&apos;aime

@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import MDEditor from "@uiw/react-md-editor";
 import { FaPaperclip, FaTimes } from "react-icons/fa";
-import { useSession } from "next-auth/react"; // Import NextAuth pour récupérer le token
+import { useSession } from "next-auth/react";
+import "katex/dist/katex.min.css";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
 
 interface AnswerPopupProps {
     questionId: string;
@@ -13,7 +16,7 @@ interface AnswerPopupProps {
 }
 
 const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
-    const { data: session } = useSession(); // Récupère la session utilisateur
+    const { data: session } = useSession();
     const [content, setContent] = useState("");
     const [files, setFiles] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -43,7 +46,7 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
             const response = await fetch(`/api/forum/questions/${questionId}/repondre`, {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${session.accessToken}`, // Ajout du token ici
+                    Authorization: `Bearer ${session.accessToken}`,
                 },
                 body: formData,
             });
@@ -53,7 +56,7 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
                 throw new Error(errorData.message || "Erreur lors de l'envoi de la réponse.");
             }
 
-            onClose(); // Fermer le popup après soumission
+            onClose();
         } catch (error) {
             console.error("Erreur:", error);
         } finally {
@@ -70,7 +73,15 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
                         <FaTimes size={20} />
                     </button>
                 </div>
-                <MDEditor value={content} onChange={(value) => setContent(value || "")} height={150} />
+                <MDEditor
+                    value={content}
+                    onChange={(value) => setContent(value || "")}
+                    height={150}
+                    previewOptions={{
+                        remarkPlugins: [remarkMath],
+                        rehypePlugins: [rehypeKatex],
+                    }}
+                />
                 <div className="mt-4">
                     <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                         <FaPaperclip className="text-blue-500" /> Ajouter des fichiers

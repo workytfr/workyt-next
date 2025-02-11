@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Question from "@/models/Question";
+import Answer from "@/models/Answer";
 import User from "@/models/User";
 
 export async function GET(req: NextRequest) {
@@ -29,25 +30,43 @@ export async function GET(req: NextRequest) {
         const questions = await Question.find(filter)
             .populate({
                 path: "user",
-                select: "username points", // Correction : Utilisation de "username" au lieu de "name"
+                select: "username points",
             })
-            .sort({ createdAt: -1 }) // Trier par date décroissante
+            .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
+
+        // Récupération du nombre de réponses pour chaque question
+        const questionIds = questions.map(q => q._id);
+        const answerCounts = await Answer.aggregate([
+            { $match: { question: { $in: questionIds } } },
+            { $group: { _id: "$question", count: { $sum: 1 } } }
+        ]);
+
+        // Création d'un mapping questionId -> nombre de réponses
+        const answerCountMap = answerCounts.reduce((acc, item) => {
+            acc[item._id.toString()] = item.count;
+            return acc;
+        }, {});
+
+        // Ajout du nombre de réponses à chaque question
+        const questionsWithAnswers = questions.map(question => ({
+            ...question.toObject(),
+            answerCount: answerCountMap[question._id.toString()] || 0
+        }));
 
         // Nombre total de questions correspondant au filtre
         const totalQuestions = await Question.countDocuments(filter);
 
         return NextResponse.json({
             success: true,
-            data: questions,
+            data: questionsWithAnswers,
             pagination: {
                 currentPage: page,
                 totalPages: Math.ceil(totalQuestions / limit),
                 totalQuestions,
             },
         });
-
     } catch (error: any) {
         console.error("❌ Erreur lors de la récupération des questions :", error.message);
         return NextResponse.json(

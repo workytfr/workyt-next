@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import B2 from "backblaze-b2";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import dbConnect from "@/lib/mongodb";
 import authMiddleware from "@/middlewares/authMiddleware";
@@ -7,54 +7,66 @@ import Question from "@/models/Question";
 import Answer from "@/models/Answer";
 import User from "@/models/User";
 
-// Initialisation de Backblaze B2
-const b2 = new B2({
-    applicationKeyId: process.env.B2_KEY_ID!,
-    applicationKey: process.env.B2_APPLICATION_KEY!,
+// --- Configuration Client S3 pour Cloudflare R2 ---
+const s3Client = new S3Client({
+    region: process.env.R2_REGION,
+    endpoint: process.env.R2_ENDPOINT,
+    credentials: {
+        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+    },
 });
 
-// Fonction pour convertir un ReadableStream en Buffer
-async function streamToBuffer(stream: ReadableStream): Promise<Buffer> {
-    const reader = stream.getReader();
-    const chunks: Uint8Array[] = [];
-    let done = false;
-
-    while (!done) {
-        const { value, done: readerDone } = await reader.read();
-        if (value) chunks.push(value);
-        done = readerDone;
-    }
-
-    return Buffer.concat(chunks.map((chunk) => Buffer.from(chunk)));
+// Convertir un fichier (File) en Buffer
+async function fileToBuffer(file: File): Promise<Buffer> {
+    const arrayBuffer = await file.arrayBuffer();
+    return Buffer.from(arrayBuffer);
 }
 
-// Fonction pour téléverser un fichier dans Backblaze B2
-async function uploadFileToB2(file: File) {
-    try {
-        await b2.authorize();
-        const bucketId = process.env.B2_BUCKET_ID!;
-        const sanitizedFileName = file.name.replace(/[<>:"/\\|?*]+/g, "_");
-        const fileKey = `uploads/${uuidv4()}-${sanitizedFileName}`;
-        const fileBuffer = await streamToBuffer(file.stream());
+// Nettoyer le nom du fichier (remplacer les caractères spéciaux)
+function sanitizeFileName(fileName: string): string {
+    return fileName.replace(/[<>:"/\\|?*]+/g, "_");
+}
 
-        const uploadUrlResponse = await b2.getUploadUrl({ bucketId });
-        await b2.uploadFile({
-            uploadUrl: uploadUrlResponse.data.uploadUrl,
-            uploadAuthToken: uploadUrlResponse.data.authorizationToken,
-            fileName: fileKey,
-            data: fileBuffer,
-            contentType: file.type,
+// Téléverser un fichier sur Cloudflare R2
+async function uploadFileToR2(file: File): Promise<string> {
+    try {
+        const sanitizedFileName = sanitizeFileName(file.name);
+        const fileKey = `uploads/${uuidv4()}-${sanitizedFileName}`;
+
+        // Conversion en Buffer
+        const fileBuffer = await fileToBuffer(file);
+
+        // Commande d'upload
+        const putCommand = new PutObjectCommand({
+            Bucket: process.env.R2_BUCKET_NAME!,
+            Key: fileKey,
+            Body: fileBuffer,
+            ContentType: file.type,
         });
 
-        return `${process.env.B2_ENDPOINT}/file/${bucketId}/${fileKey}`;
+        // Envoi de la requête à R2
+        await s3Client.send(putCommand);
+
+        // Construire l'URL publique (ou signée) selon votre configuration
+        // Exemple : https://<votreCompte>.r2.cloudflarestorage.com/bucketName/uploads/...
+        // OU si vous avez un domaine perso, adaptez ici
+        const baseUrl = process.env.R2_PUBLIC_URL
+            ? process.env.R2_PUBLIC_URL // ex: "https://cdn.mondomaine.com"
+            : process.env.R2_ENDPOINT?.replace("https://", ""); // ex: "<compte>.r2.cloudflarestorage.com"
+
+        return `https://${baseUrl}/${process.env.R2_BUCKET_NAME}/${fileKey}`;
     } catch (error: any) {
-        console.error("Erreur téléversement :", error.response?.data || error.message);
-        throw new Error("Échec du téléversement du fichier.");
+        console.error("Erreur téléversement R2 :", error.message || error);
+        throw new Error("Échec du téléversement du fichier sur R2.");
     }
 }
 
 // API pour ajouter une réponse à une question
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+) {
     try {
         await dbConnect();
 
@@ -79,7 +91,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         // Vérification que l'utilisateur n'est pas l'auteur de la question
         const isOwner = user._id.toString() === question.user.toString();
 
-        // Récupération des données de la requête
+        // Récupération des données de la requête (multipart/form-data)
         const formData = await req.formData();
         const content = formData.get("content") as string;
 
@@ -94,7 +106,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         const fileURLs: string[] = [];
         for (const [key, value] of formData.entries()) {
             if (key === "file" && value instanceof File) {
-                const fileUrl = await uploadFileToB2(value);
+                const fileUrl = await uploadFileToR2(value);
                 fileURLs.push(fileUrl);
             }
         }
@@ -108,7 +120,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             status: "Proposée",
             attachments: fileURLs,
             createdAt: new Date(),
-            isOwner, // Ajoute un flag pour identifier les réponses de l'auteur de la question
+            isOwner, // Flag pour identifier si l'auteur est le même que la question
         };
 
         const newAnswer = await Answer.create(answerData);
@@ -122,11 +134,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             { success: true, message: "Réponse ajoutée avec succès.", data: newAnswer },
             { status: 201 }
         );
-
     } catch (error: any) {
         console.error("Erreur lors de l'ajout de la réponse :", error.message);
         return NextResponse.json(
-            { success: false, message: "Impossible d'ajouter la réponse.", details: error.message },
+            {
+                success: false,
+                message: "Impossible d'ajouter la réponse.",
+                details: error.message,
+            },
             { status: 500 }
         );
     }

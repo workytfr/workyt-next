@@ -4,8 +4,8 @@ const nextConfig = {
         remotePatterns: [
             {
                 protocol: "https",
-                hostname: "s3.eu-central-003.backblazeb2.com",
-                pathname: "/**", // Autoriser toutes les URL de ce domaine
+                hostname: "workyt.8002d4938b63d45290e9963164b4e90f.r2.cloudflarestorage.com",
+                pathname: "/**", // Autorise toutes les images de ce domaine
             },
         ],
     },

@@ -11,6 +11,11 @@ import TimeAgo from "@/components/ui/TimeAgo";
 import { getSubjectColor, getLevelColor } from "@/data/educationData";
 import AnswerPopup from "@/app/forum/_components/AnswerPopup";
 import AnswerList from "@/app/forum/_components/AnswerList";
+import ReactMarkdown from "react-markdown";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import "katex/dist/katex.min.css";
+
 
 export default function QuestionDetailPage() {
     const router = useRouter();
@@ -45,13 +50,30 @@ export default function QuestionDetailPage() {
     }, [id, page]);
 
     return (
-        <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gray-100 py-10 px-6 md:px-16">
+        <div
+            style={{
+                backgroundColor: "white",
+                color: "black",
+                minHeight: "100vh",
+                width: "100%",
+                padding: "10px 16px",
+            }}
+            className="flex flex-col items-center justify-start"
+        >
             {loading ? (
                 <Skeleton className="w-full max-w-5xl h-64 rounded-md" />
             ) : (
                 question && (
                     <>
-                        <div className="w-full max-w-5xl p-6 bg-white shadow-lg rounded-lg">
+                        <div
+                            style={{
+                                backgroundColor: "white",
+                                color: "black",
+                                boxShadow: "0px 4px 6px rgba(0, 0, 0, 0.1)",
+                                borderRadius: "8px",
+                            }}
+                            className="w-full max-w-5xl p-6"
+                        >
                             <div className="flex justify-between items-center">
                                 <div className="flex items-center gap-4">
                                     <ProfileAvatar username={question.user.username} points={question.user.points} size="small" />
@@ -64,16 +86,30 @@ export default function QuestionDetailPage() {
                                 </span>
                             </div>
                             <h2 className="text-2xl font-bold mt-4">{question.title}</h2>
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mt-2">
-                                <div className="bg-orange-200 p-3 rounded-md flex items-start gap-2 flex-1">
+
+                            {/* Section avec bordure à gauche pour l'effet citation */}
+                            <div
+                                style={{
+                                    display: "block",
+                                    paddingLeft: "12px",
+                                    marginTop: "16px",
+                                }}
+                                className="space-y-4" // ✅ Ajout de `space-y-4` pour espacer les éléments
+                            >
+                                <div className="bg-orange-100 p-3 rounded-md flex items-start gap-2">
                                     <FaQuestionCircle className="text-orange-600 mt-1" />
-                                    <span>{question.description.whatIDid}</span>
+                                    <div className="whitespace-pre-line">
+                                        <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{question.description.whatIDid}</ReactMarkdown>
+                                    </div>
                                 </div>
-                                <div className="bg-red-200 p-3 rounded-md flex items-start gap-2 flex-1">
+                                <div className="bg-red-200 p-3 rounded-md flex items-start gap-2">
                                     <FaExclamationCircle className="text-red-600 mt-1" />
-                                    <span>{question.description.whatINeed}</span>
+                                    <div className="whitespace-pre-line">
+                                        <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>{question.description.whatINeed}</ReactMarkdown>
+                                    </div>
                                 </div>
                             </div>
+
                             <div className="flex justify-between items-center text-gray-500 text-sm mt-4">
                                 <span className="flex items-center gap-1">
                                     <FaPaperclip /> Pièces jointes ({question.attachments?.length || 0})
@@ -82,13 +118,19 @@ export default function QuestionDetailPage() {
                             <div className="mt-6">
                                 <h3 className="text-xl font-semibold">Fiches de Révision Suggérées</h3>
                                 {revisions.map((revision) => (
-                                    <div key={revision._id} className="mt-4 p-4 bg-blue-50 rounded-md shadow">
+                                    <div
+                                        key={revision._id}
+                                        style={{ backgroundColor: "#DBEAFE", color: "black", padding: "8px", borderRadius: "6px" }}
+                                        className="mt-4 p-4 shadow"
+                                    >
                                         <div className="flex items-center gap-4">
                                             <ProfileAvatar username={revision.author.username} points={revision.author.points} size="small" />
                                             <span className="font-bold">{revision.title}</span>
                                         </div>
                                         <p className="mt-2">{revision.content.substring(0, 150)}...</p>
-                                        <Button className="mt-2" onClick={() => router.push(`/revisions/${revision._id}`)}>Voir la fiche</Button>
+                                        <Button className="mt-2" onClick={() => router.push(`/revisions/${revision._id}`)}>
+                                            Voir la fiche
+                                        </Button>
                                     </div>
                                 ))}
                             </div>

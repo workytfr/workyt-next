@@ -56,7 +56,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                 path: "user",
                 select: "username points",
             })
-            .sort({ createdAt: -1 }) // Trier par date décroissante
+            .sort({ createdAt: 1 }) // Trier par date décroissante
             .skip((page - 1) * limit)
             .limit(limit);
 

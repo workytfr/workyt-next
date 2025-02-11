@@ -10,6 +10,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MDEditor from "@uiw/react-md-editor";
 import { educationData } from "@/data/educationData";
 import { FaFileUpload, FaGraduationCap, FaCheck, FaSpinner, FaPen, FaTrash } from "react-icons/fa";
+import rehypeKatex from "rehype-katex";
+import remarkMath from "remark-math";
+import "katex/dist/katex.min.css";
 
 export default function ForumPostPage() {
     const { data: session, status } = useSession();
@@ -155,14 +158,29 @@ export default function ForumPostPage() {
                         <FaPen className="text-blue-500" /> Ce que j&apos;ai fait
                     </h3>
                     <p className={"text-sm text-gray-500"}>Décrivez ce que vous avez déjà fait pour résoudre votre problème.</p>
-                    <MDEditor value={whatIDid} onChange={setWhatIDid} height={150} />
+                    <MDEditor
+                        value={whatIDid}
+                        onChange={setWhatIDid}
+                        height={150}
+                        previewOptions={{
+                            remarkPlugins: [remarkMath],
+                            rehypePlugins: [rehypeKatex],
+                        }}
+                    />
                 </div>
-
                 <div>
                     <h3 className="text-lg font-medium text-gray-700 flex items-center gap-2">
                         <FaPen className="text-green-500" /> Ce que j&apos;attends</h3>
                     <p className={"text-sm text-gray-500"}>Décrivez ce que vous attendez de la communauté.</p>
-                    <MDEditor value={whatINeed} onChange={setWhatINeed} height={150} />
+                    <MDEditor
+                        value={whatINeed}
+                        onChange={setWhatINeed}
+                        height={150}
+                        previewOptions={{
+                            remarkPlugins: [remarkMath],
+                            rehypePlugins: [rehypeKatex],
+                        }}
+                    />
                 </div>
 
                 <div>

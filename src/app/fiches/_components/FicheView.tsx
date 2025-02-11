@@ -19,7 +19,6 @@ import LikedByList from "@/app/fiches/_components/LikedByList";
 import CommentsList from "@/app/fiches/_components/CommentsList";
 import StatusChanger from "@/app/fiches/_components/StatusChanger";
 
-
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs"
 
