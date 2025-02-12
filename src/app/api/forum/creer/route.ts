@@ -17,11 +17,13 @@ export const config = {
 // Initialiser le client S3 pour Cloudflare R2
 const s3Client = new S3Client({
     region: process.env.S3_REGION,
-    endpoint: process.env.R2_ENDPOINT,
+    endpoint: process.env.S3_ENDPOINT,
     credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+        accessKeyId: process.env.S3_ACCESS_KEY!, // Assurez-vous d'utiliser S3_ACCESS_KEY
+        secretAccessKey: process.env.S3_SECRET_KEY!, // Idem pour S3_SECRET_KEY
     },
+    // Pour Cloudflare R2, il peut être utile d'activer le mode "forcePathStyle"
+    forcePathStyle: true,
 });
 
 // Convertir un File en Buffer
@@ -47,7 +49,7 @@ async function uploadFileToR2(file: File): Promise<string> {
 
         // On envoie le fichier à R2 via la commande PutObject
         const putCommand = new PutObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME!,
+            Bucket: process.env.S3_BUCKET_NAME!,
             Key: fileKey,
             Body: fileBuffer,
             ContentType: file.type,

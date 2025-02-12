@@ -11,6 +11,7 @@ import TimeAgo from "@/components/ui/TimeAgo";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { getSubjectColor, getLevelColor, educationData } from "@/data/educationData";
+import Image from "next/image";
 
 export default function ForumQuestionsPage() {
     const router = useRouter();
@@ -26,10 +27,10 @@ export default function ForumQuestionsPage() {
         async function fetchQuestions() {
             setLoading(true);
             try {
-                const response = await fetch(`/api/forum/questions?page=${page}&limit=5&title=${search}&subject=${subject}&classLevel=${classLevel}`);
+                const response = await fetch(`/api/forum/questions?page=${page}&limit=10&title=${search}&subject=${subject}&classLevel=${classLevel}`);
                 const data = await response.json();
                 if (data.success) {
-                    setQuestions((prevQuestions) => [...prevQuestions, ...data.data]);
+                    setQuestions(page === 1 ? data.data : (prevQuestions) => [...prevQuestions, ...data.data]); // ✅ Correction ici
                     setTotalPages(data.pagination.totalPages);
                 }
             } catch (error) {
@@ -39,12 +40,12 @@ export default function ForumQuestionsPage() {
             }
         }
         fetchQuestions();
-    }, [page, search, subject, classLevel]);
+    }, [page]); // ✅ Ajout uniquement [page] pour éviter les répétitions
 
 
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gray-100 py-10 px-6 md:px-16">
-            {/* Barre de recherche */}
+            {/* 🔍 Barre de recherche */}
             <div className="w-full max-w-5xl flex flex-col md:flex-row md:items-center gap-4 mb-6">
                 <Input
                     type="text"
@@ -91,64 +92,107 @@ export default function ForumQuestionsPage() {
                 <div className="w-full max-w-5xl space-y-4">
                     {[...Array(5)].map((_, index) => (
                         <div key={index} className="p-4 mb-4 shadow-md rounded-lg border w-full max-w-5xl mx-auto">
+                            {/* Header : Profil + Badges + Date */}
                             <div className="flex justify-between items-center">
-                                <Skeleton className="w-12 h-12 rounded-full"/>
-                                <Skeleton className="w-32 h-6" />
-                                <Skeleton className="w-16 h-6" />
+                                <div className="flex items-center gap-4">
+                                    <Skeleton className="w-12 h-12 rounded-full" /> {/* Avatar */}
+                                    <Skeleton className="w-24 h-6 rounded-md" /> {/* Username */}
+                                    <Skeleton className="w-16 h-6 rounded-md" /> {/* Badge Matière */}
+                                    <Skeleton className="w-16 h-6 rounded-md" /> {/* Badge Niveau */}
+                                    <Skeleton className="w-20 h-6 rounded-md" /> {/* Date */}
+                                </div>
+                                <Skeleton className="w-20 h-6 rounded-md" /> {/* Points */}
                             </div>
-                            <Skeleton className="w-3/4 h-6 mt-2" />
-                            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mt-2">
-                                <Skeleton className="w-full h-12 bg-orange-200 rounded-md" />
-                                <Skeleton className="w-full h-12 bg-red-200 rounded-md" />
+
+                            {/* Titre de la question */}
+                            <Skeleton className="w-3/4 h-6 mt-3 rounded-md" />
+
+                            {/* Contenu de la question (Ce que j'ai fait / Ce dont j'ai besoin) */}
+                            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mt-4">
+                                <Skeleton className="w-full h-16 rounded-md bg-orange-200" />
+                                <Skeleton className="w-full h-16 rounded-md bg-red-200" />
                             </div>
-                            <div className="flex justify-between items-center text-gray-500 text-sm mt-2">
-                                <Skeleton className="w-24 h-6" />
-                                <Skeleton className="w-16 h-6" />
+
+                            {/* Footer : Réponses + Pièces jointes */}
+                            <div className="flex justify-between items-center text-gray-500 text-sm mt-4">
+                                <Skeleton className="w-24 h-6 rounded-md" />
+                                <Skeleton className="w-16 h-6 rounded-md" />
                             </div>
                         </div>
                     ))}
+
                 </div>
             ) : (
-            questions.map((question) => (
-                <Card key={question._id} className="p-4 mb-4 shadow-md rounded-lg border w-full max-w-5xl mx-auto">
-                    <div className="flex justify-between items-center">
-                        <div className="flex items-center gap-4">
-                            <ProfileAvatar username={question.user.username} points={question.user.points} size="small"/>
-                            <Badge className={`${getSubjectColor(question.subject)}`}>{question.subject}</Badge>
-                            <Badge className={`${getLevelColor(question.classLevel)}`}>{question.classLevel}</Badge>
-                            <TimeAgo date={question.createdAt}/>
+                questions.map((question) => (
+                    <Card key={question._id} className="p-6 mb-6 shadow-lg rounded-xl border border-gray-200 w-full max-w-5xl mx-auto relative">
+
+                        {/* ✅ En-tête avec utilisateur, badges et points */}
+                        <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-4">
+                                <ProfileAvatar username={question.user.username} points={question.user.points} size="small" />
+                                <span className="mt-1 text-gray-800 font-semibold">{question.user.username}</span>
+                                <Badge className={`${getSubjectColor(question.subject)}`}>{question.subject}</Badge>
+                                <Badge className={`${getLevelColor(question.classLevel)}`}>{question.classLevel}</Badge>
+                                <TimeAgo date={question.createdAt} />
+                            </div>
+                            <div className="relative flex items-center">
+                                {/* Points et FaCoins */}
+                                <span className="flex items-center text-sm bg-gray-100 px-3 py-1 rounded-md">
+        <FaCoins className="text-yellow-500 mr-1" /> {question.points} pts
+    </span>
+
+                                {/* ✅ Badge à côté des points, bien positionné */}
+                                {question.status === "Validée" && (
+                                    <div className="absolute -right-4 -top-2">
+                                        <Image src="/badge/Valider.svg" alt="Validée" width={30} height={30} />
+                                    </div>
+                                )}
+                                {question.status === "Résolue" && (
+                                    <div className="absolute -right-4 -top-2">
+                                        <Image src="/badge/Best.svg" alt="Résolue" width={30} height={30} />
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        <span className="flex items-center text-sm bg-gray-100 px-3 py-1 rounded-md">
-                            <FaCoins className="text-yellow-500 mr-1"/> {question.points} pts
-                        </span>
-                    </div>
-                    <p className="text-lg font-medium mt-2" onClick={() => router.push(`/forum/${question._id}`)}>{question.title}</p>
-                    <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mt-2">
-                        <div className="bg-orange-200 p-3 rounded-md flex items-start gap-2 flex-1">
-                            <FaQuestionCircle className="text-orange-600 mt-1" />
-                            <span>{question.description.whatIDid.substring(0, 150)}...</span>
+
+                        {/* ✅ Titre de la question */}
+                        <h2
+                            className="text-xl font-bold text-gray-800 mt-4 cursor-pointer hover:underline"
+                            onClick={() => router.push(`/forum/${question._id}`)}
+                        >
+                            {question.title}
+                        </h2>
+
+                        {/* ✅ Contenu de la question */}
+                        <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4 mt-4">
+                            <div className="bg-blue-100 p-4 rounded-xl border-2 border-blue-300 flex items-start gap-4 flex-1 shadow-sm">
+                                <FaQuestionCircle className="text-blue-600 mt-1" />
+                                <span>{question.description.whatIDid.substring(0, 150)}...</span>
+                            </div>
+                            <div className="bg-red-100 p-4 rounded-xl border-2 border-red-300 flex items-start gap-4 flex-1 shadow-sm">
+                                <FaExclamationCircle className="text-red-600 mt-1" />
+                                <span>{question.description.whatINeed.substring(0, 150)}...</span>
+                            </div>
                         </div>
-                        <div className="bg-red-200 p-3 rounded-md flex items-start gap-2 flex-1">
-                            <FaExclamationCircle className="text-red-600 mt-1" />
-                            <span>{question.description.whatINeed.substring(0, 150)}...</span>
+
+                        {/* ✅ Infos supplémentaires : Réponses & Pièces jointes */}
+                        <div className="flex justify-between items-center text-gray-500 text-sm mt-4">
+                            <div className="flex items-center space-x-3">
+                                <span className="flex items-center gap-1">
+                                    <FaReply /> Réponses ({question.answerCount || 0})
+                                </span>
+                                <span className="flex items-center gap-1">
+                                    <FaPaperclip /> Pièces jointes ({question.attachments?.length || 0})
+                                </span>
+                                <FaEllipsisH className="cursor-pointer" />
+                            </div>
+                            <Button variant="outline" onClick={() => router.push(`/forum/${question._id}`)}>Répondre</Button>
                         </div>
-                    </div>
-                    <div className="flex justify-between items-center text-gray-500 text-sm mt-2">
-                        <div className="flex items-center space-x-3">
-                            <span className="flex items-center gap-1">
-                                <FaReply /> Réponses ({question.answerCount || 0})
-                            </span>
-                            <span className="flex items-center gap-1">
-                                <FaPaperclip /> Pièces jointes ({question.attachments?.length || 0})
-                            </span>
-                            <FaEllipsisH className="cursor-pointer" />
-                        </div>
-                        <Button variant="outline" onClick={() => router.push(`/forum/${question._id}`)}>Répondre</Button>
-                    </div>
-                </Card>
-            ))
+                    </Card>
+                ))
             )}
 
+            {/* ✅ Bouton Charger plus */}
             {page < totalPages && (
                 <Button
                     className="mt-6"

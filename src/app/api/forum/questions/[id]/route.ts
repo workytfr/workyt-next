@@ -43,7 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
                     try {
                         const rawKey = decodeURIComponent(fileUrl.split("/").slice(-1)[0]); // 🔹 Extraire le nom de fichier proprement
                         const fileKey = `uploads/${rawKey}`; // 🔹 Vérifier si `uploads/` est déjà inclus
-                        return await generateSignedUrl(process.env.B2_BUCKET_NAME!, fileKey);
+                        return await generateSignedUrl(process.env.S3_BUCKET_NAME!, fileKey);
                     } catch (err) {
                         console.error("❌ Erreur de signature de l'URL :", err);
                         return null;

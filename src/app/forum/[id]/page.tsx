@@ -27,7 +27,7 @@ export default function QuestionDetailPage() {
         setError(null);
 
         try {
-            const response = await fetch(`/api/forum/questions/${id}?page=1&limit=5`);
+            const response = await fetch(`/api/forum/questions/${id}?page=1&limit=10`);
             const data = await response.json();
 
             if (!data.success) throw new Error("Échec de récupération des données.");
@@ -64,7 +64,7 @@ export default function QuestionDetailPage() {
             )}
 
             <div className="w-full max-w-5xl mt-6">
-                {loading ? <AnswerSkeleton /> : <AnswerList answers={answers} />}
+                {loading ? <AnswerSkeleton /> : <AnswerList answers={answers} question={question} />}
             </div>
 
             {showAnswerPopup && (

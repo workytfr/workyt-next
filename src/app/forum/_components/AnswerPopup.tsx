@@ -84,24 +84,24 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
                         rehypePlugins: [rehypeKatex],
                     }}
                 />
-                <div className="mt-4">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <FaPaperclip className="text-blue-500" /> Ajouter des fichiers
-                    </label>
-                    <Input type="file" multiple accept="application/pdf,image/*" onChange={handleFileChange} />
-                    {files.length > 0 && (
-                        <ul className="mt-2">
-                            {files.map((file, index) => (
-                                <li key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded-md mt-2">
-                                    <span className="text-gray-700">📎 {file.name}</span>
-                                    <button onClick={() => removeFile(index)} className="text-red-500 hover:text-red-700">
-                                        <FaTimes />
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
+                {/*<div className="mt-4">*/}
+                {/*    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">*/}
+                {/*        <FaPaperclip className="text-blue-500" /> Ajouter des fichiers*/}
+                {/*    </label>*/}
+                {/*    <Input type="file" multiple accept="application/pdf,image/*" onChange={handleFileChange} />*/}
+                {/*    {files.length > 0 && (*/}
+                {/*        <ul className="mt-2">*/}
+                {/*            {files.map((file, index) => (*/}
+                {/*                <li key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded-md mt-2">*/}
+                {/*                    <span className="text-gray-700">📎 {file.name}</span>*/}
+                {/*                    <button onClick={() => removeFile(index)} className="text-red-500 hover:text-red-700">*/}
+                {/*                        <FaTimes />*/}
+                {/*                    </button>*/}
+                {/*                </li>*/}
+                {/*            ))}*/}
+                {/*        </ul>*/}
+                {/*    )}*/}
+                {/*</div>*/}
                 <div className="flex justify-end mt-6">
                     <Button onClick={handleSubmit} disabled={isSubmitting}>
                         {isSubmitting ? "Envoi en cours..." : "Publier la réponse"}
