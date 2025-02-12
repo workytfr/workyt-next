@@ -41,6 +41,7 @@ export default function ForumQuestionsPage() {
         fetchQuestions();
     }, [page, search, subject, classLevel]);
 
+
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gray-100 py-10 px-6 md:px-16">
             {/* Barre de recherche */}

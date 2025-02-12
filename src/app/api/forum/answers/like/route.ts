@@ -4,11 +4,22 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import Answer from "@/models/Answer";
 import User from "@/models/User";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest) {
     try {
         await dbConnect();
 
-        // Authentification de l'utilisateur
+        // ✅ Récupérer l'ID de la réponse depuis l'URL (Correction ici)
+        const { searchParams } = new URL(req.url);
+        const answerId = searchParams.get("id");
+
+        if (!answerId) {
+            return NextResponse.json(
+                { success: false, message: "ID de la réponse manquant." },
+                { status: 400 }
+            );
+        }
+
+        // ✅ Authentification de l'utilisateur
         const user = await authMiddleware(req);
         if (!user || !user._id) {
             return NextResponse.json(
@@ -17,8 +28,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             );
         }
 
-        // Vérification de l'existence de la réponse
-        const answer = await Answer.findById(params.id);
+        // ✅ Vérification de l'existence de la réponse
+        const answer = await Answer.findById(answerId);
         if (!answer) {
             return NextResponse.json(
                 { success: false, message: "Réponse non trouvée." },
@@ -26,7 +37,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             );
         }
 
-        // Vérification que l'utilisateur ne like pas sa propre réponse
+        // ✅ Vérification que l'utilisateur ne like pas sa propre réponse
         if (user._id.toString() === answer.user.toString()) {
             return NextResponse.json(
                 { success: false, message: "Vous ne pouvez pas liker votre propre réponse." },
@@ -34,15 +45,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             );
         }
 
-        // Vérifier si l'utilisateur a déjà liké la réponse
+        // ✅ Vérifier si l'utilisateur a déjà liké la réponse
         const hasLiked = answer.likedBy.includes(user.username);
 
         if (hasLiked) {
+            // ❌ Annuler le like
             answer.likedBy = answer.likedBy.filter((username: string) => username !== user.username);
             answer.likes -= 1;
             await answer.save();
 
-            // Enlever -1 point à l'auteur de la réponse
+            // 🔻 Enlever -1 point à l'auteur de la réponse
             await User.findByIdAndUpdate(answer.user, { $inc: { points: -1 } });
 
             return NextResponse.json(
@@ -55,7 +67,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
             answer.likes += 1;
             await answer.save();
 
-            // Ajouter +1 point à l'auteur de la réponse
+            // 🔺 Ajouter +1 point à l'auteur de la réponse
             await User.findByIdAndUpdate(answer.user, { $inc: { points: 1 } });
 
             return NextResponse.json(
@@ -65,7 +77,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         }
 
     } catch (error: any) {
-        console.error("Erreur lors du like/unlike :", error.message);
+        console.error("❌ Erreur lors du like/unlike :", error.message);
         return NextResponse.json(
             { success: false, message: "Impossible de gérer le like/unlike.", details: error.message },
             { status: 500 }

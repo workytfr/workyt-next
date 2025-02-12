@@ -23,12 +23,10 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             );
         }
 
-        // Récupérer la question avec son auteur (username et points)
-        const question = await Question.findById(params.id)
-            .populate({
-                path: "user",
-                select: "username points", // Récupérer username et points de l'auteur
-            });
+        const question = await Question.findById(params.id).populate({
+            path: "user",
+            select: "username points",
+        });
 
         if (!question) {
             return NextResponse.json(
@@ -37,51 +35,53 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             );
         }
 
-        // Générer des URLs signées pour les fichiers joints
-        const signedFileURLs = await Promise.all(
-            (question.attachments || []).map(async (fileUrl: string) => {
-                try {
-                    const rawKey = fileUrl.split("/").slice(-1)[0]; // Extraire le nom brut
-                    const fileKey = `uploads/${decodeURIComponent(rawKey)}`;
-                    return await generateSignedUrl(process.env.B2_BUCKET_NAME!, fileKey);
-                } catch (err) {
-                    return null;
-                }
-            })
-        ).then((results) => results.filter(Boolean));
+        // 🔹 Générer des URLs signées pour les pièces jointes
+        let signedFileURLs: string[] = [];
+        if (question.attachments && question.attachments.length > 0) {
+            signedFileURLs = await Promise.all(
+                question.attachments.map(async (fileUrl: string) => {
+                    try {
+                        const rawKey = decodeURIComponent(fileUrl.split("/").slice(-1)[0]); // 🔹 Extraire le nom de fichier proprement
+                        const fileKey = `uploads/${rawKey}`; // 🔹 Vérifier si `uploads/` est déjà inclus
+                        return await generateSignedUrl(process.env.B2_BUCKET_NAME!, fileKey);
+                    } catch (err) {
+                        console.error("❌ Erreur de signature de l'URL :", err);
+                        return null;
+                    }
+                })
+            ).then((results) => results.filter(Boolean));
+        }
 
-        // Récupérer les réponses associées avec pagination et afficher le username des auteurs
+        // 🔹 Récupérer les réponses avec pagination et username des auteurs
         const answers = await Answer.find({ question: params.id })
             .populate({
                 path: "user",
                 select: "username points",
             })
-            .sort({ createdAt: 1 }) // Trier par date décroissante
+            .sort({ createdAt: 1 })
             .skip((page - 1) * limit)
             .limit(limit);
 
-        // Nombre total de réponses associées à cette question
         const totalAnswers = await Answer.countDocuments({ question: params.id });
 
-        // Extraction de mots-clés depuis le titre de la question
-        const titleWords = question.title.split(" ").slice(0, 4).join("|"); // Prend les 4 premiers mots pour une recherche regex
+        // 🔹 Extraction des mots-clés du titre pour rechercher des fiches de révision
+        const titleWords = question.title.split(" ").slice(0, 4).join("|");
 
-        // Récupérer des fiches de révision liées à la matière et au niveau de la question
         const relatedRevisions = await Revision.find({
             subject: question.subject,
             level: question.classLevel,
-            title: { $regex: titleWords, $options: "i" }, // Recherche partielle insensible à la casse
+            title: { $regex: titleWords, $options: "i" },
         })
-            .populate("author", "username points") // ✅ Ajouté pour afficher l'auteur et ses points
+            .populate("author", "username points")
             .select("title content author likes createdAt")
-            .sort({ likes: -1 }) // Trier par popularité (likes)
-            .limit(2); // Limiter à 2 fiches suggérées
+            .sort({ likes: -1 })
+            .limit(2);
 
         return NextResponse.json({
             success: true,
             question: {
                 ...question.toObject(),
-                attachments: signedFileURLs, // Remplace les URLs par des URLs signées sécurisées
+                attachments: signedFileURLs, // 🔹 URLs signées sécurisées
             },
             answers,
             revisions: relatedRevisions,
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             },
         });
     } catch (error: any) {
-        console.error("Erreur lors de la récupération de la question :", error.message);
+        console.error("❌ Erreur lors de la récupération de la question :", error.message);
         return NextResponse.json(
             { success: false, message: "Impossible de récupérer la question.", details: error.message },
             { status: 500 }

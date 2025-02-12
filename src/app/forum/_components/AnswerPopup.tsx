@@ -56,7 +56,9 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
                 throw new Error(errorData.message || "Erreur lors de l'envoi de la réponse.");
             }
 
-            onClose();
+            onClose(); // Ferme le popup
+            window.location.reload(); // Rafraîchit la page pour afficher la nouvelle réponse
+
         } catch (error) {
             console.error("Erreur:", error);
         } finally {
