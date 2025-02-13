@@ -1,88 +1,76 @@
-"use client";
+import { Metadata } from "next";
+import React from "react";
+import QuestionDetailPage from "@/app/forum/_components/QuestionDetailPage";
 
-import React, { useEffect, useState, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { useSession } from "next-auth/react"; // 🔹 Importation de useSession
-import AnswerPopup from "@/app/forum/_components/AnswerPopup";
-import QuestionDetail from "@/app/forum/_components/QuestionView";
-import AnswerList from "@/app/forum/_components/AnswerList";
-import { QuestionSkeleton, AnswerSkeleton } from "@/app/forum/_components/QuestionSkeleton";
-import { FaPlus } from "react-icons/fa";
-import "katex/dist/katex.min.css";
+export const generateMetadata = async ({
+                                           params,
+                                       }: {
+    params: { id: string };
+}): Promise<Metadata> => {
+    try {
+        const response = await fetch(
+            `${process.env.NEXT_PUBLIC_API_URL}/api/forum/questions/${params.id}?page=1&limit=10`,
+            { headers: { "Content-Type": "application/json" } }
+        );
 
-export default function QuestionDetailPage() {
-    const { data: session } = useSession(); // 🔹 Récupération de la session utilisateur
-    const router = useRouter();
-    const { id } = useParams();
-    const [question, setQuestion] = useState(null);
-    const [answers, setAnswers] = useState([]);
-    const [revisions, setRevisions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-    const [showAnswerPopup, setShowAnswerPopup] = useState(false);
-
-    const fetchQuestion = useCallback(async () => {
-        if (!id) return;
-        setLoading(true);
-        setError(null);
-
-        try {
-            const response = await fetch(`/api/forum/questions/${id}?page=1&limit=10`);
-            const data = await response.json();
-
-            if (!data.success) throw new Error("Échec de récupération des données.");
-
-            setQuestion(data.question);
-            setAnswers(data.answers);
-            setRevisions(data.revisions);
-        } catch (error) {
-            console.error("Erreur de récupération de la question", error);
-            setError("Une erreur s'est produite lors du chargement des données.");
-        } finally {
-            setLoading(false);
+        if (!response.ok) {
+            console.error("Erreur API : ", response.statusText);
+            return {
+                title: "Question non trouvée",
+                description: "La question que vous recherchez n'existe pas ou a été supprimée.",
+            };
         }
-    }, [id]);
 
-    useEffect(() => {
-        fetchQuestion();
-    }, [fetchQuestion]);
+        const data = await response.json();
 
+        if (!data.success) {
+            return {
+                title: "Question non trouvée",
+                description: "La question que vous recherchez n'existe pas ou a été supprimée.",
+            };
+        }
+
+        const question = data.question;
+        let metaDescription = "";
+        if (question.description && question.description.whatINeed) {
+            metaDescription = question.description.whatINeed;
+        } else if (question.description && question.description.whatIDid) {
+            metaDescription = question.description.whatIDid;
+        }
+        metaDescription = metaDescription ? metaDescription.slice(0, 150) + "..." : "Forum Workyt";
+
+        return {
+            title: question.title ?  question.title : "Forum - Workyt",
+            description: metaDescription,
+            openGraph: {
+                title: question.title,
+                description: metaDescription,
+                images:
+                    (question.attachments && question.attachments.length > 0 && question.attachments[0]) ||
+                    "/default-thumbnail.png",
+            },
+            twitter: {
+                card: "summary_large_image",
+                title: question.title,
+                description: metaDescription,
+                images:
+                    (question.attachments && question.attachments.length > 0 && question.attachments[0]) ||
+                    "/default-thumbnail.png",
+            },
+        };
+    } catch (error) {
+        console.error("Erreur dans generateMetadata :", error);
+        return {
+            title: "Erreur",
+            description: "Une erreur s'est produite lors de la récupération des métadonnées.",
+        };
+    }
+};
+
+export default function QuestionPage({ params }: { params: { id: string } }) {
     return (
-        <div className="flex flex-col items-center justify-start min-h-screen w-full p-4 bg-white text-black relative">
-            {loading ? (
-                <QuestionSkeleton />
-            ) : error ? (
-                <div className="text-red-600 bg-red-100 p-4 rounded-md">{error}</div>
-            ) : (
-                question && (
-                    <QuestionDetail
-                        question={question}
-                        revisions={revisions}
-                        setShowAnswerPopup={setShowAnswerPopup}
-                    />
-                )
-            )}
-
-            <div className="w-full max-w-5xl mt-6">
-                {loading ? <AnswerSkeleton /> : <AnswerList answers={answers} question={question} />}
-            </div>
-
-            {showAnswerPopup && (
-                <AnswerPopup
-                    questionId={id as string}
-                    onClose={() => setShowAnswerPopup(false)}
-                />
-            )}
-
-            {/* 🚀 Bouton flottant noir, affiché uniquement si l'utilisateur est connecté */}
-            {session && (
-                <button
-                    className="fixed bottom-24 right-6 bg-black text-white px-5 py-3 rounded-full flex items-center gap-2 shadow-xl hover:bg-gray-800 transition duration-300"
-                    onClick={() => setShowAnswerPopup(true)}
-                >
-                    <FaPlus className="text-lg" /> Répondre
-                </button>
-            )}
+        <div>
+            <QuestionDetailPage id={params.id} />
         </div>
     );
 }

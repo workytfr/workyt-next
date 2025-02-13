@@ -116,10 +116,8 @@ export default function ForumPostPage() {
 
         files.forEach((file) => {
             formData.append("attachments", file);
-            console.log("Ajout de fichier :", file.name);
         });
 
-        console.log("FormData après ajout des fichiers :", formData.getAll("attachments"));
 
         try {
             const token = (session as any)?.accessToken || "";
@@ -168,7 +166,10 @@ export default function ForumPostPage() {
                         type="text"
                         placeholder="Ex: Comment résoudre cette équation ?"
                         value={title}
-                        onChange={(e) => setTitle(e.target.value)}
+                        onChange={(e) => {
+                            const newTitle = e.target.value.slice(0, 100); // Tronquer à 100 caractères
+                            setTitle(newTitle);
+                        }}
                         className="border rounded-md p-3"
                     />
                 </div>
