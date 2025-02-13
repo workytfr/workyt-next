@@ -45,47 +45,54 @@ export default function ForumQuestionsPage() {
 
     return (
         <div className="w-full min-h-screen flex flex-col items-center justify-start bg-gray-100 py-10 px-6 md:px-16">
-            {/* 🔍 Barre de recherche */}
-            <div className="w-full max-w-5xl flex flex-col md:flex-row md:items-center gap-4 mb-6">
-                <Input
-                    type="text"
-                    placeholder="Rechercher par mot-clé..."
-                    value={search}
-                    onChange={(e) => {
-                        setSearch(e.target.value);
-                        setPage(1);
-                        setQuestions([]);
-                    }}
-                    className="p-3 border rounded-md flex-1"
-                />
-                <select
-                    value={subject}
-                    onChange={(e) => {
-                        setSubject(e.target.value);
-                        setPage(1);
-                        setQuestions([]);
-                    }}
-                    className="p-3 border rounded-md flex-1"
-                >
-                    <option value="">Toutes les matières</option>
-                    {educationData.subjects.map((subj, index) => (
-                        <option key={index} value={subj}>{subj}</option>
-                    ))}
-                </select>
-                <select
-                    value={classLevel}
-                    onChange={(e) => {
-                        setClassLevel(e.target.value);
-                        setPage(1);
-                        setQuestions([]);
-                    }}
-                    className="p-3 border rounded-md flex-1"
-                >
-                    <option value="">Tous niveaux</option>
-                    {educationData.levels.map((lvl, index) => (
-                        <option key={index} value={lvl}>{lvl}</option>
-                    ))}
-                </select>
+            {/* 🔍 Barre de recherche + Bouton Déposer un exercice */}
+            <div className="w-full max-w-5xl flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+                <div className="flex flex-col md:flex-row flex-1 gap-4">
+                    <Input
+                        type="text"
+                        placeholder="Rechercher par mot-clé..."
+                        value={search}
+                        onChange={(e) => {
+                            setSearch(e.target.value);
+                            setPage(1);
+                            setQuestions([]);
+                        }}
+                        className="p-3 border rounded-md flex-1"
+                    />
+                    <select
+                        value={subject}
+                        onChange={(e) => {
+                            setSubject(e.target.value);
+                            setPage(1);
+                            setQuestions([]);
+                        }}
+                        className="p-3 border rounded-md flex-1"
+                    >
+                        <option value="">Toutes les matières</option>
+                        {educationData.subjects.map((subj, index) => (
+                            <option key={index} value={subj}>{subj}</option>
+                        ))}
+                    </select>
+                    <select
+                        value={classLevel}
+                        onChange={(e) => {
+                            setClassLevel(e.target.value);
+                            setPage(1);
+                            setQuestions([]);
+                        }}
+                        className="p-3 border rounded-md flex-1"
+                    >
+                        <option value="">Tous niveaux</option>
+                        {educationData.levels.map((lvl, index) => (
+                            <option key={index} value={lvl}>{lvl}</option>
+                        ))}
+                    </select>
+                </div>
+
+                {/* 🆕 Bouton Déposer un exercice aligné à droite */}
+                <Button onClick={() => router.push('/forum/creer/')} className="bg-black text-white hover:bg-orange-600 px-4 py-2">
+                    Déposer un exercice
+                </Button>
             </div>
 
             {loading ? (

@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import MDEditor from "@uiw/react-md-editor";
 import { educationData } from "@/data/educationData";
-import { FaFileUpload, FaGraduationCap, FaCheck, FaSpinner, FaPen, FaTrash } from "react-icons/fa";
+import { FaFileUpload, FaGraduationCap, FaCheck, FaSpinner, FaPen, FaTrash, FaImage } from "react-icons/fa";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
@@ -44,6 +44,48 @@ export default function ForumPostPage() {
             </div>
         );
     }
+
+    /** 📌 Fonction d'upload sur Imgur **/
+    const uploadImageToImgur = async (file: File, setEditorContent: React.Dispatch<React.SetStateAction<string | undefined>>) => {
+        const clientId = process.env.NEXT_PUBLIC_IMGUR_CLIENT_ID;
+        const formData = new FormData();
+        formData.append("image", file);
+
+        try {
+            const response = await fetch("https://api.imgur.com/3/image", {
+                method: "POST",
+                headers: {
+                    Authorization: `Client-ID ${clientId}`,
+                },
+                body: formData,
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                const imageUrl = data.data.link;
+                setEditorContent((prev) => `${prev}\n\n![Image](${imageUrl})`); // ✅ Ajout automatique dans l'éditeur
+            } else {
+                setAlertMessage("Erreur lors de l'upload de l'image.");
+            }
+        } catch (error) {
+            console.error("Erreur d'upload sur Imgur :", error);
+            setAlertMessage("Impossible d'uploader l'image.");
+        }
+    };
+
+    /** 📌 Fonction de gestion de l'upload depuis l'éditeur **/
+    const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, setEditorContent: React.Dispatch<React.SetStateAction<string | undefined>>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            await uploadImageToImgur(file, setEditorContent);
+        }
+    };
+
+    /** 📌 Empêcher la soumission du formulaire lors du clic sur "Ajouter une image" **/
+    const handleImageUploadClick = (inputId: string) => {
+        document.getElementById(inputId)?.click();
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFiles = Array.from(e.target.files || []);
@@ -181,6 +223,10 @@ export default function ForumPostPage() {
                             rehypePlugins: [rehypeKatex],
                         }}
                     />
+                    <Button type="button" className="mt-2 flex items-center gap-2" onClick={() => handleImageUploadClick("uploadWhatINeed")}>
+                        <FaImage /> Ajouter une image
+                    </Button>
+                    <input type="file" id="uploadWhatINeed" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setWhatINeed)} />
                 </div>
 
                 <div>

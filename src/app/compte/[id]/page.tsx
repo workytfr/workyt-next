@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Separator } from "@/components/ui/Separator";
 import { Toast } from "@/components/ui/UseToast";
 import { Label } from "@/components/ui/Label";
+import { FaQuestionCircle, FaReply } from "react-icons/fa";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import Image from "next/image";
 
@@ -23,6 +24,8 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
 
     const [user, setUser] = useState<any>(null);
     const [revisions, setRevisions] = useState<any[]>([]);
+    const [questions, setQuestions] = useState<any[]>([]);
+    const [answers, setAnswers] = useState<any[]>([]);
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1 }); // Pagination état
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -40,11 +43,13 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
         async function fetchUser() {
             try {
                 setLoading(true);
-                const res = await fetch(`/api/user/${id}?page=${pagination.page}&limit=5`); // Ajout des paramètres de pagination
+                const res = await fetch(`/api/user/${id}?page=${pagination.page}&limit=5`);
                 const data = await res.json();
                 if (res.ok) {
                     setUser(data.data.user);
                     setRevisions(data.data.revisions);
+                    setQuestions(data.data.questions);
+                    setAnswers(data.data.answers);
                     setPagination({
                         page: data.data.pagination.currentPage,
                         totalPages: data.data.pagination.totalPages,
@@ -58,14 +63,16 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
                         image: data.data.user.image || "",
                     });
                 } else {
-                    Toast({ title: "Error", content: data.error, variant: "destructive" });
+                    Toast({
+                        title: "Erreur",
+                        variant: "destructive",
+                    });
                     router.push("/");
                 }
             } catch (error) {
                 console.error("Failed to fetch user:", error);
                 Toast({
-                    title: "Error",
-                    content: "Unable to fetch user data.",
+                    title: "Erreur",
                     variant: "destructive",
                 });
                 router.push("/");
@@ -262,6 +269,61 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
                         <p className="text-sm text-gray-500">Aucune fiche de révision publiée.</p>
                     )}
                 </div>
+
+                {/* 📌 Questions posées */}
+                <div>
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600">
+                        <FaQuestionCircle className="text-blue-600" /> Questions posées
+                    </h2>
+
+                    {questions.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {questions.map((question) => (
+                                <div
+                                    key={question._id}
+                                    className="p-4 bg-white shadow-md rounded-lg border border-gray-200 hover:shadow-lg transition duration-300 cursor-pointer"
+                                    onClick={() => router.push(`/forum/${question._id}`)}
+                                >
+                                    <h3 className="font-semibold text-lg text-gray-800 line-clamp-2">{question.title}</h3>
+                                    <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
+                                        <span>{question.answersCount} réponse(s)</span>
+                                        <span className="text-gray-400">{new Date(question.createdAt).toLocaleDateString()}</span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">Aucune question posée.</p>
+                    )}
+                </div>
+
+                {/* 📌 Réponses données */}
+                <div className="mt-6">
+                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-green-600">
+                        <FaReply className="text-green-600" /> Réponses données
+                    </h2>
+
+                    {answers.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {answers.map((answer) => (
+                                <div
+                                    key={answer._id}
+                                    className="p-4 bg-white shadow-md rounded-lg border border-gray-200 hover:shadow-lg transition duration-300 cursor-pointer"
+                                    onClick={() => router.push(`/forum/${answer.question?._id}`)}
+                                >
+                                    <h3 className="font-semibold text-lg text-gray-800 line-clamp-2">{answer.question?.title}</h3>
+                                    <p className="text-sm text-gray-600 mt-2 line-clamp-2">{answer.content.substring(0, 100)}...</p>
+                                    <div className="text-right text-gray-400 text-xs mt-2">
+                                        {new Date(answer.createdAt).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <p className="text-sm text-gray-500">Aucune réponse donnée.</p>
+                    )}
+                </div>
+
 
                 {/* Pagination */}
                 <Pagination>

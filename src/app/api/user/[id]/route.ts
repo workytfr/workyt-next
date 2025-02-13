@@ -3,44 +3,70 @@ import { NextResponse } from "next/server";
 
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import Question from "@/models/Question";
+import Answer from "@/models/Answer";
 import Revision from "@/models/Revision";
 
-// Récupère un utilisateur et ses fiches de révision
+// ✅ Récupère un utilisateur, ses fiches de révision, ses questions et ses réponses
 export const GET = async (req: Request, { params }: { params: { id: string } }) => {
     const { id } = params;
 
     try {
         await connectDB();
 
-        // Récupération des paramètres de requête pour la pagination
+        // 📌 Récupération des paramètres de pagination
         const url = new URL(req.url);
         const page = parseInt(url.searchParams.get("page") || "1", 10);
         const limit = parseInt(url.searchParams.get("limit") || "10", 10);
+        const skip = (page - 1) * limit;
 
-        // Vérifier si l'utilisateur existe
+        // 📌 Vérifier si l'utilisateur existe
         const user = await User.findById(id).select("-password -email");
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Calcul des fiches paginées
-        const skip = (page - 1) * limit;
-
-        const totalRevisions = await Revision.countDocuments({ author: id }); // Compte total des fiches
+        // ✅ Récupération des fiches de révision de l'utilisateur
+        const totalRevisions = await Revision.countDocuments({ author: id });
         const revisions = await Revision.find({ author: id })
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
-            .select("title content likes status subject level createdAt comments") // Sélectionne les champs nécessaires
-            .lean(); // Convertit en objet JS pur
+            .select("title content likes status subject level createdAt comments")
+            .lean();
 
-        // Ajouter le nombre de commentaires dans chaque fiche
         const revisionsWithCommentCount = revisions.map((revision) => ({
             ...revision,
-            comments: revision.comments.length, // Compte le nombre de commentaires
+            comments: revision.comments?.length || 0,
         }));
 
-        // Préparer une réponse sans email
+        // ✅ Récupération des questions posées par l'utilisateur
+        const totalQuestions = await Question.countDocuments({ user: id });
+        const questions = await Question.find({ user: id })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .select("title description subject classLevel points createdAt status answers")
+            .lean();
+
+        const questionsWithAnswerCount = await Promise.all(
+            questions.map(async (question) => {
+                const count = await Answer.countDocuments({ question: question._id });
+                return { ...question, answersCount: count };
+            })
+        );
+
+        // ✅ Récupération des réponses données par l'utilisateur
+        const totalAnswers = await Answer.countDocuments({ user: id });
+        const answers = await Answer.find({ user: id })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .populate("question", "title") // Récupérer le titre de la question associée
+            .select("content question createdAt likes status")
+            .lean();
+
+        // ✅ Préparer la réponse utilisateur
         const userResponse = {
             _id: user._id,
             name: user.name,
@@ -52,20 +78,30 @@ export const GET = async (req: Request, { params }: { params: { id: string } }) 
             createdAt: user.createdAt,
         };
 
-        // Ajouter les données de pagination
+        // ✅ Ajouter les données de pagination
         const pagination = {
             totalRevisions,
-            totalPages: Math.ceil(totalRevisions / limit),
+            totalQuestions,
+            totalAnswers,
+            totalPages: Math.ceil(Math.max(totalRevisions, totalQuestions, totalAnswers) / limit),
             currentPage: page,
             limit,
         };
 
         return NextResponse.json(
-            { data: { user: userResponse, revisions: revisionsWithCommentCount, pagination } },
+            {
+                data: {
+                    user: userResponse,
+                    revisions: revisionsWithCommentCount,
+                    questions: questionsWithAnswerCount,
+                    answers,
+                    pagination,
+                },
+            },
             { status: 200 }
         );
     } catch (error) {
-        console.error("Error fetching user and revisions:", error);
+        console.error("Error fetching user, revisions, questions, and answers:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }
@@ -73,8 +109,7 @@ export const GET = async (req: Request, { params }: { params: { id: string } }) 
     }
 };
 
-
-// Met à jour un utilisateur par son ID
+// ✅ Mise à jour des informations d'un utilisateur
 export const PATCH = async (req: Request, { params }: { params: { id: string } }) => {
     try {
         await connectDB();
@@ -89,13 +124,13 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
             );
         }
 
-        // Vérifier si l'utilisateur existe
+        // 📌 Vérifier si l'utilisateur existe
         const user = await User.findById(id);
         if (!user) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // Vérifier que l'utilisateur connecté est bien le propriétaire ou un admin
+        // 📌 Vérifier les autorisations (propriétaire ou admin)
         const isAdmin = session.user?.role === "Admin";
         if (user.email !== session?.user?.email && !isAdmin) {
             return NextResponse.json(
@@ -104,7 +139,7 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
             );
         }
 
-        // Vérifier si le nom d'utilisateur est déjà utilisé
+        // 📌 Vérifier si le nom d'utilisateur est déjà utilisé
         const isUsernameExist = await User.findOne({ username });
         if (isUsernameExist && isUsernameExist?._id?.toString() !== id) {
             return NextResponse.json(
@@ -113,12 +148,12 @@ export const PATCH = async (req: Request, { params }: { params: { id: string } }
             );
         }
 
-        // Mettre à jour les informations de l'utilisateur
+        // 📌 Mettre à jour l'utilisateur
         const updatedUser = await User.findByIdAndUpdate(
             id,
             { bio, socialLinks, name, username, badges },
-            { new: true } // Retourne l'utilisateur mis à jour
-        ).select("-password -email"); // Exclure le mot de passe et l'email
+            { new: true }
+        ).select("-password -email");
 
         return NextResponse.json(
             { message: "User updated successfully", data: updatedUser },
