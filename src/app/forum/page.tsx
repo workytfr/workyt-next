@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
@@ -15,6 +16,7 @@ import Image from "next/image";
 
 export default function ForumQuestionsPage() {
     const router = useRouter();
+    const { data: session, status } = useSession(); // Récupère la session utilisateur
     const [questions, setQuestions] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
@@ -90,9 +92,14 @@ export default function ForumQuestionsPage() {
                 </div>
 
                 {/* 🆕 Bouton Déposer un exercice aligné à droite */}
-                <Button onClick={() => router.push('/forum/creer/')} className="bg-black text-white hover:bg-orange-600 px-4 py-2">
-                    Déposer un exercice
-                </Button>
+                {session && (
+                    <Button
+                        onClick={() => router.push("/forum/creer/")}
+                        className="bg-black text-white hover:bg-orange-600 px-4 py-2"
+                    >
+                        Déposer un exercice
+                    </Button>
+                )}
             </div>
 
             {loading ? (

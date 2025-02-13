@@ -220,6 +220,13 @@ export default function Navbar() {
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item
                                         asChild
+                                        className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                    >
+                                        <Link href={`/forum/creer`}>Déposer une question</Link>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="border-t my-1" />
+                                    <DropdownMenu.Item
+                                        asChild
                                         className="px-4 py-2 text-sm text-red-500 hover:bg-gray-100 cursor-pointer"
                                     >
                                         <button onClick={() => signOut()}>Déconnexion</button>

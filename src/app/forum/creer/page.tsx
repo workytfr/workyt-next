@@ -30,7 +30,7 @@ export default function ForumPostPage() {
 
     useEffect(() => {
         if (status === "unauthenticated") {
-            router.push("/");
+            router.push("/forum");
         }
     }, [status, router]);
 
