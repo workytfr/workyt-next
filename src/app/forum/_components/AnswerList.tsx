@@ -96,7 +96,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
         <div className="mt-6 w-full max-w-5xl">
             <h3 className="text-xl font-semibold mb-4">Réponses ({updatedAnswers.length})</h3>
             {updatedAnswers.length === 0 ? (
-                <p className="text-gray-500 text-sm">Aucune réponse pour l'instant. Soyez le premier à répondre !</p>
+                <p className="text-gray-500 text-sm">Aucune réponse pour l&apos;instant. Soyez le premier à répondre !</p>
             ) : (
                 updatedAnswers.map((answer) => {
                     const isQuestionOwner = question?.user && session?.user.id === question.user._id;
@@ -137,8 +137,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                                 <Image src="/badge/Best.svg" alt="Meilleure Réponse" width={40} height={40} />
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                                <p>Meilleure réponse choisie par l'auteur.</p>
-                                            </TooltipContent>
+                                                <p>Meilleure réponse choisie par l&apos;auteur.</p>                                            </TooltipContent>
                                         </Tooltip>
                                     </TooltipProvider>
                                 )}
