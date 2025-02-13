@@ -70,40 +70,9 @@ export default function Navbar() {
                 {/* Menu Items for Large Screens */}
                 <div className="hidden lg:flex items-center space-x-6">
                     {/* Forum Dropdown */}
-                    <DropdownMenu.Root>
-                        <DropdownMenu.Trigger className="text-gray-700 font-semibold cursor-pointer flex items-center">
-                            Forum <ChevronDownIcon className="ml-1" />
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Portal>
-                            <DropdownMenu.Content className="bg-white border border-gray-200 rounded-md shadow-md mt-2 py-2 z-50">
-                                <DropdownMenu.Item asChild>
-                                    <Link href="https://workyt.fr/forum/t/math-matiques" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
-                                        Mathématiques
-                                    </Link>
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item asChild>
-                                    <Link href="https://workyt.fr/forum/t/fran-ais" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
-                                        Français
-                                    </Link>
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item asChild>
-                                    <Link href="https://workyt.fr/forum/t/physique-et-chimie" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
-                                        Physique-Chimie
-                                    </Link>
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item asChild>
-                                    <Link href="https://workyt.fr/forum/t/svt" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
-                                        SVT
-                                    </Link>
-                                </DropdownMenu.Item>
-                                <DropdownMenu.Item asChild>
-                                    <Link href="https://workyt.fr/forum/t/histoire-et-geographie" className="text-gray-700 px-4 py-2 hover:bg-gray-100 block">
-                                        Histoire-Géographie
-                                    </Link>
-                                </DropdownMenu.Item>
-                            </DropdownMenu.Content>
-                        </DropdownMenu.Portal>
-                    </DropdownMenu.Root>
+                    <Link href="/forum" className="text-gray-700 font-semibold">
+                        Forum
+                    </Link>
 
                     <Link href="/fiches" className="text-gray-700 font-semibold">
                         Fiches
@@ -266,7 +235,7 @@ export default function Navbar() {
                 <div className="lg:hidden mt-4 space-y-6 flex flex-col items-center">
                     {/* Menu items centered and styled */}
                     <Link
-                        href="https://workyt.fr/forum/"
+                        href="/forum"
                         className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
                     >
                         Forum
