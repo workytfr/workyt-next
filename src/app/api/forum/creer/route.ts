@@ -7,20 +7,17 @@ import PointTransaction from "@/models/PointTransaction";
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 
-// Désactiver bodyParser pour gérer multipart/form-data
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
+
+// Si besoin, vous pouvez définir le runtime à "node"
+export const runtime = "nodejs";
 
 // Initialiser le client S3 pour Cloudflare R2
 const s3Client = new S3Client({
     region: process.env.S3_REGION,
     endpoint: process.env.S3_ENDPOINT,
     credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY!, // Assurez-vous d'utiliser S3_ACCESS_KEY
-        secretAccessKey: process.env.S3_SECRET_KEY!, // Idem pour S3_SECRET_KEY
+        accessKeyId: process.env.S3_ACCESS_KEY!, // Utilisez S3_ACCESS_KEY
+        secretAccessKey: process.env.S3_SECRET_KEY!, // Utilisez S3_SECRET_KEY
     },
     // Pour Cloudflare R2, il peut être utile d'activer le mode "forcePathStyle"
     forcePathStyle: true,
@@ -41,13 +38,13 @@ function sanitizeFileName(fileName: string): string {
 async function uploadFileToR2(file: File): Promise<string> {
     try {
         const sanitizedFileName = sanitizeFileName(file.name);
-        // On génère un chemin unique
+        // Générer un chemin unique
         const fileKey = `uploads/${uuidv4()}-${sanitizedFileName}`;
 
         // Conversion en Buffer
         const fileBuffer = await fileToBuffer(file);
 
-        // On envoie le fichier à R2 via la commande PutObject
+        // Envoi du fichier à R2 via PutObjectCommand
         const putCommand = new PutObjectCommand({
             Bucket: process.env.S3_BUCKET_NAME!,
             Key: fileKey,
@@ -57,14 +54,11 @@ async function uploadFileToR2(file: File): Promise<string> {
 
         await s3Client.send(putCommand);
 
-        // Construire l'URL finale (selon votre configuration)
-        // - Si vous avez un "Public Bucket" ou un domaine perso, adaptez ici.
-        // - Exemple générique avec un endpoint public R2:
+        // Construction de l'URL finale (à adapter selon votre configuration)
         const publicUrl = process.env.R2_PUBLIC_URL
             ? process.env.R2_PUBLIC_URL
             : `${process.env.R2_ENDPOINT?.replace("https://", "")}`;
 
-        // Exemple d'URL retournée
         return `https://${publicUrl}/${process.env.R2_BUCKET_NAME}/${fileKey}`;
     } catch (error: any) {
         console.error("Erreur lors du téléversement :", error.message || error);
@@ -86,7 +80,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Récupération des données du formulaire
+        // Récupérer les données du formulaire
         const formData = await req.formData();
         console.log("FormData reçu :", formData);
 
@@ -139,10 +133,10 @@ export async function POST(req: NextRequest) {
         };
         const newQuestion = await Question.create(questionData);
 
-        // Déduire les points de l'utilisateur
+        // Déduction des points de l'utilisateur
         await User.findByIdAndUpdate(user._id, { $inc: { points: -points } });
 
-        // Enregistrer la transaction de points
+        // Enregistrement de la transaction de points
         await PointTransaction.create({
             user: user._id,
             question: newQuestion._id,
