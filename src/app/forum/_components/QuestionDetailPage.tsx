@@ -1,4 +1,3 @@
-// app/forum/_components/QuestionDetailPage.tsx
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
@@ -11,7 +10,16 @@ import { QuestionSkeleton, AnswerSkeleton } from "@/app/forum/_components/Questi
 import { FaPlus } from "react-icons/fa";
 import "katex/dist/katex.min.css";
 
-// Vous pouvez optionnellement recevoir l'ID en prop depuis le composant serveur
+// Import des composants Breadcrumb depuis votre module
+import {
+    Breadcrumb,
+    BreadcrumbList,
+    BreadcrumbItem,
+    BreadcrumbLink,
+    BreadcrumbPage,
+    BreadcrumbSeparator,
+} from "@/components/ui/Breadcrumb";
+
 export default function QuestionDetailPage({ id: propId }: { id?: string }) {
     const { data: session } = useSession();
     const params = useParams();
@@ -55,6 +63,27 @@ export default function QuestionDetailPage({ id: propId }: { id?: string }) {
 
     return (
         <div className="flex flex-col items-center justify-start min-h-screen w-full p-4 bg-white text-black relative">
+            {/* Breadcrumb */}
+            <div className="w-full max-w-5xl mb-4">
+                <Breadcrumb>
+                    <BreadcrumbList>
+                        <BreadcrumbItem>
+                            <BreadcrumbLink href="/">Accueil</BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                            <BreadcrumbLink href="/forum">Forum</BreadcrumbLink>
+                        </BreadcrumbItem>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                            <BreadcrumbPage>
+                                {question ? question.title : "Détails de la question"}
+                            </BreadcrumbPage>
+                        </BreadcrumbItem>
+                    </BreadcrumbList>
+                </Breadcrumb>
+            </div>
+
             {loading ? (
                 <QuestionSkeleton />
             ) : error ? (
