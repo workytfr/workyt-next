@@ -210,17 +210,32 @@ export default function ForumQuestionsPage() {
                 ))
             )}
 
-            {/* ✅ Bouton Charger plus */}
-            {page < totalPages && (
-                <Button
-                    className="mt-6"
-                    variant="outline"
-                    onClick={() => setPage(page + 1)}
-                    disabled={loading}
-                >
-                    {loading ? "Chargement..." : "Charger plus"}
-                </Button>
-            )}
+            {/* ✅ Boutons de navigation */}
+            <div className="flex gap-4 mt-6">
+                {/* Bouton Précédent */}
+                {page > 1 && (
+                    <Button
+                        className="bg-gray-600 text-white"
+                        variant="outline"
+                        onClick={() => setPage((prevPage) => Math.max(prevPage - 1, 1))}
+                        disabled={loading}
+                    >
+                        Précédent
+                    </Button>
+                )}
+
+                {/* Bouton Charger plus */}
+                {page < totalPages && (
+                    <Button
+                        className="bg-black text-white"
+                        variant="outline"
+                        onClick={() => setPage((prevPage) => prevPage + 1)}
+                        disabled={loading}
+                    >
+                        {loading ? "Chargement..." : "Page suivante"}
+                    </Button>
+                )}
+            </div>
         </div>
     );
 }
