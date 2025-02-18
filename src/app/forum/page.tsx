@@ -205,7 +205,7 @@ export default function ForumQuestionsPage() {
                                 <FaEllipsisH className="cursor-pointer" />
                             </div>
                             <Button variant="outline" onClick={() => router.push(`/forum/${question._id}`)}>Répondre</Button>
-              Z          </div>
+                        </div>
                     </Card>
                 ))
             )}
