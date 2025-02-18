@@ -24,25 +24,29 @@ export default function ForumQuestionsPage() {
     const [search, setSearch] = useState("");
     const [subject, setSubject] = useState("");
     const [classLevel, setClassLevel] = useState("");
+    const [isFiltering, setIsFiltering] = useState(false);
 
     useEffect(() => {
         async function fetchQuestions() {
             setLoading(true);
+            setIsFiltering(true);
             try {
                 const response = await fetch(`/api/forum/questions?page=${page}&limit=10&title=${search}&subject=${subject}&classLevel=${classLevel}`);
                 const data = await response.json();
                 if (data.success) {
-                    setQuestions(page === 1 ? data.data : (prevQuestions) => [...prevQuestions, ...data.data]); // ✅ Correction ici
+                    setQuestions(data.data);
                     setTotalPages(data.pagination.totalPages);
                 }
             } catch (error) {
                 console.error("Erreur de récupération des questions", error);
             } finally {
                 setLoading(false);
+                setIsFiltering(false);
             }
         }
         fetchQuestions();
-    }, [page]); // ✅ Ajout uniquement [page] pour éviter les répétitions
+    }, [page, search, subject, classLevel]);
+
 
 
     return (
@@ -201,7 +205,7 @@ export default function ForumQuestionsPage() {
                                 <FaEllipsisH className="cursor-pointer" />
                             </div>
                             <Button variant="outline" onClick={() => router.push(`/forum/${question._id}`)}>Répondre</Button>
-                        </div>
+              Z          </div>
                     </Card>
                 ))
             )}
