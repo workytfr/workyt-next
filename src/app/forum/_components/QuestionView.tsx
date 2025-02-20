@@ -41,32 +41,52 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                 </div>
 
                 {/* Points + Badge du statut */}
-                <div className="flex items-center gap-3 bg-gray-100 px-3 py-1 rounded-md shadow">
-                    <FaCoins className="text-yellow-500 mr-1" /> {question.points} pts
+                <div className="flex flex-wrap items-center gap-2 bg-gray-100 px-2 py-1 rounded-md shadow hidden sm:flex">                    {/* Points */}
+                    <span className="flex items-center text-sm ">
+                        <FaCoins className="text-yellow-500 mr-1" /> {question.points} pts
+                    </span>
 
-                    {/* Badge du statut à côté des points */}
+                    {/* Badge Validée */}
                     {question.status === "Validée" && (
-                            <Tooltip>
-                                <TooltipTrigger>
-                                    <Image src="/badge/Valider.svg" alt="Validée" width={40} height={40} />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Cette question a été validée par un membre du staff.</p>
-                                </TooltipContent>
-                            </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <div className="relative w-10 h-10 hidden sm:block">
+                                    <Image
+                                        src="/badge/Valider.svg"
+                                        alt="Validée"
+                                        fill
+                                        sizes="(max-width: 768px) 40px, (max-width: 1200px) 40px, 40px"
+                                        unoptimized
+                                    />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Cette question a été validée par un membre du staff.</p>
+                            </TooltipContent>
+                        </Tooltip>
                     )}
+
+                    {/* Badge Résolue */}
                     {question.status === "Résolue" && (
-                            <Tooltip>
-                                <TooltipTrigger>
-                                    <Image src="/badge/Best.svg" alt="Résolue" width={40} height={40} />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Cette question a été résolue avec succès.</p>
-                                </TooltipContent>
-                            </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger>
+                                <div className="relative w-10 h-10 hidden sm:block">
+                                    <Image
+                                    src="/badge/Best.svg"
+                                    alt="Résolue"
+                                    className="w-6 h-6 md:w-10 md:h-10"
+                                    fill
+                                    sizes="(max-width: 768px) 40px, (max-width: 1200px) 40px, 40px"
+                                    unoptimized
+                                    />
+                                </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Cette question a été résolue avec succès.</p>
+                            </TooltipContent>
+                        </Tooltip>
                     )}
-                </div>
-            </div>
+                </div>            </div>
 
 
 
