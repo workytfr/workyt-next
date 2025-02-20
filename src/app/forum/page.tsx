@@ -24,25 +24,29 @@ export default function ForumQuestionsPage() {
     const [search, setSearch] = useState("");
     const [subject, setSubject] = useState("");
     const [classLevel, setClassLevel] = useState("");
+    const [isFiltering, setIsFiltering] = useState(false);
 
     useEffect(() => {
         async function fetchQuestions() {
             setLoading(true);
+            setIsFiltering(true);
             try {
                 const response = await fetch(`/api/forum/questions?page=${page}&limit=10&title=${search}&subject=${subject}&classLevel=${classLevel}`);
                 const data = await response.json();
                 if (data.success) {
-                    setQuestions(page === 1 ? data.data : (prevQuestions) => [...prevQuestions, ...data.data]); // ✅ Correction ici
+                    setQuestions(data.data);
                     setTotalPages(data.pagination.totalPages);
                 }
             } catch (error) {
                 console.error("Erreur de récupération des questions", error);
             } finally {
                 setLoading(false);
+                setIsFiltering(false);
             }
         }
         fetchQuestions();
-    }, [page]); // ✅ Ajout uniquement [page] pour éviter les répétitions
+    }, [page, search, subject, classLevel]);
+
 
 
     return (
@@ -141,28 +145,30 @@ export default function ForumQuestionsPage() {
                     <Card key={question._id} className="p-6 mb-6 shadow-lg rounded-xl border border-gray-200 w-full max-w-5xl mx-auto relative">
 
                         {/* ✅ En-tête avec utilisateur, badges et points */}
-                        <div className="flex justify-between items-center">
+                        <div className="flex flex-col md:flex-row justify-between items-center">
+                            {/* Bloc de gauche : Avatar, nom d'utilisateur, date, badges */}
                             <div className="flex items-center gap-4">
                                 <ProfileAvatar username={question.user.username} points={question.user.points} size="small" />
-                                <span className="mt-1 text-gray-800 font-semibold">{question.user.username}</span>
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2">
+                                    <span className="text-gray-800 font-semibold">{question.user.username}</span>
+                                    <TimeAgo date={question.createdAt} />
+                                </div>
                                 <Badge className={`${getSubjectColor(question.subject)}`}>{question.subject}</Badge>
                                 <Badge className={`${getLevelColor(question.classLevel)}`}>{question.classLevel}</Badge>
-                                <TimeAgo date={question.createdAt} />
                             </div>
-                            <div className="relative flex items-center">
-                                {/* Points et FaCoins */}
-                                <span className="flex items-center text-sm bg-gray-100 px-3 py-1 rounded-md">
-        <FaCoins className="text-yellow-500 mr-1" /> {question.points} pts
-    </span>
 
-                                {/* ✅ Badge à côté des points, bien positionné */}
+                            {/* Bloc de droite : Points + badge de statut */}
+                            <div className="relative flex items-center mt-4 md:mt-0">
+                                <span className="flex items-center text-sm bg-gray-100 px-3 py-1 rounded-md">
+                                    <FaCoins className="text-yellow-500 mr-1" /> {question.points} pts
+                                </span>
                                 {question.status === "Validée" && (
-                                    <div className="absolute -right-4 -top-2">
+                                    <div className="hidden md:block absolute -right-4 -top-2">
                                         <Image src="/badge/Valider.svg" alt="Validée" width={30} height={30} />
                                     </div>
                                 )}
                                 {question.status === "Résolue" && (
-                                    <div className="absolute -right-4 -top-2">
+                                    <div className="hidden md:block absolute -right-4 -top-2">
                                         <Image src="/badge/Best.svg" alt="Résolue" width={30} height={30} />
                                     </div>
                                 )}
@@ -206,17 +212,32 @@ export default function ForumQuestionsPage() {
                 ))
             )}
 
-            {/* ✅ Bouton Charger plus */}
-            {page < totalPages && (
-                <Button
-                    className="mt-6"
-                    variant="outline"
-                    onClick={() => setPage(page + 1)}
-                    disabled={loading}
-                >
-                    {loading ? "Chargement..." : "Charger plus"}
-                </Button>
-            )}
+            {/* ✅ Boutons de navigation */}
+            <div className="flex gap-4 mt-6">
+                {/* Bouton Précédent */}
+                {page > 1 && (
+                    <Button
+                        className="bg-gray-600 text-white"
+                        variant="outline"
+                        onClick={() => setPage((prevPage) => Math.max(prevPage - 1, 1))}
+                        disabled={loading}
+                    >
+                        Précédent
+                    </Button>
+                )}
+
+                {/* Bouton Charger plus */}
+                {page < totalPages && (
+                    <Button
+                        className="bg-black text-white"
+                        variant="outline"
+                        onClick={() => setPage((prevPage) => prevPage + 1)}
+                        disabled={loading}
+                    >
+                        {loading ? "Chargement..." : "Page suivante"}
+                    </Button>
+                )}
+            </div>
         </div>
     );
 }

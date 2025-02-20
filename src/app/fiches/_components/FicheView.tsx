@@ -156,8 +156,8 @@ export default function FicheView({ id }: FicheViewProps) {
     };
 
     return (
-        <div className="min-h-screen flex flex-col bg-white text-black">
-            <div className="max-w-4xl mx-auto p-8 space-y-6 bg-white text-black relative">
+        <div className="min-h-screen flex flex-col bg-white text-black overflow-x-hidden">
+            <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 space-y-6 bg-white text-black relative">
 
                 {/* Couverture */}
                 <div

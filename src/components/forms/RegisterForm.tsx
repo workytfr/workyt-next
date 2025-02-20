@@ -140,7 +140,11 @@ export default function AuthPage() {
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
                         required
+                        // Pattern : lettres (majuscules/minuscules), chiffres et tiret
+                        pattern="^[A-Za-z0-9-]+$"
+                        title="Votre nom d'utilisateur ne doit contenir que des lettres, chiffres et tirets (sans espace)."
                     />
+
                     <Input
                         id="email"
                         type="email"
