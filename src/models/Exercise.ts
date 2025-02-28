@@ -1,6 +1,15 @@
 import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
 
 /**
+ * Types de niveaux de difficulté
+ */
+export type DifficultyLevel =
+    'Facile 1' | 'Facile 2' |
+    'Moyen 1' | 'Moyen 2' |
+    'Difficile 1' | 'Difficile 2' |
+    'Élite';
+
+/**
  * Interface représentant un exercice
  */
 export interface IExercise extends Document {
@@ -13,6 +22,7 @@ export interface IExercise extends Document {
         text?: string; // Explication de la correction (optionnel)
         image?: string; // Image de la correction (optionnel)
     };
+    difficulty: DifficultyLevel; // Niveau de difficulté
 }
 
 /**
@@ -27,6 +37,11 @@ const ExerciseSchema: Schema = new Schema({
     correction: {
         text: { type: String }, // Texte explicatif de la correction (facultatif)
         image: { type: String } // URL d'image de correction (facultatif)
+    },
+    difficulty: {
+        type: String,
+        enum: ['Facile 1', 'Facile 2', 'Moyen 1', 'Moyen 2', 'Difficile 1', 'Difficile 2', 'Élite'],
+        required: true
     }
 });
 

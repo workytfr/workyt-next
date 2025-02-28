@@ -5,21 +5,31 @@ import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
  */
 export interface ILesson extends Document {
     sectionId: ObjectId; // Référence à la section
+    author: ObjectId; // Référence à l'auteur de la leçon
     title: string;
     content: string;
-    media?: string[]; // Images, vidéos, PDF
-    order: number;
+    media?: string[]; // Liste d'URL des fichiers multimédias
+    order: number; // Position de la leçon dans la section
+    status: 'En attente de correction' | 'Validée'; // Statut de la leçon
+    createdAt: Date;
 }
 
 /**
- * Schéma de la leçon
+ * Schéma Mongoose pour les leçons
  */
 const LessonSchema: Schema = new Schema({
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: true },
+    author: { type: Schema.Types.ObjectId, ref: 'User', required: true }, // Ajout de l'auteur
     title: { type: String, required: true },
     content: { type: String, required: true },
-    media: [{ type: String }], // Tableau d'URLs des médias
-    order: { type: Number, required: true }
+    media: [{ type: String }], // Liste de fichiers multimédias
+    order: { type: Number, required: true },
+    status: {
+        type: String,
+        enum: ['En attente de correction', 'Validée'],
+        default: 'En attente de correction'
+    },
+    createdAt: { type: Date, default: Date.now }
 });
 
 /**
