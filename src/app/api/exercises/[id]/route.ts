@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Exercise, { DifficultyLevel } from "@/models/Exercise";
 import authMiddleware from "@/middlewares/authMiddleware";
+import { uploadFiles } from "@/lib/uploadFiles";
 
 /**
  * 🚀 GET - Récupérer un exercice spécifique (Accès public)
@@ -39,9 +40,16 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
-        const body = await req.json();
+        // Utiliser formData pour récupérer les données et les fichiers
+        const formData = await req.formData();
 
-        // Vérifier si la difficulté est valide si elle est mise à jour
+        // Extraire les champs du formData dans un objet
+        const body: any = {};
+        for (const [key, value] of formData.entries()) {
+            body[key] = value;
+        }
+
+        // Vérifier si la difficulté est valide
         if (body.difficulty) {
             const validDifficulties: DifficultyLevel[] = [
                 'Facile 1', 'Facile 2', 'Moyen 1', 'Moyen 2', 'Difficile 1', 'Difficile 2', 'Élite'
@@ -51,8 +59,39 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             }
         }
 
-        const updatedExercise = await Exercise.findByIdAndUpdate(params.id, body, { new: true });
+        // Gestion de l'upload des images si de nouveaux fichiers sont envoyés
+        if (formData.get("image") instanceof File) {
+            const imageFile = formData.get("image") as File;
+            const uploadedImages = await uploadFiles([imageFile]);
+            if (uploadedImages.length > 0) {
+                body.image = uploadedImages[0];
+            }
+        }
 
+        if (formData.get("correctionImage") instanceof File) {
+            const correctionImageFile = formData.get("correctionImage") as File;
+            const uploadedCorrectionImages = await uploadFiles([correctionImageFile]);
+            if (uploadedCorrectionImages.length > 0) {
+                // On met à jour la correction en ajoutant ou en modifiant la propriété image
+                body.correction = {
+                    text: body.correctionText || "",
+                    image: uploadedCorrectionImages[0],
+                };
+                // On peut supprimer correctionText du body si nécessaire
+                delete body.correctionText;
+            }
+        } else {
+            // Si aucune image de correction n'est envoyée, on s'assure que le champ correction.text est mis à jour
+            body.correction = {
+                text: body.correctionText || "",
+                image: body.correctionImage || null,
+            };
+            delete body.correctionText;
+            delete body.correctionImage;
+        }
+
+        // Mettre à jour l'exercice dans la base de données
+        const updatedExercise = await Exercise.findByIdAndUpdate(params.id, body, { new: true });
         if (!updatedExercise) {
             return NextResponse.json({ error: "Exercice non trouvé." }, { status: 404 });
         }

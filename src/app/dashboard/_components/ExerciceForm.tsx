@@ -50,6 +50,33 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
     const [loading, setLoading] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
 
+    // Mise à jour des états si la prop exercise change
+    useEffect(() => {
+        if (exercise) {
+            setFormData({
+                title: exercise.title || "",
+                content: exercise.content || "",
+                correctionText: exercise.correction?.text || "",
+                difficulty: exercise.difficulty || "",
+            });
+            setSectionId(exercise.sectionId || "");
+            setImagePreview(exercise.image || "");
+            setCorrectionImagePreview(exercise.correction?.image || "");
+        }
+    }, [exercise]);
+
+    // Lorsqu'on a chargé les cours, déterminer le cours associé à la section de l'exercice
+    useEffect(() => {
+        if (exercise && courses.length > 0) {
+            const courseFound = courses.find(course =>
+                course.sections.some(section => section._id === exercise.sectionId)
+            );
+            if (courseFound) {
+                setCourseId(courseFound._id);
+            }
+        }
+    }, [exercise, courses]);
+
     // 📌 Charger les cours et sections associées
     useEffect(() => {
         async function fetchCourses() {
@@ -156,7 +183,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
                 const data = await res.json();
                 onSuccess(data);
             } else {
-                console.error("Erreur lors de la création de l'exercice :", await res.text());
+                console.error("Erreur lors de la création/modification de l'exercice :", await res.text());
             }
         } catch (error) {
             console.error("Erreur réseau :", error);
@@ -237,9 +264,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             {/* 📌 Sélection de la difficulté */}
             <label className="block text-sm font-medium text-gray-700">Sélectionner une difficulté</label>
             <Select
-                onValueChange={(value) =>
-                    setFormData({ ...formData, difficulty: value })
-                }
+                onValueChange={(value) => setFormData({ ...formData, difficulty: value })}
                 value={formData.difficulty}
             >
                 <SelectTrigger>
@@ -266,6 +291,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             {correctionImagePreview && <Image src={correctionImagePreview} alt="Correction" width={200} height={100} />}
 
             <Button type="submit">{exercise ? "Modifier" : "Créer"} l&apos;exercice</Button>
+            {loading && <Loader2 className="animate-spin" />}
         </form>
     );
 }

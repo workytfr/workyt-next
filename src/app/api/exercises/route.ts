@@ -6,18 +6,22 @@ import { uploadFiles } from "@/lib/uploadFiles";
 
 /**
  * 🚀 GET - Récupérer tous les exercices (Accès public)
- * ➜ Possibilité de filtrer par `difficulty`
+ * ➜ Possibilité de filtrer par `difficulty` et `sectionId`
  */
 export async function GET(req: NextRequest) {
     try {
         await dbConnect();
 
-        // Récupérer le paramètre `difficulty` de l'URL
+        // Récupérer les paramètres de l'URL
         const { searchParams } = new URL(req.url);
         const difficulty = searchParams.get("difficulty") as DifficultyLevel | null;
+        const sectionId = searchParams.get("sectionId");
 
-        // Filtrer par difficulté si un niveau est spécifié
-        const filter = difficulty ? { difficulty } : {};
+        // Construire l'objet de filtre en fonction des paramètres
+        const filter: { [key: string]: any } = {};
+        if (difficulty) filter.difficulty = difficulty;
+        if (sectionId) filter.sectionId = sectionId;
+
         const exercises = await Exercise.find(filter);
 
         return NextResponse.json(exercises, { status: 200 });
