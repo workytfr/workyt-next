@@ -51,7 +51,7 @@ const UserSchema: Schema = new Schema({
     },
     points: {
         type: Number,
-        default: 0
+        default: 20,
     }, // Points par défaut
     badges: [{ type: String }], // Liste des badges sous forme de tableau
     isAdmin: {
