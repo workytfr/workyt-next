@@ -121,4 +121,68 @@ export async function POST(req: NextRequest) {
     }
 }
 
+/**
+ * 🚀 PATCH - Mettre à jour le statut d'un cours (Réservé à l'Admin)
+ */
+export async function PATCH(req: NextRequest) {
+    try {
+        await dbConnect();
+        const user = await authMiddleware(req);
+
+        // 🔒 Vérification des permissions (Accès Admin uniquement)
+        if (!user || user.role !== "Admin") {
+            return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
+        }
+
+        // 📌 Extraire les données du body
+        const { courseId, newStatus } = await req.json();
+
+        if (!courseId || !newStatus) {
+            return NextResponse.json(
+                { error: "Paramètres manquants (courseId, newStatus)." },
+                { status: 400 }
+            );
+        }
+
+        // 🔐 Vérification du statut autorisé
+        const ALLOWED_STATUSES = [
+            "en_attente_publication",
+            "en_attente_verification",
+            "publie",
+            "annule",
+        ];
+        if (!ALLOWED_STATUSES.includes(newStatus)) {
+            return NextResponse.json({ error: "Statut invalide." }, { status: 400 });
+        }
+
+        // 🔄 Mise à jour du cours
+        const updatedCourse = await Course.findByIdAndUpdate(
+            courseId,
+            {
+                status: newStatus,
+                updatedAt: new Date(), // on met à jour la date de modification
+            },
+            { new: true } // Renvoie le document après mise à jour
+        );
+
+        if (!updatedCourse) {
+            return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
+        }
+
+        return NextResponse.json(
+            {
+                message: "Statut du cours mis à jour avec succès.",
+                course: updatedCourse,
+            },
+            { status: 200 }
+        );
+
+    } catch (error: any) {
+        console.error("Erreur lors de la mise à jour du statut :", error.message);
+        return NextResponse.json(
+            { error: "Erreur interne du serveur.", details: error.message },
+            { status: 500 }
+        );
+    }
+}
 

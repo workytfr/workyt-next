@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, GripVertical } from "lucide-react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "react-beautiful-dnd";
 
 interface Section {
@@ -112,7 +112,7 @@ export default function SectionManager({ courseId, session }: SectionManagerProp
     const onDragEnd = async (result: DropResult) => {
         if (!result.destination) return;
 
-        const reorderedSections = [...sections];
+        const reorderedSections = Array.from(sections);
         const [movedSection] = reorderedSections.splice(result.source.index, 1);
         reorderedSections.splice(result.destination.index, 0, movedSection);
 
@@ -156,13 +156,22 @@ export default function SectionManager({ courseId, session }: SectionManagerProp
                             <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
                                 {sections.map((section, index) => (
                                     <Draggable key={section._id || index} draggableId={String(section._id || index)} index={index}>
-                                        {(provided) => (
+                                        {(provided, snapshot) => (
                                             <div
                                                 ref={provided.innerRef}
                                                 {...provided.draggableProps}
-                                                {...provided.dragHandleProps}
-                                                className="flex items-center gap-2 bg-gray-100 p-2 rounded-md"
+                                                style={{
+                                                    ...provided.draggableProps.style,
+                                                    background: snapshot.isDragging ? "#e0e0e0" : "#f3f3f3",
+                                                    padding: "8px",
+                                                    borderRadius: "4px",
+                                                }}
+                                                className="flex items-center gap-2"
                                             >
+                                                {/* Drag handle distinct */}
+                                                <div {...provided.dragHandleProps} className="cursor-grab">
+                                                    <GripVertical className="w-4 h-4 text-gray-600" />
+                                                </div>
                                                 <span className="text-gray-700 font-medium">{index + 1}.</span>
                                                 <Input
                                                     value={section.title}
