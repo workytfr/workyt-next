@@ -1,8 +1,15 @@
 import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
+import { Metadata } from "next";
 import Sidebar from "./_components/sidebar";
 import Header from "./_components/header";
 import { authOptions } from "@/lib/authOptions"; // Adapté à votre configuration NextAuth
+
+export const metadata: Metadata = {
+    title: "Dashboard BETA - Workyt",
+    description: "Bienvenue sur le dashboard de Workyt. Vous pouvez gérer vos cours, exercices et leçons ici. 🚀",
+    robots: "noindex, nofollow",
+};
 
 export default async function DashboardLayout({
                                                   children,
