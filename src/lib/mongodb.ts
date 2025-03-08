@@ -2,8 +2,14 @@ import mongoose from "mongoose";
 
 // Import des modèles pour les enregistrer
 import "@/models/Comment"; // Modèle Comment
-import "@/models/Revision"; // Modèle Revision
-import "@/models/User"; // Modèle User
+import "@/models/Revision";  // Modèle Revision
+import "@/models/User";      // Modèle User
+import "@/models/Section";
+import "@/models/Course";
+import "@/models/Quiz";
+import "@/models/Lesson";
+import "@/models/Question";
+import "@/models/Exercise";
 
 const connectDB = async (): Promise<void> => {
     const { MONGODB_URI, NODE_ENV } = process.env;
@@ -31,10 +37,8 @@ const connectDB = async (): Promise<void> => {
     try {
         // Options de connexion
         await mongoose.connect(MONGODB_URI, {
-            serverSelectionTimeoutMS: 10000, // Timeout pour la sélection du serveur
-            connectTimeoutMS: 10000, // Timeout pour la connexion
-            // useNewUrlParser: true, // Option recommandée pour MongoDB >= 4.x
-            // useUnifiedTopology: true, // Option recommandée pour MongoDB >= 4.x
+            serverSelectionTimeoutMS: 10000,
+            connectTimeoutMS: 10000,
         });
 
         console.log("MongoDB connected successfully.");

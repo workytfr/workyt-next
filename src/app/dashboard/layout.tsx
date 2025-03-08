@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Metadata } from "next";
 import Sidebar from "./_components/sidebar";
 import Header from "./_components/header";
-import { authOptions } from "@/lib/authOptions"; // Adapté à votre configuration NextAuth
+import { authOptions } from "@/lib/authOptions";
 
 export const metadata: Metadata = {
     title: "Dashboard BETA - Workyt",

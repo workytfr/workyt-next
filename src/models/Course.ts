@@ -35,8 +35,19 @@ const CourseSchema: Schema = new Schema({
 });
 
 /**
- * Vérification de la présence du modèle pour éviter une réinstanciation
+ * Virtual populate pour aller chercher les "Section"
+ * où section.courseId == course._id
  */
+CourseSchema.virtual("sections", {
+    ref: "Section",         // Le modèle Section
+    localField: "_id",      // Sur quoi on matche dans Course
+    foreignField: "courseId", // Sur quoi on matche dans Section
+});
+
+// Active l'inclusion des virtuals dans le JSON/objet final
+CourseSchema.set("toJSON", { virtuals: true });
+CourseSchema.set("toObject", { virtuals: true });
+
 const Course: Model<ICourse> = mongoose.models.Course || mongoose.model<ICourse>("Course", CourseSchema);
 
 export default Course;
