@@ -5,12 +5,6 @@ import authMiddleware from '@/middlewares/authMiddleware';
 
 export const runtime = 'nodejs';
 
-export const config = {
-    api: {
-        bodyParser: false,
-    },
-};
-
 // Fonction utilitaire pour découper un Buffer par un délimiteur
 function splitBuffer(buffer: Buffer, delimiter: Buffer): Buffer[] {
     const parts: Buffer[] = [];

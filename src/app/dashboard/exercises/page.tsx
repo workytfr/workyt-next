@@ -290,8 +290,7 @@ export default function ExercisePage() {
                 <Dialog open onOpenChange={() => setViewExercise(null)}>
                     <DialogContent className="max-w-4xl w-full h-screen overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>Détails de l'exercice</DialogTitle>
-                        </DialogHeader>
+                            <DialogTitle>D&eacute;tails de l&apos;exercice</DialogTitle>                        </DialogHeader>
                         <ExerciseDetail exercise={viewExercise} onClose={() => setViewExercise(null)} />
                     </DialogContent>
                 </Dialog>
