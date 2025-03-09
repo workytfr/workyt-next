@@ -21,6 +21,12 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
     const [isOpen, setIsOpen] = useState(false);
 
     useEffect(() => {
+        document.body.classList.remove("dark"); // Supprime le mode sombre
+        document.body.style.backgroundColor = "white"; // Force le fond en blanc
+        document.body.style.color = "black"; // Force le texte en noir
+    }, []);
+
+    useEffect(() => {
         if (isOpen && !sectionDetail) {
             fetchSectionDetails();
         }
@@ -49,19 +55,19 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
     return (
         <AccordionItem
             value={sectionInitial._id}
-            className="mb-2 rounded-lg bg-white shadow-md border border-gray-200 transition-all hover:bg-gray-50"
+            className="mb-2 rounded-lg bg-white text-black shadow-md border border-gray-200 transition-all hover:bg-gray-100"
         >
             <AccordionTrigger
-                className="w-full px-5 py-3 text-left text-md font-semibold rounded-lg flex justify-between items-center sticky top-0 bg-white z-10 shadow-sm"
+                className="w-full px-5 py-3 text-left text-md font-semibold rounded-lg flex justify-between items-center sticky top-0 bg-white text-black z-10 shadow-sm"
                 onClick={() => setIsOpen((prev) => !prev)}
             >
                 <span>{sectionData.title}</span>
                 {isLoading && <Loader2 className="w-5 h-5 animate-spin text-blue-500" />}
             </AccordionTrigger>
 
-            <AccordionContent className="px-5 pb-3 bg-gray-50 rounded-b-lg border-t space-y-2">
+            <AccordionContent className="px-5 pb-3 bg-gray-100 rounded-b-lg border-t space-y-2">
                 {isLoading ? (
-                    <p className="text-sm text-gray-500 flex items-center">
+                    <p className="text-sm text-gray-700 flex items-center">
                         <Loader2 className="w-4 h-4 animate-spin mr-2" /> Chargement...
                     </p>
                 ) : (
@@ -73,7 +79,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
                                     {sectionData.lessons.map((lesson) => (
                                         <li
                                             key={lesson._id}
-                                            className="text-gray-700 hover:text-blue-600 cursor-pointer transition"
+                                            className="text-black hover:text-blue-600 cursor-pointer transition"
                                             onClick={() => onSelectContent(lesson)}
                                         >
                                             {lesson.title}
@@ -85,7 +91,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
 
                         {sectionData.exercises && sectionData.exercises.length > 0 && (
                             <button
-                                className="flex items-center gap-2 text-green-600 hover:text-green-800 font-semibold transition cursor-pointer mt-3 w-full justify-start"
+                                className="flex items-center gap-2 text-green-700 hover:text-green-900 font-semibold transition cursor-pointer mt-3 w-full justify-start"
                                 onClick={() => onSelectContent(sectionData)}
                             >
                                 <FileText className="w-5 h-5" />

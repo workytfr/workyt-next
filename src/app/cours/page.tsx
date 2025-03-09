@@ -56,7 +56,7 @@ export default function CoursesPage() {
     }, [searchQuery, selectedSubject, selectedClass]);
 
     return (
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto py-10 bg-white text-black min-h-screen">
             {/* Filtres et recherche */}
             <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
                 <SearchBar

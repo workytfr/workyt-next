@@ -40,6 +40,12 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
     const [loadingCourses, setLoadingCourses] = useState(false);
 
     useEffect(() => {
+        document.body.classList.remove("dark"); // Supprime le mode sombre
+        document.body.style.backgroundColor = "white"; // Force le fond en blanc
+        document.body.style.color = "black"; // Force le texte en noir
+    }, []);
+
+    useEffect(() => {
         async function fetchCourses() {
             if (!session?.accessToken) return;
             setLoadingCourses(true);
@@ -64,6 +70,37 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setFiles([...files, ...Array.from(e.target.files)]);
+        }
+    };
+
+    const handleImageUpload = async (file: File) => {
+        // Vérifiez que la session et l'accessToken existent
+        if (!session || !session.accessToken) {
+            console.error("Utilisateur non authentifié");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    Authorization: `Bearer ${session.accessToken}`,
+                },
+            });
+            if (!res.ok) {
+                throw new Error('Erreur lors de l’upload');
+            }
+            const data = await res.json();
+            const imageUrl = data.url; // ex: /uploads/cours/lessons/nom-fichier.jpg
+
+            // Insérer la syntaxe markdown de l'image dans le contenu
+            setContent(prev => prev + `\n\n![Texte alternatif](${imageUrl})\n\n`);
+        } catch (error) {
+            console.error('Upload image error:', error);
         }
     };
 
@@ -228,6 +265,21 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
                         </Button>
                     ))}
                 </div>
+
+                <Button type="button" onClick={() => document.getElementById("image-upload")?.click()}>
+                    Ajouter une image
+                </Button>
+                <input
+                    id="image-upload"
+                    type="file"
+                    accept="image/*"
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                        if (e.target.files && e.target.files[0]) {
+                            handleImageUpload(e.target.files[0]);
+                        }
+                    }}
+                />
 
                 <MDEditor
                     value={content}
