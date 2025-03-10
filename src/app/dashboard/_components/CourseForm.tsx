@@ -12,6 +12,7 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { useSession, signIn } from "next-auth/react";
 import SectionManager from "./SectionManager";
+import { UploadButton } from "@/utils/uploadthing";
 
 interface CourseFormProps {
     course?: any;
@@ -27,16 +28,9 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
         matiere: course?.matiere || "",
     });
 
-    const [imageFile, setImageFile] = useState<File | null>(null);
+    // Stocke l'URL de l'image uploadée
+    const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(course?.image || "");
     const [imagePreview, setImagePreview] = useState<string>(course?.image || "");
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setImageFile(file);
-            setImagePreview(URL.createObjectURL(file));
-        }
-    };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -50,23 +44,21 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
         const method = course ? "PUT" : "POST";
         const url = course ? `/api/courses/${course._id}` : "/api/courses";
 
-        const formDataToSend = new FormData();
-        formDataToSend.append("title", formData.title);
-        formDataToSend.append("description", formData.description);
-        formDataToSend.append("niveau", formData.niveau);
-        formDataToSend.append("matiere", formData.matiere);
-
-        if (imageFile) {
-            formDataToSend.append("image", imageFile);
-        }
+        const payload = {
+            title: formData.title,
+            description: formData.description,
+            niveau: formData.niveau,
+            matiere: formData.matiere,
+            image: uploadedImageUrl, // URL de l'image obtenue via Uploadthing
+        };
 
         try {
             const res = await fetch(url, {
                 method,
-                body: formDataToSend,
+                body: JSON.stringify(payload),
                 headers: {
+                    "Content-Type": "application/json",
                     Authorization: `Bearer ${session.accessToken}`,
-                    // Ne pas définir Content-Type pour FormData, le navigateur le fait automatiquement
                 },
             });
 
@@ -138,7 +130,20 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
             {course?._id && <SectionManager courseId={course._id} session={session} />}
 
             <label className="block text-sm font-medium text-gray-700">Image de fond du cours</label>
-            <Input type="file" accept="image/*" onChange={handleImageChange} />
+            {/* Bouton Uploadthing pour uploader l'image */}
+            <UploadButton
+                endpoint="imageUploader"
+                onClientUploadComplete={(res) => {
+                    if (res && res.length > 0) {
+                        const imageUrl = res[0].url;
+                        setUploadedImageUrl(imageUrl);
+                        setImagePreview(imageUrl);
+                    }
+                }}
+                onUploadError={(error: Error) => {
+                    console.error("Erreur lors de l'upload:", error.message);
+                }}
+            />
 
             {imagePreview && (
                 <div className="mt-2">

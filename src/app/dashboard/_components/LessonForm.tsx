@@ -12,10 +12,10 @@ import { useSession } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { ILesson } from "@/models/Lesson";
 import MarkdownBlockButtons from "./MarkdownBlockButtons";
-import { AlertCircle, BookOpen, Lightbulb, Star, Triangle, Info, ShieldAlert } from "lucide-react";
+import { AlertCircle, BookOpen, Lightbulb, Star, Triangle, Info } from "lucide-react";
+import { UploadButton } from "@/utils/uploadthing";
 import remarkDirective from "remark-directive";
 import { visit } from "unist-util-visit";
-
 
 interface ICourse {
     _id: string;
@@ -50,11 +50,14 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
             if (!session?.accessToken) return;
             setLoadingCourses(true);
             try {
-                const res = await fetch(`/api/courses?page=1&limit=10&search=${encodeURIComponent(searchQuery)}`, {
-                    headers: {
-                        Authorization: `Bearer ${session.accessToken}`,
-                    },
-                });
+                const res = await fetch(
+                    `/api/courses?page=1&limit=10&search=${encodeURIComponent(searchQuery)}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${session.accessToken}`,
+                        },
+                    }
+                );
                 if (!res.ok) throw new Error(await res.text());
                 const data = await res.json();
                 setCourses(data.courses || []);
@@ -70,37 +73,6 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             setFiles([...files, ...Array.from(e.target.files)]);
-        }
-    };
-
-    const handleImageUpload = async (file: File) => {
-        // Vérifiez que la session et l'accessToken existent
-        if (!session || !session.accessToken) {
-            console.error("Utilisateur non authentifié");
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('file', file);
-
-        try {
-            const res = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    Authorization: `Bearer ${session.accessToken}`,
-                },
-            });
-            if (!res.ok) {
-                throw new Error('Erreur lors de l’upload');
-            }
-            const data = await res.json();
-            const imageUrl = data.url; // ex: /uploads/cours/lessons/nom-fichier.jpg
-
-            // Insérer la syntaxe markdown de l'image dans le contenu
-            setContent(prev => prev + `\n\n![Texte alternatif](${imageUrl})\n\n`);
-        } catch (error) {
-            console.error('Upload image error:', error);
         }
     };
 
@@ -237,11 +209,15 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
                         <SelectValue placeholder="Choisissez un cours" />
                     </SelectTrigger>
                     <SelectContent>
-                        {loadingCourses ? <Loader2 className="animate-spin w-5 h-5 mx-auto" /> :
+                        {loadingCourses ? (
+                            <Loader2 className="animate-spin w-5 h-5 mx-auto" />
+                        ) : (
                             courses.map((course) => (
-                                <SelectItem key={course._id} value={course._id}>{course.title}</SelectItem>
+                                <SelectItem key={course._id} value={course._id}>
+                                    {course.title}
+                                </SelectItem>
                             ))
-                        }
+                        )}
                     </SelectContent>
                 </Select>
 
@@ -250,13 +226,21 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
                         <SelectValue placeholder="Sélectionnez une section" />
                     </SelectTrigger>
                     <SelectContent>
-                        {courses.find((course) => course._id === courseId)?.sections.map((section) => (
-                            <SelectItem key={section._id} value={section._id}>{section.title}</SelectItem>
-                        ))}
+                        {courses
+                            .find((course) => course._id === courseId)
+                            ?.sections.map((section) => (
+                                <SelectItem key={section._id} value={section._id}>
+                                    {section.title}
+                                </SelectItem>
+                            ))}
                     </SelectContent>
                 </Select>
 
-                <Input placeholder="Titre de la leçon" value={title} onChange={(e) => setTitle(e.target.value)} />
+                <Input
+                    placeholder="Titre de la leçon"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                />
 
                 <div className="flex space-x-2">
                     {["Definition", "Propriété", "Exemple", "Théorème", "Remarque", "Attention"].map((type) => (
@@ -266,18 +250,18 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
                     ))}
                 </div>
 
-                <Button type="button" onClick={() => document.getElementById("image-upload")?.click()}>
-                    Ajouter une image
-                </Button>
-                <input
-                    id="image-upload"
-                    type="file"
-                    accept="image/*"
-                    style={{ display: 'none' }}
-                    onChange={(e) => {
-                        if (e.target.files && e.target.files[0]) {
-                            handleImageUpload(e.target.files[0]);
+                {/* Intégration d'Uploadthing pour l'upload d'image */}
+                <UploadButton
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                        if (res && res.length > 0) {
+                            const imageUrl = res[0].url;
+                            // Insère la syntaxe Markdown pour l'image dans le contenu
+                            setContent((prev) => prev + `\n\n![Texte alternatif](${imageUrl})\n\n`);
                         }
+                    }}
+                    onUploadError={(error: Error) => {
+                        console.error("Erreur lors de l'upload:", error.message);
                     }}
                 />
 
@@ -294,7 +278,9 @@ export default function LessonForm({ onSuccess }: LessonFormProps) {
 
                 <Input type="file" multiple onChange={handleFilesChange} />
 
-                <Button type="submit" disabled={loading || !sectionId}>{loading ? "Création en cours..." : "Créer la leçon"}</Button>
+                <Button type="submit" disabled={loading || !sectionId}>
+                    {loading ? "Création en cours..." : "Créer la leçon"}
+                </Button>
             </form>
         </div>
     );

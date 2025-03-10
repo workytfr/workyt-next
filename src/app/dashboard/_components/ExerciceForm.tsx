@@ -17,6 +17,7 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { useSession, signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
+import { UploadButton } from "@/utils/uploadthing";
 
 interface ICourse {
     _id: string;
@@ -43,14 +44,13 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
         difficulty: exercise?.difficulty || "",
     });
 
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [correctionImageFile, setCorrectionImageFile] = useState<File | null>(null);
+    // Stocker les URLs d'image issues d'Uploadthing
     const [imagePreview, setImagePreview] = useState<string>(exercise?.image || "");
     const [correctionImagePreview, setCorrectionImagePreview] = useState<string>(exercise?.correction?.image || "");
     const [loading, setLoading] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
 
-    // Mise à jour des états si la prop exercise change
+    // Mise à jour si la prop exercise change
     useEffect(() => {
         if (exercise) {
             setFormData({
@@ -65,19 +65,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
         }
     }, [exercise]);
 
-    // Lorsqu'on a chargé les cours, déterminer le cours associé à la section de l'exercice
-    useEffect(() => {
-        if (exercise && courses.length > 0) {
-            const courseFound = courses.find(course =>
-                course.sections.some(section => section._id === exercise.sectionId)
-            );
-            if (courseFound) {
-                setCourseId(courseFound._id);
-            }
-        }
-    }, [exercise, courses]);
-
-    // 📌 Charger les cours et sections associées
+    // Charger les cours et sections associées
     useEffect(() => {
         async function fetchCourses() {
             if (!session?.accessToken) return;
@@ -102,7 +90,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
         fetchCourses();
     }, [session?.accessToken]);
 
-    // 🔍 Recherche dynamique des cours
+    // Recherche dynamique des cours
     useEffect(() => {
         if (!courseSearch.trim()) {
             setFilteredCourses(courses);
@@ -114,29 +102,19 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
         }
     }, [courseSearch, courses]);
 
-    // 📌 Gérer l'upload d'image et afficher la prévisualisation
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: "exercise" | "correction") => {
-        const file = e.target.files?.[0];
-        if (file) {
-            if (type === "exercise") {
-                setImageFile(file);
-                setImagePreview(URL.createObjectURL(file));
-            } else {
-                setCorrectionImageFile(file);
-                setCorrectionImagePreview(URL.createObjectURL(file));
+    // Déterminer le cours associé à l'exercice (si existant)
+    useEffect(() => {
+        if (exercise && courses.length > 0) {
+            const courseFound = courses.find(course =>
+                course.sections.some(section => section._id === exercise.sectionId)
+            );
+            if (courseFound) {
+                setCourseId(courseFound._id);
             }
         }
-    };
+    }, [exercise, courses]);
 
-    const handleCorrectionImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setCorrectionImageFile(file);
-            setCorrectionImagePreview(URL.createObjectURL(file));
-        }
-    };
-
-    // 📌 Gérer la soumission du formulaire
+    // Soumission du formulaire
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -153,7 +131,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             return;
         }
 
-        // ✅ Création d'un `FormData` pour envoyer les données et les images
+        // Création d'un FormData incluant les données et les URLs d'image
         const formDataToSend = new FormData();
         formDataToSend.append("sectionId", sectionId);
         formDataToSend.append("title", formData.title);
@@ -161,12 +139,11 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
         formDataToSend.append("correctionText", formData.correctionText);
         formDataToSend.append("difficulty", formData.difficulty);
 
-        if (imageFile) {
-            formDataToSend.append("image", imageFile);
+        if (imagePreview) {
+            formDataToSend.append("image", imagePreview);
         }
-
-        if (correctionImageFile) {
-            formDataToSend.append("correctionImage", correctionImageFile);
+        if (correctionImagePreview) {
+            formDataToSend.append("correctionImage", correctionImagePreview);
         }
 
         const method = exercise ? "PUT" : "POST";
@@ -202,7 +179,6 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
                 onChange={(e) => setCourseSearch(e.target.value)}
             />
 
-            {/* 📌 Sélection du cours */}
             <label className="block text-sm font-medium text-gray-700">Sélectionner un cours</label>
             <Select onValueChange={setCourseId} disabled={loadingCourses}>
                 <SelectTrigger>
@@ -281,13 +257,36 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
                 </SelectContent>
             </Select>
 
-            {/* 📌 Upload des images */}
-            <label>Ajouter une image</label>
-            <Input type="file" accept="image/*" onChange={(e) => handleImageChange(e, "exercise")} />
+            {/* Upload d'image d'exercice via Uploadthing */}
+            <label className="block text-sm font-medium text-gray-700">Ajouter une image d&apos;exercice</label>
+            <UploadButton
+                endpoint="imageUploader"
+                onClientUploadComplete={(res) => {
+                    if (res && res.length > 0) {
+                        const imageUrl = res[0].url;
+                        setImagePreview(imageUrl);
+                    }
+                }}
+                onUploadError={(error: Error) => {
+                    console.error("Erreur lors de l'upload d'image d'exercice:", error.message);
+                }}
+            />
             {imagePreview && <Image src={imagePreview} alt="Exercice" width={200} height={100} />}
 
-            <label>Image de correction</label>
-            <Input type="file" accept="image/*" onChange={handleCorrectionImageChange} />
+            {/* Upload d'image de correction via Uploadthing */}
+            <label className="block text-sm font-medium text-gray-700">Ajouter une image de correction</label>
+            <UploadButton
+                endpoint="imageUploader"
+                onClientUploadComplete={(res) => {
+                    if (res && res.length > 0) {
+                        const imageUrl = res[0].url;
+                        setCorrectionImagePreview(imageUrl);
+                    }
+                }}
+                onUploadError={(error: Error) => {
+                    console.error("Erreur lors de l'upload d'image de correction:", error.message);
+                }}
+            />
             {correctionImagePreview && <Image src={correctionImagePreview} alt="Correction" width={200} height={100} />}
 
             <Button type="submit">{exercise ? "Modifier" : "Créer"} l&apos;exercice</Button>
