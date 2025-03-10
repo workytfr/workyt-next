@@ -44,9 +44,9 @@ export default function Home() {
         <SessionWrapper>
         <div className="grid bg-white">
             <BannerWithButton
-                tTitle="🎉 Bienvenue sur Workyt v3.5 !"
-                tDetails="Découvrez le nouveau kit Fiches de révision"
-                tButton="Commencer"
+                tTitle="🎉 Bienvenue sur Workyt v3.9 Beta !"
+                tDetails="Après une année d'absence, les cours font leur retour sur Workyt, désormais enrichis de fonctionnalités innovantes."
+                tButton="Voir les fiches"
                 linkHref="/fiches"
                 tDismiss="Masquer"
             />
