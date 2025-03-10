@@ -38,16 +38,6 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
         }
     };
 
-    // Fonction utilitaire pour convertir un fichier en base64
-    const convertFileToBase64 = (file: File): Promise<string> => {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onload = () => resolve(reader.result as string);
-            reader.onerror = (error) => reject(error);
-        });
-    };
-
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
@@ -60,30 +50,23 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
         const method = course ? "PUT" : "POST";
         const url = course ? `/api/courses/${course._id}` : "/api/courses";
 
-        let imageBase64 = "";
-        if (imageFile) {
-            try {
-                imageBase64 = await convertFileToBase64(imageFile);
-            } catch (error) {
-                console.error("Erreur lors de la conversion de l'image :", error);
-            }
-        }
+        const formDataToSend = new FormData();
+        formDataToSend.append("title", formData.title);
+        formDataToSend.append("description", formData.description);
+        formDataToSend.append("niveau", formData.niveau);
+        formDataToSend.append("matiere", formData.matiere);
 
-        const payload = {
-            title: formData.title,
-            description: formData.description,
-            niveau: formData.niveau,
-            matiere: formData.matiere,
-            image: imageBase64,
-        };
+        if (imageFile) {
+            formDataToSend.append("image", imageFile);
+        }
 
         try {
             const res = await fetch(url, {
                 method,
-                body: JSON.stringify(payload),
+                body: formDataToSend,
                 headers: {
-                    "Content-Type": "application/json",
                     Authorization: `Bearer ${session.accessToken}`,
+                    // Ne pas définir Content-Type pour FormData, le navigateur le fait automatiquement
                 },
             });
 
