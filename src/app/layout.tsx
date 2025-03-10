@@ -6,6 +6,7 @@ import { SessionProvider } from "next-auth/react"; // Import du SessionProvider
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { ReactNode } from "react";
 import Navbar from "@/components/navbar/Navbar";
+import Footer from "@/components/home/footer";
 
 interface RootLayoutProps {
     children: ReactNode;
@@ -27,6 +28,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <TooltipProvider>
                 {children}
                 </TooltipProvider>
+                <Footer />
             </ThemeProvider>
         </SessionProvider>
 
