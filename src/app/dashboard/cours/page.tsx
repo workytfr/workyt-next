@@ -265,14 +265,14 @@ export default function CoursesPage() {
                                         )}
                                     </TableCell>
                                     <TableCell>
-                                        {course.sections.length > 0 ? (
+                                        {course.sections?.length > 0 ? (
                                             <ul className="list-disc pl-4">
                                                 {course.sections.map((section) => (
                                                     <li key={section._id}>{section.title}</li>
                                                 ))}
                                             </ul>
                                         ) : (
-                                            "Aucune section"
+                                            <span>Aucune section</span>
                                         )}
                                     </TableCell>
                                     <TableCell>
