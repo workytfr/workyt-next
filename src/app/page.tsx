@@ -87,7 +87,6 @@ export default function Home() {
                 <PartenairesView/>
             </div>
             <OrgChart/>
-            <Footer/>
         </div>
         </SessionWrapper>
     );

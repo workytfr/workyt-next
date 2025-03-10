@@ -78,6 +78,10 @@ export default function Navbar() {
                         Fiches
                     </Link>
 
+                    <Link href="/cours" className="text-gray-700 font-semibold">
+                        Cours
+                    </Link>
+
                     {/* Blog Dropdown */}
                     <DropdownMenu.Root>
                         <DropdownMenu.Trigger className="text-gray-700 font-semibold cursor-pointer flex items-center">
@@ -245,6 +249,12 @@ export default function Navbar() {
                         className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
                     >
                         Fiches
+                    </Link>
+                    <Link
+                        href="/cours"
+                        className="block text-gray-700 text-lg font-semibold hover:text-blue-500 transition duration-300"
+                    >
+                        Cours
                     </Link>
                     <Link
                         href="https://blog.workyt.fr/"
