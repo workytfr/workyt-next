@@ -8,7 +8,5 @@ export const { GET, POST } = createRouteHandler({
     config: {
         isDev: process.env.NODE_ENV === "development",
         callbackUrl: process.env.UPLOADTHING_CALLBACK_URL,
-        logLevel: "Debug",
-        logFormat: "json",
     },
 });
