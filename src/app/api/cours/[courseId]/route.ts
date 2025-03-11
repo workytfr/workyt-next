@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Course from "@/models/Course";
 import authMiddleware from "@/middlewares/authMiddleware";
+import { isValidObjectId } from "mongoose";
 
 export async function GET(
     req: NextRequest,
@@ -19,11 +20,19 @@ export async function GET(
 
         const { courseId } = params;
 
-        // On récupère le cours et juste la liste des sections (id + titre)
+        // Vérifier que l'ID est un ObjectId valide
+        if (!isValidObjectId(courseId)) {
+            return NextResponse.json(
+                { error: "ID de cours invalide" },
+                { status: 400 }
+            );
+        }
+
+        // Récupération du cours et de ses sections (id + titre)
         const cours = await Course.findById(courseId)
             .populate({
                 path: "sections",
-                select: "title order", // On ne récupère que le titre et l'ordre
+                select: "title order", // On récupère uniquement le titre et l'ordre
                 options: { sort: { order: 1 } },
             })
             .lean();
@@ -32,7 +41,7 @@ export async function GET(
             return NextResponse.json({ error: "Cours non trouvé" }, { status: 404 });
         }
 
-        // Vérification du statut du cours
+        // Pour les utilisateurs publics, n'afficher que les cours publiés.
         if (
             (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) &&
             cours.status !== "publie"

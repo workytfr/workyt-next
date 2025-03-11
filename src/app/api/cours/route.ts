@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         if (niveau) filters.niveau = niveau;
         if (matiere) filters.matiere = matiere;
 
-        // Si l'utilisateur n'est pas connecté ou n'est pas du staff, afficher uniquement les cours publiés
+        // Pour un accès public aux cours, on affiche uniquement ceux qui sont publiés
         if (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
             filters.status = "publie";
         }
@@ -44,11 +44,21 @@ export async function GET(req: NextRequest) {
             .skip(skip)
             .limit(limit);
 
-        // Récupération des auteurs
-        const authorIds = [...new Set(courses.flatMap(course => course.authors.filter(id => isValidObjectId(id)).map(id => new Types.ObjectId(id.toString()))))];
-        const authors = await User.find({ _id: { $in: authorIds } }).select("_id username image").lean();
+        // Extraction des auteurs en vérifiant que course.authors existe et est un tableau
+        const authorIds = [
+            ...new Set(
+                courses.flatMap(course =>
+                    (course.authors || [])
+                        .filter(id => isValidObjectId(id))
+                        .map(id => new Types.ObjectId(id.toString()))
+                )
+            ),
+        ];
+        const authors = await User.find({ _id: { $in: authorIds } })
+            .select("_id username image")
+            .lean();
 
-        // Récupération des sections pour les cours récupérés (on sélectionne uniquement l'id et le titre)
+        // Récupération des sections associées aux cours (on sélectionne uniquement courseId et title)
         const courseIds = courses.map(course => course._id);
         const sections = await Section.find({ courseId: { $in: courseIds } })
             .select("courseId title")
@@ -60,10 +70,12 @@ export async function GET(req: NextRequest) {
             sections: sections.filter(
                 section => section.courseId.toString() === course._id.toString()
             ),
-            authors: authors.filter(author => course.authors.some(id => id.toString() === author._id.toString())),
+            authors: authors.filter(author =>
+                (course.authors || []).some(id => id.toString() === author._id.toString())
+            ),
         }));
 
-        // Récupérer le nombre total de cours correspondant aux filtres (pour la pagination)
+        // Récupération du nombre total de cours correspondant aux filtres (pour la pagination)
         const totalCourses = await Course.countDocuments(filters);
 
         return NextResponse.json(
