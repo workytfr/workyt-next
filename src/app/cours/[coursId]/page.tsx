@@ -9,7 +9,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
     try {
         const res = await fetch(
-            `/api/cours/${params.coursId}`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/cours/${params.coursId}`,
             { cache: "no-store" }
         );
         if (!res.ok) {
