@@ -14,10 +14,6 @@ import PartenairesView from "@/components/home/partenaires";
 export const metadata: Metadata = {
     title: 'Workyt - La plate-forme d\'apprentissage gratuite',
     description: 'Les ressources d\'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l\'éducation sont l\'accès, le manque de confiance et le coût.',
-    twitter: {
-        card: 'summary_large_image',
-        site: '@workyt',
-    },
 }
 
 export default function Home() {

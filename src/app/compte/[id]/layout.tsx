@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         title: "Profil utilisateur | Workyt",
         description:
             "Consultez les informations utilisateur, y compris leurs fiches de révision, leurs badges et leur biographie.",
-        images: ["/avatars/default.png"],
+        images: ["https://www.workyt.fr/avatars/default.png"],
     },
 };
 

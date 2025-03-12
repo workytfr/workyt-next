@@ -36,6 +36,7 @@ export const metadata = {
         title: "Workyt - La plateforme d'apprentissage",
         description:
             "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+        images: ["https://www.workyt.fr/workytfiche.png"],
     },
 };
 

@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         title: "Forum | Workyt",
         description:
             "Posez vos questions et obtenez des réponses de la communauté Workyt.",
-        images: ["/workytfiche.png"],
+        images: ["https://www.workyt.fr/workytfiche.png"],
     },
 }
 

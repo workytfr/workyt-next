@@ -24,7 +24,7 @@ export const metadata: Metadata = {
         title: "Fiches de révision | Workyt",
         description:
             "Consultez les fiches de révision pour vous aider à réussir vos examens.",
-        images: ["/workytfiche.png"],
+        images: ["https://www.workyt.fr/workytfiche.png"],
     },
 }
 

@@ -23,6 +23,7 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         site: "@workyt",
         title: "Cours | Workyt - La plate-forme d'apprentissage gratuite",
+        images: ["https://www.workyt.fr/workytfiche.png"],
         description: "Trouvez des cours adaptés à vos besoins et apprenez auprès d'experts.",
     },
 };

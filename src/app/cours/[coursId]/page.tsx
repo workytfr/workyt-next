@@ -43,7 +43,7 @@ export async function generateMetadata({
                 card: "summary_large_image",
                 title: `${cours.title} - Cours - Workyt`,
                 description: metaDescription,
-                images: (cours.image && cours.image.url) || "/default-thumbnail.png",
+                images: (cours.image && cours.image.url) || "https://www.workyt.fr/default-thumbnail.png",
             },
         };
     } catch (error) {

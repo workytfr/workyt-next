@@ -43,7 +43,7 @@ export const generateMetadata = async ({ params }: { params: { id: string } }): 
                 card: "summary_large_image",
                 title: fiche.title,
                 description: fiche.content.slice(0, 150) + "...",
-                images: fiche.files?.[0] || "/default-thumbnail.png",
+                images: fiche.files?.[0] || "https://www.workyt.fr/default-thumbnail.png",
             },
         };
     } catch (error) {

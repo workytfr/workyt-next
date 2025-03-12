@@ -6,6 +6,9 @@ import User from "@/models/User";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { Types, isValidObjectId } from "mongoose";
 
+// Forcer le rendu dynamique pour éviter l'erreur
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
     try {
         await dbConnect();

@@ -8,6 +8,9 @@ import Question from '@/models/Question';
 import Answer from '@/models/Answer';
 import authMiddleware from '@/middlewares/authMiddleware';
 
+// Forcer le rendu dynamique pour cette route
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
     await dbConnect();
 

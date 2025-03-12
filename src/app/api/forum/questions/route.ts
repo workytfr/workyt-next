@@ -4,6 +4,9 @@ import Question from "@/models/Question";
 import Answer from "@/models/Answer";
 import User from "@/models/User";
 
+// Forcer le rendu dynamique pour éviter l'erreur
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
     try {
         // Connexion à MongoDB

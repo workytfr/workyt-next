@@ -53,9 +53,7 @@ export const generateMetadata = async ({
                 card: "summary_large_image",
                 title: question.title,
                 description: metaDescription,
-                images:
-                    (question.attachments && question.attachments.length > 0 && question.attachments[0]) ||
-                    "/default-thumbnail.png",
+                images: ["https://www.workyt.fr/workytfiche.png"],
             },
         };
     } catch (error) {
