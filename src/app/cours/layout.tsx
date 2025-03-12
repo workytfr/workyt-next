@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
+    metadataBase: new URL("https://www.workyt.fr"),
     title: "Cours | Workyt - La plate-forme d'apprentissage gratuite",
     description: "Accédez à une large sélection de cours sur Workyt et développez vos compétences professionnelles et personnelles.",
     openGraph: {
@@ -23,7 +24,6 @@ export const metadata: Metadata = {
         site: "@workyt",
         title: "Cours | Workyt - La plate-forme d'apprentissage gratuite",
         description: "Trouvez des cours adaptés à vos besoins et apprenez auprès d'experts.",
-        images: ["/workytfiche.png"],
     },
 };
 
