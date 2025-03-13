@@ -8,6 +8,10 @@ import { ReactNode } from "react";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/home/footer";
 
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
+
 interface RootLayoutProps {
     children: ReactNode;
 }
@@ -17,6 +21,15 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <html lang="fr">
         <body>
         {/* Enveloppe avec le SessionProvider */}
+        <NextSSRPlugin
+            /**
+             * The `extractRouterConfig` will extract **only** the route configs
+             * from the router to prevent additional information from being
+             * leaked to the client. The data passed to the client is the same
+             * as if you were to fetch `/api/uploadthing` directly.
+             */
+            routerConfig={extractRouterConfig(ourFileRouter)}
+        />
         <SessionProvider>
             <ThemeProvider
                 attribute="class"
