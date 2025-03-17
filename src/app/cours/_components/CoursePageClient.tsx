@@ -8,6 +8,8 @@ import LessonView from "./../_components/LessonView";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/Badge";
 import { BookOpen, GraduationCap } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+
 
 interface CoursePageProps {
     params: { coursId: string };
@@ -132,7 +134,9 @@ export default function CoursePage({ params }: CoursePageProps) {
                                     {cours.niveau}
                                 </Badge>
                             </div>
-                            <p className="text-gray-700 mt-3">{cours.description}</p>
+                            <div className="prose prose-lg text-gray-700 mt-3">
+                                <ReactMarkdown>{cours.description}</ReactMarkdown>
+                            </div>
                         </div>
 
                         {/* ✅ Message d’instruction */}
