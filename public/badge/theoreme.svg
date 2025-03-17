@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Calque_2" data-name="Calque 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 50 50">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#linear-gradient-2);
+      }
+
+      .cls-2 {
+        fill: none;
+      }
+
+      .cls-3 {
+        fill: url(#linear-gradient);
+      }
+    </style>
+    <linearGradient id="linear-gradient" x1="-341.68" y1="424.25" x2="-341.68" y2="423.25" gradientTransform="translate(15061.8 19096.82) scale(44.01 -45.01)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffcb00"/>
+      <stop offset="1" stop-color="#ff8e1f"/>
+    </linearGradient>
+    <linearGradient id="linear-gradient-2" x1="-344.49" y1="427.18" x2="-344.49" y2="426.34" gradientTransform="translate(12670.4 15033.94) scale(36.7 -35.17)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5b6187"/>
+      <stop offset="1" stop-color="#414a70"/>
+    </linearGradient>
+  </defs>
+  <g id="Layer_1" data-name="Layer 1">
+    <g id="Triangle-Ruller">
+      <rect id="Shape" class="cls-2" width="50" height="50"/>
+      <path id="Shape-2" data-name="Shape" class="cls-3" d="M9.87,3.21l36,37c2.47,2.54.67,6.79-2.87,6.79H7c-2.21,0-4-1.79-4-4V6c0-3.59,4.36-5.36,6.87-2.79ZM11,39h22.53L11,15.85v23.15Z"/>
+      <path id="Shape-3" data-name="Shape" class="cls-1" d="M10.96,4.33l.7.72-3.3,3.3c-.2.2-.51.2-.71,0s-.2-.51,0-.71l3.31-3.31ZM13.92,7.37l.7.72-1.26,1.26c-.2.2-.51.2-.71,0s-.2-.51,0-.71l1.27-1.27h0ZM16.88,10.42l.7.72-3.22,3.22c-.2.2-.51.2-.71,0s-.2-.51,0-.71l3.23-3.23h0ZM19.84,13.46l.7.72-1.18,1.18c-.2.2-.51.2-.71,0s-.2-.51,0-.71l1.19-1.19ZM22.8,16.5l.7.72-3.14,3.14c-.2.2-.51.2-.71,0s-.2-.51,0-.71l3.15-3.15ZM25.75,19.54l.7.72-1.1,1.1c-.2.2-.51.2-.71,0s-.2-.51,0-.71l1.11-1.11h0ZM28.71,22.58l.7.72-3.06,3.06c-.2.2-.51.2-.71,0s-.2-.51,0-.71l3.07-3.07h0ZM31.67,25.62l.7.72-1.02,1.02c-.2.2-.51.2-.71,0s-.2-.51,0-.71l1.03-1.03h0ZM34.63,28.66l.7.72-2.97,2.97c-.2.2-.51.2-.71,0s-.2-.51,0-.71l2.98-2.98h0ZM37.59,31.7l.7.72-.93.93c-.2.2-.51.2-.71,0s-.2-.51,0-.71l.94-.94h0ZM40.55,34.74l.7.72-2.89,2.89c-.2.2-.51.2-.71,0s-.2-.51,0-.71l2.9-2.9h0ZM43.51,37.79l.7.72-.85.85c-.2.2-.51.2-.71,0s-.2-.51,0-.71l.86-.86Z"/>
+    </g>
+  </g>
+</svg>
