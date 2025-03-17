@@ -6,19 +6,17 @@ const authMiddleware = async (req: NextRequest) => {
     try {
         const authHeader = req.headers.get("authorization");
         if (!authHeader) {
-            console.warn("Aucun token fourni.");
-            return null; // Ne pas lancer d'erreur immédiatement
+            throw new Error("Non autorisé. Aucun token fourni.");
         }
 
         const token = authHeader.split(" ")[1];
         if (!token) {
-            console.warn("Token invalide.");
-            return null;
+            throw new Error("Non autorisé. Aucun token valide.");
         }
 
-        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+        const decoded: any = jwt.verify(token, process.env.JWT_SECRET!); // Décodage avec la clé secrète
         if (!decoded || !decoded.id) {
-            throw new Error("Token invalide.");
+            throw new Error("Token invalide ou champ sub manquant.");
         }
 
         const user = await User.findById(decoded.id).select("-password");
@@ -29,7 +27,7 @@ const authMiddleware = async (req: NextRequest) => {
         return user;
     } catch (error: any) {
         console.error("Erreur dans authMiddleware :", error.message);
-        return null; // Retourne null au lieu de lancer une erreur en boucle
+        throw error;
     }
 };
 
