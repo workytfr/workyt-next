@@ -30,7 +30,7 @@ export async function POST(req: Request) {
             username,
             password: hashedPassword,
             role: "Apprenti",
-            points: 0,
+            points: 20,
             badges: [],
             isAdmin: false,
             bio: "",
