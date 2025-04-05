@@ -3,11 +3,30 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/Table";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/Select";
 import { Pencil, Trash2, Plus, Loader2 } from "lucide-react";
-import { useSession } from "next-auth/react";
+import { useSession, signIn } from "next-auth/react";
 import LessonForm from "./../_components/LessonForm";
 import { ILesson } from "@/models/Lesson";
 
@@ -18,10 +37,12 @@ interface ICourse {
 }
 
 export default function LessonsPage() {
-    const { data: session } = useSession();
+    const { data: session, update } = useSession();
     const [courses, setCourses] = useState<ICourse[]>([]);
     const [lessons, setLessons] = useState<ILesson[]>([]);
-    const [selectedLesson, setSelectedLesson] = useState<ILesson | undefined>(undefined);
+    const [selectedLesson, setSelectedLesson] = useState<ILesson | undefined>(
+        undefined
+    );
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [courseId, setCourseId] = useState<string>("");
     const [sectionId, setSectionId] = useState<string>("");
@@ -29,17 +50,27 @@ export default function LessonsPage() {
     const [loadingCourses, setLoadingCourses] = useState(false);
     const [loadingLessons, setLoadingLessons] = useState(false);
 
-    // 🔥 Charger les cours avec pagination et recherche
+    // Chargement des cours avec recherche
     useEffect(() => {
         async function fetchCourses() {
-            if (!session?.accessToken) return; // ✅ Vérification de l'authentification
+            if (!session?.accessToken) return;
             setLoadingCourses(true);
             try {
-                const res = await fetch(`/api/courses?page=1&limit=10&search=${searchQuery}`, {
-                    headers: {
-                        Authorization: `Bearer ${session.accessToken}`,
-                    },
-                });
+                const res = await fetch(
+                    `/api/courses?page=1&limit=10&search=${encodeURIComponent(
+                        searchQuery
+                    )}`,
+                    {
+                        headers: {
+                            Authorization: `Bearer ${session.accessToken}`,
+                        },
+                    }
+                );
+                if (res.status === 401) {
+                    console.error("JWT expiré, rafraîchissement de la session...");
+                    await update();
+                    return;
+                }
                 if (res.ok) {
                     const data = await res.json();
                     setCourses(data.courses || []);
@@ -53,9 +84,9 @@ export default function LessonsPage() {
             }
         }
         fetchCourses();
-    }, [searchQuery, session?.accessToken]);
+    }, [searchQuery, session?.accessToken, update]);
 
-    // 🔥 Charger les leçons de la section sélectionnée
+    // Chargement des leçons pour la section sélectionnée
     useEffect(() => {
         if (!sectionId || !session?.accessToken) return;
         async function fetchLessons() {
@@ -63,12 +94,18 @@ export default function LessonsPage() {
             try {
                 const res = await fetch(`/api/lessons?sectionId=${sectionId}`, {
                     headers: {
-                        Authorization: `Bearer ${session?.accessToken}`,
-                    },
+                        Authorization: `Bearer ${session?.accessToken ?? ""}`,                    },
                 });
+                if (res.status === 401) {
+                    console.error("JWT expiré, rafraîchissement de la session...");
+                    await update();
+                    return;
+                }
                 if (res.ok) {
                     const data = await res.json();
                     setLessons(data);
+                } else {
+                    console.error("Erreur lors du chargement des leçons :", await res.text());
                 }
             } catch (error) {
                 console.error("Erreur lors du chargement des leçons :", error);
@@ -77,9 +114,9 @@ export default function LessonsPage() {
             }
         }
         fetchLessons();
-    }, [sectionId, session?.accessToken]);
+    }, [sectionId, session?.accessToken, update]);
 
-    // 🔥 Supprimer une leçon
+    // Suppression d'une leçon
     const handleDelete = async (id: string) => {
         if (!confirm("Voulez-vous vraiment supprimer cette leçon ?")) return;
         try {
@@ -89,8 +126,13 @@ export default function LessonsPage() {
                     Authorization: `Bearer ${session?.accessToken}`,
                 },
             });
+            if (res.status === 401) {
+                console.error("JWT expiré, rafraîchissement de la session...");
+                await update();
+                return;
+            }
             if (res.ok) {
-                setLessons(lessons.filter(lesson => lesson._id !== id));
+                setLessons((prev) => prev.filter((lesson) => lesson._id !== id));
             } else {
                 console.error("Erreur lors de la suppression :", await res.text());
             }
@@ -103,21 +145,30 @@ export default function LessonsPage() {
         <div>
             <div className="flex justify-between mb-4">
                 <h1 className="text-2xl font-bold">Gestion des Leçons</h1>
-                <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+                <Dialog
+                    open={isDialogOpen}
+                    onOpenChange={(open) => {
+                        setDialogOpen(open);
+                        if (!open) setSelectedLesson(undefined);
+                    }}
+                >
                     <DialogTrigger asChild>
                         <Button>
                             <Plus className="mr-2" /> Ajouter une leçon
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl w-full max-h-[80vh] overflow-y-auto"> {/* ✅ Ajout scrollbar */}
+                    <DialogContent className="max-w-4xl w-full max-h-[80vh] overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>{selectedLesson ? "Modifier la leçon" : "Ajouter une nouvelle leçon"}</DialogTitle>
+                            <DialogTitle>
+                                {selectedLesson ? "Modifier la leçon" : "Ajouter une nouvelle leçon"}
+                            </DialogTitle>
                         </DialogHeader>
                         <LessonForm
+                            lesson={selectedLesson}
                             onSuccess={(newLesson: ILesson) => {
-                                setLessons(prev =>
+                                setLessons((prev) =>
                                     selectedLesson
-                                        ? prev.map(l => (l._id === newLesson._id ? newLesson : l))
+                                        ? prev.map((l) => (l._id === newLesson._id ? newLesson : l))
                                         : [...prev, newLesson]
                                 );
                                 setDialogOpen(false);
@@ -128,8 +179,10 @@ export default function LessonsPage() {
                 </Dialog>
             </div>
 
-            {/* 📌 Barre de recherche des cours */}
-            <label className="block text-sm font-medium text-gray-700">Rechercher un cours</label>
+            {/* Barre de recherche */}
+            <label className="block text-sm font-medium text-gray-700">
+                Rechercher un cours
+            </label>
             <Input
                 placeholder="Tapez le nom d'un cours..."
                 value={searchQuery}
@@ -137,7 +190,9 @@ export default function LessonsPage() {
             />
 
             {/* Sélection du cours */}
-            <label className="block text-sm font-medium text-gray-700">Sélectionner un cours</label>
+            <label className="block text-sm font-medium text-gray-700">
+                Sélectionner un cours
+            </label>
             <Select onValueChange={setCourseId} disabled={loadingCourses}>
                 <SelectTrigger>
                     <SelectValue placeholder="Choisissez un cours" />
@@ -166,11 +221,13 @@ export default function LessonsPage() {
                         <SelectValue placeholder="Sélectionner une section" />
                     </SelectTrigger>
                     <SelectContent>
-                        {courses.find((course) => course._id === courseId)?.sections.map((section) => (
-                            <SelectItem key={section._id} value={section._id}>
-                                {section.title}
-                            </SelectItem>
-                        ))}
+                        {courses
+                            .find((course) => course._id === courseId)
+                            ?.sections.map((section) => (
+                                <SelectItem key={section._id} value={section._id}>
+                                    {section.title}
+                                </SelectItem>
+                            ))}
                     </SelectContent>
                 </Select>
             )}
@@ -195,15 +252,24 @@ export default function LessonsPage() {
                             </TableRow>
                         ) : lessons.length > 0 ? (
                             lessons.map((lesson) => (
-                                <TableRow key={lesson._id as string}>
-                                    <TableCell>{lesson.order}</TableCell>
+                                <TableRow key={lesson._id as string}>                                    <TableCell>{lesson.order}</TableCell>
                                     <TableCell>{lesson.title}</TableCell>
                                     <TableCell>{lesson.status}</TableCell>
                                     <TableCell>
-                                        <Button variant="ghost" onClick={() => { setSelectedLesson(lesson); setDialogOpen(true); }}>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setSelectedLesson(lesson);
+                                                setDialogOpen(true);
+                                            }}
+                                        >
                                             <Pencil className="w-4 h-4" />
                                         </Button>
-                                        <Button variant="ghost" className="text-red-500" onClick={() => handleDelete(lesson._id as string)}>
+                                        <Button
+                                            variant="ghost"
+                                            className="text-red-500"
+                                            onClick={() => handleDelete(lesson._id as string)}
+                                        >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </TableCell>
