@@ -14,6 +14,16 @@ const nextConfig = {
             },
         ],
     },
+    async redirects() {
+        return [
+            {
+                source: "/:path*",
+                has: [{ type: "host", value: "www.workyt.fr" }],
+                destination: "https://workyt.fr/:path*",
+                permanent: true,
+            },
+        ];
+    },
 };
 
 export default nextConfig;
