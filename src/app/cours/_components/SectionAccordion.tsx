@@ -6,8 +6,21 @@ import {
     AccordionTrigger,
     AccordionContent,
 } from "@/components/ui/Accordion";
-import { BookOpen, FileText, Loader2 } from "lucide-react";
+import { BookOpen, FileText, Loader2, ChevronRight, Book } from "lucide-react";
 import { Section, Lesson } from "./types";
+
+// Subtle grain effect component
+const GrainOverlay = ({ opacity = 0.05 }) => (
+    <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+            backgroundImage: "url(/noise.webp)",
+            backgroundSize: "30%",
+            opacity: opacity,
+            mixBlendMode: "overlay"
+        }}
+    />
+);
 
 interface SectionAccordionProps {
     courseId: string;
@@ -19,12 +32,6 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
     const [sectionDetail, setSectionDetail] = useState<Section | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
-
-    useEffect(() => {
-        document.body.classList.remove("dark"); // Supprime le mode sombre
-        document.body.style.backgroundColor = "white"; // Force le fond en blanc
-        document.body.style.color = "black"; // Force le texte en noir
-    }, []);
 
     useEffect(() => {
         if (isOpen && !sectionDetail) {
@@ -55,50 +62,77 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
     return (
         <AccordionItem
             value={sectionInitial._id}
-            className="mb-2 rounded-lg bg-white text-black shadow-md border border-gray-200 transition-all hover:bg-gray-100"
+            className="overflow-hidden border border-orange-100 rounded-lg bg-white shadow-sm transition-all group relative hover:shadow-md"
         >
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-orange-300 to-amber-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
             <AccordionTrigger
-                className="w-full px-5 py-3 text-left text-md font-semibold rounded-lg flex justify-between items-center sticky top-0 bg-white text-black z-10 shadow-sm"
+                className="w-full px-4 py-3 text-left text-gray-800 font-medium rounded-t-lg flex justify-between items-center bg-gradient-to-r from-orange-50 to-amber-50/50 transition-colors relative"
                 onClick={() => setIsOpen((prev) => !prev)}
             >
-                <span>{sectionData.title}</span>
-                {isLoading && <Loader2 className="w-5 h-5 animate-spin text-blue-500" />}
+                <GrainOverlay opacity={0.07} />
+                <div className="flex items-center gap-2 relative z-10">
+                    <div className="flex-shrink-0 w-6 h-6 bg-gradient-to-br from-orange-400 to-amber-500 rounded-md flex items-center justify-center text-white shadow-sm">
+                        <Book className="w-3 h-3" />
+                    </div>
+                    <span className="text-sm md:text-base">{sectionData.title}</span>
+                </div>
+                {isLoading ? (
+                    <Loader2 className="w-5 h-5 animate-spin text-orange-500 relative z-10" />
+                ) : (
+                    <div className="flex-shrink-0 text-orange-500 bg-white/70 rounded-full p-1 shadow-sm relative z-10">
+                        <ChevronRight className="w-4 h-4 transform transition-transform duration-200 ease-in-out" />
+                    </div>
+                )}
             </AccordionTrigger>
 
-            <AccordionContent className="px-5 pb-3 bg-gray-100 rounded-b-lg border-t space-y-2">
+            <AccordionContent className="bg-white px-4 py-2 relative">
+                <GrainOverlay opacity={0.03} />
+
                 {isLoading ? (
-                    <p className="text-sm text-gray-700 flex items-center">
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" /> Chargement...
-                    </p>
+                    <div className="flex items-center justify-center py-4">
+                        <div className="flex items-center justify-center p-2 bg-orange-50 rounded-full">
+                            <Loader2 className="w-5 h-5 animate-spin text-orange-500" />
+                        </div>
+                        <span className="text-sm text-gray-600 ml-3">Chargement...</span>
+                    </div>
                 ) : (
-                    <>
+                    <div className="relative z-10">
                         {sectionData.lessons && sectionData.lessons.length > 0 && (
-                            <div className="flex items-start gap-2">
-                                <BookOpen className="w-5 h-5 text-blue-600" />
-                                <ul className="list-none space-y-1 text-sm w-full">
-                                    {sectionData.lessons.map((lesson) => (
-                                        <li
-                                            key={lesson._id}
-                                            className="text-black hover:text-blue-600 cursor-pointer transition"
-                                            onClick={() => onSelectContent(lesson)}
-                                        >
-                                            {lesson.title}
-                                        </li>
-                                    ))}
-                                </ul>
+                            <div className="space-y-1 py-2">
+                                {sectionData.lessons.map((lesson) => (
+                                    <div
+                                        key={lesson._id}
+                                        className="flex items-center gap-3 p-2 hover:bg-gradient-to-r hover:from-orange-50 hover:to-amber-50/30 rounded-md transition-all cursor-pointer group"
+                                        onClick={() => onSelectContent(lesson)}
+                                    >
+                                        <div className="p-1.5 bg-blue-100 text-blue-600 rounded-md group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                                            <BookOpen className="w-4 h-4 flex-shrink-0" />
+                                        </div>
+                                        <span className="text-sm text-gray-700 group-hover:text-gray-900">
+                      {lesson.title}
+                    </span>
+                                    </div>
+                                ))}
                             </div>
                         )}
 
                         {sectionData.exercises && sectionData.exercises.length > 0 && (
-                            <button
-                                className="flex items-center gap-2 text-green-700 hover:text-green-900 font-semibold transition cursor-pointer mt-3 w-full justify-start"
-                                onClick={() => onSelectContent(sectionData)}
-                            >
-                                <FileText className="w-5 h-5" />
-                                Voir les exercices de {sectionData.title}
-                            </button>
+                            <div className="my-2 py-2 border-t border-orange-100">
+                                <button
+                                    className="flex items-center gap-3 w-full p-2 justify-start hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50/30 rounded-md transition-all group"
+                                    onClick={() => onSelectContent(sectionData)}
+                                >
+                                    <div className="p-1.5 bg-green-100 text-green-600 rounded-md group-hover:bg-green-600 group-hover:text-white transition-colors">
+                                        <FileText className="w-4 h-4 flex-shrink-0" />
+                                    </div>
+                                    <span className="text-sm font-medium text-green-700 group-hover:text-green-800">
+                    Voir les exercices
+                  </span>
+                                </button>
+                            </div>
                         )}
-                    </>
+                    </div>
                 )}
             </AccordionContent>
         </AccordionItem>
