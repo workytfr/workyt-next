@@ -19,9 +19,35 @@ interface LessonViewProps {
 }
 
 /**
+ * CSS pour le fond avec effet grain
+ * Injecté une seule fois dans le document
+ */
+const injectGrainyCss = () => {
+    if (typeof document !== "undefined" && !document.getElementById("grainy-css")) {
+        const style = document.createElement("style");
+        style.id = "grainy-css";
+        style.innerHTML = `
+            .grain {
+                position: relative;
+            }
+            .grain::before {
+                content: "";
+                position: absolute;
+                inset: 0;
+                background-image: url(/noise.webp)
+                opacity: 0.15;
+                mix-blend-mode: overlay;
+                pointer-events: none;
+                z-index: 1;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+};
+
+/**
  * Plugin Rehype qui applique des styles aux titres (h1, h2, h3)
  * et aux blocs <div class="definition"> etc.
- * Au lieu d'un émoji, on insère un <img src="/badge/definition.svg" ...>
  */
 function fancyStylePlugin() {
     return (tree: any) => {
@@ -39,9 +65,11 @@ function fancyStylePlugin() {
                                 "font-bold",
                                 "text-orange-700",
                                 "border-b-4",
-                                "border-orange-500",
+                                "border-orange-400",
                                 "pb-3",
                                 "mt-8",
+                                "relative",
+                                "z-10",
                             ],
                         };
                     } else if (tag === "h2") {
@@ -53,6 +81,8 @@ function fancyStylePlugin() {
                                 "text-orange-700",
                                 "mt-6",
                                 "mb-2",
+                                "relative",
+                                "z-10",
                             ],
                         };
                     } else if (tag === "h3") {
@@ -66,6 +96,8 @@ function fancyStylePlugin() {
                                 "border-l-4",
                                 "border-orange-400",
                                 "pl-3",
+                                "relative",
+                                "z-10",
                             ],
                         };
                     }
@@ -78,28 +110,28 @@ function fancyStylePlugin() {
                         : String(node.properties.className).split(" ");
 
                     const blockStyle =
-                        "my-4 p-4 rounded-xl shadow-md border-l-4 flex items-start gap-3 transition-all duration-200 hover:scale-105 animate-fade-in";
+                        "my-4 p-4 rounded-xl shadow-md border-l-4 flex items-start gap-3 transition-all duration-300 hover:scale-102 animate-fade-in backdrop-blur-sm grain";
 
                     let colorClass = "";
                     let iconSrc = ""; // Chemin du fichier SVG dans public/badge
 
                     if (classes.includes("definition")) {
-                        colorClass = "bg-blue-50 border-blue-500 text-blue-900";
+                        colorClass = "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-500 text-blue-900";
                         iconSrc = "/badge/definition.svg";
                     } else if (classes.includes("propriete")) {
-                        colorClass = "bg-green-50 border-green-500 text-green-900";
+                        colorClass = "bg-gradient-to-br from-green-50 to-green-100 border-green-500 text-green-900";
                         iconSrc = "/badge/propriete.svg";
                     } else if (classes.includes("exemple")) {
-                        colorClass = "bg-yellow-50 border-yellow-500 text-yellow-900";
+                        colorClass = "bg-gradient-to-br from-yellow-50 to-amber-100 border-yellow-500 text-yellow-900";
                         iconSrc = "/badge/exemple.svg";
                     } else if (classes.includes("theoreme")) {
-                        colorClass = "bg-purple-50 border-purple-500 text-purple-900";
+                        colorClass = "bg-gradient-to-br from-purple-50 to-purple-100 border-purple-500 text-purple-900";
                         iconSrc = "/badge/theoreme.svg";
                     } else if (classes.includes("remarque")) {
-                        colorClass = "bg-gray-50 border-gray-500 text-gray-900";
+                        colorClass = "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-500 text-gray-900";
                         iconSrc = "/badge/remarque.svg";
                     } else if (classes.includes("warning") || classes.includes("attention")) {
-                        colorClass = "bg-red-50 border-red-500 text-red-900 font-bold";
+                        colorClass = "bg-gradient-to-br from-red-50 to-red-100 border-red-500 text-red-900 font-bold";
                         iconSrc = "/badge/attention.svg";
                     }
 
@@ -118,11 +150,107 @@ function fancyStylePlugin() {
                             properties: {
                                 src: iconSrc,
                                 alt: "icon",
-                                className: ["mr-2", "w-6", "h-6"],
+                                className: ["mr-2", "w-6", "h-6", "relative", "z-10"],
                             },
                             children: [],
                         });
                     }
+                }
+
+                // -- 3) S'assurer que le texte normal est visible --
+                if (tag === "p") {
+                    node.properties = {
+                        ...node.properties,
+                        className: [
+                            ...(node.properties?.className || []),
+                            "text-gray-800",  // Couleur de texte foncée pour le contraste
+                            "relative",
+                            "z-10",
+                            "my-3",  // Marges verticales
+                        ],
+                    };
+                }
+
+                // Styliser les listes
+                if (["ul", "ol"].includes(tag)) {
+                    node.properties = {
+                        ...node.properties,
+                        className: [
+                            ...(node.properties?.className || []),
+                            "text-gray-800",
+                            "my-3",
+                            "pl-5",
+                            "relative",
+                            "z-10",
+                        ],
+                    };
+                }
+
+                if (tag === "li") {
+                    node.properties = {
+                        ...node.properties,
+                        className: [
+                            ...(node.properties?.className || []),
+                            "my-1",
+                            "text-gray-800",
+                            "relative",
+                            "z-10",
+                        ],
+                    };
+                }
+
+                // Styliser les liens
+                if (tag === "a") {
+                    node.properties = {
+                        ...node.properties,
+                        className: [
+                            ...(node.properties?.className || []),
+                            "text-orange-600",
+                            "hover:text-orange-700",
+                            "underline",
+                            "relative",
+                            "z-10",
+                        ],
+                    };
+                }
+
+                // Styliser les balises code
+                if (tag === "code") {
+                    node.properties = {
+                        ...node.properties,
+                        className: [
+                            ...(node.properties?.className || []),
+                            "bg-gray-100",
+                            "text-orange-700",
+                            "px-1",
+                            "py-0.5",
+                            "rounded",
+                            "font-mono",
+                            "text-sm",
+                            "relative",
+                            "z-10",
+                        ],
+                    };
+                }
+
+                // Styliser les blocs pre (code blocks)
+                if (tag === "pre") {
+                    node.properties = {
+                        ...node.properties,
+                        className: [
+                            ...(node.properties?.className || []),
+                            "bg-gray-800",
+                            "text-gray-100",
+                            "p-4",
+                            "rounded-lg",
+                            "overflow-x-auto",
+                            "my-4",
+                            "font-mono",
+                            "text-sm",
+                            "relative",
+                            "z-10",
+                        ],
+                    };
                 }
             }
         });
@@ -155,6 +283,11 @@ function transformLatex(html: string): string {
 }
 
 export default function LessonView({ title, content }: LessonViewProps) {
+    // Injecter le CSS du grain au montage du composant
+    React.useEffect(() => {
+        injectGrainyCss();
+    }, []);
+
     // 1. On parse & applique fancyStylePlugin
     const fancyHtml = unified()
         .use(rehypeParse, { fragment: true })
@@ -167,15 +300,19 @@ export default function LessonView({ title, content }: LessonViewProps) {
     const finalHtml = transformLatex(fancyHtml);
 
     return (
-        <div className="p-6 bg-white shadow-lg rounded-xl border border-gray-200">
+        <div className="p-6 bg-gradient-to-br from-white to-orange-50 shadow-xl rounded-xl border border-orange-100 relative overflow-hidden grain text-gray-800">
+            {/* Formes décoratives en arrière-plan */}
+            <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-gradient-to-br from-orange-200/30 to-red-200/30 blur-2xl" />
+            <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-gradient-to-tr from-amber-200/30 to-yellow-200/30 blur-3xl" />
+
             {/* Titre principal */}
-            <div className="flex items-center gap-3 bg-gradient-to-r from-orange-600 to-red-600 text-white px-5 py-3 rounded-xl w-fit shadow-md">
-                <FaBook className="text-2xl" />
-                <h1 className="text-2xl font-extrabold tracking-wide">{title}</h1>
+            <div className="flex items-center gap-3 bg-gradient-to-r from-orange-600 to-red-600 text-white px-5 py-3 rounded-xl w-fit shadow-lg relative overflow-hidden grain">
+                <FaBook className="text-2xl relative z-10" />
+                <h1 className="text-2xl font-extrabold tracking-wide relative z-10">{title}</h1>
             </div>
 
-            {/* 3. On insère le HTML final via dangerouslySetInnerHTML */}
-            <div className="mt-5" dangerouslySetInnerHTML={{ __html: finalHtml }} />
+            {/* Contenu principal avec une petite marge et z-index pour rester au-dessus des formes décoratives */}
+            <div className="mt-5 relative z-10 prose prose-orange max-w-none" dangerouslySetInnerHTML={{ __html: finalHtml }} />
         </div>
     );
 }
