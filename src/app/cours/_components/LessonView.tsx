@@ -300,7 +300,7 @@ export default function LessonView({ title, content }: LessonViewProps) {
     const finalHtml = transformLatex(fancyHtml);
 
     return (
-        <div className="p-6 bg-gradient-to-br from-white to-orange-50 shadow-xl rounded-xl border border-orange-100 relative overflow-hidden grain text-gray-800">
+        <div className="p-6 bg-gradient-to-br from-white to-orange-50 shadow-xl rounded-xl border border-orange-100 relative w-full max-w-full overflow-hidden grain text-gray-800">
             {/* Formes décoratives en arrière-plan */}
             <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-gradient-to-br from-orange-200/30 to-red-200/30 blur-2xl" />
             <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-gradient-to-tr from-amber-200/30 to-yellow-200/30 blur-3xl" />
