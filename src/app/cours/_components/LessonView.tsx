@@ -157,16 +157,17 @@ function fancyStylePlugin() {
                     }
                 }
 
-                // -- 3) S'assurer que le texte normal est visible --
+                // -- 3) S'assurer que le texte normal est visible et plus grand --
                 if (tag === "p") {
                     node.properties = {
                         ...node.properties,
                         className: [
                             ...(node.properties?.className || []),
-                            "text-gray-800",  // Couleur de texte foncée pour le contraste
+                            "text-gray-800",
+                            "text-lg",      // TAILLE DU TEXTE ACCRUE
                             "relative",
                             "z-10",
-                            "my-3",  // Marges verticales
+                            "my-3",
                         ],
                     };
                 }
@@ -178,6 +179,7 @@ function fancyStylePlugin() {
                         className: [
                             ...(node.properties?.className || []),
                             "text-gray-800",
+                            "text-lg",     // TAILLE DU TEXTE ACCRUE
                             "my-3",
                             "pl-5",
                             "relative",
@@ -193,6 +195,7 @@ function fancyStylePlugin() {
                             ...(node.properties?.className || []),
                             "my-1",
                             "text-gray-800",
+                            "text-lg",     // TAILLE DU TEXTE ACCRUE
                             "relative",
                             "z-10",
                         ],
@@ -210,11 +213,12 @@ function fancyStylePlugin() {
                             "underline",
                             "relative",
                             "z-10",
+                            "text-lg",     // TAILLE DU TEXTE ACCRUE
                         ],
                     };
                 }
 
-                // Styliser les balises code
+                // Styliser les balises code inline
                 if (tag === "code") {
                     node.properties = {
                         ...node.properties,
@@ -266,7 +270,7 @@ function transformLatex(html: string): string {
         try {
             return katex.renderToString(math, { displayMode: true });
         } catch (error) {
-            return match; // en cas d'erreur, on laisse tel quel
+            return match;
         }
     });
 
@@ -291,7 +295,7 @@ export default function LessonView({ title, content }: LessonViewProps) {
     // 1. On parse & applique fancyStylePlugin
     const fancyHtml = unified()
         .use(rehypeParse, { fragment: true })
-        .use(fancyStylePlugin) // applique le style sur h1, div.definition, etc.
+        .use(fancyStylePlugin)
         .use(rehypeStringify)
         .processSync(content)
         .toString();
@@ -300,7 +304,7 @@ export default function LessonView({ title, content }: LessonViewProps) {
     const finalHtml = transformLatex(fancyHtml);
 
     return (
-        <div className="p-6 bg-gradient-to-br from-white to-orange-50 shadow-xl rounded-xl border border-orange-100 relative w-full max-w-full overflow-hidden grain text-gray-800">
+        <div className="p-6 bg-gradient-to-br from-white to-orange-50 shadow-xl rounded-xl border border-orange-100 relative w-full max-w-full overflow-hidden grain text-gray-800 text-lg">
             {/* Formes décoratives en arrière-plan */}
             <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-gradient-to-br from-orange-200/30 to-red-200/30 blur-2xl" />
             <div className="absolute -bottom-32 -left-20 w-80 h-80 rounded-full bg-gradient-to-tr from-amber-200/30 to-yellow-200/30 blur-3xl" />
