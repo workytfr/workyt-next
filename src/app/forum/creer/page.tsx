@@ -9,7 +9,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import MDEditor from "@uiw/react-md-editor";
 import { educationData } from "@/data/educationData";
-import { FaFileUpload, FaGraduationCap, FaCheck, FaSpinner, FaPen, FaTrash, FaImage } from "react-icons/fa";
+import { FaFileUpload, FaGraduationCap, FaCheck, FaSpinner, FaPen, FaTrash, FaImage, FaQuestion } from "react-icons/fa";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import "katex/dist/katex.min.css";
@@ -36,7 +36,7 @@ export default function ForumPostPage() {
 
     if (status === "loading") {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center space-y-6 bg-gray-100">
+            <div className="min-h-screen flex flex-col items-center justify-center space-y-6 bg-indigo-50">
                 <Skeleton className="w-48 h-8 rounded" />
                 <Skeleton className="w-full max-w-2xl h-16 rounded" />
                 <Skeleton className="w-full max-w-2xl h-72 rounded" />
@@ -142,132 +142,170 @@ export default function ForumPostPage() {
             setIsSubmitting(false);
         }
     };
+
     return (
-        <div className="max-w-4xl mx-auto p-6 bg-white shadow-lg rounded-lg mt-10">
-            <h1 className="text-3xl font-bold text-center text-gray-800 flex items-center justify-center gap-2">
-              Poser une Question
-            </h1>
+        <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 py-10 px-4">
+            <div className="max-w-4xl mx-auto p-8 bg-white shadow-xl rounded-xl border border-purple-100">
+                <h1 className="text-3xl font-bold text-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-6 flex items-center justify-center gap-3">
+                    <FaQuestion className="text-purple-500" /> Poser une Question
+                </h1>
 
-            {alertMessage && (
-                <Alert className="bg-red-100 text-red-800 p-4 rounded border border-red-200 mt-4">
-                    <div>
-                        <AlertTitle>Notification</AlertTitle>
-                        <AlertDescription>{alertMessage}</AlertDescription>
-                    </div>
-                </Alert>
-            )}
+                {alertMessage && (
+                    <Alert className={`p-4 rounded-lg border mt-4 ${alertMessage.includes("succès") ? "bg-green-50 border-green-200 text-green-800" : "bg-red-50 border-red-200 text-red-800"}`}>
+                        <div>
+                            <AlertTitle className="font-semibold">{alertMessage.includes("succès") ? "Bravo !" : "Attention"}</AlertTitle>
+                            <AlertDescription>{alertMessage}</AlertDescription>
+                        </div>
+                    </Alert>
+                )}
 
-            <form onSubmit={handleSubmit} className="flex flex-col space-y-6 mt-4">
-                <div className="flex flex-col">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <FaGraduationCap /> Titre de la question
-                    </label>
-                    <Input
-                        type="text"
-                        placeholder="Ex: Comment résoudre cette équation ?"
-                        value={title}
-                        onChange={(e) => {
-                            const newTitle = e.target.value.slice(0, 100); // Tronquer à 100 caractères
-                            setTitle(newTitle);
-                        }}
-                        className="border rounded-md p-3"
-                    />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label className="text-sm font-medium text-gray-700">Matière</label>
-                        <select value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full p-3 border rounded-md bg-white">
-                            <option value="" disabled>Choisir une matière</option>
-                            {educationData.subjects.map((subj, index) => (
-                                <option key={index} value={subj}>{subj}</option>
-                            ))}
-                        </select>
+                <form onSubmit={handleSubmit} className="flex flex-col space-y-6 mt-6">
+                    <div className="flex flex-col">
+                        <label className="text-sm font-medium text-indigo-700 flex items-center gap-2 mb-2">
+                            <FaGraduationCap className="text-purple-500" /> Titre de la question
+                        </label>
+                        <Input
+                            type="text"
+                            placeholder="Ex: Comment résoudre cette équation ?"
+                            value={title}
+                            onChange={(e) => {
+                                const newTitle = e.target.value.slice(0, 100);
+                                setTitle(newTitle);
+                            }}
+                            className="border border-indigo-200 rounded-lg p-3 focus:ring-2 focus:ring-purple-400 focus:border-transparent transition duration-200 text-black"
+                        />
+                        <div className="text-xs text-right text-indigo-400 mt-1">{title.length}/100</div>
                     </div>
 
-                    <div>
-                        <label className="text-sm font-medium text-gray-700">Niveau</label>
-                        <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)} className="w-full p-3 border rounded-md bg-white">
-                            <option value="" disabled>Choisir un niveau</option>
-                            {educationData.levels.map((lvl, index) => (
-                                <option key={index} value={lvl}>{lvl}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label className="text-sm font-medium text-indigo-700 mb-2 block">Matière</label>
+                            <select
+                                value={subject}
+                                onChange={(e) => setSubject(e.target.value)}
+                                className="w-full p-3 border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition duration-200 text-black"
+                            >
+                                <option value="" disabled>Choisir une matière</option>
+                                {educationData.subjects.map((subj, index) => (
+                                    <option key={index} value={subj}>{subj}</option>
+                                ))}
+                            </select>
+                        </div>
 
-                <div>
-                    <h3 className="text-lg font-medium text-gray-700 flex items-center gap-2">
-                        <FaPen className="text-blue-500" /> Ce que j&apos;ai fait
-                    </h3>
-                    <p className={"text-sm text-gray-500"}>Décrivez ce que vous avez déjà fait pour résoudre votre problème.</p>
-                    <MDEditor
-                        value={whatIDid}
-                        onChange={setWhatIDid}
-                        height={150}
-                        previewOptions={{
-                            remarkPlugins: [remarkMath],
-                            rehypePlugins: [rehypeKatex],
-                        }}
-                    />
-                </div>
-                <div>
-                    <h3 className="text-lg font-medium text-gray-700 flex items-center gap-2">
-                        <FaPen className="text-green-500" /> Ce que j&apos;attends</h3>
-                    <p className={"text-sm text-gray-500"}>Décrivez ce que vous attendez de la communauté.</p>
-                    <MDEditor
-                        value={whatINeed}
-                        onChange={setWhatINeed}
-                        height={150}
-                        previewOptions={{
-                            remarkPlugins: [remarkMath],
-                            rehypePlugins: [rehypeKatex],
-                        }}
-                    />
-                    <Button type="button" className="mt-2 flex items-center gap-2" onClick={() => handleImageUploadClick("uploadWhatINeed")}>
-                        <FaImage /> Ajouter une image
+                        <div>
+                            <label className="text-sm font-medium text-indigo-700 mb-2 block">Niveau</label>
+                            <select
+                                value={classLevel}
+                                onChange={(e) => setClassLevel(e.target.value)}
+                                className="w-full p-3 border border-indigo-200 rounded-lg bg-white focus:ring-2 focus:ring-purple-400 focus:border-transparent transition duration-200 text-black"
+                            >
+                                <option value="" disabled>Choisir un niveau</option>
+                                {educationData.levels.map((lvl, index) => (
+                                    <option key={index} value={lvl}>{lvl}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100">
+                        <h3 className="text-lg font-medium text-indigo-800 flex items-center gap-2 mb-2">
+                            <FaPen className="text-blue-500" /> Ce que j&apos;ai fait
+                        </h3>
+                        <p className="text-sm text-indigo-600 mb-3">Décrivez ce que vous avez déjà fait pour résoudre votre problème.</p>
+                        <div className="rounded-lg overflow-hidden">
+                            <MDEditor
+                                value={whatIDid}
+                                onChange={setWhatIDid}
+                                height={150}
+                                previewOptions={{
+                                    remarkPlugins: [remarkMath],
+                                    rehypePlugins: [rehypeKatex],
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="bg-purple-50 p-4 rounded-lg border border-purple-100">
+                        <h3 className="text-lg font-medium text-purple-800 flex items-center gap-2 mb-2">
+                            <FaPen className="text-purple-500" /> Ce que j&apos;attends
+                        </h3>
+                        <p className="text-sm text-purple-600 mb-3">Décrivez ce que vous attendez de la communauté.</p>
+                        <div className="rounded-lg overflow-hidden">
+                            <MDEditor
+                                value={whatINeed}
+                                onChange={setWhatINeed}
+                                height={150}
+                                previewOptions={{
+                                    remarkPlugins: [remarkMath],
+                                    rehypePlugins: [rehypeKatex],
+                                }}
+                            />
+                        </div>
+                        <Button
+                            type="button"
+                            className="mt-3 bg-purple-600 hover:bg-purple-700 text-white flex items-center gap-2 transition duration-200"
+                            onClick={() => handleImageUploadClick("uploadWhatINeed")}
+                        >
+                            <FaImage /> Ajouter une image
+                        </Button>
+                        <input type="file" id="uploadWhatINeed" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setWhatINeed)} />
+                    </div>
+
+                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                        <h3 className="text-lg font-medium text-blue-800 flex items-center gap-2 mb-3">
+                            <FaFileUpload className="text-blue-500" /> Ajouter des fichiers
+                        </h3>
+                        <Input
+                            type="file"
+                            multiple
+                            accept="application/pdf,image/*"
+                            onChange={handleFileChange}
+                            className="border border-blue-200 bg-white"
+                        />
+                        {files.length > 0 && (
+                            <ul className="mt-3 space-y-2">
+                                {files.map((file, index) => (
+                                    <li key={index} className="flex items-center justify-between bg-white p-3 rounded-lg shadow-sm border border-blue-100">
+                                        <span className="text-indigo-700 flex items-center gap-2">📎 {file.name}</span>
+                                        <button
+                                            onClick={() => removeFile(index)}
+                                            className="text-red-500 hover:text-red-600 transition-colors p-1 rounded-full hover:bg-red-50"
+                                            type="button"
+                                        >
+                                            <FaTrash />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </div>
+
+                    {/* Section des points */}
+                    <div className="flex items-center justify-end space-x-2 border-t border-purple-100 pt-4">
+                        <label className="text-sm font-medium text-indigo-700 flex items-center gap-2">
+                            <FaCheck className="text-purple-500"/> Points mis en jeu
+                        </label>
+                        <Input
+                            type="number"
+                            min="1"
+                            max="15"
+                            value={points}
+                            onChange={(e) => setPoints(parseInt(e.target.value))}
+                            className="w-20 border border-indigo-200 rounded-lg p-2 focus:ring-2 focus:ring-purple-400 focus:border-transparent text-black"
+                        />
+                    </div>
+
+                    <Button
+                        type="submit"
+                        className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-3 rounded-lg font-medium transition duration-300 transform hover:scale-[1.02] active:scale-[0.98] shadow-md"
+                    >
+                        {isSubmitting ?
+                            <FaSpinner className="animate-spin mr-2"/> :
+                            "Publier la question"
+                        }
                     </Button>
-                    <input type="file" id="uploadWhatINeed" className="hidden" accept="image/*" onChange={(e) => handleImageUpload(e, setWhatINeed)} />
-                </div>
-
-                <div>
-                    <h3 className="text-lg font-medium text-gray-700 flex items-center gap-2">
-                        <FaFileUpload className="text-blue-500" /> Ajouter des fichiers
-                    </h3>
-                    <Input type="file" multiple accept="application/pdf,image/*" onChange={handleFileChange} />
-                    {files.length > 0 && (
-                        <ul className="mt-2">
-                            {files.map((file, index) => (
-                                <li key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded-md mt-2">
-                                    <span className="text-gray-700 flex items-center gap-2">📎 {file.name}</span>
-                                    <button onClick={() => removeFile(index)} className="text-red-500 hover:text-red-700">
-                                        <FaTrash />
-                                    </button>
-                                </li>
-                            ))}
-                        </ul>
-                    )}
-                </div>
-
-                {/* Section des points */}
-                <div className="flex items-center justify-end space-x-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                        <FaCheck/> Points mis en jeu
-                    </label>
-                    <Input
-                        type="number"
-                        min="1"
-                        max="15"
-                        value={points}
-                        onChange={(e) => setPoints(parseInt(e.target.value))}
-                        className="w-20 border rounded-md p-2"
-                    />
-                </div>
-
-                <Button type="submit" className="w-full">
-                    {isSubmitting ? <FaSpinner className="animate-spin"/> : "Publier la question"}
-                </Button>
-            </form>
+                </form>
+            </div>
         </div>
     );
 }
