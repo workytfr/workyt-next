@@ -7,83 +7,61 @@ import PointTransaction from "@/models/PointTransaction";
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 
-
-// Si besoin, vous pouvez définir le runtime à "node"
+// Exécuter ce route handler en runtime Node.js
 export const runtime = "nodejs";
 
-// Initialiser le client S3 pour Cloudflare R2
+// Initialisation du client S3 (Cloudflare R2)
 const s3Client = new S3Client({
     region: process.env.S3_REGION,
     endpoint: process.env.S3_ENDPOINT,
     credentials: {
-        accessKeyId: process.env.S3_ACCESS_KEY!, // Utilisez S3_ACCESS_KEY
-        secretAccessKey: process.env.S3_SECRET_KEY!, // Utilisez S3_SECRET_KEY
+        accessKeyId: process.env.S3_ACCESS_KEY!,
+        secretAccessKey: process.env.S3_SECRET_KEY!,
     },
-    // Pour Cloudflare R2, il peut être utile d'activer le mode "forcePathStyle"
     forcePathStyle: true,
 });
 
-// Convertir un File en Buffer
+// Utility: convertir File en Buffer
 async function fileToBuffer(file: File): Promise<Buffer> {
     const arrayBuffer = await file.arrayBuffer();
     return Buffer.from(arrayBuffer);
 }
 
-// Nettoyer le nom du fichier (enlever les caractères spéciaux)
+// Nettoyage du nom de fichier
 function sanitizeFileName(fileName: string): string {
     return fileName.replace(/[<>:"/\\|?*]+/g, "_");
 }
 
-// Fonction pour téléverser un fichier dans Cloudflare R2
+// Téléversement sur R2 et renvoi de l'URL publique
 async function uploadFileToR2(file: File): Promise<string> {
-    try {
-        const sanitizedFileName = sanitizeFileName(file.name);
-        // Générer un chemin unique
-        const fileKey = `uploads/${uuidv4()}-${sanitizedFileName}`;
+    const sanitized = sanitizeFileName(file.name);
+    const key = `uploads/${uuidv4()}-${sanitized}`;
+    const buffer = await fileToBuffer(file);
+    const cmd = new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME!,
+        Key: key,
+        Body: buffer,
+        ContentType: file.type,
+    });
+    await s3Client.send(cmd);
 
-        // Conversion en Buffer
-        const fileBuffer = await fileToBuffer(file);
+    const publicHost = process.env.R2_PUBLIC_URL
+        ? process.env.R2_PUBLIC_URL
+        : process.env.R2_ENDPOINT?.replace("https://", "");
 
-        // Envoi du fichier à R2 via PutObjectCommand
-        const putCommand = new PutObjectCommand({
-            Bucket: process.env.S3_BUCKET_NAME!,
-            Key: fileKey,
-            Body: fileBuffer,
-            ContentType: file.type,
-        });
-
-        await s3Client.send(putCommand);
-
-        // Construction de l'URL finale (à adapter selon votre configuration)
-        const publicUrl = process.env.R2_PUBLIC_URL
-            ? process.env.R2_PUBLIC_URL
-            : `${process.env.R2_ENDPOINT?.replace("https://", "")}`;
-
-        return `https://${publicUrl}/${process.env.R2_BUCKET_NAME}/${fileKey}`;
-    } catch (error: any) {
-        console.error("Erreur lors du téléversement :", error.message || error);
-        throw new Error("Échec du téléversement du fichier sur R2.");
-    }
+    return `https://${publicHost}/${process.env.R2_BUCKET_NAME}/${key}`;
 }
 
-// Route POST pour créer une question
+// Route POST: création d'une question
 export async function POST(req: NextRequest) {
     try {
         await dbConnect();
-
-        // Vérifier l'authentification
         const user = await authMiddleware(req);
-        if (!user || !user._id) {
-            return NextResponse.json(
-                { error: "Non autorisé. Utilisateur non trouvé." },
-                { status: 401 }
-            );
+        if (!user?._id) {
+            return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        // Récupérer les données du formulaire
         const formData = await req.formData();
-        console.log("FormData reçu :", formData);
-
         const title = formData.get("title") as string;
         const classLevel = formData.get("classLevel") as string;
         const subject = formData.get("subject") as string;
@@ -91,7 +69,7 @@ export async function POST(req: NextRequest) {
         const whatINeed = formData.get("whatINeed") as string;
         const points = parseInt(formData.get("points") as string, 10);
 
-        // Vérifications basiques
+        // Validation simple
         if (!title || !classLevel || !subject || !whatIDid || !whatINeed || isNaN(points)) {
             return NextResponse.json({ error: "Champs obligatoires manquants." }, { status: 400 });
         }
@@ -99,58 +77,71 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Les points doivent être entre 1 et 15." }, { status: 400 });
         }
         if (user.points < points) {
-            return NextResponse.json(
-                { error: "Vous n'avez pas assez de points pour poser cette question." },
-                { status: 400 }
-            );
+            return NextResponse.json({ error: "Points insuffisants." }, { status: 400 });
         }
 
-        // Téléversement des fichiers sur R2
+        // Upload des fichiers
         const fileURLs: string[] = [];
-        for (const [key, value] of formData.entries()) {
-            if (value instanceof File) {
-                console.log("Téléversement du fichier :", value.name);
-                const fileUrl = await uploadFileToR2(value);
-                fileURLs.push(fileUrl);
+        for (const [_, value] of formData.entries()) {
+            if (value instanceof File && value.size > 0) {
+                const url = await uploadFileToR2(value);
+                fileURLs.push(url);
             }
         }
-        console.log("Fichiers téléversés :", fileURLs);
 
-        // Création de la question
-        const questionData = {
+        // Création de la question en BDD
+        const question = await Question.create({
             user: user._id,
             title,
             classLevel,
             subject,
-            description: {
-                whatIDid,
-                whatINeed,
-            },
+            description: { whatIDid, whatINeed },
             attachments: fileURLs,
             points,
             status: "Non validée",
             createdAt: new Date(),
-        };
-        const newQuestion = await Question.create(questionData);
+        });
 
-        // Déduction des points de l'utilisateur
+        // Mise à jour des points de l'utilisateur
         await User.findByIdAndUpdate(user._id, { $inc: { points: -points } });
-
-        // Enregistrement de la transaction de points
         await PointTransaction.create({
             user: user._id,
-            question: newQuestion._id,
+            question: question._id,
             type: "perte",
             points,
             createdAt: new Date(),
         });
 
-        return NextResponse.json(newQuestion, { status: 201 });
-    } catch (error: any) {
-        console.error("Erreur lors de la création de la question :", error.message);
-        return NextResponse.json(
-            { error: "Impossible de créer la question.", details: error.message },
-            { status: 500 }
-        );
+        // --- Envoi de la notification Discord via webhook ---
+        const webhookUrl = process.env.DISCORD_WEBHOOK_URL!;
+        const baseUrl = process.env.NEXT_PUBLIC_API_URL!;
+        const questionLink = `${baseUrl}/questions/${question._id}`;
+        const payload = {
+            embeds: [
+                {
+                    title: "🆕 Nouvelle question postée",
+                    url: questionLink,
+                    author: { name: user.username },
+                    fields: [
+                        { name: "Titre", value: title, inline: true },
+                        { name: "Sujet", value: subject, inline: true },
+                        { name: "Niveau", value: classLevel, inline: true },
+                        { name: "Points misés", value: points.toString(), inline: true },
+                    ],
+                    timestamp: question.createdAt.toISOString(),
+                    color: 0x00aaff,
+                },
+            ],
+        };
+        await fetch(webhookUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+        });
+
+        return NextResponse.json(question, { status: 201 });
+    } catch (err: any) {
+        console.error("Erreur création question :", err);
+        return NextResponse.json({ error: "Échec création question.", details: err.message }, { status: 500 });
     }
 }
