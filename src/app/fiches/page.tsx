@@ -16,8 +16,8 @@ import {
     PaginationPrevious,
 } from "@/components/ui/Pagination";
 import { PiFireSimpleFill } from "react-icons/pi";
-import { MdSearch, MdInsertComment } from "react-icons/md";
-import { MdInfoOutline } from "react-icons/md";
+import { MdSearch, MdInsertComment, MdFilterList, MdInfoOutline } from "react-icons/md";
+import { FiPlusCircle } from "react-icons/fi";
 import ProfileAvatar from "@/components/ui/profile";
 import InfoDrawer from "@/app/fiches/_components/InfoDrawer";
 import { educationData, subjectColors, levelColors } from "@/data/educationData";
@@ -39,6 +39,7 @@ export default function SearchPage() {
     const [fiches, setFiches] = useState<Fiche[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
     const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
     const [filters, setFilters] = useState({
         query: "",
@@ -121,215 +122,259 @@ export default function SearchPage() {
         }
     };
 
+    const toggleFilters = () => {
+        setShowFilters(!showFilters);
+    };
+
+    const headerStyle = {
+        backgroundImage: `linear-gradient(to right, #FF8C42, #FF5E78), url(/noise.webp)`,
+        backgroundSize: "cover, 2%",
+        backgroundBlendMode: "overlay",
+    };
+
     const SkeletonCard = () => (
-        <div className="flex gap-4 p-4 bg-gray-50 border rounded-lg shadow items-center animate-pulse">
-            <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
+        <div className="flex gap-4 p-6 bg-white border rounded-xl shadow-sm hover:shadow-md transition-all duration-300 items-center animate-pulse">
+            <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
             <div className="flex-1">
-                <div className="h-4 bg-gray-300 rounded w-3/4 mb-2"></div>
-                <div className="h-3 bg-gray-300 rounded w-full mb-1"></div>
-                <div className="h-3 bg-gray-300 rounded w-5/6"></div>
-                <div className="flex gap-2 mt-2">
-                    <div className="h-6 w-16 bg-gray-300 rounded"></div>
-                    <div className="h-6 w-16 bg-gray-300 rounded"></div>
+                <div className="h-5 bg-gray-200 rounded w-3/4 mb-3"></div>
+                <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded w-5/6 mb-3"></div>
+                <div className="flex gap-2 mt-3">
+                    <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
+                    <div className="h-6 w-16 bg-gray-200 rounded-full"></div>
                 </div>
             </div>
-            <div className="w-12 h-4 bg-gray-300 rounded"></div>
+            <div className="w-16 h-10 bg-gray-200 rounded-lg"></div>
         </div>
     );
 
-
     return (
-        <div className="bg-white text-black min-h-screen max-w-7xl mx-auto p-8 space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold">Trouvez des fiches</h1>
-                <div className="flex gap-4">
-                    {/* Bouton pour déposer une fiche */}
+        <div className="min-h-screen bg-gray-50">
+            {/* Header avec gradient */}
+            <div
+                className="pt-12 pb-8 px-6 rounded-b-3xl shadow-md mb-8"
+                style={headerStyle}
+            >
+                <div className="max-w-7xl mx-auto">
+                    <h1 className="text-4xl font-bold text-white mb-6">Trouvez des fiches</h1>
+
+                    {/* Barre de recherche principale */}
+                    <div className="relative flex items-center max-w-3xl mx-auto bg-white rounded-full shadow-lg overflow-hidden">
+                        <input
+                            type="text"
+                            placeholder="Rechercher par mot-clé..."
+                            className="w-full py-4 px-6 outline-none text-lg"
+                            value={filters.query}
+                            onChange={(e) => handleFilterChange("query", e.target.value)}
+                            onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                        />
+                        <div className="flex items-center pr-3">
+                            <Button
+                                variant="ghost"
+                                className="rounded-full p-2 hover:bg-gray-100"
+                                onClick={toggleFilters}
+                            >
+                                <MdFilterList size={24} className="text-gray-500" />
+                            </Button>
+                            <Button
+                                className="rounded-full px-6 py-2 bg-gradient-to-r from-orange-400 to-pink-500 hover:opacity-90 transition-opacity"
+                                onClick={handleSearch}
+                            >
+                                <MdSearch size={20} className="mr-2" /> Rechercher
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="max-w-7xl mx-auto px-6 pb-12">
+                {/* Options avancées de filtre */}
+                {showFilters && (
+                    <div className="bg-white p-6 rounded-xl shadow-sm mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Select
+                            value={filters.subject}
+                            onValueChange={(value) => handleFilterChange("subject", value === "Toutes les matières" ? "" : value)}
+                        >
+                            <SelectTrigger className="h-12 rounded-lg text-black">
+                                <SelectValue placeholder="Toutes les matières" className="text-black"/>
+                            </SelectTrigger>
+                            <SelectContent className="text-black">
+                                <SelectItem value="Toutes les matières" className="text-black">Toutes les matières</SelectItem>
+                                {educationData.subjects.map((subject) => (
+                                    <SelectItem key={subject} value={subject} className="text-black">
+                                        {subject}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Select
+                            value={filters.startDate && filters.endDate ? "Autre" : "Tout"}
+                            onValueChange={handleDateRangeChange}
+                        >
+                            <SelectTrigger className="h-12 rounded-lg text-black">
+                                <SelectValue placeholder="Filtrer par date" className="text-black"/>
+                            </SelectTrigger>
+                            <SelectContent className="text-black">
+                                {dateRangeOptions.map((option) => (
+                                    <SelectItem key={option.label} value={option.label} className="text-black">
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                {/* Boutons d'action */}
+                <div className="flex justify-between items-center mb-8">
+                    <div className="text-gray-600 font-medium">
+                        {!loading && fiches.length > 0 && (
+                            <span>Résultats : {fiches.length} fiche{fiches.length > 1 ? 's' : ''}</span>
+                        )}
+                    </div>
+                    <div className="flex gap-3">
+                        <InfoDrawer />
                         <Link href="/fiches/creer">
-                            <Button variant="outline" className="text-sm">
-                                Déposer une fiche
+                            <Button className="flex items-center gap-2 py-2 px-4 bg-gradient-to-r from-orange-400 to-pink-500 text-white hover:opacity-90 transition-all shadow-sm">
+                                <FiPlusCircle size={18} />
+                                <span>Déposer une fiche</span>
                             </Button>
                         </Link>
-
-                    {/* Bouton d'information */}
-                    <InfoDrawer/>
-                </div>
-            </div>
-
-            {/* Filtres */}
-            <div className="space-y-4 bg-white p-4 rounded-lg shadow-md border border-gray-200">
-                <div className="flex items-center gap-2 border border-gray-300 rounded px-3 py-2">
-                    <MdSearch className="text-gray-500" size={20}/>
-                    <input
-                        type="text"
-                        placeholder="Rechercher par mot-clé"
-                        className="w-full bg-transparent outline-none"
-                        value={filters.query}
-                        onChange={(e) => handleFilterChange("query", e.target.value)}
-                    />
+                    </div>
                 </div>
 
-                <Select
-                    value={filters.level}
-                    onValueChange={(value) => handleFilterChange("level", value === "Tous les niveaux" ? "" : value)}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Tous les niveaux"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Tous les niveaux">Tous les niveaux</SelectItem>
-                        {educationData.levels.map((level) => (
-                            <SelectItem key={level} value={level}>
-                                {level}
-                            </SelectItem>
+                {/* Liste des fiches */}
+                {loading ? (
+                    <div className="space-y-4">
+                        {[...Array(3)].map((_, index) => (
+                            <SkeletonCard key={index} />
                         ))}
-                    </SelectContent>
-                </Select>
-
-                <Select
-                    value={filters.subject}
-                    onValueChange={(value) => handleFilterChange("subject", value === "Toutes les matières" ? "" : value)}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Toutes les matières"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Toutes les matières">Toutes les matières</SelectItem>
-                        {educationData.subjects.map((subject) => (
-                            <SelectItem key={subject} value={subject}>
-                                {subject}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-
-                <Select
-                    value={filters.startDate && filters.endDate ? "Autre" : "Tout"}
-                    onValueChange={handleDateRangeChange}
-                >
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filtrer par date"/>
-                    </SelectTrigger>
-                    <SelectContent>
-                        {dateRangeOptions.map((option) => (
-                            <SelectItem key={option.label} value={option.label}>
-                                {option.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-
-                <Button
-                    className="w-full text-white font-semibold py-2 px-4 rounded transition duration-200"
-                    onClick={handleSearch}
-                >
-                    Rechercher
-                </Button>
-            </div>
-
-            {/* Liste des fiches */}
-            {loading ? (
-                <div className="space-y-6">
-                    {[...Array(3)].map((_, index) => (
-                        <SkeletonCard key={index} />
-                    ))}
-                </div>
-            ) : error ? (
-                <p className="text-red-500">{error}</p>
-            ) : (
-                <div className="space-y-6">
-                    {fiches.map((fiche) => (
-                        <div
-                            key={fiche.id}
-                            className="relative flex gap-4 p-4 bg-gray-50 border rounded-lg shadow items-center"
-                        >
-                            {/* Icône de statut dans le coin supérieur droit */}
-                            {fiche.status !== "Non Certifiée" && (
-                                <div className="absolute top-2 right-2">
-                                    <Tooltip>
-                                        <TooltipTrigger>
-                                            <div className="relative group">
-                                                <Image
-                                                    src={`/badge/${fiche.status}.svg`}
-                                                    alt={`Statut: ${fiche.status}`}
-                                                    width={30}
-                                                    height={30}
-                                                    className="rounded cursor-pointer"
-                                                />
-                                            </div>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <div className="flex items-center gap-2">
-                                                <MdInfoOutline className="text-blue-500" size={16}/>
-                                                <span>
-                  Ce badge indique que cette fiche est <strong>{fiche.status}</strong>.
-                </span>
-                                            </div>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </div>
-                            )}
-
-                            {/* Contenu de la carte */}
-                            <ProfileAvatar username={fiche.authors?.username || "Inconnu"}
-                                           points={fiche.authors?.points || 0}/>
-                            <div className="flex-1">
-                                {/* Titre cliquable */}
-                                <Link href={`/fiches/${fiche.id}`}>
-                                    <h2 className="text-lg font-semibold text-gray-800 hover:underline cursor-pointer">
-                                        {fiche.title}
-                                    </h2>
-                                    <p className="text-sm text-gray-600 break-words line-clamp-2">{fiche.content}</p>
-                                </Link>
-                                <div className="mt-2 flex items-center gap-2">
-                                    <Badge className={levelColors[fiche.level] || "bg-gray-200"}>{fiche.level}</Badge>
-                                    <Badge
-                                        className={subjectColors[fiche.subject] || "bg-gray-200"}>{fiche.subject}</Badge>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-end">
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                    <PiFireSimpleFill className="text-red-500"/>
-                                    {fiche.likes}
-                                    <MdInsertComment className="text-blue-500"/>
-                                    {fiche.comments}
-                                </div>
-                                <p className="text-xs text-gray-500">{new Date(fiche.createdAt).toLocaleDateString("fr-FR")}</p>
-                            </div>
+                    </div>
+                ) : error ? (
+                    <div className="bg-red-50 text-red-600 p-4 rounded-lg text-center">
+                        <p>{error}</p>
+                    </div>
+                ) : fiches.length === 0 ? (
+                    <div className="text-center py-16">
+                        <div className="text-gray-400 mb-3">
+                            <MdSearch size={48} className="mx-auto" />
                         </div>
-                    ))}
-                </div>
-            )}
-
-            {/* Pagination */}
-            <Pagination>
-                <PaginationContent>
-                    <PaginationItem>
-                        <PaginationPrevious
-                            href={pagination.page > 1 ? "#" : undefined}
-                            onClick={pagination.page > 1 ? () => handlePageChange(pagination.page - 1) : undefined}
-                            className={pagination.page === 1 ? "opacity-50 pointer-events-none" : ""}
-                        />
-                    </PaginationItem>
-                    {[...Array(pagination.totalPages)].map((_, index) => (
-                        <PaginationItem key={index}>
-                            <PaginationLink
-                                href="#"
-                                isActive={index + 1 === pagination.page}
-                                onClick={() => handlePageChange(index + 1)}
+                        <h3 className="text-xl font-medium text-gray-700 mb-2">Aucune fiche trouvée</h3>
+                        <p className="text-gray-500">Essayez de modifier vos critères de recherche</p>
+                    </div>
+                ) : (
+                    <div className="space-y-4">
+                        {fiches.map((fiche) => (
+                            <div
+                                key={fiche.id}
+                                className="relative flex gap-4 p-6 bg-white border rounded-xl shadow-sm hover:shadow-md transition-all duration-300 items-center"
                             >
-                                {index + 1}
-                            </PaginationLink>
-                        </PaginationItem>
-                    ))}
-                    <PaginationItem>
-                        <PaginationNext
-                            href={pagination.page < pagination.totalPages ? "#" : undefined}
-                            onClick={pagination.page < pagination.totalPages ? () => handlePageChange(pagination.page + 1) : undefined}
-                            className={pagination.page === pagination.totalPages ? "opacity-50 pointer-events-none" : ""}
-                        />
-                    </PaginationItem>
-                </PaginationContent>
-            </Pagination>
+                                {/* Icône de statut */}
+                                {fiche.status !== "Non Certifiée" && (
+                                    <div className="absolute top-3 right-3">
+                                        <Tooltip>
+                                            <TooltipTrigger>
+                                                <div className="relative">
+                                                    <Image
+                                                        src={`/badge/${fiche.status}.svg`}
+                                                        alt={`Statut: ${fiche.status}`}
+                                                        width={30}
+                                                        height={30}
+                                                        className="rounded cursor-pointer"
+                                                    />
+                                                </div>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <div className="flex items-center gap-2">
+                                                    <MdInfoOutline
+                                                        size={24}
+                                                        className="!text-black stroke-current"
+                                                    />                                                    <span>
+                                                        Cette fiche est <strong>{fiche.status}</strong>
+                                                    </span>
+                                                </div>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </div>
+                                )}
+
+                                {/* Avatar et contenu */}
+                                <ProfileAvatar
+                                    username={fiche.authors?.username || "Inconnu"}
+                                    points={fiche.authors?.points || 0}
+                                />
+                                <div className="flex-1">
+                                    <Link href={`/fiches/${fiche.id}`}>
+                                        <h2 className="text-xl font-semibold text-gray-800 hover:text-orange-500 transition-colors mb-1">
+                                            {fiche.title}
+                                        </h2>
+                                        <p className="text-gray-600 break-words line-clamp-2 mb-3">{fiche.content}</p>
+                                    </Link>
+                                    <div className="flex items-center gap-2">
+                                        <Badge className={`${levelColors[fiche.level] || "bg-gray-200"} px-3 py-1 rounded-full text-xs font-medium`}>
+                                            {fiche.level}
+                                        </Badge>
+                                        <Badge className={`${subjectColors[fiche.subject] || "bg-gray-200"} px-3 py-1 rounded-full text-xs font-medium`}>
+                                            {fiche.subject}
+                                        </Badge>
+                                    </div>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <div className="flex items-center gap-3 text-gray-600 mb-2">
+                                        <div className="flex items-center">
+                                            <PiFireSimpleFill className="text-orange-500 mr-1" size={18}/>
+                                            <span>{fiche.likes}</span>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <MdInsertComment className="text-blue-500 mr-1" size={18}/>
+                                            <span>{fiche.comments}</span>
+                                        </div>
+                                    </div>
+                                    <p className="text-xs text-gray-500">{new Date(fiche.createdAt).toLocaleDateString("fr-FR")}</p>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+
+                {/* Pagination */}
+                {fiches.length > 0 && pagination.totalPages > 1 && (
+                    <div className="mt-8">
+                        <Pagination>
+                            <PaginationContent>
+                                <PaginationItem>
+                                    <PaginationPrevious
+                                        href={pagination.page > 1 ? "#" : undefined}
+                                        onClick={pagination.page > 1 ? () => handlePageChange(pagination.page - 1) : undefined}
+                                        className={pagination.page === 1 ? "opacity-50 pointer-events-none" : ""}
+                                    />
+                                </PaginationItem>
+                                {[...Array(pagination.totalPages)].map((_, index) => (
+                                    <PaginationItem key={index}>
+                                        <PaginationLink
+                                            href="#"
+                                            isActive={index + 1 === pagination.page}
+                                            onClick={() => handlePageChange(index + 1)}
+                                            className={index + 1 === pagination.page
+                                                ? "bg-gradient-to-r from-orange-400 to-pink-500 text-white"
+                                                : ""}
+                                        >
+                                            {index + 1}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                ))}
+                                <PaginationItem>
+                                    <PaginationNext
+                                        href={pagination.page < pagination.totalPages ? "#" : undefined}
+                                        onClick={pagination.page < pagination.totalPages ? () => handlePageChange(pagination.page + 1) : undefined}
+                                        className={pagination.page === pagination.totalPages ? "opacity-50 pointer-events-none" : ""}
+                                    />
+                                </PaginationItem>
+                            </PaginationContent>
+                        </Pagination>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
