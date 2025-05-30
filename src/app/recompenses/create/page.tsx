@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,11 @@ import { Label } from '@/components/ui/Label';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Calendar, Trophy, Star, Target, Image, Clock, Gift, Sparkles, Users, BookOpen } from 'lucide-react';
+import { Calendar, Trophy, Star, Target, Image, Clock, Gift, Sparkles, Users, BookOpen, Shield, AlertTriangle } from 'lucide-react';
+import { useSession, signIn } from "next-auth/react";
 
 export default function CreateRewardPage() {
+    const { data: session, status } = useSession();
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
     const [imageUrl, setImageUrl] = useState('');
@@ -29,7 +31,76 @@ export default function CreateRewardPage() {
         { value: 'mostRevisionsInCategory', label: 'Fiches créées dans une catégorie', icon: Target, color: 'text-green-500' }
     ];
 
-    const handleSubmit = async (e: React.FormEvent) => {        e.preventDefault();
+    // Vérification si l'utilisateur est admin
+    const isAdmin = session?.user?.role === 'Admin' || session?.user?.isAdmin === true;
+
+    // Si pas de session, afficher le bouton de connexion
+    if (status === "loading") {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+                <Card className="w-full max-w-md">
+                    <CardContent className="pt-6">
+                        <div className="text-center space-y-4">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                            <p className="text-gray-600">Chargement...</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    if (!session) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+                <Card className="w-full max-w-md">
+                    <CardContent className="pt-6">
+                        <div className="text-center space-y-4">
+                            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                <Shield className="w-8 h-8 text-blue-600" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-gray-800">Connexion requise</h3>
+                            <p className="text-gray-600">Vous devez être connecté pour accéder à cette page.</p>
+                            <Button
+                                onClick={() => signIn()}
+                                className="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+                            >
+                                Se connecter
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    // Si l'utilisateur n'est pas admin
+    if (!isAdmin) {
+        return (
+            <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 flex items-center justify-center p-4">
+                <Card className="w-full max-w-md">
+                    <CardContent className="pt-6">
+                        <div className="text-center space-y-4">
+                            <div className="mx-auto w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <AlertTriangle className="w-8 h-8 text-red-600" />
+                            </div>
+                            <h3 className="text-xl font-semibold text-red-800">Accès refusé</h3>
+                            <p className="text-gray-600">
+                                Cette page est réservée aux administrateurs. Vous n&apos;avez pas les permissions nécessaires pour créer des récompenses.
+                            </p>
+                            <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                                <Shield className="w-4 h-4" />
+                                <span>Droits administrateur requis</span>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
         setError(null);
 
         // Validation
@@ -48,14 +119,37 @@ export default function CreateRewardPage() {
 
         setLoading(true);
 
-        // Simulation d'appel API
-        setTimeout(() => {
-            setLoading(false);
+        try {
+            // Appel API réel
+            const response = await fetch('/api/recompenses', {
+                method: 'POST',
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: session?.accessToken ? `Bearer ${session.accessToken}` : '',
+                },
+                body: JSON.stringify({
+                    title,
+                    description,
+                    imageUrl: imageUrl || undefined, // Ne pas envoyer une chaîne vide
+                    startDate: new Date(startDate).toISOString(),
+                    endDate: new Date(endDate).toISOString(),
+                    method,
+                    category: method === 'mostRevisionsInCategory' ? category : undefined,
+                    prize
+                })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Erreur lors de la création');
+            }
+
             setIsSubmitted(true);
-            // Simuler une redirection après succès
+
+            // Reset form après succès
             setTimeout(() => {
                 setIsSubmitted(false);
-                // Reset form
                 setTitle('');
                 setDescription('');
                 setImageUrl('');
@@ -65,7 +159,12 @@ export default function CreateRewardPage() {
                 setCategory('');
                 setPrize('');
             }, 2000);
-        }, 1500);
+
+        } catch (err) {
+            setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        } finally {
+            setLoading(false);
+        }
     };
 
     const selectedMethod = methodOptions.find(opt => opt.value === method);
@@ -103,6 +202,12 @@ export default function CreateRewardPage() {
                         Créer un événement Récompense
                     </h1>
                     <p className="text-gray-600 mt-2">Motivez votre communauté avec des récompenses attractives</p>
+
+                    {/* Badge administrateur */}
+                    <div className="inline-flex items-center gap-2 mt-3 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium">
+                        <Shield className="w-4 h-4" />
+                        <span>Mode Administrateur</span>
+                    </div>
                 </div>
 
                 <Card className="shadow-xl border-0 bg-white/80 backdrop-blur-sm animate-in slide-in-from-bottom duration-700">
@@ -125,7 +230,7 @@ export default function CreateRewardPage() {
                             </Alert>
                         )}
 
-                        <div className="space-y-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-2">
                                 <Label htmlFor="title" className="text-sm font-medium flex items-center gap-2">
                                     <Gift className="w-4 h-4 text-purple-500" />
@@ -265,7 +370,6 @@ export default function CreateRewardPage() {
                             <Button
                                 type="submit"
                                 disabled={loading}
-                                onClick={handleSubmit}
                                 className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-[1.02] hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed h-12"
                             >
                                 {loading ? (
@@ -280,7 +384,7 @@ export default function CreateRewardPage() {
                                     </div>
                                 )}
                             </Button>
-                        </div>
+                        </form>
                     </CardContent>
                 </Card>
             </div>

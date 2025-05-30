@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
     const rewardId = searchParams.get('id');
 
     if (!rewardId || !mongoose.Types.ObjectId.isValid(rewardId)) {
-        return NextResponse.json({ error: 'ID de l’événement invalide' }, { status: 400 });
+        return NextResponse.json({ error: "ID de l'événement invalide" }, { status: 400 });
     }
 
     const reward = await Reward.findById(rewardId);
@@ -31,7 +31,18 @@ export async function GET(req: NextRequest) {
 
     if (method === 'highestPoints') {
         collection = PointTransaction;
-        groupExpr = { total: { $sum: '$points' } };
+        // Correction : utiliser $cond pour soustraire les pertes
+        groupExpr = {
+            total: {
+                $sum: {
+                    $cond: {
+                        if: { $eq: ['$type', 'perte'] },
+                        then: { $multiply: ['$points', -1] }, // Soustraire les pertes
+                        else: '$points' // Ajouter les gains
+                    }
+                }
+            }
+        };
     } else {
         collection = Revision;
         groupExpr = { total: { $sum: 1 } };
@@ -51,7 +62,8 @@ export async function GET(req: NextRequest) {
                 localField: '_id',
                 foreignField: '_id',
                 as: 'user'
-            }},
+            }
+        },
         { $unwind: '$user' },
         { $project: { _id: 0, userId: '$_id', username: '$user.username', total: 1 } }
     ]);
