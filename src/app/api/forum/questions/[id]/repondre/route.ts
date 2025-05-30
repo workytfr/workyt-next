@@ -6,6 +6,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import Question from "@/models/Question";
 import Answer from "@/models/Answer";
 import User from "@/models/User";
+import PointTransaction from '@/models/PointTransaction';
 
 // --- Configuration Client S3 pour Cloudflare R2 ---
 const s3Client = new S3Client({
@@ -128,6 +129,13 @@ export async function POST(
         // Ajouter +2 points à l'utilisateur SI ce n'est PAS lui qui a posé la question
         if (!isOwner) {
             await User.findByIdAndUpdate(user._id, { $inc: { points: 2 } });
+            await PointTransaction.create({
+                user:   user._id,
+                question: question._id,
+                action: 'createAnswer',
+                type:   'gain',
+                points: 2
+            });
         }
 
         return NextResponse.json(

@@ -202,6 +202,11 @@ export default function Navbar() {
                                         </Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item asChild>
+                                        <Link href={`/recompenses`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors">
+                                            Récompenses
+                                        </Link>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item asChild>
                                         <Link href={`/fiches/creer`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors">
                                             Partager une fiche
                                         </Link>
@@ -384,6 +389,13 @@ export default function Navbar() {
                                     onClick={closeMobileMenu}
                                 >
                                     Mon Compte
+                                </Link>
+                                <Link
+                                    href={`/recompenses`}
+                                    className="block text-gray-600 py-2"
+                                    onClick={closeMobileMenu}
+                                >
+                                    Récompenses
                                 </Link>
                                 <Link
                                     href={`/fiches/creer`}

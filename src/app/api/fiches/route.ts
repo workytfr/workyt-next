@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from "uuid";
 import Revision from "@/models/Revision";
 import User from "@/models/User";
+import PointTransaction from '@/models/PointTransaction';
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 
@@ -89,6 +90,13 @@ export async function POST(req: NextRequest) {
         });
 
         await User.findByIdAndUpdate(user._id, { $inc: { points: 10 } });
+        await PointTransaction.create({
+            user:     user._id,
+            revision: newRevision._id,
+            action:   'createRevision',
+            type:     'gain',
+            points:   10
+        });
         return NextResponse.json(newRevision, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: "Erreur lors de la création de la fiche." }, { status: 500 });
