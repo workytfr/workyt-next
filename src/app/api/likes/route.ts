@@ -3,6 +3,7 @@ import connectDB from "@/lib/mongodb";
 import Revision from "@/models/Revision";
 import User from "@/models/User";
 import authMiddleware from "@/middlewares/authMiddleware";
+import PointTransaction from '@/models/PointTransaction';
 import mongoose from "mongoose";
 
 // Connexion à la base de données
@@ -18,6 +19,13 @@ async function likeRevision(revision: any, userId: mongoose.Types.ObjectId) {
     revision.likes += 1;
     revision.likedBy.push({ userId: userId.toString(), likedAt: new Date() });
     await User.findByIdAndUpdate(revision.author, { $inc: { points: 5 } });
+    await PointTransaction.create({
+        user:     revision.author,
+        revision: revision._id,
+        action:   'likeRevision',
+        type:     'gain',
+        points:   5
+    });
 }
 
 // Fonction pour retirer un like
@@ -25,6 +33,13 @@ async function dislikeRevision(revision: any, userId: mongoose.Types.ObjectId) {
     revision.likes -= 1;
     revision.likedBy.filter((like: any) => like.userId.toString() !== userId.toString());
     await User.findByIdAndUpdate(revision.author, { $inc: { points: -5 } });
+    await PointTransaction.create({
+        user:     revision.author,
+        revision: revision._id,
+        action:   'unlikeRevision',
+        type:     'perte',
+        points:   -5
+    });
 }
 
 export async function POST(req: NextRequest) {

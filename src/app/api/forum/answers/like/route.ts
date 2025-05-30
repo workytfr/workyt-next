@@ -3,6 +3,8 @@ import dbConnect from "@/lib/mongodb";
 import authMiddleware from "@/middlewares/authMiddleware";
 import Answer from "@/models/Answer";
 import User from "@/models/User";
+import PointTransaction from '@/models/PointTransaction';
+
 
 export async function POST(req: NextRequest) {
     try {
@@ -56,6 +58,13 @@ export async function POST(req: NextRequest) {
 
             // 🔻 Enlever -1 point à l'auteur de la réponse
             await User.findByIdAndUpdate(answer.user, { $inc: { points: -1 } });
+            await PointTransaction.create({
+                user: answer.user,
+                answer: answer._id,
+                action: 'unlikeAnswer',
+                type: "perte",
+                points: 1,
+            });
 
             return NextResponse.json(
                 { success: true, message: "Like annulé avec succès.", data: answer },
@@ -69,6 +78,13 @@ export async function POST(req: NextRequest) {
 
             // 🔺 Ajouter +1 point à l'auteur de la réponse
             await User.findByIdAndUpdate(answer.user, { $inc: { points: 1 } });
+            await PointTransaction.create({
+                user: answer.user,
+                answer: answer._id,
+                action: 'likeAnswer',
+                type: "gain",
+                points: 1,
+            });
 
             return NextResponse.json(
                 { success: true, message: "Like ajouté avec succès.", data: answer },
