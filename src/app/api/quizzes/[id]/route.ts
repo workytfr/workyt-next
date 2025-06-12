@@ -6,10 +6,14 @@ import authMiddleware from "@/middlewares/authMiddleware";
 /**
  * 🚀 GET - Récupérer un quizz spécifique (Accès public)
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
-        const quiz = await Quiz.findById(params.id);
+
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
+        const quiz = await Quiz.findById(resolvedParams.id);
         if (!quiz) {
             return NextResponse.json({ error: "Quizz non trouvé." }, { status: 404 });
         }
@@ -26,7 +30,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 /**
  * 🚀 PUT - Mettre à jour un quizz (Réservé aux Rédacteurs, Correcteurs, Admins)
  */
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -39,8 +43,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
         const body = await req.json();
-        const updatedQuiz = await Quiz.findByIdAndUpdate(params.id, body, { new: true });
+        const updatedQuiz = await Quiz.findByIdAndUpdate(resolvedParams.id, body, { new: true });
 
         if (!updatedQuiz) {
             return NextResponse.json({ error: "Quizz non trouvé." }, { status: 404 });
@@ -59,7 +66,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 /**
  * 🚀 DELETE - Supprimer un quizz (Réservé aux Admins)
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -72,7 +79,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: "Seul un Admin peut supprimer un quizz." }, { status: 403 });
         }
 
-        const deletedQuiz = await Quiz.findByIdAndDelete(params.id);
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
+        const deletedQuiz = await Quiz.findByIdAndDelete(resolvedParams.id);
         if (!deletedQuiz) {
             return NextResponse.json({ error: "Quizz non trouvé." }, { status: 404 });
         }

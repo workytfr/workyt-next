@@ -8,11 +8,13 @@ import Answer from "@/models/Answer";
 import Revision from "@/models/Revision";
 
 // ✅ Récupère un utilisateur, ses fiches de révision, ses questions et ses réponses
-export const GET = async (req: Request, { params }: { params: { id: string } }) => {
-    const { id } = params;
-
+export const GET = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     try {
         await connectDB();
+
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
 
         // 📌 Récupération des paramètres de pagination
         const url = new URL(req.url);
@@ -110,10 +112,14 @@ export const GET = async (req: Request, { params }: { params: { id: string } }) 
 };
 
 // ✅ Mise à jour des informations d'un utilisateur
-export const PATCH = async (req: Request, { params }: { params: { id: string } }) => {
+export const PATCH = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
     try {
         await connectDB();
-        const { id } = params;
+
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+        const { id } = resolvedParams;
+
         const { bio, socialLinks, name, username, badges } = await req.json();
         const session = await getServerSession();
 

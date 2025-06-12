@@ -93,6 +93,7 @@ export async function POST(req: NextRequest) {
                 user: answer.user,
                 question: question._id,
                 answer: answer._id,
+                action: "validateAnswer",
                 type: "gain",
                 points: question.points,
                 createdAt: new Date(),

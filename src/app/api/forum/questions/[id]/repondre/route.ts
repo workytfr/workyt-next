@@ -66,7 +66,7 @@ async function uploadFileToR2(file: File): Promise<string> {
 // API pour ajouter une réponse à une question
 export async function POST(
     req: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         await dbConnect();
@@ -80,8 +80,11 @@ export async function POST(
             );
         }
 
+        // Await params to get the id
+        const { id } = await params;
+
         // Vérification de l'existence de la question
-        const question = await Question.findById(params.id);
+        const question = await Question.findById(id);
         if (!question) {
             return NextResponse.json(
                 { success: false, message: "Question non trouvée." },

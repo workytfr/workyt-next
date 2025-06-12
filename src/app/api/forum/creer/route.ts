@@ -107,6 +107,7 @@ export async function POST(req: NextRequest) {
         await PointTransaction.create({
             user: user._id,
             question: question._id,
+            action: 'createQuestion',
             type: "perte",
             points,
             createdAt: new Date(),
@@ -115,7 +116,7 @@ export async function POST(req: NextRequest) {
         // --- Envoi de la notification Discord via webhook ---
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL!;
         const baseUrl = process.env.NEXT_PUBLIC_API_URL!;
-        const questionLink = `${baseUrl}/questions/${question._id}`;
+        const questionLink = `${baseUrl}/forum/${question._id}`;
         const payload = {
             embeds: [
                 {

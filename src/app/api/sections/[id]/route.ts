@@ -6,7 +6,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 /**
  * 🚀 PUT - Mettre à jour une section (Réservé aux Rédacteurs, Correcteurs, Admins)
  */
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -15,8 +15,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
         const body = await req.json();
-        const existingSection = await Section.findById(params.id);
+        const existingSection = await Section.findById(resolvedParams.id);
 
         if (!existingSection) {
             return NextResponse.json({ error: "Section non trouvée." }, { status: 404 });
@@ -26,7 +29,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
-        const updatedSection = await Section.findByIdAndUpdate(params.id, body, { new: true });
+        const updatedSection = await Section.findByIdAndUpdate(resolvedParams.id, body, { new: true });
 
         return NextResponse.json(updatedSection, { status: 200 });
     } catch (error: any) {
@@ -41,7 +44,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 /**
  * 🚀 DELETE - Supprimer une section (Réservé aux Admins uniquement)
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -54,7 +57,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: "Seul un Admin peut supprimer une section." }, { status: 403 });
         }
 
-        const deletedSection = await Section.findByIdAndDelete(params.id);
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
+        const deletedSection = await Section.findByIdAndDelete(resolvedParams.id);
         if (!deletedSection) {
             return NextResponse.json({ error: "Section non trouvée." }, { status: 404 });
         }

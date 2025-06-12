@@ -7,10 +7,11 @@ import { uploadFiles } from "@/lib/uploadFiles";
 /**
  * 🚀 GET - Récupérer un exercice spécifique (Accès public)
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
-        const exercise = await Exercise.findById(params.id);
+        const { id } = await params;
+        const exercise = await Exercise.findById(id);
         if (!exercise) {
             return NextResponse.json({ error: "Exercice non trouvé." }, { status: 404 });
         }
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 /**
  * 🚀 PUT - Mettre à jour un exercice (Réservé aux Rédacteurs, Correcteurs, Admins)
  */
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -91,7 +92,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
 
         // Mettre à jour l'exercice dans la base de données
-        const updatedExercise = await Exercise.findByIdAndUpdate(params.id, body, { new: true });
+        const { id } = await params;
+        const updatedExercise = await Exercise.findByIdAndUpdate(id, body, { new: true });
         if (!updatedExercise) {
             return NextResponse.json({ error: "Exercice non trouvé." }, { status: 404 });
         }

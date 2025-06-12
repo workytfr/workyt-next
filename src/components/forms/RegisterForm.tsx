@@ -1,56 +1,174 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
 
+// Fonction pour normaliser le username côté client
+function normalizeUsername(username: string): string {
+    return username
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, '')
+        .replace(/[^a-z0-9_]/g, '')
+        .substring(0, 20);
+}
+
+// Fonction pour valider le username
+function validateUsername(username: string): { isValid: boolean; error?: string } {
+    if (!username || username.length === 0) {
+        return { isValid: false, error: "Le nom d'utilisateur est requis" };
+    }
+
+    if (username.length < 3) {
+        return { isValid: false, error: "Au moins 3 caractères requis" };
+    }
+
+    if (username.length > 20) {
+        return { isValid: false, error: "Maximum 20 caractères" };
+    }
+
+    const validPattern = /^[a-z0-9_]+$/;
+    if (!validPattern.test(username)) {
+        return { isValid: false, error: "Seules les lettres, chiffres et _ sont autorisés" };
+    }
+
+    if (username.startsWith('_') || /^[0-9]/.test(username)) {
+        return { isValid: false, error: "Doit commencer par une lettre" };
+    }
+
+    return { isValid: true };
+}
+
 export default function AuthPage() {
     const [isRegister, setIsRegister] = useState(false);
-    const [isForgotPassword, setIsForgotPassword] = useState(false); // Ajout de l'état "Mot de passe oublié"
-    const [isLoading, setIsLoading] = useState(false); // Nouveau : état pour gérer si une requête est en cours
+    const [isForgotPassword, setIsForgotPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
     const [name, setName] = useState("");
     const [username, setUsername] = useState("");
+    const [normalizedUsername, setNormalizedUsername] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [message, setMessage] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+    const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+
+    // Normalisation en temps réel du username
+    useEffect(() => {
+        if (username) {
+            const normalized = normalizeUsername(username);
+            setNormalizedUsername(normalized);
+
+            const validation = validateUsername(normalized);
+            if (!validation.isValid) {
+                setUsernameError(validation.error || "");
+            } else {
+                setUsernameError("");
+            }
+        } else {
+            setNormalizedUsername("");
+            setUsernameError("");
+        }
+        setUsernameSuggestions([]); // Reset suggestions quand l'utilisateur tape
+    }, [username]);
+
+    const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setUsername(value);
+    };
+
+    const handleSuggestionClick = (suggestion: string) => {
+        setUsername(suggestion);
+        setUsernameSuggestions([]);
+        setMessage("");
+    };
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
-        const res = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, username, email, password }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-            setMessage("Inscription réussie !");
-            window.location.reload(); // Rafraîchit la page
-        } else {
-            setMessage(data.message || "L'inscription a échoué.");
+
+        // Validation finale côté client
+        const validation = validateUsername(normalizedUsername);
+        if (!validation.isValid) {
+            setUsernameError(validation.error || "");
+            return;
+        }
+
+        setIsLoading(true);
+        setMessage("");
+        setUsernameSuggestions([]);
+
+        try {
+            const res = await fetch("/api/auth/register", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name,
+                    username: normalizedUsername, // Envoie la version normalisée
+                    email,
+                    password
+                }),
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                setMessage("Inscription réussie !");
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            } else {
+                setMessage(data.message || "L'inscription a échoué.");
+
+                // Affiche les suggestions si le username est pris
+                if (data.suggestions && data.suggestions.length > 0) {
+                    setUsernameSuggestions(data.suggestions);
+                }
+            }
+        } catch (error) {
+            console.error("Erreur lors de l'inscription:", error);
+            setMessage("Erreur de connexion au serveur.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        const result = await signIn("credentials", { email, password, redirect: false });
-        if (result?.ok) {
-            setMessage("Connexion réussie !");
-            window.location.reload(); // Rafraîchit la page
-        } else {
-            setMessage("Email ou mot de passe incorrect.");
+        setIsLoading(true);
+        setMessage("");
+
+        try {
+            const result = await signIn("credentials", {
+                email,
+                password,
+                redirect: false
+            });
+
+            if (result?.ok) {
+                setMessage("Connexion réussie !");
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                setMessage("Email ou mot de passe incorrect.");
+            }
+        } catch (error) {
+            console.error("Erreur lors de la connexion:", error);
+            setMessage("Erreur de connexion.");
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleForgotPassword = async (e: React.FormEvent) => {
         e.preventDefault();
 
-        // Bloquer les requêtes multiples si une requête est déjà en cours
         if (isLoading) return;
 
-        setIsLoading(true); // Début de la requête
-        setMessage(""); // Réinitialiser le message
+        setIsLoading(true);
+        setMessage("");
 
         try {
             const res = await fetch("/api/auth/reset", {
@@ -70,7 +188,7 @@ export default function AuthPage() {
             console.error(error);
             setMessage("Impossible de se connecter au serveur.");
         } finally {
-            setIsLoading(false); // Fin de la requête
+            setIsLoading(false);
         }
     };
 
@@ -86,7 +204,11 @@ export default function AuthPage() {
                         className={`text-lg font-semibold ${
                             !isRegister ? "text-primary border-b-2 border-primary" : "text-gray-500"
                         }`}
-                        onClick={() => setIsRegister(false)}
+                        onClick={() => {
+                            setIsRegister(false);
+                            setUsernameSuggestions([]);
+                            setUsernameError("");
+                        }}
                     >
                         Connexion
                     </button>
@@ -110,15 +232,16 @@ export default function AuthPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
-                        disabled={isLoading} // Désactive l'input si une requête est en cours
+                        disabled={isLoading}
                     />
                     <Button type="submit" disabled={isLoading}>
                         {isLoading ? "Envoi en cours..." : "Envoyer un email de réinitialisation"}
                     </Button>
                     <button
+                        type="button"
                         className="text-sm text-gray-500 underline"
                         onClick={() => setIsForgotPassword(false)}
-                        disabled={isLoading} // Bloque l'interaction si une requête est en cours
+                        disabled={isLoading}
                     >
                         Retour à la connexion
                     </button>
@@ -132,18 +255,54 @@ export default function AuthPage() {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
-                    <Input
-                        id="username"
-                        type="text"
-                        placeholder="Votre nom d'utilisateur"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        required
-                        // Pattern : lettres (majuscules/minuscules), chiffres et tiret
-                        pattern="^[A-Za-z0-9-]+$"
-                        title="Votre nom d'utilisateur ne doit contenir que des lettres, chiffres et tirets (sans espace)."
-                    />
+
+                    <div className="relative">
+                        <Input
+                            id="username"
+                            type="text"
+                            placeholder="Votre nom d'utilisateur"
+                            value={username}
+                            onChange={handleUsernameChange}
+                            required
+                            disabled={isLoading}
+                            className={usernameError ? "border-red-500" : ""}
+                        />
+
+                        {/* Aperçu du username normalisé */}
+                        {username && normalizedUsername !== username && (
+                            <div className="text-xs text-gray-500 mt-1">
+                                Sera sauvegardé comme: <span className="font-mono bg-gray-100 px-1 rounded">{normalizedUsername}</span>
+                            </div>
+                        )}
+
+                        {/* Erreur de validation */}
+                        {usernameError && (
+                            <div className="text-xs text-red-500 mt-1">
+                                {usernameError}
+                            </div>
+                        )}
+
+                        {/* Suggestions */}
+                        {usernameSuggestions.length > 0 && (
+                            <div className="mt-2 p-2 bg-gray-50 rounded border">
+                                <div className="text-xs text-gray-600 mb-2">Suggestions disponibles :</div>
+                                <div className="flex flex-wrap gap-2">
+                                    {usernameSuggestions.map((suggestion, index) => (
+                                        <button
+                                            key={index}
+                                            type="button"
+                                            onClick={() => handleSuggestionClick(suggestion)}
+                                            className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition-colors"
+                                        >
+                                            {suggestion}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
                     <Input
                         id="email"
@@ -152,16 +311,26 @@ export default function AuthPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
+
                     <Input
                         id="password"
                         type="password"
-                        placeholder="Votre mot de passe"
+                        placeholder="Votre mot de passe (min. 6 caractères)"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        minLength={6}
+                        disabled={isLoading}
                     />
-                    <Button type="submit">S&apos;inscrire</Button>
+
+                    <Button
+                        type="submit"
+                        disabled={isLoading || !!usernameError}
+                    >
+                        {isLoading ? "Inscription en cours..." : "S'inscrire"}
+                    </Button>
                 </form>
             ) : (
                 <form onSubmit={handleLogin} className="flex flex-col space-y-4">
@@ -172,6 +341,7 @@ export default function AuthPage() {
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
                     <Input
                         id="password"
@@ -180,11 +350,16 @@ export default function AuthPage() {
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         required
+                        disabled={isLoading}
                     />
-                    <Button type="submit">Se connecter</Button>
+                    <Button type="submit" disabled={isLoading}>
+                        {isLoading ? "Connexion en cours..." : "Se connecter"}
+                    </Button>
                     <button
+                        type="button"
                         className="text-sm text-gray-500 underline"
                         onClick={() => setIsForgotPassword(true)}
+                        disabled={isLoading}
                     >
                         Mot de passe oublié ?
                     </button>
@@ -192,13 +367,23 @@ export default function AuthPage() {
             )}
 
             <div className="flex justify-center mt-4">
-                <Button onClick={handleGoogleSignIn} className="flex items-center space-x-2">
+                <Button
+                    onClick={handleGoogleSignIn}
+                    className="flex items-center space-x-2"
+                    disabled={isLoading}
+                >
                     <FcGoogle />
                     <span>{isRegister ? "S'inscrire avec Google" : "Se connecter avec Google"}</span>
                 </Button>
             </div>
 
-            {message && <p className="text-center text-sm mt-4">{message}</p>}
+            {message && (
+                <p className={`text-center text-sm mt-4 ${
+                    message.includes("réussie") ? "text-green-600" : "text-red-600"
+                }`}>
+                    {message}
+                </p>
+            )}
         </div>
     );
 }

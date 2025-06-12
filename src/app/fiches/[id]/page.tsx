@@ -2,11 +2,19 @@ import { Metadata } from "next";
 import FicheView from "@/app/fiches/_components/FicheView";
 import React from "react";
 
-// Fonction pour générer des métadonnées
-export const generateMetadata = async ({ params }: { params: { id: string } }): Promise<Metadata> => {
+// Updated interface for the new Next.js params format
+interface PageProps {
+    params: Promise<{ id: string }>;
+}
+
+// Fonction pour générer des métadonnées (mise à jour pour async params)
+export const generateMetadata = async ({ params }: PageProps): Promise<Metadata> => {
     try {
+        // Await the params Promise
+        const { id } = await params;
+
         // Appel de l'API pour récupérer les données
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fiches/${params.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fiches/${id}`, {
             headers: {
                 'Content-Type': 'application/json',
             },
@@ -55,12 +63,15 @@ export const generateMetadata = async ({ params }: { params: { id: string } }): 
     }
 };
 
-// Composant principal de la page
-export default function FichePage({ params }: { params: { id: string } }) {
+// Composant principal de la page (mise à jour pour async params)
+export default async function FichePage({ params }: PageProps) {
+    // Await the params Promise
+    const { id } = await params;
+
     return (
         <div>
             {/* Affichage de la fiche */}
-            <FicheView id={params.id} />
+            <FicheView id={id} />
         </div>
     );
 }
