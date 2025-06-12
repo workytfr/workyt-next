@@ -28,7 +28,7 @@ const PointTransactionSchema: Schema = new Schema({
         enum: [
             'createRevision','likeRevision','unlikeRevision',
             'createAnswer','likeAnswer','unlikeAnswer',
-            'validateAnswer'
+            'validateAnswer', 'createQuestion',
         ],
         required: true
     },

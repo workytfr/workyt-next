@@ -2,14 +2,18 @@ import { Metadata } from "next";
 import React from "react";
 import QuestionDetailPage from "@/app/forum/_components/QuestionDetailPage";
 
-export const generateMetadata = async ({
-                                           params,
-                                       }: {
-    params: { id: string };
-}): Promise<Metadata> => {
+// Interface mise à jour pour correspondre au format de params utilisé ailleurs
+interface PageProps {
+    params: Promise<{ id: string }>;
+}
+
+export const generateMetadata = async ({ params }: PageProps): Promise<Metadata> => {
     try {
+        // Récupération des paramètres de l'URL
+        const { id } = await params;
+
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/forum/questions/${params.id}?page=1&limit=10`,
+            `${process.env.NEXT_PUBLIC_API_URL}/api/forum/questions/${id}?page=1&limit=10`,
             { headers: { "Content-Type": "application/json" } }
         );
 
@@ -65,10 +69,14 @@ export const generateMetadata = async ({
     }
 };
 
-export default function QuestionPage({ params }: { params: { id: string } }) {
+// Composant de page mis à jour pour utiliser async/await avec les params
+export default async function QuestionPage({ params }: PageProps) {
+    // Attendre la résolution de la promesse params
+    const { id } = await params;
+
     return (
         <div>
-            <QuestionDetailPage id={params.id} />
+            <QuestionDetailPage id={id} />
         </div>
     );
 }

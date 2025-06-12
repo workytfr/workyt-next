@@ -7,7 +7,7 @@ import { isValidObjectId } from "mongoose";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { courseId: string; sectionId: string } }
+    { params }: { params: Promise<{ courseId: string; sectionId: string }> }
 ) {
     try {
         await dbConnect();
@@ -20,7 +20,7 @@ export async function GET(
             user = null;
         }
 
-        const { courseId, sectionId } = params;
+        const { courseId, sectionId } = await params;
 
         // Validation des IDs
         if (!isValidObjectId(courseId) || !isValidObjectId(sectionId)) {
@@ -56,8 +56,15 @@ export async function GET(
         return NextResponse.json({ section }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la récupération de la section :", error.message);
+
+        // Don't expose internal error details in production
+        const isDevelopment = process.env.NODE_ENV === "development";
+
         return NextResponse.json(
-            { error: "Impossible de récupérer la section.", details: error.message },
+            {
+                error: "Impossible de récupérer la section.",
+                ...(isDevelopment && { details: error.message }),
+            },
             { status: 500 }
         );
     }

@@ -6,7 +6,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 /**
  * 🚀 PUT - Mettre à jour une leçon (Réservé aux Rédacteurs pour leurs propres leçons, aux Correcteurs et Admins)
  */
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -15,8 +15,11 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
         const body = await req.json();
-        const existingLesson = await Lesson.findById(params.id);
+        const existingLesson = await Lesson.findById(resolvedParams.id);
 
         if (!existingLesson) {
             return NextResponse.json({ error: "Leçon non trouvée." }, { status: 404 });
@@ -32,7 +35,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
 
         // Mise à jour de la leçon
-        const updatedLesson = await Lesson.findByIdAndUpdate(params.id, body, { new: true });
+        const updatedLesson = await Lesson.findByIdAndUpdate(resolvedParams.id, body, { new: true });
 
         return NextResponse.json(updatedLesson, { status: 200 });
     } catch (error: any) {
@@ -47,7 +50,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 /**
  * 🚀 DELETE - Supprimer une leçon (Réservé aux Admins uniquement)
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -56,11 +59,14 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
         if (user.role !== "Admin") {
             return NextResponse.json({ error: "Seul un Admin peut supprimer une leçon." }, { status: 403 });
         }
 
-        const deletedLesson = await Lesson.findByIdAndDelete(params.id);
+        const deletedLesson = await Lesson.findByIdAndDelete(resolvedParams.id);
         if (!deletedLesson) {
             return NextResponse.json({ error: "Leçon non trouvée." }, { status: 404 });
         }

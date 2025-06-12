@@ -6,10 +6,11 @@ import authMiddleware from "@/middlewares/authMiddleware";
 /**
  * 🚀 GET - Récupérer un cours spécifique (Accès public)
  */
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
-        const course = await Course.findById(params.id);
+        const { id } = await params;
+        const course = await Course.findById(id);
         if (!course) {
             return NextResponse.json({ error: "Cours non trouvé." }, { status: 404 });
         }
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 /**
  * 🚀 PUT - Mettre à jour un cours (Réservé aux Auteurs, Correcteurs, Admins)
  */
-export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -36,7 +37,8 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
         }
 
         const body = await req.json();
-        const existingCourse = await Course.findById(params.id);
+        const { id } = await params;
+        const existingCourse = await Course.findById(id);
 
         if (!existingCourse) {
             return NextResponse.json({ error: "Cours non trouvé." }, { status: 404 });
@@ -51,7 +53,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
-        const updatedCourse = await Course.findByIdAndUpdate(params.id, body, { new: true });
+        const updatedCourse = await Course.findByIdAndUpdate(id, body, { new: true });
 
         return NextResponse.json(updatedCourse, { status: 200 });
     } catch (error: any) {
@@ -66,7 +68,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 /**
  * 🚀 DELETE - Supprimer un cours (Réservé aux Admins uniquement)
  */
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         await dbConnect();
         const user = await authMiddleware(req);
@@ -79,7 +81,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
             return NextResponse.json({ error: "Seul un Admin peut supprimer un cours." }, { status: 403 });
         }
 
-        const deletedCourse = await Course.findByIdAndDelete(params.id);
+        const { id } = await params;
+        const deletedCourse = await Course.findByIdAndDelete(id);
         if (!deletedCourse) {
             return NextResponse.json({ error: "Cours non trouvé." }, { status: 404 });
         }

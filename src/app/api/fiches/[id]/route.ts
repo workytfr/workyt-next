@@ -12,8 +12,8 @@ connectDB();
 /**
  * Gérer la méthode GET pour récupérer une fiche spécifique
  */
-export const GET = async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const { id } = params;
+export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
 
     if (!id) {
         return NextResponse.json({ success: false, message: "ID de la fiche requis." }, { status: 400 });
@@ -56,11 +56,12 @@ export const GET = async (req: NextRequest, { params }: { params: { id: string }
         return NextResponse.json({ success: false, message: "Erreur lors de la récupération." }, { status: 500 });
     }
 };
+
 /**
  * Gérer la méthode PUT pour mettre à jour une fiche
  */
-export const PUT = async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const { id } = params;
+export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
 
     if (!id) {
         return NextResponse.json({ success: false, message: "ID de la fiche requis." }, { status: 400 });
@@ -94,8 +95,8 @@ export const PUT = async (req: NextRequest, { params }: { params: { id: string }
 /**
  * Gérer la méthode DELETE pour supprimer une fiche
  */
-export const DELETE = async (req: NextRequest, { params }: { params: { id: string } }) => {
-    const { id } = params;
+export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
+    const { id } = await params;
 
     if (!id) {
         return NextResponse.json({ success: false, message: "ID de la fiche requis." }, { status: 400 });

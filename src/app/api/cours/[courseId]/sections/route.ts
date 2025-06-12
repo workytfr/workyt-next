@@ -5,7 +5,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 
 export async function GET(
     req: NextRequest,
-    { params }: { params: { courseId: string } }
+    { params }: { params: Promise<{ courseId: string }> }
 ) {
     try {
         await dbConnect();
@@ -17,7 +17,8 @@ export async function GET(
             user = null;
         }
 
-        const { courseId } = params;
+        // Await the params Promise
+        const { courseId } = await params;
 
         // Récupérer toutes les sections du cours
         const sections = await Section.find({ courseId })

@@ -5,7 +5,7 @@ import Answer from "@/models/Answer";
 import Revision from "@/models/Revision";
 import { generateSignedUrl } from "@/lib/b2Utils"; // Fonction pour générer des URLs signées
 
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
         // Connexion à MongoDB
         await dbConnect();
@@ -15,15 +15,18 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         const page = parseInt(searchParams.get("page") || "1", 10);
         const limit = parseInt(searchParams.get("limit") || "10", 10);
 
+        // 🔹 Await the params Promise
+        const resolvedParams = await params;
+
         // Vérifier si l'ID est fourni
-        if (!params.id) {
+        if (!resolvedParams.id) {
             return NextResponse.json(
                 { success: false, message: "ID de la question manquant." },
                 { status: 400 }
             );
         }
 
-        const question = await Question.findById(params.id).populate({
+        const question = await Question.findById(resolvedParams.id).populate({
             path: "user",
             select: "username points",
         });
@@ -53,7 +56,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         }
 
         // 🔹 Récupérer les réponses avec pagination et username des auteurs
-        const answers = await Answer.find({ question: params.id })
+        const answers = await Answer.find({ question: resolvedParams.id })
             .populate({
                 path: "user",
                 select: "username points",
@@ -62,7 +65,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
             .skip((page - 1) * limit)
             .limit(limit);
 
-        const totalAnswers = await Answer.countDocuments({ question: params.id });
+        const totalAnswers = await Answer.countDocuments({ question: resolvedParams.id });
 
         // 🔹 Extraction des mots-clés du titre pour rechercher des fiches de révision
         const titleWords = question.title.split(" ").slice(0, 4).join("|");

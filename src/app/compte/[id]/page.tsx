@@ -17,16 +17,16 @@ import { FaQuestionCircle, FaReply } from "react-icons/fa";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import Image from "next/image";
 
-export default function UserAccountPage({ params }: { params: { id: string } }) {
-    const { id } = params;
+export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
     const router = useRouter();
 
+    const [id, setId] = useState<string | null>(null);
     const [user, setUser] = useState<any>(null);
     const [revisions, setRevisions] = useState<any[]>([]);
     const [questions, setQuestions] = useState<any[]>([]);
     const [answers, setAnswers] = useState<any[]>([]);
-    const [pagination, setPagination] = useState({ page: 1, totalPages: 1 }); // Pagination état
+    const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -39,7 +39,18 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
         image: "",
     });
 
+    // Resolve params promise
     useEffect(() => {
+        async function resolveParams() {
+            const resolvedParams = await params;
+            setId(resolvedParams.id);
+        }
+        resolveParams();
+    }, [params]);
+
+    useEffect(() => {
+        if (!id) return; // Wait for id to be resolved
+
         async function fetchUser() {
             try {
                 setLoading(true);
@@ -103,6 +114,8 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
     };
 
     const handleSave = async () => {
+        if (!id) return;
+
         try {
             const res = await fetch(`/api/user/${id}`, {
                 method: "PATCH",
@@ -131,7 +144,7 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
     const isOwner = session?.user?.id === id;
     const isAdmin = session?.user?.role === "Admin";
 
-    if (loading) {
+    if (loading || !id) {
         return (
             <div className="bg-white">
                 <div className="container mx-auto mt-6 space-y-6">
@@ -323,7 +336,6 @@ export default function UserAccountPage({ params }: { params: { id: string } }) 
                         <p className="text-sm text-gray-500">Aucune réponse donnée.</p>
                     )}
                 </div>
-
 
                 {/* Pagination */}
                 <Pagination>
