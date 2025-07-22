@@ -7,6 +7,7 @@ import Question from "@/models/Question";
 import Answer from "@/models/Answer";
 import User from "@/models/User";
 import PointTransaction from '@/models/PointTransaction';
+import { BadgeService } from "@/lib/badgeService";
 
 // --- Configuration Client S3 pour Cloudflare R2 ---
 const s3Client = new S3Client({
@@ -140,6 +141,9 @@ export async function POST(
                 points: 2
             });
         }
+
+        // Vérification et attribution des badges
+        await BadgeService.checkAndAwardBadges(user._id.toString());
 
         return NextResponse.json(
             { success: true, message: "Réponse ajoutée avec succès.", data: newAnswer },

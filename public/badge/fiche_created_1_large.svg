@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cercle de fond -->
+  <circle cx="32" cy="32" r="30" fill="#10B981" stroke="#059669" stroke-width="3"/>
+  
+  <!-- Icône de document/fiche -->
+  <rect x="18" y="12" width="28" height="36" rx="2" fill="white" stroke="#059669" stroke-width="2"/>
+  
+  <!-- Ligne de titre -->
+  <rect x="22" y="18" width="20" height="3" rx="1" fill="#059669"/>
+  
+  <!-- Lignes de contenu -->
+  <rect x="22" y="24" width="16" height="2" rx="1" fill="#059669"/>
+  <rect x="22" y="28" width="18" height="2" rx="1" fill="#059669"/>
+  <rect x="22" y="32" width="14" height="2" rx="1" fill="#059669"/>
+  <rect x="22" y="36" width="12" height="2" rx="1" fill="#059669"/>
+  
+  <!-- Indicateur de niveau 1 -->
+  <circle cx="48" cy="16" r="6" fill="#F59E0B" stroke="white" stroke-width="1.5"/>
+  <text x="48" y="19" text-anchor="middle" fill="white" font-size="10" font-weight="bold">1</text>
+  
+  <!-- Icône de crayon pour auteur -->
+  <path d="M16 44L20 40L24 44L20 48Z" fill="#059669"/>
+  <path d="M20 40L24 36" stroke="#059669" stroke-width="1.5" stroke-linecap="round"/>
+</svg> 

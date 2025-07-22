@@ -5,6 +5,7 @@ import Answer from "@/models/Answer";
 import Question from "@/models/Question";
 import User from "@/models/User";
 import PointTransaction from "@/models/PointTransaction";
+import { BadgeService } from "@/lib/badgeService";
 
 export async function POST(req: NextRequest) {
     try {
@@ -99,6 +100,9 @@ export async function POST(req: NextRequest) {
                 createdAt: new Date(),
             });
 
+            // 🔹 Vérifier les badges pour l'auteur de la réponse
+            await BadgeService.triggerBadgeCheck(answer.user.toString());
+
             return NextResponse.json(
                 { success: true, message: "Réponse désignée comme Meilleure Réponse.", data: answer },
                 { status: 200 }
@@ -115,6 +119,9 @@ export async function POST(req: NextRequest) {
                 question.status = "Validée";
                 await question.save();
             }
+
+            // 🔹 Vérifier les badges pour l'auteur de la réponse
+            await BadgeService.triggerBadgeCheck(answer.user.toString());
 
             return NextResponse.json(
                 { success: true, message: "Réponse validée par le staff.", data: answer },

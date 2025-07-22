@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Separator } from "@/components/ui/Separator";
 import { Toast } from "@/components/ui/UseToast";
 import { Label } from "@/components/ui/Label";
+import BadgeDisplay from "@/components/ui/BadgeDisplay";
 import { FaQuestionCircle, FaReply } from "react-icons/fa";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import Image from "next/image";
@@ -197,18 +198,8 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
 
                 {/* Badges Section */}
                 <div>
-                    <h2 className="text-lg font-bold">Badges</h2>
-                    <div className="flex gap-2 flex-wrap mt-4">
-                        {formData.badges.length > 0 ? (
-                            formData.badges.map((badge: string, idx: number) => (
-                                <Badge key={idx} variant="secondary">
-                                    {badge}
-                                </Badge>
-                            ))
-                        ) : (
-                            <p className="text-sm text-gray-500">Aucun badge obtenu.</p>
-                        )}
-                    </div>
+                    <h2 className="text-lg font-bold mb-4">Badges</h2>
+                    <BadgeDisplay userId={id} showProgress={true} />
                 </div>
 
                 <Separator className="my-6" />

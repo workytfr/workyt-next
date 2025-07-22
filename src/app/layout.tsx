@@ -3,6 +3,7 @@ import ClientProviders from "@/components/ClientProviders";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
+import { ReactNode } from "react";
 
 interface RootLayoutProps {
     children: ReactNode;

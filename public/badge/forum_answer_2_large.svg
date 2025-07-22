@@ -1,0 +1,24 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cercle de fond -->
+  <circle cx="32" cy="32" r="30" fill="#3B82F6" stroke="#1E40AF" stroke-width="3"/>
+  
+  <!-- Icône de message/forum -->
+  <rect x="16" y="20" width="32" height="24" rx="4" fill="white" stroke="#1E40AF" stroke-width="2"/>
+  
+  <!-- Ligne de texte 1 -->
+  <rect x="20" y="26" width="20" height="2" rx="1" fill="#1E40AF"/>
+  
+  <!-- Ligne de texte 2 -->
+  <rect x="20" y="30" width="16" height="2" rx="1" fill="#1E40AF"/>
+  
+  <!-- Ligne de texte 3 -->
+  <rect x="20" y="34" width="12" height="2" rx="1" fill="#1E40AF"/>
+  
+  <!-- Indicateur de niveau 2 -->
+  <circle cx="48" cy="16" r="8" fill="#F59E0B" stroke="white" stroke-width="2"/>
+  <text x="48" y="20" text-anchor="middle" fill="white" font-size="12" font-weight="bold">2</text>
+  
+  <!-- Étoiles pour la rareté -->
+  <path d="M12 12L14 16L18 16L15 19L16 23L12 21L8 23L9 19L6 16L10 16Z" fill="#FCD34D"/>
+  <path d="M52 12L54 16L58 16L55 19L56 23L52 21L48 23L49 19L46 16L50 16Z" fill="#FCD34D"/>
+</svg> 
