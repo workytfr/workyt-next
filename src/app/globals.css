@@ -86,3 +86,43 @@
   }
 
 }
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Animation de brillance pour les ranks */
+@keyframes shine {
+  0% {
+    transform: translateX(-100%) skewX(-12deg);
+  }
+  100% {
+    transform: translateX(200%) skewX(-12deg);
+  }
+}
+
+.animate-shine {
+  animation: shine 2s ease-in-out infinite;
+  overflow: hidden;
+}
+
+/* Empêcher le débordement horizontal */
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
+/* S'assurer que les conteneurs ne débordent pas */
+.container {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Corriger les animations qui peuvent causer des débordements */
+.animate-pulse,
+.animate-bounce,
+.animate-spin {
+  overflow: hidden;
+}

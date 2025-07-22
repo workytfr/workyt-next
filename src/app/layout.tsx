@@ -12,7 +12,7 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html lang="fr">
-        <body>
+        <body className="overflow-x-hidden">
         <ClientProviders>
             {children}
         </ClientProviders>

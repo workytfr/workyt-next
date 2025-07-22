@@ -14,6 +14,8 @@ import { Separator } from "@/components/ui/Separator";
 import { Toast } from "@/components/ui/UseToast";
 import { Label } from "@/components/ui/Label";
 import BadgeDisplay from "@/components/ui/BadgeDisplay";
+import UserRank from "@/components/ui/UserRank";
+import BadgeProgress from "@/components/ui/BadgeProgress";
 import { FaQuestionCircle, FaReply } from "react-icons/fa";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import Image from "next/image";
@@ -196,10 +198,21 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
 
                 <Separator className="my-6" />
 
+                {/* Rank Section */}
+                <div>
+                    <h2 className="text-lg font-bold mb-4">Niveau & Rank</h2>
+                    <UserRank points={formData.points} />
+                </div>
+
+                <Separator className="my-6" />
+
                 {/* Badges Section */}
                 <div>
                     <h2 className="text-lg font-bold mb-4">Badges</h2>
-                    <BadgeDisplay userId={id} showProgress={true} />
+                    <BadgeProgress badgesCount={formData.badges.length} totalBadges={18} />
+                    <div className="mt-4">
+                        <BadgeDisplay userId={id} showProgress={true} />
+                    </div>
                 </div>
 
                 <Separator className="my-6" />

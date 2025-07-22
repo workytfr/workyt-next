@@ -185,9 +185,9 @@ export default function BadgeDisplay({
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
+    <div className={`space-y-4 overflow-hidden ${className}`}>
       {/* Badges obtenus */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-hidden">
         {displayBadges.map((badge) => (
           <Tooltip key={badge._id}>
             <TooltipTrigger asChild>
