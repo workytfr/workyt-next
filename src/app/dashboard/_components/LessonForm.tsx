@@ -13,7 +13,7 @@ import {
 import { useSession, signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { ILesson } from "@/models/Lesson";
-import RichTextEditor from "@/components/ui/RichTextEditor";
+import RichTextEditor from "@/components/ui/RichTextEditorClientWrapper";
 
 interface ICourse {
     _id: string;
@@ -27,6 +27,7 @@ interface LessonFormProps {
 }
 
 export default function LessonForm({ lesson, onSuccess }: LessonFormProps) {
+    // TOUS les autres hooks doivent être appelés ici AVANT la condition
     const { data: session, update } = useSession();
     const [courses, setCourses] = useState<ICourse[]>([]);
     const [searchQuery, setSearchQuery] = useState("");

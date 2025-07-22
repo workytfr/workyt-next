@@ -1,13 +1,5 @@
-"use client";
-
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
-import { SessionProvider } from "next-auth/react"; // Import du SessionProvider
-import { TooltipProvider } from "@/components/ui/Tooltip";
-import { ReactNode } from "react";
-import Navbar from "@/components/navbar/Navbar";
-import Footer from "@/components/home/footer";
-
+import ClientProviders from "@/components/ClientProviders";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
@@ -20,37 +12,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html lang="fr">
         <body>
-        {/* Enveloppe avec le SessionProvider */}
-        <NextSSRPlugin
-            /**
-             * The `extractRouterConfig` will extract **only** the route configs
-             * from the router to prevent additional information from being
-             * leaked to the client. The data passed to the client is the same
-             * as if you were to fetch `/api/uploadthing` directly.
-             */
-            routerConfig={extractRouterConfig(ourFileRouter)}
-        />
-        <SessionProvider>
-            <ThemeProvider
-                attribute="class"
-                defaultTheme="system"
-                enableSystem
-                disableTransitionOnChange
-            >
-                <Navbar />
-                <TooltipProvider>
-                {children}
-                </TooltipProvider>
-                <Footer />
-            </ThemeProvider>
-        </SessionProvider>
-
+        <ClientProviders>
+            {children}
+        </ClientProviders>
         {/* Tidio Script */}
         <script
             src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
             async
         ></script>
-
         {/* Cookie Consent Scripts */}
         <script
             type="text/javascript"
@@ -66,7 +35,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
             charSet="utf-8"
             async
         ></script>
-
         {/* Google Ads Scripts */}
         <script
             async
@@ -84,7 +52,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
                         `,
             }}
         ></script>
-
         {/* Mailchimp Script */}
         <script
             id="mcjs"
