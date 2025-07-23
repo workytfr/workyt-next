@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils"; // ShadCN helper
-import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot } from "lucide-react";
+import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot, Award } from "lucide-react";
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -12,6 +12,7 @@ const navItems = [
     { name: "Leçons", href: "/dashboard/lessons", icon: FileText },
     { name: "Quizz", href: "/dashboard/quizzes", icon: CircleDot, disabled: true },
     { name: "Exercices", href: "/dashboard/exercises", icon: LibraryBig },
+    { name: "Certificats", href: "/dashboard/certificates", icon: Award },
     { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
     { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];

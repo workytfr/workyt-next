@@ -5,7 +5,7 @@ import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 
 /**
- * 🚀 GET - Récupérer les cours avec pagination et recherche (Réservé au staff)
+ * 🚀 GET - Récupérer les cours avec pagination et recherche avancée (Réservé au staff)
  */
 export async function GET(req: NextRequest) {
     try {
@@ -21,9 +21,12 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const search = searchParams.get("search") || "";
         const status = searchParams.get("status");
-        const authorId = searchParams.get("authorId");
         const niveau = searchParams.get("niveau");
         const matiere = searchParams.get("matiere");
+        const sortBy = searchParams.get("sortBy") || "createdAt";
+        const sortOrder = searchParams.get("sortOrder") || "desc";
+        const hasSections = searchParams.get("hasSections");
+        const authorId = searchParams.get("authorId");
 
         const page = parseInt(searchParams.get("page") || "1", 10);
         const limit = parseInt(searchParams.get("limit") || "10", 10);
@@ -31,17 +34,29 @@ export async function GET(req: NextRequest) {
 
         // 🔍 Création des filtres
         const filters: any = {};
-        if (search) filters.title = { $regex: search, $options: "i" }; // Recherche insensible à la casse
-        if (status) filters.status = status;
-        if (authorId) filters.authors = authorId; // Filtrer par auteur
-        if (niveau) filters.niveau = niveau; // Filtrer par niveau
-        if (matiere) filters.matiere = matiere; // Filtrer par matière
+        
+        // Recherche textuelle
+        if (search) {
+            filters.$or = [
+                { title: { $regex: search, $options: "i" } },
+                { description: { $regex: search, $options: "i" } },
+            ];
+        }
+        
+        if (status && status !== "all") filters.status = status;
+        if (niveau && niveau !== "all") filters.niveau = niveau;
+        if (matiere && matiere !== "all") filters.matiere = matiere;
+        if (authorId && authorId !== "all") filters.authors = authorId;
+
+        // Configuration du tri
+        const sortConfig: any = {};
+        sortConfig[sortBy] = sortOrder === "asc" ? 1 : -1;
 
         // 📌 Récupération des cours avec pagination et leurs sections
         const courses = await Course.find(filters)
-            .populate("authors", "name") // Charger les noms des auteurs
+            .populate("authors", "name")
             .lean()
-            .sort({ createdAt: -1 }) // Trier par date décroissante
+            .sort(sortConfig)
             .skip(skip)
             .limit(limit);
 
@@ -58,11 +73,115 @@ export async function GET(req: NextRequest) {
         // 📊 Obtenir le nombre total de documents pour la pagination
         const totalCourses = await Course.countDocuments(filters);
 
+        // 🔍 Filtre par sections si demandé
+        let filteredCourses = coursesWithSections;
+        if (hasSections === "true") {
+            filteredCourses = coursesWithSections.filter(course => course.sections.length > 0);
+        }
+
+        // 📈 Calculer les statistiques
+        const stats = await Promise.all([
+            Course.countDocuments(),
+            Course.countDocuments({ status: "publie" }),
+            Course.countDocuments({ status: { $in: ["en_attente_verification", "en_attente_publication"] } }),
+            Course.countDocuments({ status: "annule" }),
+            Course.aggregate([
+                {
+                    $lookup: {
+                        from: "sections",
+                        localField: "_id",
+                        foreignField: "courseId",
+                        as: "sections"
+                    }
+                },
+                {
+                    $match: {
+                        "sections.0": { $exists: true }
+                    }
+                },
+                {
+                    $count: "count"
+                }
+            ]),
+            Course.aggregate([
+                {
+                    $group: {
+                        _id: "$niveau",
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Course.aggregate([
+                {
+                    $group: {
+                        _id: "$matiere",
+                        count: { $sum: 1 }
+                    }
+                }
+            ]),
+            Course.aggregate([
+                {
+                    $lookup: {
+                        from: "sections",
+                        localField: "_id",
+                        foreignField: "courseId",
+                        as: "sections"
+                    }
+                },
+                {
+                    $group: {
+                        _id: null,
+                        avgSections: { $avg: { $size: "$sections" } }
+                    }
+                }
+            ]),
+            Course.countDocuments({
+                createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
+            })
+        ]);
+
+        const [
+            total,
+            published,
+            pending,
+            cancelled,
+            withSectionsResult,
+            byLevel,
+            bySubject,
+            avgSectionsResult,
+            recentCourses
+        ] = stats;
+
+        const withSections = withSectionsResult[0]?.count || 0;
+        const avgSectionsPerCourse = avgSectionsResult[0]?.avgSections || 0;
+
+        const byLevelMap = byLevel.reduce((acc, item) => {
+            acc[item._id] = item.count;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const bySubjectMap = bySubject.reduce((acc, item) => {
+            acc[item._id] = item.count;
+            return acc;
+        }, {} as Record<string, number>);
+
         return NextResponse.json({
             total: totalCourses,
             page,
             limit,
-            courses: coursesWithSections, // ✅ Retourne les cours avec leurs sections associées
+            totalPages: Math.ceil(totalCourses / limit),
+            courses: filteredCourses,
+            stats: {
+                total,
+                published,
+                pending,
+                cancelled,
+                withSections,
+                byLevel: byLevelMap,
+                bySubject: bySubjectMap,
+                recentCourses,
+                avgSectionsPerCourse
+            }
         }, { status: 200 });
 
     } catch (error: any) {
