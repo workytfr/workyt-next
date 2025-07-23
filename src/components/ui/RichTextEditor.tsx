@@ -1,19 +1,20 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import Heading from '@tiptap/extension-heading';
 import Highlight from '@tiptap/extension-highlight';
-import Mathematics from '@tiptap-pro/extension-mathematics';
-import TextStyle from '@tiptap/extension-text-style';
+import Mathematics from '@tiptap/extension-mathematics';
+import { TextStyle } from '@tiptap/extension-text-style';
 import Color from '@tiptap/extension-color';
 import Image from '@tiptap/extension-image';
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import Table from '@tiptap/extension-table';
-import TableRow from '@tiptap/extension-table-row';
-import TableHeader from '@tiptap/extension-table-header';
-import TableCell from '@tiptap/extension-table-cell';
+import { Table } from '@tiptap/extension-table';
+import { TableRow } from '@tiptap/extension-table-row';
+import { TableHeader } from '@tiptap/extension-table-header';
+import { TableCell } from '@tiptap/extension-table-cell';
 import { all, createLowlight } from 'lowlight';
 import 'katex/dist/katex.min.css';
 
@@ -34,6 +35,7 @@ function defaultShouldRender(state: any, pos: number, node: any) {
 }
 
 export default function RichTextEditor({ content, onChange }: RichTextEditorProps) {
+    // Le hook useEditor doit être appelé directement dans le composant, sans condition.
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
@@ -45,11 +47,7 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
             }),
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             Highlight,
-            Mathematics.configure({
-                shouldRender: (state, pos, node) =>
-                    defaultShouldRender(state, pos, node) && node.type.name !== 'heading',
-                regex: /\$([^\$]*)\$/gi,
-            }),
+            Mathematics,
             TextStyle,
             Color.configure({ types: ['textStyle'] }),
             Image.configure({
@@ -70,13 +68,10 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
             TableRow,
             TableHeader,
             TableCell,
-
-            // Notre extension custom pour les blocs
-            CustomBlock.configure({
-                // Optionnel: vous pouvez définir des attributs HTML par défaut ici
-            }),
+            CustomBlock.configure({}),
         ],
         content,
+        immediatelyRender: false,
         editorProps: {
             attributes: { class: 'ProseMirror min-h-[156px] border rounded-md bg-slate-50 py-2 px-3' },
         },

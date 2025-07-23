@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+// SUPPRIMER : import ReactDOM from "react-dom";
 import {
     FaBook,
     FaLightbulb,
@@ -30,120 +31,215 @@ const injectCustomCss = () => {
         const style = document.createElement("style");
         style.id = "lesson-custom-css";
         style.innerHTML = `
+            @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@800&display=swap');
+            @keyframes fadeInUp {
+                0% { opacity: 0; transform: translateY(40px); }
+                100% { opacity: 1; transform: translateY(0); }
+            }
+            /* Nouveau fond très doux et granuleux */
+            .lesson-bg-animated {
+                position: fixed;
+                top: 0; left: 0; width: 100vw; height: 100vh;
+                z-index: 0 !important;
+                pointer-events: none;
+                background: radial-gradient(circle at 60% 30%, #fff7ed 0%, #fffbe6 100%);
+                /* Overlay granuleux subtil en SVG base64 */
+                /* Source : https://svgbackgrounds.com/ ou générateur de grain */
+                /* Le SVG est très léger et discret */
+                opacity: 1;
+            }
+            .lesson-bg-animated::after {
+                content: '';
+                position: absolute;
+                top: 0; left: 0; width: 100%; height: 100%;
+                pointer-events: none;
+                opacity: 0.18;
+                background-image: url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%25" height="100%25" filter="url(%23grain)" opacity="0.35"/></svg>');
+                background-repeat: repeat;
+                background-size: cover;
+            }
             .lesson-container {
-                font-family: 'Inter', sans-serif;
-                line-height: 1.6;
-                background: linear-gradient(to bottom right, #f8fafc, #f1f5f9);
+                background: none !important;
+                position: relative;
+                z-index: 2 !important;
+                min-height: 100vh;
+                color: #222;
+                padding-bottom: 4rem !important;
             }
             .lesson-header {
-                background: linear-gradient(to right, #3b82f6, #2563eb);
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                position: relative;
+                z-index: 2;
+                display: flex;
+                align-items: center;
+                gap: 1.5rem;
+                padding: 2.2rem 3.5rem;
+                margin-bottom: 2.5rem;
+                width: fit-content;
+                border-radius: 2rem;
+                background: rgba(255,255,255,0.25);
+                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+                backdrop-filter: blur(8px) saturate(1.1);
+                -webkit-backdrop-filter: blur(8px) saturate(1.1);
+                border: 1.5px solid rgba(255,255,255,0.18);
+                animation: fadeInUp 1s cubic-bezier(.4,0,.2,1);
             }
-            .math-section {
-                background-color: #f0f9ff;
-                border-left: 4px solid #3b82f6;
-                padding: 1rem;
-                margin: 1rem 0;
-                border-radius: 0.5rem;
+            .lesson-header h1 {
+                font-family: 'Montserrat', 'Playfair Display', serif;
+                font-size: 2.8rem;
+                font-weight: 800;
+                letter-spacing: 0.04em;
+                color: #222;
+                background: none;
+                -webkit-background-clip: unset;
+                background-clip: unset;
+                filter: none;
+                text-shadow: 0 2px 12px #fffbe6cc, 0 1px 0 #fff;
+                animation: none;
+                transition: none;
             }
-            .math-content {
-                font-size: 1.1rem;
-                color: #1e3a8a;
+            .lesson-header .text-3xl {
+                font-size: 2.5rem;
+                filter: drop-shadow(0 2px 8px #fffbe6cc);
+                color: #ffb86b;
             }
-            .index-highlight {
-                color: #dc2626;
-                font-weight: 600;
-            }
-            .section-title {
-                color: #1e40af;
-                font-weight: 700;
-                border-bottom: 2px solid #60a5fa;
-                padding-bottom: 0.5rem;
-                margin-bottom: 1rem;
-            }
-            
-            /* Blocs génériques */
             .lesson-block {
                 position: relative;
                 padding: 1.5rem 1rem 1.5rem 2.5rem;
                 margin: 1.5rem 0;
-                border-radius: 0.75rem;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                border-radius: 1.1rem;
+                box-shadow: 0 4px 24px 0 rgba(112,145,245,0.06);
                 overflow: hidden;
+                transition: box-shadow 0.2s, transform 0.2s;
+                animation: zoomIn 0.7s cubic-bezier(.4,0,.2,1);
+                z-index: 2;
+                background: #fffbe6;
+                color: #222;
+            }
+            .lesson-block.sequential-appear {
+                opacity: 0;
+                transform: translateY(40px);
+                animation: fadeInUp 0.7s cubic-bezier(.4,0,.2,1) forwards;
+            }
+            .lesson-block:hover {
+                box-shadow: 0 8px 32px 0 rgba(112,145,245,0.10);
             }
             .lesson-block-title {
                 font-weight: 700;
                 margin-bottom: 0.5rem;
                 display: flex;
                 align-items: center;
-                gap: 0.75rem;
+                gap: 1rem;
+                font-size: 1.25rem;
+                color: #d97706;
             }
             .lesson-block-content {
-                color: #333;
+                color: #222;
                 font-weight: 500;
+                font-size: 1.08rem;
             }
             .lesson-block-description {
-                font-size: 0.875rem;
-                color: #666;
+                font-size: 0.95rem;
+                color: #b26a00;
                 margin-bottom: 0.5rem;
                 font-style: italic;
             }
-            
-            /* Définition */
+            /* Blocs spécifiques : fond très pâle, bordure colorée douce */
             .definition-box {
-                background: linear-gradient(135deg, #FFF3E0, #FFE0B2);
-                border-left: 6px solid #FF9800;
-                color: #333;
+                background: #fffbe6;
+                border-left: 8px solid #ffb86b;
+                color: #222;
             }
-            .definition-box .lesson-block-title {
-                color: #F57C00;
+            .propriete-box {
+                background: #fffbe6;
+                border-left: 8px solid #6ec1e4;
+                color: #222;
             }
-            
-            /* Propriété */
-            .property-box {
-                background: linear-gradient(135deg, #E6F3FF, #D6E6FF);
-                border-left: 6px solid #2196F3;
-                color: #1565c0;
+            .theoreme-box {
+                background: #fffbe6;
+                border-left: 8px solid #7ed957;
+                color: #222;
             }
-            .property-box .lesson-block-title {
-                color: #1976D2;
+            .remarque-box {
+                background: #fffbe6;
+                border-left: 8px dashed #b26a00;
+                color: #222;
             }
-            
-            /* Théorème */
-            .theorem-box {
-                background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
-                border-left: 6px solid #4CAF50;
-                color: #2E7D32;
+            .attention-box {
+                background: #fffbe6;
+                border-left: 8px solid #ff7f50;
+                color: #222;
             }
-            .theorem-box .lesson-block-title {
-                color: #2E7D32;
+            .exemple-box {
+                background: #fffbe6;
+                border-left: 8px solid #6ec1e4;
+                color: #222;
             }
-            
-            /* Remarque */
-            .remark-box {
-                background: linear-gradient(135deg, #F3E5F5, #E1BEE7);
-                border-left: 6px solid #9C27B0;
-                color: #6A1B9A;
+            .lesson-content, .lesson-content *, .lesson-content :not([class^='lesson-block']) {
+                color: #222 !important;
+                background: transparent !important;
             }
-            .remark-box .lesson-block-title {
-                color: #7B1FA2;
+            .lesson-content a {
+                color: #b26a00 !important;
+                text-decoration: underline !important;
             }
-            
-            /* Attention */
-            .warning-box {
-                background: linear-gradient(135deg, #FFEBEE, #FFCDD2);
-                border-left: 6px solid #F44336;
-                color: #B71C1C;
+            .lesson-content img {
+                filter: none !important;
+                opacity: 1 !important;
+                background: none !important;
+                box-shadow: 0 2px 12px #ffecd1cc;
             }
-            .warning-box .lesson-block-title {
-                color: #D32F2F;
+            .lesson-content h2 {
+                font-size: 2.1rem;
+                font-weight: 800;
+                color: #ffb86b;
+                margin-top: 2.5rem;
+                margin-bottom: 1.2rem;
+                position: relative;
+                padding-left: 1.1rem;
+                letter-spacing: 0.01em;
+                text-shadow: 0 2px 12px #ffecd1cc;
+            }
+            .lesson-content h2::before {
+                content: '';
+                position: absolute;
+                left: 0; top: 0.3rem;
+                width: 6px; height: 70%;
+                border-radius: 4px;
+                background: linear-gradient(180deg, #ffb86b 0%, #fffbe6 100%);
+                box-shadow: 0 2px 8px #ffecd1cc;
+            }
+            .lesson-content h3 {
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: #6ec1e4;
+                margin-top: 2rem;
+                margin-bottom: 1rem;
+                border-left: 4px solid #6ec1e4;
+                padding-left: 0.7rem;
+                background: linear-gradient(90deg, #e0f7fa 0%, #fffbe6 100%);
+                border-radius: 0 0.5rem 0.5rem 0;
+            }
+            .lesson-content h4 {
+                font-size: 1.08rem;
+                font-weight: 700;
+                color: #b26a00;
+                margin-top: 1.5rem;
+                margin-bottom: 0.7rem;
+                text-transform: uppercase;
+                letter-spacing: 0.08em;
+                display: inline-block;
+                padding: 0.18em 0.7em;
+                background: #fff7ed;
+                border-radius: 0.5em;
+                border-bottom: 2px solid #ffb86b;
+                box-shadow: 0 1px 4px #ffecd144;
             }
         `;
         document.head.appendChild(style);
     }
 };
 
-// Mapping des blocs avec leurs icônes et descriptions
+// Adapter le mapping d'icônes pour les noms français
 const blockTypeConfig = {
     "definition": {
         icon: FaBookOpen,
@@ -169,6 +265,11 @@ const blockTypeConfig = {
         icon: FaExclamationCircle,
         title: "Attention",
         description: "Un avertissement important ou un point critique à considérer avec une attention particulière."
+    },
+    "exemple": {
+        icon: FaBook,
+        title: "Exemple",
+        description: "Une illustration concrète pour mieux comprendre le concept."
     }
 };
 
@@ -178,26 +279,27 @@ function enhancedStylePlugin() {
             if (node.type === "element" && node.tagName === "div" && node.properties?.blocktype) {
                 const blockType = node.properties.blocktype;
                 const config = blockTypeConfig[blockType as keyof typeof blockTypeConfig] || blockTypeConfig.remarque;
-
-                // Modify the structure to include a title, description, and icon
                 if (node.children && node.children.length > 0) {
                     const firstChild = node.children[0];
                     let title = config.title;
                     let remainingChildren = node.children;
-
-                    // If first child is a strong element, use its content as the title
                     if (firstChild.type === 'element' && firstChild.tagName === 'strong') {
                         title = firstChild.children[0]?.value || config.title;
                         remainingChildren = node.children.slice(1);
                     }
-
-                    // Create a new structure with icon, title, description, and content
+                    // Structure SANS icône (l'icône sera injectée côté React)
                     node.children = [
                         {
                             type: 'element',
                             tagName: 'div',
                             properties: { className: ['lesson-block-title'] },
                             children: [
+                                {
+                                    type: 'element',
+                                    tagName: 'span',
+                                    properties: { className: ['block-icon'], 'data-blocktype': blockType },
+                                    children: []
+                                },
                                 {
                                     type: 'element',
                                     tagName: 'span',
@@ -224,14 +326,11 @@ function enhancedStylePlugin() {
                         }
                     ];
                 }
-
-                // Add appropriate classes based on block type
                 const blockClasses = [
                     `lesson-block`,
                     `${blockType}-box`,
                     "whitespace-normal"
                 ];
-
                 node.properties = {
                     ...node.properties,
                     className: blockClasses
@@ -241,15 +340,57 @@ function enhancedStylePlugin() {
     };
 }
 
+// Ajouter la fonction utilitaire pour les SVG d'icônes
+function getIconSVG(type: string) {
+    switch (type) {
+        case "definition":
+            return `<svg viewBox="0 0 24 24" width="32" height="32" fill="#ffb86b"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg>`;
+        case "propriete":
+            return `<svg viewBox="0 0 24 24" width="32" height="32" fill="#6ec1e4"><path d="M5 12h14M12 5v14"/></svg>`;
+        case "theoreme":
+            return `<svg viewBox="0 0 24 24" width="32" height="32" fill="#7ed957"><circle cx="12" cy="12" r="10"/></svg>`;
+        case "remarque":
+            return `<svg viewBox="0 0 24 24" width="32" height="32" fill="#b26a00"><circle cx="12" cy="12" r="10"/></svg>`;
+        case "attention":
+            return `<svg viewBox="0 0 24 24" width="32" height="32" fill="#ff7f50"><circle cx="12" cy="12" r="10"/></svg>`;
+        case "exemple":
+            return `<svg viewBox="0 0 24 24" width="32" height="32" fill="#6ec1e4"><rect x="4" y="4" width="16" height="16"/></svg>`;
+        default:
+            return `<svg viewBox="0 0 24 24" width="32" height="32" fill="#b26a00"><circle cx="12" cy="12" r="10"/></svg>`;
+    }
+}
+
 // Rest of the code remains the same as in the previous version...
 
 export default function LessonView({ title, content }: LessonViewProps) {
     // Injecter le CSS personnalisé au montage du composant
     React.useEffect(() => {
         injectCustomCss();
+        // Animation séquentielle sur les blocs
+        setTimeout(() => {
+            if (typeof document !== 'undefined') {
+                const blocks = document.querySelectorAll('.lesson-block');
+                blocks.forEach((block, i) => {
+                    setTimeout(() => {
+                        block.classList.add('sequential-appear');
+                    }, i * 180);
+                });
+            }
+        }, 200);
+        // Injection dynamique des icônes React dans chaque bloc
+        setTimeout(() => {
+            if (typeof document !== 'undefined') {
+                document.querySelectorAll('.block-icon').forEach((iconSpan) => {
+                    const type = iconSpan.getAttribute('data-blocktype');
+                    if (iconSpan.childNodes.length === 0) {
+                        iconSpan.innerHTML = getIconSVG(type as string);
+                    }
+                });
+            }
+        }, 400);
     }, []);
 
-    // Transformation du contenu
+    // Transformation du contenu (ancienne version)
     const processedHtml = unified()
         .use(rehypeParse, { fragment: true })
         .use(enhancedStylePlugin)
@@ -257,21 +398,18 @@ export default function LessonView({ title, content }: LessonViewProps) {
         .processSync(content)
         .toString();
 
-    // Transformation LaTeX
+    // Fonction pour transformer le LaTeX en HTML KaTeX
     const transformLatex = (html: string): string => {
-        // Recherche les expressions LaTeX délimitées par $$ ou $
-        return html.replace(/\$\$(.*?)\$\$|\$(.*?)\$/g, (match, displayMode, inlineMode) => {
+        return html.replace(/\$\$(.*?)\$\$|\$(.*?)\$/gs, (match, displayMode, inlineMode) => {
             const formula = displayMode || inlineMode;
             const isDisplayMode = !!displayMode;
-
             try {
                 return katex.renderToString(formula, {
                     displayMode: isDisplayMode,
                     throwOnError: false
                 });
             } catch (error) {
-                console.error("Erreur LaTeX:", error);
-                return match; // En cas d'erreur, retourne l'expression originale
+                return match;
             }
         });
     };
@@ -279,18 +417,22 @@ export default function LessonView({ title, content }: LessonViewProps) {
     const finalHtml = transformLatex(processedHtml);
 
     return (
-        <div className="lesson-container p-8 min-h-screen">
-            {/* Titre principal */}
-            <div className="lesson-header flex items-center gap-4 text-white px-6 py-4 rounded-xl mb-8 w-fit">
-                <FaBook className="text-3xl" />
-                <h1 className="text-3xl font-bold tracking-wide">{title}</h1>
+        <>
+            <div className="lesson-bg-animated" />
+            <div className="lesson-container p-8 min-h-screen animate-fadeInUp">
+                {/* Titre principal */}
+                <div className="lesson-header">
+                    <FaBook className="text-3xl" />
+                    <h1 className="animated-gradient-text font-montserrat">
+                        {title}
+                    </h1>
+                </div>
+                {/* Contenu principal */}
+                <div
+                    className="lesson-content max-w-none"
+                    dangerouslySetInnerHTML={{ __html: finalHtml }}
+                />
             </div>
-
-            {/* Contenu principal */}
-            <div
-                className="lesson-content prose prose-lg prose-blue max-w-none"
-                dangerouslySetInnerHTML={{ __html: finalHtml }}
-            />
-        </div>
+        </>
     );
 }

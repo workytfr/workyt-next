@@ -116,44 +116,27 @@ export default function MenuBarEditor({ editor }: { editor: Editor | null }) {
         preesed: editor.isActive("textStyle", { color }),
     }));
 
-    // Boutons pour insérer des blocs personnalisés via la commande setCustomBlock
+    // Boutons pour les blocs custom
     const customBlocks = [
         {
-            label: "Definition",
-            icon: <BookOpen className="size-4" />,
-            blockType: "definition",
+            icon: <Info className="size-4" />, label: "Définition", type: "definition"
         },
         {
-            label: "Propriété",
-            icon: <Star className="size-4" />,
-            blockType: "propriete",
+            icon: <BookOpen className="size-4" />, label: "Propriété", type: "propriete"
         },
         {
-            label: "Exemple",
-            icon: <Lightbulb className="size-4" />,
-            blockType: "exemple",
+            icon: <Star className="size-4" />, label: "Exemple", type: "exemple"
         },
         {
-            label: "Théorème",
-            icon: <Triangle className="size-4" />,
-            blockType: "theoreme",
+            icon: <Triangle className="size-4" />, label: "Théorème", type: "theoreme"
         },
         {
-            label: "Remarque",
-            icon: <Info className="size-4" />,
-            blockType: "remarque",
+            icon: <Lightbulb className="size-4" />, label: "Remarque", type: "remarque"
         },
         {
-            label: "Attention",
-            icon: <AlertCircle className="size-4" />,
-            blockType: "attention",
+            icon: <AlertCircle className="size-4" />, label: "Attention", type: "attention"
         },
     ];
-    const customBlockButtons = customBlocks.map((block) => ({
-        icon: block.icon,
-        onClick: () => editor.chain().focus().setCustomBlock(block.blockType).run(),
-        preesed: false,
-    }));
 
     return (
         <div className="border rounded-md p-1 mb-1 bg-slate-50 flex flex-wrap items-center gap-2">
@@ -172,10 +155,15 @@ export default function MenuBarEditor({ editor }: { editor: Editor | null }) {
             ))}
 
             {/* Boutons de blocs custom */}
-            {customBlockButtons.map((option, index) => (
-                <Toggle key={`custom-${index}`} pressed={option.preesed} onPressedChange={option.onClick}>
-                    {option.icon}
-                </Toggle>
+            {customBlocks.map((block) => (
+                <button
+                    key={block.label}
+                    onClick={() => editor.chain().focus().setCustomBlock?.(block.type).run()}
+                    title={block.label}
+                    className="p-2 rounded hover:bg-gray-200"
+                >
+                    {block.icon}
+                </button>
             ))}
 
             {/* Bouton UploadThing pour l'insertion d'image */}

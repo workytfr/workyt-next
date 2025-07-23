@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
     Table,
     TableBody,
@@ -19,7 +18,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/Badge";
-import { Pencil, Loader2 } from "lucide-react";
+import { Pencil, Loader2, Download, Filter, Users, TrendingUp, Award } from "lucide-react";
 import {
     ToastProvider,
     ToastViewport,
@@ -36,8 +35,11 @@ import {
     SelectValue,
 } from "@/components/ui/Select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
-import { Info } from "lucide-react";
+import { Info, Calendar, Mail, User } from "lucide-react";
 import UserForm from "../_components/UserForm";
+import AdvancedPagination from "@/components/ui/AdvancedPagination";
+import AdvancedSearch from "@/components/ui/AdvancedSearch";
+import UserStats from "@/components/ui/UserStats";
 
 interface User {
     _id: string;
@@ -51,16 +53,51 @@ interface User {
     createdAt: string;
 }
 
+interface SearchFilters {
+    query: string;
+    role: string;
+    sortBy: string;
+    sortOrder: "asc" | "desc";
+    hasBadges: boolean;
+    minPoints: number;
+    maxPoints: number;
+}
+
+interface Stats {
+    roles: {
+        apprenti: number;
+        redacteur: number;
+        correcteur: number;
+        admin: number;
+    };
+    withBadges: number;
+    points: {
+        minPoints: number;
+        maxPoints: number;
+        avgPoints: number;
+    };
+}
+
 export default function UsersPage() {
     const { data: session } = useSession();
     const [users, setUsers] = useState<User[]>([]);
-    const [search, setSearch] = useState("");
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [selectedUser, setSelectedUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(false);
     const [page, setPage] = useState(1);
+    const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalUsers, setTotalUsers] = useState(0);
-    const limit = 10; // Nombre d'éléments par page
+    const [totalPages, setTotalPages] = useState(0);
+    const [stats, setStats] = useState<Stats | null>(null);
+    const [filters, setFilters] = useState<SearchFilters>({
+        query: "",
+        role: "all",
+        sortBy: "createdAt",
+        sortOrder: "desc",
+        hasBadges: false,
+        minPoints: 0,
+        maxPoints: 999999
+    });
 
     // Gestion du Toast
     const [toastOpen, setToastOpen] = useState(false);
@@ -80,20 +117,33 @@ export default function UsersPage() {
         setTimeout(() => setToastOpen(false), 3000);
     };
 
-    // Chargement des utilisateurs avec pagination
+    // Construction de l'URL avec les paramètres
+    const buildApiUrl = () => {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            limit: itemsPerPage.toString(),
+            search: filters.query,
+            role: filters.role === "all" ? "" : filters.role,
+            sortBy: filters.sortBy,
+            sortOrder: filters.sortOrder,
+            hasBadges: filters.hasBadges.toString(),
+            minPoints: filters.minPoints.toString(),
+            maxPoints: filters.maxPoints.toString(),
+        });
+        return `/api/dashboard/users?${params.toString()}`;
+    };
+
+    // Chargement des utilisateurs avec pagination et filtres
     useEffect(() => {
         async function fetchUsers() {
             if (!session?.accessToken) return;
             setLoading(true);
             try {
-                const res = await fetch(
-                    `/api/dashboard/users?search=${search}&page=${page}&limit=${limit}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${session.accessToken}`,
-                        },
-                    }
-                );
+                const res = await fetch(buildApiUrl(), {
+                    headers: {
+                        Authorization: `Bearer ${session.accessToken}`,
+                    },
+                });
 
                 if (!res.ok) {
                     throw new Error(await res.text());
@@ -102,16 +152,18 @@ export default function UsersPage() {
                 const data = await res.json();
                 setUsers(data.users || []);
                 setTotalUsers(data.total || 0);
+                setTotalPages(data.totalPages || 0);
+                setStats(data.stats || null);
             } catch (error) {
                 console.error("Erreur lors du chargement des utilisateurs :", error);
-                showToast({ title: "Erreur de chargement" });
+                showToast({ title: "Erreur de chargement", variant: "destructive" });
             } finally {
                 setLoading(false);
             }
         }
 
         fetchUsers();
-    }, [search, page, session?.accessToken]);
+    }, [filters, page, itemsPerPage, session?.accessToken]);
 
     // Callback lors de la mise à jour ou création d'un utilisateur
     const handleUserUpdate = (updatedUser: User) => {
@@ -158,143 +210,244 @@ export default function UsersPage() {
         }
     };
 
+    // Gestion des filtres
+    const handleFiltersChange = (newFilters: SearchFilters) => {
+        setFilters(newFilters);
+        setPage(1); // Retour à la première page lors du changement de filtres
+    };
+
+    // Gestion de la pagination
+    const handlePageChange = (newPage: number) => {
+        setPage(newPage);
+    };
+
+    const handleItemsPerPageChange = (newItemsPerPage: number) => {
+        setItemsPerPage(newItemsPerPage);
+        setPage(1); // Retour à la première page
+    };
+
+    // Export des données
+    const handleExport = () => {
+        const csvContent = [
+            ['Nom', 'Email', 'Username', 'Rôle', 'Points', 'Badges', 'Bio', 'Date de création'],
+            ...users.map(user => [
+                user.name,
+                user.email,
+                user.username,
+                user.role,
+                user.points.toString(),
+                user.badges.join(', '),
+                user.bio || '',
+                new Date(user.createdAt).toLocaleDateString('fr-FR')
+            ])
+        ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', `utilisateurs_${new Date().toISOString().split('T')[0]}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     return (
         <ToastProvider>
-            <div>
-                <div className="flex justify-between mb-4">
-                    <h1 className="text-2xl font-bold">Gestion des Utilisateurs</h1>
-                    <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button onClick={() => setSelectedUser(null)}>
-                                <Pencil className="mr-2" /> Ajouter / Modifier un utilisateur
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-4xl w-full">
-                            <DialogHeader>
-                                <DialogTitle>
-                                    {selectedUser ? "Modifier l'utilisateur" : "Ajouter un nouvel utilisateur"}
-                                </DialogTitle>
-                            </DialogHeader>
-                            <UserForm user={selectedUser} onSuccess={handleUserUpdate} />
-                        </DialogContent>
-                    </Dialog>
+            <div className="space-y-6">
+                {/* En-tête avec statistiques */}
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold">Gestion des Utilisateurs</h1>
+                        <p className="text-gray-600">Gérez les utilisateurs de la plateforme</p>
+                    </div>
+                    
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={handleExport} disabled={loading}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Exporter
+                        </Button>
+                        <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button onClick={() => setSelectedUser(null)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Ajouter un utilisateur
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-4xl w-full">
+                                <DialogHeader>
+                                    <DialogTitle>
+                                        {selectedUser ? "Modifier l'utilisateur" : "Ajouter un nouvel utilisateur"}
+                                    </DialogTitle>
+                                </DialogHeader>
+                                <UserForm user={selectedUser} onSuccess={handleUserUpdate} />
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                 </div>
 
-                {/* Barre de recherche */}
-                <div className="flex gap-4 mb-4">
-                    <Input
-                        placeholder="Rechercher un utilisateur..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
+                {/* Statistiques détaillées */}
+                {stats && (
+                    <UserStats stats={stats} totalUsers={totalUsers} />
+                )}
+
+                {/* Barre de recherche et filtres */}
+                <AdvancedSearch
+                    onFiltersChange={handleFiltersChange}
+                    isLoading={loading}
+                    totalResults={totalUsers}
+                />
 
                 {/* Table des utilisateurs */}
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Nom</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Username</TableHead>
-                            <TableHead>Rôle</TableHead>
-                            <TableHead>Points</TableHead>
-                            <TableHead>Badges</TableHead>
-                            <TableHead>Bio</TableHead>
-                            <TableHead>Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {loading ? (
+                <div className="bg-white rounded-lg shadow">
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={8} className="text-center">
-                                    <Loader2 className="animate-spin w-6 h-6 mx-auto" />
-                                </TableCell>
+                                <TableHead>Utilisateur</TableHead>
+                                <TableHead>Contact</TableHead>
+                                <TableHead>Rôle</TableHead>
+                                <TableHead>Points</TableHead>
+                                <TableHead>Badges</TableHead>
+                                <TableHead>Bio</TableHead>
+                                <TableHead>Actions</TableHead>
                             </TableRow>
-                        ) : users.length > 0 ? (
-                            users.map((user) => (
-                                <TableRow key={user._id}>
-                                    <TableCell>{user.name}</TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell>{user.username}</TableCell>
-                                    <TableCell>
-                                        <Select
-                                            value={user.role}
-                                            onValueChange={(newRole) => handleRoleChange(user._id, newRole)}
-                                        >
-                                            <SelectTrigger className="w-[180px]">
-                                                <SelectValue placeholder="Choisir un rôle" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Apprenti">Apprenti</SelectItem>
-                                                <SelectItem value="Rédacteur">Rédacteur</SelectItem>
-                                                <SelectItem value="Correcteur">Correcteur</SelectItem>
-                                                <SelectItem value="Admin">Admin</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </TableCell>
-                                    <TableCell>{user.points}</TableCell>
-                                    <TableCell>
-                                        {user.badges && user.badges.length > 0 ? (
-                                            <div className="flex flex-wrap gap-1">
-                                                {user.badges.map((badge, idx) => (
-                                                    <Badge key={idx}>{badge}</Badge>
-                                                ))}
-                                            </div>
-                                        ) : (
-                                            <span>Aucun badge</span>
-                                        )}
-                                    </TableCell>
-                                    <TableCell>
-                                        {user.bio ? (
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-        <span>
-          <Info className="w-4 h-4 text-gray-600 cursor-pointer" />
-        </span>
-                                                </TooltipTrigger>
-                                                <TooltipContent className="max-w-xs p-2 text-sm">
-                                                    {user.bio}
-                                                </TooltipContent>
-                                            </Tooltip>
-                                        ) : (
-                                            <span>-</span>
-                                        )}
-                                    </TableCell>                                    <TableCell>
-                                        <Button
-                                            variant="ghost"
-                                            onClick={() => {
-                                                setSelectedUser(user);
-                                                setDialogOpen(true);
-                                            }}
-                                        >
-                                            <Pencil className="w-4 h-4" />
-                                        </Button>
+                        </TableHeader>
+                        <TableBody>
+                            {loading ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8">
+                                        <Loader2 className="animate-spin w-6 h-6 mx-auto" />
+                                        <p className="mt-2 text-gray-500">Chargement des utilisateurs...</p>
                                     </TableCell>
                                 </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={8} className="text-center text-gray-500">
-                                    Aucun utilisateur trouvé
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-
-                {/* Pagination */}
-                <div className="flex justify-center mt-4 gap-4">
-                    <Button onClick={() => setPage((prev) => Math.max(prev - 1, 1))} disabled={page === 1}>
-                        Précédent
-                    </Button>
-                    <span>Page {page}</span>
-                    <Button
-                        onClick={() => setPage((prev) => (prev * limit < totalUsers ? prev + 1 : prev))}
-                        disabled={page * limit >= totalUsers}
-                    >
-                        Suivant
-                    </Button>
+                            ) : users.length > 0 ? (
+                                users.map((user) => (
+                                    <TableRow key={user._id}>
+                                        <TableCell>
+                                            <div className="flex items-center space-x-3">
+                                                <div className="flex-shrink-0">
+                                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+                                                        <User className="h-5 w-5 text-gray-600" />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="font-medium text-gray-900">{user.name}</div>
+                                                    <div className="text-sm text-gray-500">@{user.username}</div>
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="space-y-1">
+                                                <div className="flex items-center text-sm">
+                                                    <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                                                    {user.email}
+                                                </div>
+                                                <div className="flex items-center text-sm text-gray-500">
+                                                    <Calendar className="h-4 w-4 mr-2" />
+                                                    {new Date(user.createdAt).toLocaleDateString('fr-FR')}
+                                                </div>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Select
+                                                value={user.role}
+                                                onValueChange={(newRole) => handleRoleChange(user._id, newRole)}
+                                                disabled={loading}
+                                            >
+                                                <SelectTrigger className="w-[140px]">
+                                                    <SelectValue placeholder="Choisir un rôle" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Apprenti">Apprenti</SelectItem>
+                                                    <SelectItem value="Rédacteur">Rédacteur</SelectItem>
+                                                    <SelectItem value="Correcteur">Correcteur</SelectItem>
+                                                    <SelectItem value="Admin">Admin</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center">
+                                                <span className="font-medium">{user.points}</span>
+                                                <span className="text-sm text-gray-500 ml-1">pts</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.badges && user.badges.length > 0 ? (
+                                                <div className="flex flex-wrap gap-1">
+                                                    {user.badges.slice(0, 3).map((badge, idx) => (
+                                                        <Badge key={idx} variant="secondary" className="text-xs">
+                                                            {badge}
+                                                        </Badge>
+                                                    ))}
+                                                    {user.badges.length > 3 && (
+                                                        <Badge variant="outline" className="text-xs">
+                                                            +{user.badges.length - 3}
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <span className="text-gray-400 text-sm">Aucun badge</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            {user.bio ? (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="cursor-pointer">
+                                                            <Info className="w-4 h-4 text-gray-600" />
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent className="max-w-xs p-2 text-sm">
+                                                        {user.bio}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            ) : (
+                                                <span className="text-gray-400">-</span>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setSelectedUser(user);
+                                                    setDialogOpen(true);
+                                                }}
+                                                disabled={loading}
+                                            >
+                                                <Pencil className="w-4 h-4" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8">
+                                        <div className="text-gray-500">
+                                            <Users className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                                            <p>Aucun utilisateur trouvé</p>
+                                            <p className="text-sm">Essayez de modifier vos critères de recherche</p>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
                 </div>
+
+                {/* Pagination avancée */}
+                {totalPages > 1 && (
+                    <AdvancedPagination
+                        currentPage={page}
+                        totalPages={totalPages}
+                        totalItems={totalUsers}
+                        itemsPerPage={itemsPerPage}
+                        onPageChange={handlePageChange}
+                        onItemsPerPageChange={handleItemsPerPageChange}
+                        isLoading={loading}
+                    />
+                )}
             </div>
 
             {/* Affichage du Toast */}
