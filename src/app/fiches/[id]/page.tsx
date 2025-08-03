@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import FicheView from "@/app/fiches/_components/FicheView";
 import React from "react";
+import { BASE_URL } from "@/utils/constants";
 
 // Updated interface for the new Next.js params format
 interface PageProps {
@@ -14,7 +15,7 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
         const { id } = await params;
 
         // Appel de l'API pour récupérer les données
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/fiches/${id}`, {
+        const response = await fetch(`${BASE_URL}/api/fiches/${id}`, {
             headers: {
                 'Content-Type': 'application/json',
             },

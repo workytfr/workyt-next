@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Table,
@@ -117,8 +117,7 @@ export default function UsersPage() {
         setTimeout(() => setToastOpen(false), 3000);
     };
 
-    // Construction de l'URL avec les paramètres
-    const buildApiUrl = () => {
+    const buildApiUrl = useCallback(() => {
         const params = new URLSearchParams({
             page: page.toString(),
             limit: itemsPerPage.toString(),
@@ -131,7 +130,7 @@ export default function UsersPage() {
             maxPoints: filters.maxPoints.toString(),
         });
         return `/api/dashboard/users?${params.toString()}`;
-    };
+    }, [page, itemsPerPage, filters]);
 
     // Chargement des utilisateurs avec pagination et filtres
     useEffect(() => {
@@ -163,7 +162,7 @@ export default function UsersPage() {
         }
 
         fetchUsers();
-    }, [filters, page, itemsPerPage, session?.accessToken]);
+    }, [buildApiUrl, session?.accessToken]);
 
     // Callback lors de la mise à jour ou création d'un utilisateur
     const handleUserUpdate = (updatedUser: User) => {

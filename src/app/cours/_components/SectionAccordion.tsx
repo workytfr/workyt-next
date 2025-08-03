@@ -43,7 +43,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
         setIsLoading(true);
         try {
             const res = await fetch(
-                `${process.env.NEXT_PUBLIC_API_URL}/api/cours/${courseId}/sections/${sectionInitial._id}`,
+                `/api/cours/${courseId}/sections/${sectionInitial._id}`,
                 { cache: "no-store" }
             );
             const data = await res.json();

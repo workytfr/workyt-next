@@ -225,11 +225,12 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
             document.head.removeChild(styleTag);
         };
     }, []);
+
     // Fetch
     useEffect(() => {
         const fetchCourse = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cours/${params.coursId}`, {
+                const res = await fetch(`/api/cours/${params.coursId}`, {
                     cache: "no-store",
                 });
                 if (!res.ok) throw new Error("Cours introuvable");

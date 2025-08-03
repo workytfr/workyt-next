@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -87,8 +87,7 @@ export default function LessonsPage() {
         setTimeout(() => setToastOpen(false), 3000);
     };
 
-    // Construction de l'URL avec les paramètres
-    const buildApiUrl = () => {
+    const buildApiUrl = useCallback(() => {
         const params = new URLSearchParams({
             page: page.toString(),
             limit: itemsPerPage.toString(),
@@ -102,7 +101,7 @@ export default function LessonsPage() {
             hasMedia: filters.hasMedia.toString(),
         });
         return `/api/lessons?${params.toString()}`;
-    };
+    }, [page, itemsPerPage, filters]);
 
     // Chargement des cours
     useEffect(() => {
@@ -167,7 +166,7 @@ export default function LessonsPage() {
             }
         }
         fetchLessons();
-    }, [filters, page, itemsPerPage, session?.accessToken, update]);
+    }, [buildApiUrl, session?.accessToken, update]);
 
     // Suppression d'une leçon
     const handleDelete = async (id: string) => {

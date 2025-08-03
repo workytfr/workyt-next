@@ -1,5 +1,6 @@
 import { Metadata } from "next";
 import CourseClientWrapper from "@/app/cours/_components/CourseClientWrapper";
+import { BASE_URL } from "@/utils/constants";
 
 // Updated interface for the new Next.js params format
 interface PageProps {
@@ -15,8 +16,13 @@ export async function generateMetadata({
         const { coursId } = await params;
 
         const res = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/cours/${coursId}`,
-            { cache: "no-store" }
+            `${BASE_URL}/api/cours/${coursId}`,
+            { 
+                cache: "no-store",
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            }
         );
 
         if (!res.ok) {

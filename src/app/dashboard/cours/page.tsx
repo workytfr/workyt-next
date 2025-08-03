@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -126,8 +126,7 @@ export default function CoursesPage() {
         setTimeout(() => setToastOpen(false), 3000);
     };
 
-    // Construction de l'URL avec les paramètres
-    const buildApiUrl = () => {
+    const buildApiUrl = useCallback(() => {
         const params = new URLSearchParams({
             page: page.toString(),
             limit: itemsPerPage.toString(),
@@ -141,7 +140,7 @@ export default function CoursesPage() {
             authorId: filters.authorId === "all" ? "" : filters.authorId,
         });
         return `/api/courses?${params.toString()}`;
-    };
+    }, [page, itemsPerPage, filters]);
 
     // Charger les cours avec gestion des erreurs et pagination
     useEffect(() => {
@@ -174,7 +173,7 @@ export default function CoursesPage() {
         }
 
         fetchCourses();
-    }, [filters, page, itemsPerPage, session?.accessToken]);
+    }, [buildApiUrl, session?.accessToken]);
 
     // Supprimer un cours
     const handleDelete = async (id: string) => {

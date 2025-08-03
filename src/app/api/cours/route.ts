@@ -3,7 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import Course from "@/models/Course";
 import Section from "@/models/Section";
 import User from "@/models/User";
-import authMiddleware from "@/middlewares/authMiddleware";
+import { optionalAuthMiddleware } from "@/middlewares/authMiddleware";
 import { Types, isValidObjectId } from "mongoose";
 
 // Forcer le rendu dynamique pour éviter l'erreur
@@ -14,12 +14,7 @@ export async function GET(req: NextRequest) {
         await dbConnect();
 
         // Tentative de récupération de l'utilisateur (authentification optionnelle)
-        let user = null;
-        try {
-            user = await authMiddleware(req);
-        } catch (err) {
-            user = null;
-        }
+        const user = await optionalAuthMiddleware(req);
 
         const { searchParams } = new URL(req.url);
         const search = searchParams.get("search") || "";
@@ -36,6 +31,7 @@ export async function GET(req: NextRequest) {
         if (matiere) filters.matiere = matiere;
 
         // Pour un accès public aux cours, on affiche uniquement ceux qui sont publiés
+        // Les utilisateurs avec des rôles spécifiques peuvent voir tous les cours
         if (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
             filters.status = "publie";
         }
