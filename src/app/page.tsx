@@ -45,10 +45,10 @@ export default function Home() {
         <SessionWrapper>
         <div className="grid bg-white">
             <BannerWithButton
-                tTitle="🎉 Bienvenue sur Workyt v3.9 Beta !"
+                tTitle="🎉 Bienvenue sur Workyt v4.0.0 Beta !"
                 tDetails="Après une année d'absence, les cours font leur retour sur Workyt, désormais enrichis de fonctionnalités innovantes."
                 tButton="Voir les fiches"
-                linkHref="/fiches"
+                linkHref="/cours"
                 tDismiss="Masquer"
             />
             <div
