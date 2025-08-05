@@ -5,9 +5,12 @@ import { Sidebar } from "./../_components/SidebarCours";
 import { Course, Lesson, Section, Exercise } from "./../_components/types";
 import ExerciseCard from "./../_components/ExerciseCard";
 import LessonView from "./../_components/LessonView";
+import QuizCard from "./../_components/QuizCard";
+import QuizViewer from "./../_components/QuizViewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
 import { ArrowLeft, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 // Noise component for subtle grain
 const Noise = ({ opacity = 0.05, scale = 1.5 }) => (
@@ -70,6 +73,80 @@ function ErrorMessage({ error }: { error: string | null }) {
 
 // Vue d'un contenu sélectionné
 function ContentView({ content, onBack }: { content: any; onBack: () => void }) {
+    const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
+    const [quizzes, setQuizzes] = useState<any[]>([]);
+    const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
+
+    useEffect(() => {
+        if (content.type === 'quizzes' && content.quizzes) {
+            setQuizzes(content.quizzes);
+        } else if (content.type === 'exercises') {
+            // Réinitialiser les quiz si on affiche explicitement des exercices
+            setQuizzes([]);
+        } else if ("quizzes" in content && content.quizzes) {
+            setQuizzes(content.quizzes);
+        } else if ("_id" in content && content._id && !("exercises" in content)) {
+            // Charger les quiz de la section seulement si ce n'est pas pour les exercices
+            fetchQuizzes(content._id);
+        } else if ("exercises" in content) {
+            // Réinitialiser les quiz si on affiche explicitement des exercices
+            setQuizzes([]);
+        }
+    }, [content]);
+
+    const fetchQuizzes = async (sectionId: string) => {
+        setIsLoadingQuizzes(true);
+        try {
+            const response = await fetch(`/api/sections/${sectionId}/quizzes`);
+            if (response.ok) {
+                const data = await response.json();
+                setQuizzes(data);
+            }
+        } catch (error) {
+            console.error('Erreur lors du chargement des quiz:', error);
+        } finally {
+            setIsLoadingQuizzes(false);
+        }
+    };
+
+    const handleStartQuiz = async (quizId: string) => {
+        try {
+            const response = await fetch(`/api/quizzes/${quizId}`);
+            if (response.ok) {
+                const quiz = await response.json();
+                setSelectedQuiz(quiz);
+            }
+        } catch (error) {
+            console.error('Erreur lors du chargement du quiz:', error);
+        }
+    };
+
+    const handleQuizComplete = (result: any) => {
+        // Mettre à jour la liste des quiz avec les nouvelles informations de completion
+        setQuizzes(prev => prev.map(quiz => 
+            quiz._id === selectedQuiz._id 
+                ? { ...quiz, completed: true, score: result.score, maxScore: result.maxScore, percentage: result.percentage }
+                : quiz
+        ));
+    };
+
+    if (selectedQuiz) {
+        // Vérifier si le quiz est déjà complété
+        const completedQuiz = quizzes.find(q => q._id === selectedQuiz._id);
+        const isCompleted = completedQuiz?.completed || false;
+        
+        return (
+            <QuizViewer 
+                quiz={selectedQuiz} 
+                onClose={() => setSelectedQuiz(null)}
+                onComplete={handleQuizComplete}
+                isCompleted={isCompleted}
+            />
+        );
+    }
+
+
+
     return (
         <>
             <button
@@ -79,13 +156,19 @@ function ContentView({ content, onBack }: { content: any; onBack: () => void }) 
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Retour
             </button>
-            {"exercises" in content ? (
-                <ExerciseList exercises={content.exercises} title={content.title} />
-            ) : "content" in content ? (
-                <LessonView title={content.title} content={content.content || ""} />
-            ) : (
-                <p className="text-gray-600">Aucun contenu disponible.</p>
-            )}
+                           {content.type === 'exercises' ? (
+                   <ExerciseList exercises={content.exercises} title={content.title} />
+               ) : content.type === 'quizzes' ? (
+                   <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
+               ) : "content" in content ? (
+                   <LessonView title={content.title} content={content.content || ""} />
+               ) : "exercises" in content ? (
+                   <ExerciseList exercises={content.exercises} title={content.title} />
+               ) : "quizzes" in content && quizzes.length > 0 ? (
+                   <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
+               ) : (
+                   <p className="text-gray-600">Aucun contenu disponible.</p>
+               )}
         </>
     );
 }
@@ -101,6 +184,49 @@ function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: stri
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-300 to-amber-500" />
                         <ExerciseCard exercise={{ ...ex, content: ex.content || "" }} index={idx} />
                     </div>
+                ))}
+            </div>
+        </>
+    );
+}
+
+// Liste de quiz
+function QuizList({ quizzes, title, onStartQuiz, isLoading }: { 
+    quizzes: any[]; 
+    title: string; 
+    onStartQuiz: (quizId: string) => void;
+    isLoading: boolean;
+}) {
+    const { data: session } = useSession();
+
+    if (isLoading) {
+        return (
+            <div className="space-y-4">
+                <h1 className="text-xl md:text-2xl font-bold mb-6 text-gray-800">{title}</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[...Array(3)].map((_, i) => (
+                        <div key={i} className="h-48 bg-gray-200 rounded-lg animate-pulse" />
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <>
+            <div className="flex items-center justify-between mb-6">
+                <h1 className="text-xl md:text-2xl font-bold text-gray-800">{title}</h1>
+                {!session?.user && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
+                        <p className="text-sm text-blue-700">
+                            💡 Connectez-vous pour participer aux quiz et gagner des points !
+                        </p>
+                    </div>
+                )}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {quizzes.map((quiz) => (
+                    <QuizCard key={quiz._id} quiz={quiz} onStartQuiz={onStartQuiz} />
                 ))}
             </div>
         </>
@@ -166,7 +292,7 @@ export function SidebarWrapper({
                                    onSelectContent,
                                }: {
     course: Course;
-    onSelectContent: (content: any) => void;
+    onSelectContent: (content: Lesson | Exercise | Section | { type: string; title: string; exercises?: any[]; quizzes?: any[] }) => void;
 }) {
     return (
         <div className="h-full flex flex-col overflow-hidden sidebar-wrapper">
@@ -206,7 +332,7 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
     const [cours, setCours] = useState<Course | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedContent, setSelectedContent] = useState<Lesson | Exercise | Section | null>(null);
+    const [selectedContent, setSelectedContent] = useState<Lesson | Exercise | Section | { type: string; title: string; exercises?: any[]; quizzes?: any[] } | null>(null);
 
     // contrôle mobile de l'affichage de la sidebar
     const [showSidebar, setShowSidebar] = useState(true);
@@ -225,11 +351,12 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
             document.head.removeChild(styleTag);
         };
     }, []);
+
     // Fetch
     useEffect(() => {
         const fetchCourse = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/cours/${params.coursId}`, {
+                const res = await fetch(`/api/cours/${params.coursId}`, {
                     cache: "no-store",
                 });
                 if (!res.ok) throw new Error("Cours introuvable");

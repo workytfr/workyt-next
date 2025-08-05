@@ -7,6 +7,7 @@ import '../models/Revision';
 import '../models/Section';
 import '../models/Course';
 import '../models/Quiz';
+import '../models/QuizCompletion';
 import '../models/Lesson';
 import '../models/Question';
 import '../models/Exercise';
@@ -111,9 +112,17 @@ export class BadgeService {
    * Vérifie le nombre de quiz réussis
    */
   private static async checkQuizSuccess(userId: string, requiredCount: number): Promise<boolean> {
-    // Cette logique dépend de comment tu stockes les résultats de quiz
-    // Pour l'instant, on retourne false - à adapter selon ton modèle
-    return false;
+    try {
+      const QuizCompletion = mongoose.model('QuizCompletion');
+      const count = await QuizCompletion.countDocuments({ 
+        userId: userId,
+        score: { $gt: 0 } // Au moins 1 point gagné
+      });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la vérification des quiz:', error);
+      return false;
+    }
   }
 
   /**

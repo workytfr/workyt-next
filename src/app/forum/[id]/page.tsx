@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import React from "react";
 import QuestionDetailPage from "@/app/forum/_components/QuestionDetailPage";
+import { BASE_URL } from "@/utils/constants";
 
 // Interface mise à jour pour correspondre au format de params utilisé ailleurs
 interface PageProps {
@@ -13,7 +14,7 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
         const { id } = await params;
 
         const response = await fetch(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/forum/questions/${id}?page=1&limit=10`,
+            `${BASE_URL}/api/forum/questions/${id}?page=1&limit=10`,
             { headers: { "Content-Type": "application/json" } }
         );
 

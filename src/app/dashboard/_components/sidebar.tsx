@@ -4,13 +4,14 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { cn } from "@/lib/utils"; // ShadCN helper
-import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot, Award } from "lucide-react";
+import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot, Award, Layers } from "lucide-react";
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "Cours", href: "/dashboard/cours", icon: Book },
+    { name: "Sections", href: "/dashboard/sections", icon: Layers },
     { name: "Leçons", href: "/dashboard/lessons", icon: FileText },
-    { name: "Quizz", href: "/dashboard/quizzes", icon: CircleDot, disabled: true },
+    { name: "Quiz", href: "/dashboard/quizzes", icon: CircleDot },
     { name: "Exercices", href: "/dashboard/exercises", icon: LibraryBig },
     { name: "Certificats", href: "/dashboard/certificates", icon: Award },
     { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
@@ -31,19 +32,17 @@ export default function Sidebar() {
         <aside className="w-64 bg-white text-black border-r border-gray-300 p-4">
             <h1 className="text-xl font-bold mb-6">Dashboard</h1>
             <nav>
-                {navItems.map(({ name, href, icon: Icon, disabled }) => (
+                {navItems.map((item) => (
                     <Link
-                        key={href}
-                        href={disabled ? "#" : href}
+                        key={item.href}
+                        href={item.href}
                         className={cn(
                             "flex items-center px-4 py-2 rounded-md hover:bg-gray-100 transition text-black",
-                            pathname === href ? "bg-gray-200 font-semibold" : "",
-                            disabled ? "text-gray-500 cursor-not-allowed" : ""
+                            pathname === item.href ? "bg-gray-200 font-semibold" : ""
                         )}
-                        onClick={e => disabled && e.preventDefault()}
                     >
-                        <Icon className="w-5 h-5 mr-2" />
-                        {name}
+                        <item.icon className="w-5 h-5 mr-2" />
+                        {item.name}
                     </Link>
                 ))}
             </nav>

@@ -28,6 +28,7 @@ import ProfileAvatar from "@/components/ui/profile";
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
     const [mobileDropdowns, setMobileDropdowns] = useState({
         blog: false
     });
@@ -72,7 +73,7 @@ export default function Navbar() {
     };
 
     return (
-        <nav className="bg-white border-b border-gray-200 py-4 sticky top-0 z-50">
+        <nav className="bg-white border-b border-gray-200 py-4 sticky top-0 z-[9999] shadow-sm">
             <div className="container mx-auto px-4 flex justify-between items-center">
                 {/* Left side: Logo */}
                 <div className="flex items-center">
@@ -107,7 +108,7 @@ export default function Navbar() {
                             Blog <ChevronDownIcon className="ml-1" />
                         </DropdownMenu.Trigger>
                         <DropdownMenu.Portal>
-                            <DropdownMenu.Content className="bg-white border border-gray-100 rounded-lg shadow-lg mt-2 py-2 z-50 min-w-[200px]">
+                            <DropdownMenu.Content className="bg-white border border-gray-100 rounded-lg shadow-lg mt-2 py-2 z-[9999] min-w-[200px]">
                                 <DropdownMenu.Item asChild>
                                     <Link href="https://blog.workyt.fr/category/actualites/" className="text-gray-700 px-4 py-2 hover:bg-gray-50 block transition-colors">
                                         Actualités
@@ -176,19 +177,23 @@ export default function Navbar() {
 
                     {/* Auth - Desktop */}
                     {session ? (
-                        <DropdownMenu.Root>
-                            <DropdownMenu.Trigger className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer">
+                        <DropdownMenu.Root open={isProfileOpen} onOpenChange={setIsProfileOpen}>
+                            <DropdownMenu.Trigger className="flex items-center space-x-2 text-gray-700 font-semibold cursor-pointer hover:text-primary transition-colors">
                                 <ProfileAvatar
                                     username={session.user.username}
                                     points={session.user.points}
                                 />
                                 <span>{session.user?.username || "Utilisateur"}</span>
-                                <ChevronDownIcon className="w-4 h-4" />
+                                <ChevronDownIcon className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
                             </DropdownMenu.Trigger>
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content
-                                    className="bg-white border border-gray-100 rounded-lg shadow-lg mt-2 py-2 z-50 w-48"
+                                    className="bg-white border border-gray-100 rounded-lg shadow-lg mt-2 py-2 z-[9999] w-48"
                                     align="end"
+                                    sideOffset={5}
+                                    collisionPadding={10}
+                                    onCloseAutoFocus={(e) => e.preventDefault()}
+                                    onEscapeKeyDown={() => setIsProfileOpen(false)}
                                 >
                                     <DropdownMenu.Item
                                         className="px-4 py-2 text-sm text-gray-500 cursor-default"
@@ -197,28 +202,31 @@ export default function Navbar() {
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item asChild>
-                                        <Link href={`/compte/${session.user.id}`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors">
+                                        <Link href={`/compte/${session.user.id}`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors" onClick={() => setIsProfileOpen(false)}>
                                             Mon Compte
                                         </Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item asChild>
-                                        <Link href={`/recompenses`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors">
+                                        <Link href={`/recompenses`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors" onClick={() => setIsProfileOpen(false)}>
                                             Récompenses
                                         </Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item asChild>
-                                        <Link href={`/fiches/creer`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors">
+                                        <Link href={`/fiches/creer`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors" onClick={() => setIsProfileOpen(false)}>
                                             Partager une fiche
                                         </Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item asChild>
-                                        <Link href={`/forum/creer`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors">
+                                        <Link href={`/forum/creer`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors" onClick={() => setIsProfileOpen(false)}>
                                             Déposer une question
                                         </Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item>
-                                        <button onClick={() => signOut()} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50 transition-colors">
+                                        <button onClick={() => {
+                                            setIsProfileOpen(false);
+                                            signOut();
+                                        }} className="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-50 transition-colors">
                                             Déconnexion
                                         </button>
                                     </DropdownMenu.Item>
@@ -249,11 +257,20 @@ export default function Navbar() {
                 </button>
             </div>
 
+            {/* Mobile Menu Overlay */}
+            {isMenuOpen && (
+                <div 
+                    className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-[9998]"
+                    onClick={() => setIsMenuOpen(false)}
+                />
+            )}
+            
             {/* Mobile Menu - Slide from right */}
             <div
-                className={`lg:hidden fixed inset-y-0 right-0 w-full max-w-xs bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out ${
+                className={`lg:hidden fixed inset-y-0 right-0 w-full max-w-xs bg-white shadow-xl z-[9999] transform transition-transform duration-300 ease-in-out ${
                     isMenuOpen ? 'translate-x-0' : 'translate-x-full'
                 } flex flex-col h-full`}
+                onClick={(e) => e.stopPropagation()}
             >
                 {/* Mobile menu header */}
                 <div className="flex items-center justify-between p-4 border-b border-gray-100">

@@ -1,20 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 import Course from "@/models/Course";
 import Section from "@/models/Section";
-import authMiddleware from "@/middlewares/authMiddleware";
+import connectDB from "@/lib/mongodb";
 
 /**
  * 🚀 GET - Récupérer les cours avec pagination et recherche avancée (Réservé au staff)
  */
 export async function GET(req: NextRequest) {
     try {
-        await dbConnect();
-        const user = await authMiddleware(req);
+        await connectDB();
+        const session = await getServerSession(authOptions);
 
         // 🔒 Vérification des permissions (Accès staff uniquement)
-        if (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
-            return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
         // 📌 Récupération des paramètres
@@ -198,15 +199,17 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
     try {
-        await dbConnect();
-        const user = await authMiddleware(req);
+        await connectDB();
+        const session = await getServerSession(authOptions);
 
         // 🔒 Vérification de l'authentification et des permissions
-        if (!user || !user._id) {
+        if (!session?.user?.email) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
-        if (!["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
-            return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
+
+        // Vérifier que l'utilisateur a les droits appropriés
+        if (session.user.role !== 'Admin' && session.user.role !== 'Rédacteur' && session.user.role !== 'Correcteur') {
+            return NextResponse.json({ error: 'Accès refusé. Seuls les Admins, rédacteurs et correcteurs peuvent créer des cours.' }, { status: 403 });
         }
 
         // 📌 Extraire les données du body
@@ -223,7 +226,7 @@ export async function POST(req: NextRequest) {
             description,
             niveau,
             matiere,
-            authors: [user._id], // L'auteur est l'utilisateur connecté
+            authors: [session.user.id], // L'auteur est l'utilisateur connecté
             image,
             status: "en_attente_verification", // Par défaut, un cours doit être validé
             createdAt: new Date(),
@@ -245,12 +248,12 @@ export async function POST(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
     try {
-        await dbConnect();
-        const user = await authMiddleware(req);
+        await connectDB();
+        const session = await getServerSession(authOptions);
 
         // 🔒 Vérification des permissions (Accès Admin uniquement)
-        if (!user || user.role !== "Admin") {
-            return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
         // 📌 Extraire les données du body

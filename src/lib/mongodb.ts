@@ -7,6 +7,7 @@ import "@/models/User";      // Modèle User
 import "@/models/Section";
 import "@/models/Course";
 import "@/models/Quiz";
+import "@/models/QuizCompletion"; // Modèle QuizCompletion
 import "@/models/Lesson";
 import "@/models/Question";
 import "@/models/Exercise";

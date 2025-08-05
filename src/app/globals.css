@@ -91,6 +91,11 @@
   .text-balance {
     text-wrap: balance;
   }
+  
+  /* Grille de contribution style GitHub */
+  .grid-cols-13 {
+    grid-template-columns: repeat(13, minmax(0, 1fr));
+  }
 }
 
 /* Animation de brillance pour les ranks */

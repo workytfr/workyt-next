@@ -1,0 +1,18 @@
+User-agent: *
+Allow: /
+
+# Pages publiques à indexer
+Allow: /cours
+Allow: /forum
+Allow: /fiches
+Allow: /recompenses
+Allow: /kits
+
+# Pages privées à ne pas indexer
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+# Sitemap
+Sitemap: https://workyt.fr/sitemap.xml 
