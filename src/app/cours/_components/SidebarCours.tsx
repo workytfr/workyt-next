@@ -8,7 +8,7 @@ import { Sparkles } from "lucide-react";
 
 interface SidebarProps {
     course: Course;
-    onSelectContent: (content: Section | Lesson) => void;
+    onSelectContent: (content: Section | Lesson | { type: string; title: string; exercises?: any[]; quizzes?: any[] }) => void;
 }
 
 export function Sidebar({ course, onSelectContent }: SidebarProps) {

@@ -12,7 +12,8 @@ export interface IPointTransaction extends Document {
         | 'createAnswer'
         | 'likeAnswer'
         | 'unlikeAnswer'
-        | 'validateAnswer';
+        | 'validateAnswer'
+        | 'completeQuiz';
     type: 'gain' | 'perte';
     points: number;
     createdAt: Date;
@@ -28,7 +29,7 @@ const PointTransactionSchema: Schema = new Schema({
         enum: [
             'createRevision','likeRevision','unlikeRevision',
             'createAnswer','likeAnswer','unlikeAnswer',
-            'validateAnswer', 'createQuestion',
+            'validateAnswer', 'createQuestion', 'completeQuiz',
         ],
         required: true
     },

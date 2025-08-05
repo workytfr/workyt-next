@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/Label";
 import BadgeDisplay from "@/components/ui/BadgeDisplay";
 import UserRank from "@/components/ui/UserRank";
 import BadgeProgress from "@/components/ui/BadgeProgress";
+import ContributionGraph from "@/components/ui/ContributionGraph";
 import { FaQuestionCircle, FaReply } from "react-icons/fa";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import Image from "next/image";
@@ -213,6 +214,14 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                     <div className="mt-4">
                         <BadgeDisplay userId={id} showProgress={true} />
                     </div>
+                </div>
+
+                <Separator className="my-6" />
+
+                {/* Contribution Graph Section */}
+                <div>
+                    <h2 className="text-lg font-bold mb-4">Activité & Contributions</h2>
+                    <ContributionGraph userId={id} />
                 </div>
 
                 <Separator className="my-6" />

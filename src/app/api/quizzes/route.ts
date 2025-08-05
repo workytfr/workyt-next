@@ -1,62 +1,134 @@
-import { NextRequest, NextResponse } from "next/server";
-import dbConnect from "@/lib/mongodb";
-import Quiz from "@/models/Quiz";
-import User from "@/models/User";
-import authMiddleware from "@/middlewares/authMiddleware";
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import Quiz from '@/models/Quiz';
+import connectDB from '@/lib/mongodb';
 
-/**
- * 🚀 GET - Récupérer tous les quizz (Accès public)
- */
-export async function GET(req: NextRequest) {
+// GET - Récupérer tous les quiz (pour le dashboard)
+export async function GET(request: NextRequest) {
     try {
-        await dbConnect();
-        const quizzes = await Quiz.find();
-        return NextResponse.json(quizzes, { status: 200 });
-    } catch (error: any) {
-        console.error("Erreur lors de la récupération des quizz :", error.message);
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+        }
+
+        await connectDB();
+
+        const { searchParams } = new URL(request.url);
+        const sectionId = searchParams.get('sectionId');
+        const lessonId = searchParams.get('lessonId');
+
+        let query: any = {};
+        if (sectionId) query.sectionId = sectionId;
+        if (lessonId) query.lessonId = lessonId;
+
+        const quizzes = await Quiz.find(query)
+            .populate('sectionId', 'title')
+            .populate('lessonId', 'title')
+            .sort({ createdAt: -1 });
+
+        return NextResponse.json(quizzes);
+    } catch (error) {
+        console.error('Erreur lors de la récupération des quiz:', error);
         return NextResponse.json(
-            { error: "Impossible de récupérer les quizz.", details: error.message },
+            { error: 'Erreur interne du serveur' },
             { status: 500 }
         );
     }
 }
 
-/**
- * 🚀 POST - Créer un nouveau quizz (Réservé aux Rédacteurs, Correcteurs, Admins)
- */
-export async function POST(req: NextRequest) {
+// POST - Créer un nouveau quiz
+export async function POST(request: NextRequest) {
     try {
-        await dbConnect();
-        const user = await authMiddleware(req);
-
-        if (!user || !user._id) {
-            return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
         }
 
-        if (!["Rédacteur", "Correcteur", "Admin", "Helpeur"].includes(user.role)) {
-            return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
+        await connectDB();
+
+        const body = await request.json();
+        
+        // Validation des données
+        if (!body.title || !body.questions || body.questions.length === 0) {
+            return NextResponse.json(
+                { error: 'Titre et questions requis' },
+                { status: 400 }
+            );
         }
 
-        const body = await req.json();
-        const { title, description, questions } = body;
+        // Validation des questions
+        for (let i = 0; i < body.questions.length; i++) {
+            const question = body.questions[i];
+            if (!question.question || !question.questionType || !question.point) {
+                return NextResponse.json(
+                    { error: `Question ${i + 1}: données manquantes` },
+                    { status: 400 }
+                );
+            }
 
-        if (!title || !questions || questions.length === 0) {
-            return NextResponse.json({ error: "Données obligatoires manquantes." }, { status: 400 });
+            // Validation selon le type de question
+            switch (question.questionType) {
+                case 'QCM':
+                    if (!question.answers || question.answers.length < 2) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: QCM nécessite au moins 2 réponses` },
+                            { status: 400 }
+                        );
+                    }
+                    if (question.correctAnswer === undefined || question.correctAnswer === null) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: réponse correcte requise` },
+                            { status: 400 }
+                        );
+                    }
+                    // Vérifier que la réponse correcte est valide
+                    if (question.correctAnswer < 0 || question.correctAnswer >= question.answers.length) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: index de réponse correcte invalide` },
+                            { status: 400 }
+                        );
+                    }
+                    // Ajouter answerSelectionType si manquant
+                    if (!question.answerSelectionType) {
+                        question.answerSelectionType = 'single';
+                    }
+                    break;
+
+                case 'Vrai/Faux':
+                    if (question.correctAnswer === undefined || question.correctAnswer === null) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: réponse correcte requise` },
+                            { status: 400 }
+                        );
+                    }
+                    break;
+
+                case 'Réponse courte':
+                    if (!question.correctAnswer || question.correctAnswer === undefined || question.correctAnswer === null) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: réponse correcte requise` },
+                            { status: 400 }
+                        );
+                    }
+                    break;
+
+                default:
+                    return NextResponse.json(
+                        { error: `Question ${i + 1}: type de question non supporté` },
+                        { status: 400 }
+                    );
+            }
         }
 
-        const newQuiz = await Quiz.create({
-            title,
-            description,
-            questions,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-        });
+        const quiz = new Quiz(body);
+        await quiz.save();
 
-        return NextResponse.json(newQuiz, { status: 201 });
-    } catch (error: any) {
-        console.error("Erreur lors de la création du quizz :", error.message);
+        return NextResponse.json(quiz, { status: 201 });
+    } catch (error) {
+        console.error('Erreur lors de la création du quiz:', error);
         return NextResponse.json(
-            { error: "Impossible de créer le quizz.", details: error.message },
+            { error: 'Erreur interne du serveur' },
             { status: 500 }
         );
     }

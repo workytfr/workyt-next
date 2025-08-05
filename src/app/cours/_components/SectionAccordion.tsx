@@ -6,8 +6,9 @@ import {
     AccordionTrigger,
     AccordionContent,
 } from "@/components/ui/Accordion";
-import { BookOpen, FileText, Loader2, ChevronRight, Book } from "lucide-react";
+import { BookOpen, FileText, Loader2, ChevronRight, Book, Trophy, Lock } from "lucide-react";
 import { Section, Lesson } from "./types";
+import { useSession } from "next-auth/react";
 
 // Subtle grain effect component
 const GrainOverlay = ({ opacity = 0.05 }) => (
@@ -25,10 +26,11 @@ const GrainOverlay = ({ opacity = 0.05 }) => (
 interface SectionAccordionProps {
     courseId: string;
     sectionInitial: Section;
-    onSelectContent: (content: Lesson | Section) => void;
+    onSelectContent: (content: Lesson | Section | { type: string; title: string; exercises?: any[]; quizzes?: any[] }) => void;
 }
 
 export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: SectionAccordionProps) {
+    const { data: session } = useSession();
     const [sectionDetail, setSectionDetail] = useState<Section | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -121,7 +123,11 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
                             <div className="my-2 py-2 border-t border-orange-100">
                                 <button
                                     className="flex items-center gap-3 w-full p-2 justify-start hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50/30 rounded-md transition-all group"
-                                    onClick={() => onSelectContent(sectionData)}
+                                    onClick={() => onSelectContent({ 
+                                        type: 'exercises',
+                                        title: sectionData.title,
+                                        exercises: sectionData.exercises 
+                                    })}
                                 >
                                     <div className="p-1.5 bg-green-100 text-green-600 rounded-md group-hover:bg-green-600 group-hover:text-white transition-colors">
                                         <FileText className="w-4 h-4 flex-shrink-0" />
@@ -130,6 +136,42 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent }: 
                     Voir les exercices
                   </span>
                                 </button>
+                            </div>
+                        )}
+
+                        {sectionData.quizzes && sectionData.quizzes.length > 0 && (
+                            <div className="my-2 py-2 border-t border-orange-100">
+                                {session?.user ? (
+                                    <button
+                                        className="flex items-center gap-3 w-full p-2 justify-start hover:bg-gradient-to-r hover:from-yellow-50 hover:to-amber-50/30 rounded-md transition-all group"
+                                        onClick={() => onSelectContent({ 
+                                            type: 'quizzes',
+                                            title: sectionData.title,
+                                            quizzes: sectionData.quizzes 
+                                        })}
+                                    >
+                                        <div className="p-1.5 bg-yellow-100 text-yellow-600 rounded-md group-hover:bg-yellow-600 group-hover:text-white transition-colors">
+                                            <Trophy className="w-4 h-4 flex-shrink-0" />
+                                        </div>
+                                        <span className="text-sm font-medium text-yellow-700 group-hover:text-yellow-800">
+                                            Voir les quiz ({sectionData.quizzes.length})
+                                        </span>
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center gap-3 w-full p-2 justify-start bg-gray-50 rounded-md">
+                                        <div className="p-1.5 bg-gray-200 text-gray-500 rounded-md">
+                                            <Lock className="w-4 h-4 flex-shrink-0" />
+                                        </div>
+                                        <div className="flex-1">
+                                            <span className="text-sm font-medium text-gray-600">
+                                                Quiz disponibles ({sectionData.quizzes.length})
+                                            </span>
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Connectez-vous pour accéder aux quiz et gagner des points
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
