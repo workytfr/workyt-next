@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1024px" height="1024px" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <!-- Fond du badge -->
+  <g>
+    <path style="opacity:1" fill="#3b82f6" d="M 512,64 C 264.576,64 64,264.576 64,512 C 64,759.424 264.576,960 512,960 C 759.424,960 960,759.424 960,512 C 960,264.576 759.424,64 512,64 Z"/>
+  </g>
+  
+  <!-- Bordure -->
+  <g>
+    <path style="opacity:1" fill="#1d4ed8" d="M 512,96 C 282.138,96 96,282.138 96,512 C 96,741.862 282.138,928 512,928 C 741.862,928 928,741.862 928,512 C 928,282.138 741.862,96 512,96 Z M 512,896 C 300.186,896 128,723.814 128,512 C 128,300.186 300.186,128 512,128 C 723.814,128 896,300.186 896,512 C 896,723.814 723.814,896 512,896 Z"/>
+  </g>
+  
+  <!-- Livre ouvert -->
+  <g>
+    <path style="opacity:1" fill="#ffffff" d="M 256,384 L 768,384 L 768,640 L 256,640 Z"/>
+    <path style="opacity:1" fill="#e5e7eb" d="M 256,384 L 512,384 L 512,640 L 256,640 Z"/>
+    <path style="opacity:1" fill="#ffffff" d="M 512,384 L 768,384 L 768,640 L 512,640 Z"/>
+    <path style="opacity:1" fill="#9ca3af" d="M 320,416 L 448,416 L 448,432 L 320,432 Z"/>
+    <path style="opacity:1" fill="#9ca3af" d="M 320,448 L 448,448 L 448,464 L 320,464 Z"/>
+    <path style="opacity:1" fill="#9ca3af" d="M 320,480 L 448,480 L 448,496 L 320,496 Z"/>
+    <path style="opacity:1" fill="#9ca3af" d="M 576,416 L 704,416 L 704,432 L 576,432 Z"/>
+    <path style="opacity:1" fill="#9ca3af" d="M 576,448 L 704,448 L 704,464 L 576,464 Z"/>
+    <path style="opacity:1" fill="#9ca3af" d="M 576,480 L 704,480 L 704,496 L 576,496 Z"/>
+  </g>
+</svg>

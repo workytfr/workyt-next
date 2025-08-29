@@ -30,6 +30,7 @@ import { motion } from "framer-motion";
 interface User {
     username: string;
     points: number;
+    _id: string; // Added _id for ProfileAvatar
 }
 
 interface Description {
@@ -291,7 +292,12 @@ export default function ForumPageClient() {
                                     {/* Header: User info and badges - Amélioration pour mobile */}
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 pr-6 sm:pr-0">
                                         <div className="flex items-center gap-2 sm:gap-3">
-                                            <ProfileAvatar username={question.user.username} points={question.user.points} size="small" />
+                                            <ProfileAvatar 
+                                                username={question.user.username} 
+                                                points={question.user.points} 
+                                                size="small"
+                                                userId={question.user._id}
+                                            />
                                             <div>
                                                 <p className="font-semibold text-gray-800 text-sm sm:text-base">{question.user.username}</p>
                                                 <TimeAgo date={question.createdAt}/>

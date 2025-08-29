@@ -17,9 +17,10 @@ import { UploadButton } from "@/utils/uploadthing";
 interface CourseFormProps {
     course?: any;
     onSuccess: (course: any) => void;
+    onError?: (error: any) => void;
 }
 
-export default function CourseForm({ course, onSuccess }: CourseFormProps) {
+export default function CourseForm({ course, onSuccess, onError }: CourseFormProps) {
     const { data: session, update } = useSession();
     const [formData, setFormData] = useState({
         title: course?.title || "",
@@ -32,12 +33,39 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
     const [uploadedImageUrl, setUploadedImageUrl] = useState<string>(course?.image || "");
     const [imagePreview, setImagePreview] = useState<string>(course?.image || "");
 
+    // Gestion d'erreur locale
+    const [error, setError] = useState<string | null>(null);
+
+    // Fonction de gestion d'erreur locale
+    const handleError = (error: any, context: string) => {
+        console.error(`Erreur dans ${context}:`, error);
+        setError(`Une erreur est survenue dans ${context}. Veuillez réessayer.`);
+        if (onError) {
+            onError(error);
+        }
+        setTimeout(() => setError(null), 5000);
+    };
+
+    // Fonction sécurisée pour exécuter des opérations
+    const safeExecute = (fn: Function, context: string) => {
+        try {
+            return fn();
+        } catch (error) {
+            handleError(error, context);
+            return null;
+        }
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
         if (!session || !session.accessToken) {
             console.error("Erreur d'authentification : Aucun token fourni.");
-            await signIn();
+            try {
+                await signIn();
+            } catch (error) {
+                console.error("Erreur lors de la connexion:", error);
+            }
             return;
         }
 
@@ -64,13 +92,21 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
 
             if (res.status === 401) {
                 console.error("JWT expiré, rafraîchissement de la session...");
-                await update();
+                try {
+                    await update();
+                } catch (error) {
+                    console.error("Erreur lors du rafraîchissement de la session:", error);
+                }
                 return;
             }
 
             if (res.ok) {
-                const data = await res.json();
-                onSuccess(data);
+                try {
+                    const data = await res.json();
+                    onSuccess(data);
+                } catch (error) {
+                    console.error("Erreur lors du parsing de la réponse:", error);
+                }
             } else {
                 console.error("Erreur lors de la création du cours :", await res.text());
             }
@@ -88,15 +124,20 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
             />
 
             <label className="block text-sm font-medium text-gray-700">Description du cours</label>
-            <MDEditor
-                value={formData.description}
-                onChange={(value) => setFormData({ ...formData, description: value || "" })}
-                previewOptions={{
-                    remarkPlugins: [remarkMath],
-                    rehypePlugins: [rehypeKatex],
-                }}
-                height={200}
-            />
+            <div className="border rounded-md">
+                <MDEditor
+                    value={formData.description}
+                    onChange={(value) => setFormData({ ...formData, description: value || "" })}
+                    previewOptions={{
+                        remarkPlugins: [remarkMath],
+                        rehypePlugins: [rehypeKatex],
+                    }}
+                    height={200}
+                    onError={(error) => {
+                        console.error("Erreur de l'éditeur MD:", error);
+                    }}
+                />
+            </div>
 
             <label className="block text-sm font-medium text-gray-700">Niveau scolaire</label>
             <Select onValueChange={(value) => setFormData({ ...formData, niveau: value })} value={formData.niveau}>
@@ -127,23 +168,40 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
             </Select>
 
             {/* Intégration du composant SectionManager */}
-            {course?._id && <SectionManager courseId={course._id} session={session} />}
+            {course?._id && (
+                <div className="border-t pt-4">
+                    <SectionManager 
+                        courseId={course._id} 
+                        session={session}
+                        onError={(error: any) => {
+                            if (onError) {
+                                onError(error);
+                            }
+                        }}
+                    />
+                </div>
+            )}
 
             <label className="block text-sm font-medium text-gray-700">Image de fond du cours</label>
             {/* Bouton Uploadthing pour uploader l'image */}
-            <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                    if (res && res.length > 0) {
-                        const imageUrl = res[0].url;
-                        setUploadedImageUrl(imageUrl);
-                        setImagePreview(imageUrl);
-                    }
-                }}
-                onUploadError={(error: Error) => {
-                    console.error("Erreur lors de l'upload:", error.message);
-                }}
-            />
+            <div className="border rounded-md p-4">
+                <UploadButton
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                        if (res && res.length > 0) {
+                            const imageUrl = res[0].url;
+                            setUploadedImageUrl(imageUrl);
+                            setImagePreview(imageUrl);
+                        }
+                    }}
+                    onUploadError={(error: Error) => {
+                        console.error("Erreur lors de l'upload:", error.message);
+                    }}
+                    onUploadBegin={(fileName) => {
+                        console.log("Début de l'upload:", fileName);
+                    }}
+                />
+            </div>
 
             {imagePreview && (
                 <div className="mt-2">
@@ -153,11 +211,41 @@ export default function CourseForm({ course, onSuccess }: CourseFormProps) {
                         width={200}
                         height={100}
                         className="rounded-md shadow"
+                        onError={(e) => {
+                            console.error("Erreur de chargement de l'image:", e);
+                            setImagePreview("");
+                        }}
                     />
                 </div>
             )}
 
             <Button type="submit">{course ? "Modifier" : "Créer"} le cours</Button>
+
+            {/* Affichage de l'erreur locale */}
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                        <div className="ml-auto pl-3">
+                            <button
+                                onClick={() => setError(null)}
+                                className="inline-flex text-red-400 hover:text-red-600"
+                            >
+                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </form>
     );
 }

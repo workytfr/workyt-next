@@ -42,19 +42,19 @@ const OrangeGradient: React.FC<{ className?: string; children?: React.ReactNode 
 function LoadingSkeleton() {
     return (
         <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 overflow-x-hidden">
-            <div className="w-full md:w-72 lg:w-80 p-4 bg-orange-50">
-                <Skeleton className="h-6 w-3/4 mb-4" />
+            <div className="w-full md:w-72 lg:w-80 p-3 sm:p-4 bg-orange-50">
+                <Skeleton className="h-5 sm:h-6 w-3/4 mb-3 sm:mb-4" />
                 {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-4 w-full mb-3" />
+                    <Skeleton key={i} className="h-3 sm:h-4 w-full mb-2 sm:mb-3" />
                 ))}
             </div>
-            <main className="flex-1 p-4 md:p-6 bg-gradient-to-br from-white to-orange-50">
-                <Skeleton className="h-8 w-full md:w-1/2 mb-4" />
-                <Skeleton className="h-4 w-1/2 md:w-1/4 mb-6" />
-                <Skeleton className="h-10 w-1/3 md:w-1/5 mb-6" />
-                <div className="space-y-4">
+            <main className="flex-1 p-3 sm:p-4 md:p-6 bg-gradient-to-br from-white to-orange-50">
+                <Skeleton className="h-6 sm:h-8 w-full md:w-1/2 mb-3 sm:mb-4" />
+                <Skeleton className="h-3 sm:h-4 w-1/2 md:w-1/4 mb-4 sm:mb-6" />
+                <Skeleton className="h-8 sm:h-10 w-1/3 md:w-1/5 mb-4 sm:mb-6" />
+                <div className="space-y-3 sm:space-y-4">
                     {[...Array(3)].map((_, i) => (
-                        <Skeleton key={i} className="h-16 w-full rounded-lg" />
+                        <Skeleton key={i} className="h-12 sm:h-16 w-full rounded-lg" />
                     ))}
                 </div>
             </main>
@@ -145,40 +145,41 @@ function ContentView({ content, onBack }: { content: any; onBack: () => void }) 
         );
     }
 
-
-
     return (
-        <>
+        <div className="w-full max-w-none overflow-hidden">
             <button
                 onClick={onBack}
-                className="mb-6 px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-full flex items-center text-sm font-medium shadow-sm"
+                className="mb-4 sm:mb-6 px-3 sm:px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-full flex items-center text-sm font-medium shadow-sm"
             >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Retour
             </button>
-                           {content.type === 'exercises' ? (
-                   <ExerciseList exercises={content.exercises} title={content.title} />
-               ) : content.type === 'quizzes' ? (
-                   <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
-               ) : "content" in content ? (
-                   <LessonView title={content.title} content={content.content || ""} />
-               ) : "exercises" in content ? (
-                   <ExerciseList exercises={content.exercises} title={content.title} />
-               ) : "quizzes" in content && quizzes.length > 0 ? (
-                   <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
-               ) : (
-                   <p className="text-gray-600">Aucun contenu disponible.</p>
-               )}
-        </>
+            
+            <div className="w-full overflow-hidden">
+                {content.type === 'exercises' ? (
+                    <ExerciseList exercises={content.exercises} title={content.title} />
+                ) : content.type === 'quizzes' ? (
+                    <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
+                ) : "content" in content ? (
+                    <LessonView title={content.title} content={content.content || ""} />
+                ) : "exercises" in content ? (
+                    <ExerciseList exercises={content.exercises} title={content.title} />
+                ) : "quizzes" in content && quizzes.length > 0 ? (
+                    <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
+                ) : (
+                    <p className="text-gray-600">Aucun contenu disponible.</p>
+                )}
+            </div>
+        </div>
     );
 }
 
 // Liste d'exercices
 function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: string }) {
     return (
-        <>
-            <h1 className="text-xl md:text-2xl font-bold mb-6 text-gray-800">{title}</h1>
-            <div className="flex flex-col space-y-6">
+        <div className="w-full max-w-none overflow-hidden">
+            <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-gray-800 break-words">{title}</h1>
+            <div className="flex flex-col space-y-4 sm:space-y-6">
                 {exercises.map((ex, idx) => (
                     <div key={ex._id} className="relative overflow-hidden rounded-xl">
                         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-300 to-amber-500" />
@@ -186,7 +187,7 @@ function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: stri
                     </div>
                 ))}
             </div>
-        </>
+        </div>
     );
 }
 
@@ -201,11 +202,11 @@ function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
 
     if (isLoading) {
         return (
-            <div className="space-y-4">
-                <h1 className="text-xl md:text-2xl font-bold mb-6 text-gray-800">{title}</h1>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="w-full max-w-none overflow-hidden">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-gray-800 break-words">{title}</h1>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-48 bg-gray-200 rounded-lg animate-pulse" />
+                        <div key={i} className="h-32 sm:h-48 bg-gray-200 rounded-lg animate-pulse" />
                     ))}
                 </div>
             </div>
@@ -213,46 +214,46 @@ function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
     }
 
     return (
-        <>
-            <div className="flex items-center justify-between mb-6">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-800">{title}</h1>
+        <div className="w-full max-w-none overflow-hidden">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 break-words">{title}</h1>
                 {!session?.user && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2">
-                        <p className="text-sm text-blue-700">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 sm:px-4 py-2">
+                        <p className="text-xs sm:text-sm text-blue-700">
                             💡 Connectez-vous pour participer aux quiz et gagner des points !
                         </p>
                     </div>
                 )}
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                 {quizzes.map((quiz) => (
                     <QuizCard key={quiz._id} quiz={quiz} onStartQuiz={onStartQuiz} />
                 ))}
             </div>
-        </>
+        </div>
     );
 }
 
 // Aperçu du cours
 function CourseOverview({ cours }: { cours: Course }) {
     return (
-        <>
+        <div className="w-full max-w-none overflow-hidden">
             <CourseHeader cours={cours} />
             <Instruction />
-        </>
+        </div>
     );
 }
 
 // En-tête de l'aperçu
 function CourseHeader({ cours }: { cours: Course }) {
     return (
-        <div className="relative overflow-hidden bg-white border border-orange-100 rounded-xl shadow-md mb-8">
+        <div className="relative overflow-hidden bg-white border border-orange-100 rounded-xl shadow-md mb-6 sm:mb-8">
             <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-400" />
-            <div className="p-6 md:p-8 flex flex-col md:flex-row justify-between items-start">
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-2">{cours.title}</h1>
-                <Sparkles className="w-6 h-6 text-orange-500" />
+            <div className="p-4 sm:p-6 md:p-8 flex flex-col md:flex-row justify-between items-start">
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 break-words">{cours.title}</h1>
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 flex-shrink-0" />
             </div>
-            <div className="border-t border-orange-100 bg-orange-50/50 p-6 md:p-8 relative">
+            <div className="border-t border-orange-100 bg-orange-50/50 p-4 sm:p-6 md:p-8 relative">
                 <Noise opacity={0.04} />
                 <div className="prose prose-sm md:prose-base text-gray-700 max-w-full overflow-hidden prose-headings:text-orange-800 prose-a:text-orange-600">
                     <ReactMarkdown className="break-words">{cours.description}</ReactMarkdown>
@@ -265,9 +266,9 @@ function CourseHeader({ cours }: { cours: Course }) {
 // Bloc d'instructions
 function Instruction() {
     return (
-        <OrangeGradient className="rounded-xl border border-orange-100 shadow-md p-8 text-center">
-            <div className="mx-auto w-16 h-16 flex items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white mb-4 shadow-md">
-                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <OrangeGradient className="rounded-xl border border-orange-100 shadow-md p-4 sm:p-6 md:p-8 text-center">
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white mb-3 sm:mb-4 shadow-md">
+                <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -276,10 +277,10 @@ function Instruction() {
                     />
                 </svg>
             </div>
-            <p className="text-base md:text-lg text-gray-800 font-medium">
+            <p className="text-sm sm:text-base md:text-lg text-gray-800 font-medium">
                 Sélectionnez une leçon ou un exercice dans le sommaire pour voir son contenu.
             </p>
-            <p className="text-sm mt-2 text-gray-600">
+            <p className="text-xs sm:text-sm mt-2 text-gray-600">
                 Naviguez entre les leçons et les exercices pour avancer dans votre cours.
             </p>
         </OrangeGradient>
@@ -296,12 +297,12 @@ export function SidebarWrapper({
 }) {
     return (
         <div className="h-full flex flex-col overflow-hidden sidebar-wrapper">
-            <div className="flex-shrink-0 p-6 pb-4 relative">
-                <h2 className="text-xl font-bold text-gray-800 flex items-center">
+            <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 relative">
+                <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
                     Sommaire du cours
                     <span className="inline-block w-2 h-2 rounded-full bg-orange-500 ml-2" />
                 </h2>
-                <div className="h-1 w-28 bg-gradient-to-r from-orange-400 to-amber-500 rounded-full mt-3" />
+                <div className="h-1 w-20 sm:w-28 bg-gradient-to-r from-orange-400 to-amber-500 rounded-full mt-2 sm:mt-3" />
             </div>
             <div className="flex-grow relative overflow-hidden sidebar">
                 <Sidebar
@@ -406,12 +407,14 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
             </div>
 
             {/* Main — seul conteneur scrollable */}
-            <main className="flex-1 relative h-full overflow-y-auto p-4 md:p-8 bg-white/70 rounded-tl-2xl">
-                {selectedContent ? (
-                    <ContentView content={selectedContent} onBack={() => setSelectedContent(null)} />
-                ) : (
-                    <CourseOverview cours={cours} />
-                )}
+            <main className="flex-1 relative h-full overflow-y-auto overflow-x-hidden p-2 sm:p-4 md:p-6 lg:p-8 bg-white/70 rounded-tl-2xl">
+                <div className="w-full max-w-none">
+                    {selectedContent ? (
+                        <ContentView content={selectedContent} onBack={() => setSelectedContent(null)} />
+                    ) : (
+                        <CourseOverview cours={cours} />
+                    )}
+                </div>
             </main>
 
             {/* Bouton flottant toujours visible lors du défilement (uniquement sur mobile) */}

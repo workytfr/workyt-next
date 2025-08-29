@@ -24,6 +24,9 @@ import {
     HamburgerMenuIcon
 } from "@radix-ui/react-icons";
 import ProfileAvatar from "@/components/ui/profile";
+import GemIndicator from "@/components/ui/GemIndicator";
+import GemMenuSection from "@/components/ui/GemMenuSection";
+import CustomUsername from "@/components/ui/CustomUsername";
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -101,6 +104,8 @@ export default function Navbar() {
                     <Link href="/cours" className="text-gray-700 font-semibold hover:text-primary transition-colors">
                         Cours
                     </Link>
+
+
 
                     {/* Blog Dropdown */}
                     <DropdownMenu.Root>
@@ -182,8 +187,13 @@ export default function Navbar() {
                                 <ProfileAvatar
                                     username={session.user.username}
                                     points={session.user.points}
+                                    userId={session.user.id}
+                                    size="small"
                                 />
-                                <span>{session.user?.username || "Utilisateur"}</span>
+                                <div className="flex items-center gap-2">
+                                    <CustomUsername username={session.user.username} userId={session.user.id} />
+                                    <GemIndicator userId={session.user.id} />
+                                </div>
                                 <ChevronDownIcon className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
                             </DropdownMenu.Trigger>
                             <DropdownMenu.Portal>
@@ -200,6 +210,10 @@ export default function Navbar() {
                                     >
                                         <span>{session.user?.email}</span>
                                     </DropdownMenu.Item>
+                                    
+                                    {/* Section des gemmes */}
+                                    <GemMenuSection userId={session.user.id} />
+                                    
                                     <DropdownMenu.Separator className="border-t my-1" />
                                     <DropdownMenu.Item asChild>
                                         <Link href={`/compte/${session.user.id}`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors" onClick={() => setIsProfileOpen(false)}>
@@ -209,6 +223,11 @@ export default function Navbar() {
                                     <DropdownMenu.Item asChild>
                                         <Link href={`/recompenses`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors" onClick={() => setIsProfileOpen(false)}>
                                             Récompenses
+                                        </Link>
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Item asChild>
+                                        <Link href={`/gems`} className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 block transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                            💎 Gemmes
                                         </Link>
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item asChild>
@@ -393,9 +412,14 @@ export default function Navbar() {
                                 <ProfileAvatar
                                     username={session.user.username}
                                     points={session.user.points}
+                                    userId={session.user.id}
+                                    size="small"
                                 />
                                 <div>
-                                    <p className="font-semibold">{session.user?.username || "Utilisateur"}</p>
+                                    <div className="flex items-center gap-2">
+                                        <CustomUsername username={session.user.username} userId={session.user.id} />
+                                        <GemIndicator userId={session.user.id} />
+                                    </div>
                                     <p className="text-sm text-gray-500">{session.user?.email}</p>
                                 </div>
                             </div>
@@ -413,6 +437,13 @@ export default function Navbar() {
                                     onClick={closeMobileMenu}
                                 >
                                     Récompenses
+                                </Link>
+                                <Link
+                                    href={`/gems`}
+                                    className="block text-gray-600 py-2"
+                                    onClick={closeMobileMenu}
+                                >
+                                    💎 Gemmes
                                 </Link>
                                 <Link
                                     href={`/fiches/creer`}

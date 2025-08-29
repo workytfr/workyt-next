@@ -147,9 +147,9 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
         switch (question.questionType) {
             case 'QCM':
                 return (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                         {question.answers.map((answer, answerIndex) => (
-                            <label key={answerIndex} className="flex items-center space-x-3 cursor-pointer">
+                            <label key={answerIndex} className="flex items-start space-x-2 sm:space-x-3 cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors">
                                 <input
                                     type={question.answerSelectionType === 'single' ? 'radio' : 'checkbox'}
                                     name={`question-${index}`}
@@ -175,9 +175,9 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                                             handleAnswerChange(newAnswer);
                                         }
                                     }}
-                                    className="mr-2"
+                                    className="mt-1 mr-2 sm:mr-3 flex-shrink-0"
                                 />
-                                <span className="text-sm">{renderLatexContent(answer)}</span>
+                                <span className="text-sm sm:text-base leading-relaxed">{renderLatexContent(answer)}</span>
                             </label>
                         ))}
                     </div>
@@ -185,28 +185,28 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
 
             case 'Vrai/Faux':
                 return (
-                    <div className="space-y-3">
-                        <label className="flex items-center space-x-3 cursor-pointer">
+                    <div className="space-y-2 sm:space-y-3">
+                        <label className="flex items-center space-x-2 sm:space-x-3 cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors">
                             <input
                                 type="radio"
                                 name={`question-${index}`}
                                 value="true"
                                 checked={currentAnswer === true}
                                 onChange={() => handleAnswerChange(true)}
-                                className="mr-2"
+                                className="mr-2 sm:mr-3"
                             />
-                            <span className="text-sm">Vrai</span>
+                            <span className="text-sm sm:text-base">Vrai</span>
                         </label>
-                        <label className="flex items-center space-x-3 cursor-pointer">
+                        <label className="flex items-center space-x-2 sm:space-x-3 cursor-pointer p-2 sm:p-3 rounded-lg hover:bg-gray-50 transition-colors">
                             <input
                                 type="radio"
                                 name={`question-${index}`}
                                 value="false"
                                 checked={currentAnswer === false}
                                 onChange={() => handleAnswerChange(false)}
-                                className="mr-2"
+                                className="mr-2 sm:mr-3"
                             />
-                            <span className="text-sm">Faux</span>
+                            <span className="text-sm sm:text-base">Faux</span>
                         </label>
                     </div>
                 );
@@ -218,7 +218,7 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                         value={currentAnswer || ''}
                         onChange={(e) => handleAnswerChange(e.target.value)}
                         placeholder="Tapez votre réponse..."
-                        className="w-full p-2 border border-gray-300 rounded-md"
+                        className="w-full p-2 sm:p-3 border border-gray-300 rounded-md text-sm sm:text-base"
                     />
                 );
 
@@ -229,43 +229,43 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
 
     if (showResults && results) {
         return (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <Card className="w-full max-w-2xl mx-4">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                            <Trophy className="h-6 w-6 text-yellow-600" />
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+                <Card className="w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-2xl mx-auto max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                    <CardHeader className="p-3 sm:p-4 md:p-6">
+                        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl md:text-2xl">
+                            <Trophy className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-600" />
                             Résultats du quiz
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-3 sm:space-y-4 p-3 sm:p-4 md:p-6">
                         <div className="text-center">
-                            <div className="text-3xl font-bold text-green-600 mb-2">
+                            <div className="text-2xl sm:text-3xl font-bold text-green-600 mb-2">
                                 {results.score}/{results.maxScore} points
                             </div>
-                            <div className="text-lg text-gray-600 mb-4">
+                            <div className="text-base sm:text-lg text-gray-600 mb-3 sm:mb-4">
                                 {results.percentage}% de réussite
                             </div>
-                            <Progress value={results.percentage} className="h-3 mb-4" />
+                            <Progress value={results.percentage} className="h-2 sm:h-3 mb-3 sm:mb-4" />
                         </div>
 
                         <div className="space-y-2">
-                            <h3 className="font-semibold">Détail des réponses :</h3>
+                            <h3 className="font-semibold text-sm sm:text-base">Détail des réponses :</h3>
                             {results.answers.map((answer: any, index: number) => (
                                 <div key={index} className="flex items-center gap-2 p-2 rounded">
                                     {answer.isCorrect ? (
-                                        <CheckCircle className="h-5 w-5 text-green-600" />
+                                        <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 flex-shrink-0" />
                                     ) : (
-                                        <XCircle className="h-5 w-5 text-red-600" />
+                                        <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 flex-shrink-0" />
                                     )}
-                                    <span className="text-sm">
+                                    <span className="text-xs sm:text-sm">
                                         Question {index + 1}: {answer.pointsEarned} point{answer.pointsEarned > 1 ? 's' : ''}
                                     </span>
                                 </div>
                             ))}
                         </div>
 
-                        <div className="flex gap-2">
-                            <Button onClick={onClose} className="flex-1">
+                        <div className="flex gap-2 pt-2">
+                            <Button onClick={onClose} className="flex-1 text-sm sm:text-base py-2 sm:py-2.5">
                                 Fermer
                             </Button>
                         </div>
@@ -279,39 +279,39 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
     const progress = ((currentQuestion + 1) / quiz.questions.length) * 100;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <Card className="w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <CardTitle className="flex items-center gap-2">
-                            <Trophy className="h-5 w-5 text-yellow-600" />
-                            {quiz.title}
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
+            <Card className="w-full max-w-sm sm:max-w-md md:max-w-2xl lg:max-w-4xl mx-auto max-h-[95vh] sm:max-h-[90vh] overflow-y-auto">
+                <CardHeader className="p-3 sm:p-4 md:p-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                        <CardTitle className="flex items-center gap-2 text-lg sm:text-xl md:text-2xl">
+                            <Trophy className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-600" />
+                            <span className="line-clamp-2">{quiz.title}</span>
                         </CardTitle>
-                        <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1 text-sm text-gray-600">
-                                <Clock className="h-4 w-4" />
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
+                            <div className="flex items-center gap-1 text-xs sm:text-sm text-gray-600">
+                                <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
                                 {Math.floor(timeSpent / 60)}:{(timeSpent % 60).toString().padStart(2, '0')}
                             </div>
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="text-xs sm:text-sm">
                                 Question {currentQuestion + 1}/{quiz.questions.length}
                             </Badge>
                         </div>
                     </div>
-                    <Progress value={progress} className="h-2" />
+                    <Progress value={progress} className="h-2 mt-3" />
                 </CardHeader>
 
-                <CardContent className="space-y-6">
-                    <div className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-lg font-semibold">
+                <CardContent className="space-y-4 sm:space-y-6 p-3 sm:p-4 md:p-6">
+                    <div className="space-y-3 sm:space-y-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
+                            <h3 className="text-base sm:text-lg font-semibold">
                                 Question {currentQuestion + 1}
                             </h3>
-                            <Badge variant="outline">
+                            <Badge variant="outline" className="text-xs sm:text-sm w-fit">
                                 {currentQ.point} point{currentQ.point > 1 ? 's' : ''}
                             </Badge>
                         </div>
 
-                        <div className="text-gray-700">
+                        <div className="text-gray-700 text-sm sm:text-base leading-relaxed">
                             {renderLatexContent(currentQ.question)}
                         </div>
 
@@ -319,34 +319,36 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                             <img 
                                 src={currentQ.questionPic} 
                                 alt="Question" 
-                                className="max-w-full h-auto rounded-md"
+                                className="max-w-full h-auto rounded-md shadow-sm"
                             />
                         )}
 
-                        <div className="mt-4">
+                        <div className="mt-3 sm:mt-4">
                             {renderQuestion(currentQ, currentQuestion)}
                         </div>
                     </div>
 
-                    <div className="flex justify-between pt-4 border-t">
+                    <div className="flex flex-col sm:flex-row justify-between gap-3 sm:gap-0 pt-3 sm:pt-4 border-t">
                         <Button
                             variant="outline"
                             onClick={handlePrevious}
                             disabled={currentQuestion === 0}
+                            className="text-sm sm:text-base py-2 sm:py-2.5 order-2 sm:order-1"
                         >
                             Précédent
                         </Button>
 
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 order-1 sm:order-2">
                             {currentQuestion === quiz.questions.length - 1 ? (
                                 <Button
                                     onClick={handleSubmit}
                                     disabled={isSubmitting || answers.length !== quiz.questions.length || isCompleted}
+                                    className="text-sm sm:text-base py-2 sm:py-2.5"
                                 >
                                     {isSubmitting ? 'Soumission...' : isCompleted ? 'Quiz déjà complété' : 'Terminer le quiz'}
                                 </Button>
                             ) : (
-                                <Button onClick={handleNext}>
+                                <Button onClick={handleNext} className="text-sm sm:text-base py-2 sm:py-2.5">
                                     Suivant
                                 </Button>
                             )}

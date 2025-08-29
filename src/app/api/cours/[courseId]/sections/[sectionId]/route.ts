@@ -36,7 +36,7 @@ export async function GET(
         // Si l'utilisateur n'est pas authentifié (ou n'est pas staff),
         // n'autoriser l'accès qu'aux cours publiés.
         if (
-            (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) &&
+            (!user || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) &&
             course.status !== "publie"
         ) {
             return NextResponse.json({ error: "Section non trouvée" }, { status: 404 });

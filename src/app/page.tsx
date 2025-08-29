@@ -12,9 +12,8 @@ import { WobbleCardDemo } from "@/components/home/notre-mission";
 import { FeedCard } from "@/components/home/news";
 import Footer from '@/components/home/footer';
 import { Avis } from '@/components/home/avis';
-import PartenairesView from "@/components/home/partenaires";
+import PartnersSection from "@/components/home/PartnersSection";
 import OrgChart from "@/components/home/OrgChart";
-import SessionWrapper from "@/components/SessionWrapper";
 import * as React from "react";
 import { Metadata } from 'next'
 
@@ -42,7 +41,6 @@ export const metadata = {
 
 export default function Home() {
     return (
-        <SessionWrapper>
         <div className="grid bg-white">
             <BannerWithButton
                 tTitle="🎉 Bienvenue sur Workyt v4.0.0 Beta !"
@@ -85,10 +83,9 @@ export default function Home() {
             <FeedCard/>
             <div className="px-4 md:px-8 lg:px-16 py-8 w-full max-w-full overflow-x-hidden">
                 <Avis/>
-                <PartenairesView/>
             </div>
+            <PartnersSection/>
             <OrgChart/>
         </div>
-        </SessionWrapper>
     );
 }

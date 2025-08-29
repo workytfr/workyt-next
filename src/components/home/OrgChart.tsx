@@ -1,6 +1,7 @@
 import React from 'react';
-import * as Avatar from '@radix-ui/react-avatar';
-import * as Tooltip from '@radix-ui/react-tooltip';
+import { motion } from 'framer-motion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
+import ProfileAvatar from '@/components/ui/profile';
 
 // Composant pour l'effet de fond "Noise"
 const Noise: React.FC = () => {
@@ -113,45 +114,30 @@ interface OrgNodeProps {
 
 const OrgNode: React.FC<OrgNodeProps> = ({ member, size = 'large' }) => {
     // Taille de l'avatar selon la taille spécifiée (grand ou petit)
-    const avatarSize = size === 'large' ? 100 : 60;
+    const avatarSize = size === 'large' ? 'large' : 'medium';
     const fontSize = size === 'large' ? 18 : 14;
     const roleFontSize = size === 'large' ? 14 : 12;
 
     return (
         <div style={{ textAlign: 'center', margin: '10px', width: '150px' }}>
-            <Tooltip.Provider>
-                <Tooltip.Root>
-                    <Tooltip.Trigger asChild>
-                        <div
-                            style={{
-                                display: 'flex',
-                                justifyContent: 'center',
-                                alignItems: 'center',
-                                width: avatarSize,
-                                height: avatarSize,
-                                borderRadius: '50%',
-                                overflow: 'hidden',
-                                backgroundColor: '#333', // Fond gris foncé
-                                margin: 'auto',
-                            }}
-                        >
-                            <Avatar.Root>
-                                <Avatar.Image
-                                    src={`/avatars/${member.id}.png`}
-                                    alt={member.name}
-                                    style={{ width: '100%', height: '100%' }}
-                                />
-                                <Avatar.Fallback delayMs={600}>{member.name.charAt(0)}</Avatar.Fallback>
-                            </Avatar.Root>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <div className="flex justify-center">
+                            <ProfileAvatar
+                                username={member.name}
+                                size={avatarSize}
+                                showPoints={false}
+                            />
                         </div>
-                    </Tooltip.Trigger>
-                    <Tooltip.Content sideOffset={5}>
+                    </TooltipTrigger>
+                    <TooltipContent sideOffset={5}>
                         <div style={{ padding: '10px', backgroundColor: '#222', color: '#fff', borderRadius: '4px' }}>
                             {member.email || 'Email non disponible'}
                         </div>
-                    </Tooltip.Content>
-                </Tooltip.Root>
-            </Tooltip.Provider>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
             <div style={{ marginTop: '10px' }}>
                 <div style={{ fontWeight: 'bold', fontSize, color: '#fff' }}>{member.name}</div>
                 <div style={{ fontSize: roleFontSize, color: '#bbb' }}>{member.role}</div>

@@ -72,7 +72,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST - Créer une nouvelle section
+// POST - Créer une nouvelle section ou plusieurs sections
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -84,7 +84,70 @@ export async function POST(request: NextRequest) {
 
         const body = await request.json();
         
-        // Validation des données
+        // Si on reçoit un tableau de sections, les traiter toutes
+        if (Array.isArray(body.sections)) {
+            const sections = body.sections;
+            const courseId = body.courseId;
+            
+            if (!courseId) {
+                return NextResponse.json(
+                    { error: 'ID du cours requis' },
+                    { status: 400 }
+                );
+            }
+
+            // Vérifier que le cours existe
+            const course = await Course.findById(courseId);
+            if (!course) {
+                return NextResponse.json(
+                    { error: 'Cours non trouvé' },
+                    { status: 404 }
+                );
+            }
+
+            const savedSections = [];
+            
+            for (const sectionData of sections) {
+                if (!sectionData.title) continue;
+                
+                // Déterminer l'ordre si non fourni
+                if (!sectionData.order) {
+                    const lastSection = await Section.findOne({ courseId })
+                        .sort({ order: -1 })
+                        .limit(1);
+                    sectionData.order = lastSection ? lastSection.order + 1 : 1;
+                }
+                
+                sectionData.courseId = courseId;
+                
+                if (sectionData._id) {
+                    // Mettre à jour une section existante
+                    const updatedSection = await Section.findByIdAndUpdate(
+                        sectionData._id,
+                        sectionData,
+                        { new: true }
+                    );
+                    savedSections.push(updatedSection);
+                } else {
+                    // Créer une nouvelle section
+                    const section = new Section(sectionData);
+                    await section.save();
+                    savedSections.push(section);
+                }
+            }
+
+            // Retourner toutes les sections mises à jour
+            const allSections = await Section.find({ courseId })
+                .sort({ order: 1 })
+                .populate('courseId', 'title niveau matiere');
+
+            return NextResponse.json({ 
+                sections: allSections,
+                message: `${savedSections.length} sections traitées avec succès`
+            }, { status: 200 });
+        }
+        
+        // Traitement d'une seule section (comportement original)
         if (!body.title || !body.courseId) {
             return NextResponse.json(
                 { error: 'Titre et cours requis' },
@@ -120,6 +183,67 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.error('Erreur lors de la création de la section:', error);
+        return NextResponse.json(
+            { error: 'Erreur interne du serveur' },
+            { status: 500 }
+        );
+    }
+}
+
+// PUT - Mettre à jour l'ordre des sections
+export async function PUT(request: NextRequest) {
+    try {
+        const session = await getServerSession(authOptions);
+        if (!session?.user?.email) {
+            return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+        }
+
+        await connectDB();
+
+        const body = await request.json();
+        
+        if (!body.sections || !Array.isArray(body.sections)) {
+            return NextResponse.json(
+                { error: 'Sections requises' },
+                { status: 400 }
+            );
+        }
+
+        const updatedSections = [];
+        
+        for (const sectionData of body.sections) {
+            if (sectionData._id && sectionData.order !== undefined) {
+                const updatedSection = await Section.findByIdAndUpdate(
+                    sectionData._id,
+                    { order: sectionData.order },
+                    { new: true }
+                );
+                if (updatedSection) {
+                    updatedSections.push(updatedSection);
+                }
+            }
+        }
+
+        // Retourner toutes les sections mises à jour
+        if (updatedSections.length > 0) {
+            const courseId = updatedSections[0].courseId;
+            const allSections = await Section.find({ courseId })
+                .sort({ order: 1 })
+                .populate('courseId', 'title niveau matiere');
+
+            return NextResponse.json({ 
+                sections: allSections,
+                message: `${updatedSections.length} sections mises à jour avec succès`
+            });
+        }
+
+        return NextResponse.json({ 
+            sections: [],
+            message: 'Aucune section mise à jour'
+        });
+
+    } catch (error) {
+        console.error('Erreur lors de la mise à jour des sections:', error);
         return NextResponse.json(
             { error: 'Erreur interne du serveur' },
             { status: 500 }
