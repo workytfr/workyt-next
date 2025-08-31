@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
 import { FcGoogle } from "react-icons/fc";
+import PrivacyConsent from "./PrivacyConsent";
 
 // Fonction pour normaliser le username côté client
 function normalizeUsername(username: string): string {
@@ -54,6 +55,7 @@ export default function AuthPage() {
     const [message, setMessage] = useState("");
     const [usernameError, setUsernameError] = useState("");
     const [usernameSuggestions, setUsernameSuggestions] = useState<string[]>([]);
+    const [hasAcceptedPrivacyPolicy, setHasAcceptedPrivacyPolicy] = useState(false);
 
     // Normalisation en temps réel du username
     useEffect(() => {
@@ -85,6 +87,10 @@ export default function AuthPage() {
         setMessage("");
     };
 
+    const handlePrivacyConsent = (hasConsented: boolean) => {
+        setHasAcceptedPrivacyPolicy(hasConsented);
+    };
+
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -92,6 +98,11 @@ export default function AuthPage() {
         const validation = validateUsername(normalizedUsername);
         if (!validation.isValid) {
             setUsernameError(validation.error || "");
+            return;
+        }
+
+        if (!hasAcceptedPrivacyPolicy) {
+            setMessage("Vous devez accepter la politique de confidentialité pour continuer.");
             return;
         }
 
@@ -107,7 +118,8 @@ export default function AuthPage() {
                     name,
                     username: normalizedUsername, // Envoie la version normalisée
                     email,
-                    password
+                    password,
+                    hasAcceptedPrivacyPolicy
                 }),
             });
 
@@ -325,9 +337,17 @@ export default function AuthPage() {
                         disabled={isLoading}
                     />
 
+                    {/* Consentement à la politique de confidentialité */}
+                    <div className="border-t pt-4">
+                        <PrivacyConsent
+                            onConsentChange={handlePrivacyConsent}
+                            required={true}
+                        />
+                    </div>
+
                     <Button
                         type="submit"
-                        disabled={isLoading || !!usernameError}
+                        disabled={isLoading || !!usernameError || !hasAcceptedPrivacyPolicy}
                     >
                         {isLoading ? "Inscription en cours..." : "S'inscrire"}
                     </Button>

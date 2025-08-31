@@ -22,7 +22,7 @@ import {
     SelectItem,
     SelectValue,
 } from "@/components/ui/Select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/Tooltip";
 import AdvancedPagination from "@/components/ui/AdvancedPagination";
 import CourseAdvancedSearch from "@/components/ui/CourseAdvancedSearch";
 import CourseStats from "@/components/ui/CourseStats";
@@ -70,26 +70,38 @@ interface Stats {
 
 // Retourne des classes CSS personnalisées en fonction du statut
 const getBadgeClass = (status: string) => {
-    switch (status) {
-        case "publie":
-            return "bg-green-500 text-white";
-        case "annule":
-            return "bg-red-500 text-white";
-        case "en_attente_verification":
-            return "bg-yellow-500 text-white";
-        case "en_attente_publication":
-            return "bg-blue-500 text-white";
-        default:
-            return "bg-gray-500 text-white";
+    try {
+        if (!status) return "bg-gray-500 text-white";
+        switch (status) {
+            case "publie":
+                return "bg-green-500 text-white";
+            case "annule":
+                return "bg-red-500 text-white";
+            case "en_attente_verification":
+                return "bg-yellow-500 text-white";
+            case "en_attente_publication":
+                return "bg-blue-500 text-white";
+            default:
+                return "bg-gray-500 text-white";
+        }
+    } catch (error) {
+        console.error("Erreur lors de la détermination de la classe du badge:", error);
+        return "bg-gray-500 text-white";
     }
 };
 
 // Formate le statut : supprime les underscores et capitalise chaque mot
 const formatStatus = (status: string) => {
-    return status
-        .split("_")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
+    try {
+        if (!status) return "Inconnu";
+        return status
+            .split("_")
+            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(" ");
+    } catch (error) {
+        console.error("Erreur lors du formatage du statut:", error);
+        return status || "Inconnu";
+    }
 };
 
 export default function CoursesPage() {
@@ -119,27 +131,61 @@ export default function CoursesPage() {
     const [toastMessage, setToastMessage] = useState("");
     const [toastVariant, setToastVariant] = useState<"default" | "destructive">("default");
 
+    // Gestion d'erreur globale
+    const [error, setError] = useState<string | null>(null);
+
+    // Fonction de gestion d'erreur globale
+    const handleGlobalError = (error: any, context: string) => {
+        console.error(`Erreur dans ${context}:`, error);
+        setError(`Une erreur est survenue dans ${context}. Veuillez réessayer.`);
+        setTimeout(() => setError(null), 5000);
+    };
+
+    // Gestionnaire d'erreur global pour les composants
+    const safeExecute = (fn: Function, context: string) => {
+        try {
+            return fn();
+        } catch (error) {
+            handleGlobalError(error, context);
+            return null;
+        }
+    };
+
+    // Gestionnaire d'erreur pour les composants enfants
+    const handleChildError = (error: any, context: string) => {
+        handleGlobalError(error, context);
+    };
+
     const showToast = ({ title, variant }: { title: string; variant?: "default" | "destructive" }) => {
-        setToastMessage(title);
-        setToastVariant(variant || "default");
-        setToastOpen(true);
-        setTimeout(() => setToastOpen(false), 3000);
+        try {
+            setToastMessage(title);
+            setToastVariant(variant || "default");
+            setToastOpen(true);
+            setTimeout(() => setToastOpen(false), 3000);
+        } catch (error) {
+            console.error("Erreur lors de l'affichage du toast:", error);
+        }
     };
 
     const buildApiUrl = useCallback(() => {
-        const params = new URLSearchParams({
-            page: page.toString(),
-            limit: itemsPerPage.toString(),
-            search: filters.query,
-            status: filters.status === "all" ? "" : filters.status,
-            niveau: filters.niveau === "all" ? "" : filters.niveau,
-            matiere: filters.matiere === "all" ? "" : filters.matiere,
-            sortBy: filters.sortBy,
-            sortOrder: filters.sortOrder,
-            hasSections: filters.hasSections.toString(),
-            authorId: filters.authorId === "all" ? "" : filters.authorId,
-        });
-        return `/api/courses?${params.toString()}`;
+        try {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                limit: itemsPerPage.toString(),
+                search: filters.query,
+                status: filters.status === "all" ? "" : filters.status,
+                niveau: filters.niveau === "all" ? "" : filters.niveau,
+                matiere: filters.matiere === "all" ? "" : filters.matiere,
+                sortBy: filters.sortBy,
+                sortOrder: filters.sortOrder,
+                hasSections: filters.hasSections.toString(),
+                authorId: filters.authorId === "all" ? "" : filters.authorId,
+            });
+            return `/api/courses?${params.toString()}`;
+        } catch (error) {
+            console.error("Erreur lors de la construction de l'URL:", error);
+            return `/api/courses?page=${page}&limit=${itemsPerPage}`;
+        }
     }, [page, itemsPerPage, filters]);
 
     // Charger les cours avec gestion des erreurs et pagination
@@ -160,10 +206,15 @@ export default function CoursesPage() {
                 }
 
                 const data = await res.json();
-                setCourses(data.courses || []);
-                setTotalCourses(data.total || 0);
-                setTotalPages(data.totalPages || 0);
-                setStats(data.stats || null);
+                try {
+                    setCourses(data.courses || []);
+                    setTotalCourses(data.total || 0);
+                    setTotalPages(data.totalPages || 0);
+                    setStats(data.stats || null);
+                } catch (error) {
+                    console.error("Erreur lors de la mise à jour de l'état local:", error);
+                    showToast({ title: "Erreur lors de la mise à jour de l'état", variant: "destructive" });
+                }
             } catch (error) {
                 console.error("Erreur lors du chargement des cours :", error);
                 showToast({ title: "Erreur de chargement", variant: "destructive" });
@@ -188,8 +239,13 @@ export default function CoursesPage() {
             });
 
             if (res.ok) {
-                setCourses((prev) => prev.filter((course) => course._id !== id));
-                showToast({ title: "Cours supprimé avec succès." });
+                try {
+                    setCourses((prev) => prev.filter((course) => course._id !== id));
+                    showToast({ title: "Cours supprimé avec succès." });
+                } catch (error) {
+                    console.error("Erreur lors de la mise à jour de l'état local:", error);
+                    showToast({ title: "Erreur lors de la mise à jour de l'état", variant: "destructive" });
+                }
             } else {
                 console.error("Erreur lors de la suppression :", await res.text());
                 showToast({ title: "Erreur lors de la suppression", variant: "destructive" });
@@ -223,11 +279,15 @@ export default function CoursesPage() {
 
             const { course: updatedCourse } = await res.json();
 
-            setCourses((prev) =>
-                prev.map((c) => (c._id === courseId ? { ...c, status: updatedCourse.status } : c))
-            );
-
-            showToast({ title: "Statut mis à jour" });
+            try {
+                setCourses((prev) =>
+                    prev.map((c) => (c._id === courseId ? { ...c, status: updatedCourse.status } : c))
+                );
+                showToast({ title: "Statut mis à jour" });
+            } catch (error) {
+                console.error("Erreur lors de la mise à jour de l'état local:", error);
+                showToast({ title: "Erreur lors de la mise à jour de l'état", variant: "destructive" });
+            }
         } catch (err) {
             console.error("Erreur réseau :", err);
             showToast({ title: "Erreur réseau", variant: "destructive" });
@@ -236,45 +296,66 @@ export default function CoursesPage() {
 
     // Gestion des filtres
     const handleFiltersChange = (newFilters: SearchFilters) => {
-        setFilters(newFilters);
-        setPage(1); // Retour à la première page lors du changement de filtres
+        try {
+            setFilters(newFilters);
+            setPage(1); // Retour à la première page lors du changement de filtres
+        } catch (error) {
+            console.error("Erreur lors du changement de filtres:", error);
+            showToast({ title: "Erreur lors du changement de filtres", variant: "destructive" });
+        }
     };
 
     // Gestion de la pagination
     const handlePageChange = (newPage: number) => {
-        setPage(newPage);
+        try {
+            setPage(newPage);
+        } catch (error) {
+            console.error("Erreur lors du changement de page:", error);
+            showToast({ title: "Erreur lors du changement de page", variant: "destructive" });
+        }
     };
 
     const handleItemsPerPageChange = (newItemsPerPage: number) => {
-        setItemsPerPage(newItemsPerPage);
-        setPage(1); // Retour à la première page
+        try {
+            setItemsPerPage(newItemsPerPage);
+            setPage(1); // Retour à la première page
+        } catch (error) {
+            console.error("Erreur lors du changement d'éléments par page:", error);
+            showToast({ title: "Erreur lors du changement d'éléments par page", variant: "destructive" });
+        }
     };
 
     // Export des données
     const handleExport = () => {
-        const csvContent = [
-            ['Titre', 'Description', 'Niveau', 'Matière', 'Statut', 'Sections', 'Auteurs', 'Date de création'],
-            ...courses.map(course => [
-                course.title,
-                course.description,
-                course.niveau,
-                course.matiere,
-                formatStatus(course.status),
-                course.sections.length.toString(),
-                course.authors.map(author => author.name).join(', '),
-                new Date(course.createdAt).toLocaleDateString('fr-FR')
-            ])
-        ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+        try {
+            const csvContent = [
+                ['Titre', 'Description', 'Niveau', 'Matière', 'Statut', 'Sections', 'Auteurs', 'Date de création'],
+                ...courses.map(course => [
+                    course.title,
+                    course.description,
+                    course.niveau,
+                    course.matiere,
+                    formatStatus(course.status),
+                    course.sections.length.toString(),
+                    course.authors.map(author => author.name).join(', '),
+                    new Date(course.createdAt).toLocaleDateString('fr-FR')
+                ])
+            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
 
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-        const link = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        link.setAttribute('href', url);
-        link.setAttribute('download', `cours_${new Date().toISOString().split('T')[0]}.csv`);
-        link.style.visibility = 'hidden';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `cours_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error("Erreur lors de l'export:", error);
+            showToast({ title: "Erreur lors de l'export", variant: "destructive" });
+        }
     };
 
     return (
@@ -288,13 +369,26 @@ export default function CoursesPage() {
                     </div>
                     
                     <div className="flex gap-2">
-                        <Button variant="outline" onClick={handleExport} disabled={loading}>
+                        <Button variant="outline" onClick={() => {
+                            try {
+                                handleExport();
+                            } catch (error) {
+                                console.error("Erreur lors de l'export:", error);
+                                showToast({ title: "Erreur lors de l'export", variant: "destructive" });
+                            }
+                        }} disabled={loading}>
                             <Download className="mr-2 h-4 w-4" />
                             Exporter
                         </Button>
                         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button onClick={() => setSelectedCourse(null)}>
+                                <Button onClick={() => {
+                                    try {
+                                        setSelectedCourse(null);
+                                    } catch (error) {
+                                        console.error("Erreur lors de la réinitialisation du cours sélectionné:", error);
+                                    }
+                                }}>
                                     <Plus className="mr-2 h-4 w-4" />
                                     Ajouter un cours
                                 </Button>
@@ -308,13 +402,22 @@ export default function CoursesPage() {
                                 <CourseForm
                                     course={selectedCourse}
                                     onSuccess={(newCourse: Course) => {
-                                        setCourses((prev) =>
-                                            selectedCourse
-                                                ? prev.map((c) => (c._id === newCourse._id ? newCourse : c))
-                                                : [...prev, newCourse]
-                                        );
-                                        setDialogOpen(false);
-                                        showToast({ title: selectedCourse ? "Cours mis à jour" : "Cours créé" });
+                                        try {
+                                            setCourses((prev) =>
+                                                selectedCourse
+                                                    ? prev.map((c) => (c._id === newCourse._id ? newCourse : c))
+                                                    : [...prev, newCourse]
+                                            );
+                                            setDialogOpen(false);
+                                            showToast({ title: selectedCourse ? "Cours mis à jour" : "Cours créé" });
+                                        } catch (error) {
+                                            console.error("Erreur lors de la mise à jour des cours:", error);
+                                            showToast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
+                                            handleChildError(error, "CourseForm - onSuccess");
+                                        }
+                                    }}
+                                    onError={(error: any) => {
+                                        handleChildError(error, "CourseForm");
                                     }}
                                 />
                             </DialogContent>
@@ -324,19 +427,28 @@ export default function CoursesPage() {
 
                 {/* Statistiques détaillées */}
                 {stats && (
-                    <CourseStats stats={stats} />
+                    <div className="border rounded-lg p-4">
+                        <CourseStats stats={stats} />
+                    </div>
                 )}
 
                 {/* Barre de recherche et filtres */}
                 <CourseAdvancedSearch
-                    onFiltersChange={handleFiltersChange}
+                    onFiltersChange={(newFilters) => {
+                        try {
+                            handleFiltersChange(newFilters);
+                        } catch (error) {
+                            console.error("Erreur lors du changement de filtres:", error);
+                            showToast({ title: "Erreur lors du changement de filtres", variant: "destructive" });
+                        }
+                    }}
                     isLoading={loading}
                     totalResults={totalCourses}
                     stats={stats}
                 />
 
                 {/* Table des cours */}
-                <div className="bg-white rounded-lg shadow">
+                <div className="bg-white rounded-lg shadow overflow-hidden">
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -383,7 +495,14 @@ export default function CoursesPage() {
                                             {session?.user?.role === "Admin" ? (
                                                 <Select
                                                     value={course.status}
-                                                    onValueChange={(newValue) => handleStatusChange(course._id, newValue)}
+                                                    onValueChange={(newValue) => {
+                                                        try {
+                                                            handleStatusChange(course._id, newValue);
+                                                        } catch (error) {
+                                                            console.error("Erreur lors du changement de statut:", error);
+                                                            showToast({ title: "Erreur lors du changement de statut", variant: "destructive" });
+                                                        }
+                                                    }}
                                                     disabled={loading}
                                                 >
                                                     <SelectTrigger className="w-[180px]">
@@ -410,23 +529,25 @@ export default function CoursesPage() {
                                                 </span>
                                             </div>
                                             {course.sections && course.sections.length > 0 && (
-                                                <Tooltip>
-                                                    <TooltipTrigger asChild>
-                                                        <span className="cursor-pointer text-xs text-blue-600">
-                                                            Voir les sections
-                                                        </span>
-                                                    </TooltipTrigger>
-                                                    <TooltipContent className="max-w-xs p-2 text-sm">
-                                                        <ul className="list-disc pl-4">
-                                                            {course.sections.slice(0, 3).map((section) => (
-                                                                <li key={section._id}>{section.title}</li>
-                                                            ))}
-                                                            {course.sections.length > 3 && (
-                                                                <li>... et {course.sections.length - 3} autres</li>
-                                                            )}
-                                                        </ul>
-                                                    </TooltipContent>
-                                                </Tooltip>
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <span className="cursor-pointer text-xs text-blue-600">
+                                                                Voir les sections
+                                                            </span>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent className="max-w-xs p-2 text-sm">
+                                                            <ul className="list-disc pl-4">
+                                                                {course.sections.slice(0, 3).map((section) => (
+                                                                    <li key={section._id}>{section.title}</li>
+                                                                ))}
+                                                                {course.sections.length > 3 && (
+                                                                    <li>... et {course.sections.length - 3} autres</li>
+                                                                )}
+                                                            </ul>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
                                             )}
                                         </TableCell>
                                         <TableCell>
@@ -443,8 +564,13 @@ export default function CoursesPage() {
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => {
-                                                        setSelectedCourse(course);
-                                                        setDialogOpen(true);
+                                                        try {
+                                                            setSelectedCourse(course);
+                                                            setDialogOpen(true);
+                                                        } catch (error) {
+                                                            console.error("Erreur lors de la sélection du cours:", error);
+                                                            showToast({ title: "Erreur lors de la sélection", variant: "destructive" });
+                                                        }
                                                     }}
                                                     disabled={loading}
                                                 >
@@ -454,7 +580,14 @@ export default function CoursesPage() {
                                                     variant="ghost"
                                                     size="sm"
                                                     className="text-red-500 hover:text-red-700"
-                                                    onClick={() => handleDelete(course._id)}
+                                                    onClick={() => {
+                                                        try {
+                                                            handleDelete(course._id);
+                                                        } catch (error) {
+                                                            console.error("Erreur lors de la suppression:", error);
+                                                            showToast({ title: "Erreur lors de la suppression", variant: "destructive" });
+                                                        }
+                                                    }}
                                                     disabled={loading}
                                                 >
                                                     <Trash2 className="w-4 h-4" />
@@ -485,8 +618,22 @@ export default function CoursesPage() {
                         totalPages={totalPages}
                         totalItems={totalCourses}
                         itemsPerPage={itemsPerPage}
-                        onPageChange={handlePageChange}
-                        onItemsPerPageChange={handleItemsPerPageChange}
+                        onPageChange={(newPage) => {
+                            try {
+                                handlePageChange(newPage);
+                            } catch (error) {
+                                console.error("Erreur lors du changement de page:", error);
+                                showToast({ title: "Erreur lors du changement de page", variant: "destructive" });
+                            }
+                        }}
+                        onItemsPerPageChange={(newItemsPerPage) => {
+                            try {
+                                handleItemsPerPageChange(newItemsPerPage);
+                            } catch (error) {
+                                console.error("Erreur lors du changement d'éléments par page:", error);
+                                showToast({ title: "Erreur lors du changement d'éléments par page", variant: "destructive" });
+                            }
+                        }}
                         isLoading={loading}
                     />
                 )}
@@ -495,12 +642,48 @@ export default function CoursesPage() {
             {/* Affichage du Toast */}
             <ToastViewport>
                 {toastOpen && (
-                    <Toast open={toastOpen} onOpenChange={setToastOpen} variant={toastVariant}>
+                    <Toast 
+                        open={toastOpen} 
+                        onOpenChange={(open) => {
+                            try {
+                                setToastOpen(open);
+                            } catch (error) {
+                                console.error("Erreur lors du changement d'état du toast:", error);
+                            }
+                        }} 
+                        variant={toastVariant}
+                    >
                         <ToastTitle>{toastMessage}</ToastTitle>
                         <ToastClose />
                     </Toast>
                 )}
             </ToastViewport>
+
+            {/* Affichage de l'erreur globale */}
+            {error && (
+                <div className="fixed top-4 right-4 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg">
+                    <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                            </svg>
+                        </div>
+                        <div className="ml-3">
+                            <p className="text-sm font-medium">{error}</p>
+                        </div>
+                        <div className="ml-auto pl-3">
+                            <button
+                                onClick={() => setError(null)}
+                                className="inline-flex text-red-400 hover:text-red-600"
+                            >
+                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </ToastProvider>
     );
 }

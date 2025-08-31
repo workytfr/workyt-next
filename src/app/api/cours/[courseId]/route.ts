@@ -35,7 +35,7 @@ export async function GET(
         const query: any = { _id: courseId };
 
         // If user is not authorized to see unpublished content
-        if (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
             query.status = "publie";
         }
 
@@ -59,7 +59,7 @@ export async function GET(
         const response = {
             cours,
             userRole: user?.role || "anonymous",
-            canEdit: user && ["Rédacteur", "Correcteur", "Admin"].includes(user.role)
+            canEdit: user && typeof user.role === 'string' && ["Rédacteur", "Correcteur", "Admin"].includes(user.role)
         };
 
         return NextResponse.json(response, { status: 200 });
@@ -90,7 +90,7 @@ export async function PATCH(
         // Require authentication for updates
         const user = await authMiddleware(req);
 
-        if (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
             return NextResponse.json(
                 { error: "Accès non autorisé" },
                 { status: 403 }

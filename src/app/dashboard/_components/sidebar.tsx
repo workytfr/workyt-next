@@ -2,9 +2,10 @@
 
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { cn } from "@/lib/utils"; // ShadCN helper
-import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot, Award, Layers } from "lucide-react";
+import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot, Award, Layers, Store } from "lucide-react";
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -14,12 +15,14 @@ const navItems = [
     { name: "Quiz", href: "/dashboard/quizzes", icon: CircleDot },
     { name: "Exercices", href: "/dashboard/exercises", icon: LibraryBig },
     { name: "Certificats", href: "/dashboard/certificates", icon: Award },
+    { name: "Partenaires", href: "/dashboard/partners", icon: Store, adminOnly: true },
     { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
     { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];
 
 export default function Sidebar() {
     const pathname = usePathname();
+    const { data: session } = useSession();
 
     // 🔥 Forcer le mode clair sur le body
     useEffect(() => {
@@ -28,11 +31,19 @@ export default function Sidebar() {
         document.body.style.color = "black"; // Force le texte en noir
     }, []);
 
+    // Filtrer les éléments de navigation selon le rôle de l'utilisateur
+    const filteredNavItems = navItems.filter(item => {
+        if (item.adminOnly && session?.user?.role !== 'Admin') {
+            return false;
+        }
+        return true;
+    });
+
     return (
         <aside className="w-64 bg-white text-black border-r border-gray-300 p-4">
             <h1 className="text-xl font-bold mb-6">Dashboard</h1>
             <nav>
-                {navItems.map((item) => (
+                {filteredNavItems.map((item) => (
                     <Link
                         key={item.href}
                         href={item.href}

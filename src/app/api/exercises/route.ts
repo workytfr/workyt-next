@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user.role || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="1024px" height="1024px" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <!-- Fond du badge -->
+  <g>
+    <path style="opacity:1" fill="#4ade80" d="M 512,64 C 264.576,64 64,264.576 64,512 C 64,759.424 264.576,960 512,960 C 759.424,960 960,759.424 960,512 C 960,264.576 759.424,64 512,64 Z"/>
+  </g>
+  
+  <!-- Bordure -->
+  <g>
+    <path style="opacity:1" fill="#22c55e" d="M 512,96 C 282.138,96 96,282.138 96,512 C 96,741.862 282.138,928 512,928 C 741.862,928 928,741.862 928,512 C 928,282.138 741.862,96 512,96 Z M 512,896 C 300.186,896 128,723.814 128,512 C 128,300.186 300.186,128 512,128 C 723.814,128 896,300.186 896,512 C 896,723.814 723.814,896 512,896 Z"/>
+  </g>
+  
+  <!-- Symbole de validation (checkmark) -->
+  <g>
+    <path style="opacity:1" fill="#ffffff" d="M 384,512 L 448,576 L 640,384 L 704,448 L 448,704 L 320,576 Z"/>
+  </g>
+  
+  <!-- Effet de brillance -->
+  <g>
+    <path style="opacity:0.3" fill="#ffffff" d="M 512,128 C 300.186,128 128,300.186 128,512 C 128,723.814 300.186,896 512,896 C 723.814,896 896,300.186 896,512 C 896,723.814 723.814,128 512,128 Z M 512,864 C 318.817,864 160,705.183 160,512 C 160,318.817 318.817,160 512,160 C 705.183,160 864,318.817 864,512 C 864,705.183 705.183,864 512,864 Z"/>
+  </g>
+</svg>

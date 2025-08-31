@@ -94,7 +94,7 @@ export default function CourseCard({ course }: CourseCardProps) {
                 {/* Image avec overlay gradient pour meilleur contraste */}
                 {course.image ? (
                     <div
-                        className="h-48 w-full overflow-hidden relative cursor-pointer group"
+                        className="h-32 sm:h-40 md:h-48 w-full overflow-hidden relative cursor-pointer group"
                         onClick={() => router.push(`/cours/${course._id}`)}
                     >
                         <img
@@ -105,12 +105,12 @@ export default function CourseCard({ course }: CourseCardProps) {
                         <div className="image-overlay"></div>
 
                         {/* Badge niveau sur l'image */}
-                        <Badge className="absolute top-3 right-3 bg-blue-600 text-white shadow-md z-10 px-3 py-1 font-medium">
-                            <GraduationCap className="w-4 h-4 mr-1" /> {course.niveau}
+                        <Badge className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-blue-600 text-white shadow-md z-10 px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm font-medium">
+                            <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> {course.niveau}
                         </Badge>
                     </div>
                 ) : (
-                    <div className="h-24 w-full bg-gradient-to-r from-blue-500 to-purple-600 relative overflow-hidden">
+                    <div className="h-20 sm:h-24 md:h-24 w-full bg-gradient-to-r from-blue-500 to-purple-600 relative overflow-hidden">
                         <div className="absolute inset-0 opacity-20">
                             <div className="absolute -inset-[10px] opacity-50 mix-blend-multiply blur-xl">
                                 {Array.from({ length: 3 }).map((_, i) => (
@@ -128,17 +128,17 @@ export default function CourseCard({ course }: CourseCardProps) {
                                 ))}
                             </div>
                         </div>
-                        <Badge className="absolute top-3 right-3 bg-blue-600 text-white shadow-md z-10 px-3 py-1 font-medium">
-                            <GraduationCap className="w-4 h-4 mr-1" /> {course.niveau}
+                        <Badge className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-blue-600 text-white shadow-md z-10 px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm font-medium">
+                            <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> {course.niveau}
                         </Badge>
                     </div>
                 )}
 
-                <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
+                <CardHeader className="pb-2 px-3 sm:px-4 md:px-6">
+                    <div className="flex justify-between items-start gap-2">
                         {/* Titre du cours */}
                         <CardTitle
-                            className="text-xl font-bold cursor-pointer hover:text-blue-600 transition line-clamp-2"
+                            className="text-base sm:text-lg md:text-xl font-bold cursor-pointer hover:text-blue-600 transition line-clamp-2 flex-1"
                             onClick={() => router.push(`/cours/${course._id}`)}
                         >
                             {course.title}
@@ -147,8 +147,8 @@ export default function CourseCard({ course }: CourseCardProps) {
                         {/* Badge avec Tooltip pour les sections */}
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <div className="shrink-0 cursor-pointer bg-gray-100 rounded-full p-2 shadow-sm hover:bg-gray-200 transition">
-                                    <Layers className="w-5 h-5 text-gray-700" />
+                                <div className="shrink-0 cursor-pointer bg-gray-100 rounded-full p-1.5 sm:p-2 shadow-sm hover:bg-gray-200 transition">
+                                    <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
                                 </div>
                             </TooltipTrigger>
                             <TooltipContent className="bg-white shadow-lg p-3 rounded-lg text-sm text-gray-800 border border-gray-100 max-w-xs">
@@ -173,34 +173,38 @@ export default function CourseCard({ course }: CourseCardProps) {
                         </Tooltip>
                     </div>
 
-                    <div className="flex flex-wrap gap-2 mt-3">
-                        <Badge variant="outline" className="bg-white border-gray-200 text-gray-700 shadow-sm font-normal flex items-center gap-1 px-3 py-1">
+                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-3">
+                        <Badge variant="outline" className="bg-white border-gray-200 text-gray-700 shadow-sm font-normal flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm">
                             <BookOpen className="w-3 h-3" /> {course.matiere}
                         </Badge>
                     </div>
                 </CardHeader>
 
-                <CardContent className="pt-1">
-                    <p className="text-gray-600 text-sm line-clamp-2 mb-4">{course.description}</p>
+                <CardContent className="pt-1 px-3 sm:px-4 md:px-6">
+                    <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 mb-3 sm:mb-4">{course.description}</p>
 
-                    <div className="flex items-center justify-between mt-4 pt-2 border-t border-gray-100">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mt-3 sm:mt-4 pt-2 border-t border-gray-100">
                         {/* Auteur */}
                         <div className="flex items-center gap-2">
                             <ProfileAvatar
-                                username={course.authors[0]?.username}
+                                username={course.authors[0]?.username || "Inconnu"}
                                 image={course.authors[0]?.image}
                                 size="small"
+                                userId={course.authors[0]?._id}
                             />
-                            <span className="text-sm font-medium text-gray-700">{course.authors[0]?.username}</span>
+                            <div className="flex flex-col">
+                                <span className="text-xs sm:text-sm font-medium text-gray-700">{course.authors[0]?.username || "Inconnu"}</span>
+                                <span className="text-xs text-gray-500">Auteur</span>
+                            </div>
                         </div>
 
                         {/* Bouton pour voir le cours */}
                         <Button
                             variant="ghost"
-                            className="px-3 py-1 h-auto text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium text-sm flex items-center gap-1"
+                            className="px-2 py-1 sm:px-3 sm:py-1 h-auto text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium text-xs sm:text-sm flex items-center gap-1 self-end sm:self-auto"
                             onClick={() => router.push(`/cours/${course._id}`)}
                         >
-                            Voir <ArrowRight className="w-4 h-4 ml-1" />
+                            Voir <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
                         </Button>
                     </div>
                 </CardContent>

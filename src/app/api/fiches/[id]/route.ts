@@ -70,7 +70,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
     try {
         const user = await authMiddleware(req); // Authentification de l'utilisateur
 
-        if (!["Admin", "Correcteur", "Rédacteur"].includes(user.role)) {
+        if (!user.role || typeof user.role !== 'string' || !["Admin", "Correcteur", "Rédacteur"].includes(user.role)) {
             return NextResponse.json(
                 { success: false, message: "Accès refusé. Vous n'avez pas les permissions nécessaires pour modifier cette fiche." },
                 { status: 403 }

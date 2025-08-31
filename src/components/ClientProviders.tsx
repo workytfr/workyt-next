@@ -15,7 +15,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
     <>
       <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
       <SessionProvider>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+        <ThemeProvider>
           <Navbar />
           <TooltipProvider>
             {children}

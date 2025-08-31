@@ -11,7 +11,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
-        <html lang="fr">
+        <html lang="fr" suppressHydrationWarning>
         <body className="overflow-x-hidden">
         <ClientProviders>
             {children}

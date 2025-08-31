@@ -2,24 +2,97 @@
 
 import React, { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import ProfileAvatar from "@/components/ui/profile";
-import FicheCard from "@/components/fiches/FicheCard";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/Badge";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/Label";
 import { Textarea } from "@/components/ui/Textarea";
 import { Separator } from "@/components/ui/Separator";
-import { Toast } from "@/components/ui/UseToast";
-import { Label } from "@/components/ui/Label";
-import BadgeDisplay from "@/components/ui/BadgeDisplay";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
+import { 
+    User, 
+    Mail, 
+    Calendar, 
+    MapPin, 
+    Phone, 
+    Instagram, 
+    Twitter, 
+    Linkedin, 
+    Github, 
+    Globe, 
+    Rocket, 
+    Sparkles, 
+    Zap, 
+    Flame, 
+    Snowflake, 
+    Droplets, 
+    Sun, 
+    Moon, 
+    Cloud, 
+    Rainbow, 
+    Crown, 
+    Diamond, 
+    Gem, 
+    Coins, 
+    Banknote, 
+    CreditCard, 
+    Wallet, 
+    ShoppingCart, 
+    Gift, 
+    Tag, 
+    Percent, 
+    Calculator, 
+    BarChart, 
+    TrendingUp, 
+    TrendingDown, 
+    Activity, 
+    PieChart, 
+    LineChart, 
+    AreaChart, 
+    File, 
+    Folder, 
+    Archive, 
+    Code, 
+    Terminal, 
+    Database, 
+    Server, 
+    Network, 
+    Wifi, 
+    Bluetooth, 
+    Signal, 
+    Battery, 
+    Power, 
+    Settings, 
+    Palette, 
+    Brush, 
+    Pencil, 
+    Pen, 
+    Eraser, 
+    Scissors, 
+    Copy, 
+    Group, 
+    Layers, 
+    AlignLeft, 
+    AlignCenter, 
+    AlignRight, 
+    Space,
+    HelpCircle,
+    MessageCircle
+} from "lucide-react";
+import ProfileAvatar from "@/components/ui/profile";
 import UserRank from "@/components/ui/UserRank";
 import BadgeProgress from "@/components/ui/BadgeProgress";
+import BadgeDisplay from "@/components/ui/BadgeDisplay";
 import ContributionGraph from "@/components/ui/ContributionGraph";
-import { FaQuestionCircle, FaReply } from "react-icons/fa";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
+import FicheCard from "@/components/fiches/FicheCard";
+import CustomUsername from "@/components/ui/CustomUsername";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Toast } from "@/components/ui/UseToast";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
@@ -185,6 +258,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                     <ProfileAvatar
                         username={formData.username}
                         size="large"
+                        userId={id}
                     />
                 </div>
             </div>
@@ -192,7 +266,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
             {/* User Details Section */}
             <div className="container mx-auto mt-16 space-y-6 px-4">
                 <div className="flex flex-col items-center text-center">
-                    <h1 className="text-2xl font-bold">{formData.username}</h1>
+                    <CustomUsername username={formData.username} userId={id} className="text-2xl font-bold" />
                     <p className="text-gray-700">{formData.points} points</p>
                     <p className="text-gray-700 mt-2 max-w-lg">{formData.bio}</p>
                 </div>
@@ -299,7 +373,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                 {/* 📌 Questions posées */}
                 <div>
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600">
-                        <FaQuestionCircle className="text-blue-600" /> Questions posées
+                        <HelpCircle className="text-blue-600" /> Questions posées
                     </h2>
 
                     {questions.length > 0 ? (
@@ -326,7 +400,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                 {/* 📌 Réponses données */}
                 <div className="mt-6">
                     <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-green-600">
-                        <FaReply className="text-green-600" /> Réponses données
+                        <MessageCircle className="text-green-600" /> Réponses données
                     </h2>
 
                     {answers.length > 0 ? (

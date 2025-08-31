@@ -14,7 +14,8 @@ import Footer from '@/components/home/footer';
 import { Avis } from '@/components/home/avis';
 import PartenairesView from "@/components/home/partenaires";
 import OrgChart from "@/components/home/OrgChart";
-import SessionWrapper from "@/components/SessionWrapper";
+import { GamificationSection } from "@/components/home/gamification";
+import { CoursSystemSection } from "@/components/home/cours-system";
 import * as React from "react";
 import { Metadata } from 'next'
 
@@ -42,7 +43,6 @@ export const metadata = {
 
 export default function Home() {
     return (
-        <SessionWrapper>
         <div className="grid bg-white">
             <BannerWithButton
                 tTitle="🎉 Bienvenue sur Workyt v4.0.0 Beta !"
@@ -81,14 +81,15 @@ export default function Home() {
                 </PageHeader>
             </div>
             <NosServices/>
+            <CoursSystemSection/>
             <WobbleCardDemo/>
+            <GamificationSection/>
             <FeedCard/>
             <div className="px-4 md:px-8 lg:px-16 py-8 w-full max-w-full overflow-x-hidden">
                 <Avis/>
-                <PartenairesView/>
             </div>
+            <PartenairesView/>
             <OrgChart/>
         </div>
-        </SessionWrapper>
     );
 }

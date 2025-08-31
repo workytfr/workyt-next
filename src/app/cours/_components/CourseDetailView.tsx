@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { BookOpen, Users, Calendar, ArrowLeft, Play, FileText } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import ProfileAvatar from "@/components/ui/profile";
 
 interface Section {
     _id: string;
@@ -187,7 +188,20 @@ export default function CourseDetailView() {
                             <div className="flex flex-wrap items-center gap-6 text-sm text-gray-600 mb-6">
                                 <div className="flex items-center gap-2">
                                     <Users className="h-4 w-4" />
-                                    <span>{course.authors.map(a => a.username).join(", ")}</span>
+                                    <div className="flex items-center gap-2">
+                                        {course.authors.map((author, index) => (
+                                            <div key={author._id} className="flex items-center gap-1">
+                                                <ProfileAvatar
+                                                    username={author.username}
+                                                    size="small"
+                                                    userId={author._id}
+                                                    showPoints={false}
+                                                />
+                                                <span>{author.username}</span>
+                                                {index < course.authors.length - 1 && <span>,</span>}
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                                 <div className="flex items-center gap-2">
                                     <Calendar className="h-4 w-4" />
