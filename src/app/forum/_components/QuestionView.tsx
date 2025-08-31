@@ -14,7 +14,6 @@ import {
 } from "react-icons/fa";
 import ProfileAvatar from "@/components/ui/profile";
 import TimeAgo from "@/components/ui/TimeAgo";
-import BadgeDisplay from "@/components/ui/BadgeDisplay";
 import { getSubjectColor, getLevelColor } from "@/data/educationData";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
@@ -59,7 +58,6 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                         <ProfileAvatar username={question.user.username} points={question.user.points} size="small" />
                         <div>
                             <span className="font-medium text-gray-800">{question.user.username}</span>
-                            <BadgeDisplay userId={question.user._id} maxDisplay={3} />
                             <TimeAgo date={question.createdAt} />
                         </div>
                     </div>

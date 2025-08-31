@@ -22,7 +22,7 @@ interface GemData {
 
 interface CustomizationData {
   usernameColor: {
-    type: 'solid' | 'gradient' | 'rainbow' | 'neon' | 'holographic' | 'galaxy' | 'fire' | 'ice' | 'lightning' | 'cosmic' | 'diamond' | 'legendary' | 'custom';
+    type: 'solid' | 'gradient' | 'rainbow' | 'neon' | 'automne' | 'galaxy' | 'fire' | 'ice' | 'lightning' | 'cosmic' | 'diamond' | 'legendary' | 'glitch' | 'stardust' | 'nitro' | 'typewriter' | 'custom';
     value: string;
     isActive: boolean;
   };
@@ -347,30 +347,35 @@ const GemManager: React.FC = () => {
               {[
                 // Couleurs basiques
                 { type: 'solid', label: 'Simple', price: 3, color: '#3B82F6', rarity: 'common' },
-                { type: 'gradient', label: 'Dégradé', price: 8, color: 'linear-gradient(45deg, #3B82F6, #8B5CF6)', rarity: 'common' },
+                { type: 'gradient', label: 'Dégradé', price: 5, color: 'linear-gradient(45deg, #3B82F6, #8B5CF6)', rarity: 'common' },
                 
-                // Couleurs rares
-                { type: 'rainbow', label: 'Arc-en-ciel', price: 25, color: 'rainbow', rarity: 'rare', animated: true },
-                { type: 'neon', label: 'Néon', price: 35, color: '#00FF00', rarity: 'rare', animated: true },
-                { type: 'holographic', label: 'Holographique', price: 50, color: '#FF00FF', rarity: 'epic', animated: true },
-                { type: 'galaxy', label: 'Galaxie', price: 75, color: '#4C1D95', rarity: 'epic', animated: true },
-                { type: 'fire', label: 'Feu', price: 100, color: '#DC2626', rarity: 'legendary', animated: true },
-                { type: 'ice', label: 'Glace', price: 100, color: '#0EA5E9', rarity: 'legendary', animated: true },
-                { type: 'lightning', label: 'Éclair', price: 125, color: '#F59E0B', rarity: 'mythic', animated: true },
-                { type: 'cosmic', label: 'Cosmique', price: 150, color: '#7C3AED', rarity: 'mythic', animated: true },
-                { type: 'diamond', label: 'Diamant', price: 200, color: '#10B981', rarity: 'divine', animated: true },
-                { type: 'legendary', label: 'Légendaire', price: 500, color: '#F97316', rarity: 'divine', animated: true },
+                // Couleurs spéciales  
+                { type: 'rainbow', label: 'Arc-en-ciel', price: 10, color: '#FF4500', rarity: 'common', animated: true },
+                { type: 'neon', label: 'Néon', price: 15, color: '#00FFFF', rarity: 'common', animated: true },
+                { type: 'automne', label: 'Automne', price: 20, color: '#D2691E', rarity: 'rare', animated: true },
+                { type: 'galaxy', label: 'Galaxie', price: 25, color: '#4B0082', rarity: 'rare', animated: true },
+                { type: 'fire', label: 'Feu', price: 30, color: '#FF4500', rarity: 'epic', animated: true },
+                { type: 'ice', label: 'Glace', price: 30, color: '#0369A1', rarity: 'epic', animated: true },
+                { type: 'lightning', label: 'Éclair', price: 35, color: '#FFD700', rarity: 'epic', animated: true },
+                { type: 'cosmic', label: 'Cosmique', price: 40, color: '#9370DB', rarity: 'epic', animated: true },
+                { type: 'diamond', label: 'Diamant', price: 45, color: '#4A90E2', rarity: 'legendary', animated: true },
+                { type: 'legendary', label: 'Légendaire', price: 50, color: '#FFD700', rarity: 'legendary', animated: true },
+                
+                // Styles typographiques
+                { type: 'typewriter', label: 'Machine à écrire', price: 25, color: '#22C55E', rarity: 'rare', animated: true },
+                { type: 'glitch', label: 'Glitch', price: 35, color: '#FF0080', rarity: 'epic', animated: true },
+                { type: 'stardust', label: 'Poussière d\'étoiles', price: 40, color: '#9932CC', rarity: 'epic', animated: true },
+                { type: 'nitro', label: 'Nitro', price: 55, color: '#5865F2', rarity: 'legendary', animated: true },
                 
                 // Couleur personnalisée
-                { type: 'custom', label: 'Personnalisée', price: 15, color: customColor, rarity: 'common' }
+                { type: 'custom', label: 'Personnalisée', price: 8, color: customColor, rarity: 'common' }
               ].map((option) => (
                 <div key={option.type} className={`border rounded-lg p-3 text-center relative ${
                   option.rarity === 'common' ? 'border-gray-200' :
                   option.rarity === 'rare' ? 'border-blue-300' :
                   option.rarity === 'epic' ? 'border-purple-400' :
                   option.rarity === 'legendary' ? 'border-orange-400' :
-                  option.rarity === 'mythic' ? 'border-yellow-400' :
-                  'border-red-500'
+                  'border-gray-300'
                 }`}>
                   {/* Badge de rareté */}
                   <div className={`absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full ${
@@ -378,15 +383,13 @@ const GemManager: React.FC = () => {
                     option.rarity === 'rare' ? 'bg-blue-100 text-blue-600' :
                     option.rarity === 'epic' ? 'bg-purple-100 text-purple-600' :
                     option.rarity === 'legendary' ? 'bg-orange-100 text-orange-600' :
-                    option.rarity === 'mythic' ? 'bg-yellow-100 text-yellow-600' :
-                    'bg-red-100 text-red-600'
+                    'bg-gray-100 text-gray-600'
                   }`}>
                     {option.rarity === 'common' ? '★' :
                      option.rarity === 'rare' ? '★★' :
                      option.rarity === 'epic' ? '★★★' :
                      option.rarity === 'legendary' ? '★★★★' :
-                     option.rarity === 'mythic' ? '★★★★★' :
-                     '★★★★★★'}
+                     '★'}
                   </div>
                   
                   {/* Aperçu de la couleur */}
@@ -396,11 +399,11 @@ const GemManager: React.FC = () => {
                     }`}
                     style={{
                       background: option.type === 'rainbow' 
-                        ? 'linear-gradient(45deg, #FF6B6B, #4ECDC4, #45B7D1, #96CEB4, #FFEAA7, #DDA0DD)'
+                        ? 'linear-gradient(45deg, #FF4500, #FF8C00, #1E90FF, #32CD32, #FF1493)'
                         : option.type === 'neon'
                         ? 'linear-gradient(45deg, #00FF00, #00FFFF, #FF00FF)'
-                        : option.type === 'holographic'
-                        ? 'linear-gradient(45deg, #FF00FF, #00FFFF, #FFFF00, #FF00FF)'
+                        : option.type === 'automne'
+                        ? 'linear-gradient(45deg, #FF6B35, #F7931E, #FFD700, #FF4500, #8B4513)'
                         : option.type === 'galaxy'
                         ? 'linear-gradient(45deg, #4C1D95, #7C3AED, #A855F7, #C084FC)'
                         : option.type === 'fire'
@@ -412,9 +415,17 @@ const GemManager: React.FC = () => {
                         : option.type === 'cosmic'
                         ? 'linear-gradient(45deg, #7C3AED, #A855F7, #C084FC, #DDD6FE)'
                         : option.type === 'diamond'
-                        ? 'linear-gradient(45deg, #10B981, #34D399, #6EE7B7, #A7F3D0)'
+                        ? 'linear-gradient(45deg, #4A90E2, #87CEEB, #1E90FF, #4169E1)'
                         : option.type === 'legendary'
                         ? 'linear-gradient(45deg, #F97316, #FB923C, #FDBA74, #FED7AA)'
+                        : option.type === 'glitch'
+                        ? 'linear-gradient(45deg, #FF0080, #00FFFF, #FF0080, #00FFFF)'
+                        : option.type === 'stardust'
+                        ? 'linear-gradient(45deg, #9932CC, #8A2BE2, #DA70D6, #9370DB)'
+                        : option.type === 'nitro'
+                        ? 'linear-gradient(45deg, #5865F2, #7289DA, #99AAB5, #5865F2)'
+                        : option.type === 'typewriter'
+                        ? 'linear-gradient(45deg, #22C55E, #10B981, #059669, #22C55E)'
                         : option.color
                     }}
                   />
@@ -422,6 +433,63 @@ const GemManager: React.FC = () => {
                   <div className="text-sm font-medium mb-1">{option.label}</div>
                   <div className="text-xs text-gray-600 mb-2">{option.price} gemmes</div>
                   
+                  {/* Aperçu animé du nom */}
+                  {option.animated && (
+                    <div className="bg-white rounded p-1 mb-2 border text-center">
+                      <div className="text-xs text-gray-500 mb-1">Aperçu:</div>
+                      <span 
+                        className="text-sm font-medium"
+                        style={{
+                          animation: `${option.type} 3s ease-in-out infinite`,
+                          ...(option.type === 'rainbow' ? { 
+                                color: '#FF4500',
+                                fontFamily: 'Arial Black, sans-serif',
+                                fontWeight: '900'
+                              } :
+                              option.type === 'neon' ? { color: '#00FFFF', textShadow: '0 0 8px #00FFFF', fontFamily: 'Impact, sans-serif', fontWeight: 'bold' } :
+                              option.type === 'automne' ? { color: '#D2691E', fontFamily: 'Georgia, serif', fontWeight: 'bold' } :
+                              option.type === 'galaxy' ? { background: 'linear-gradient(45deg, #4B0082, #8A2BE2, #9370DB)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontFamily: 'Verdana, sans-serif', fontWeight: 'bold' } :
+                              option.type === 'fire' ? { color: '#FF4500', textShadow: '0 0 6px #FF6347', fontFamily: 'Arial Black, sans-serif', fontWeight: '900' } :
+                              option.type === 'ice' ? { color: '#0369A1', fontFamily: 'Trebuchet MS, sans-serif', fontWeight: 'bold' } :
+                              option.type === 'lightning' ? { color: '#FFD700', textShadow: '0 0 6px #FFFF00', fontFamily: 'Comic Sans MS, cursive', fontWeight: 'bold' } :
+                              option.type === 'cosmic' ? { background: 'linear-gradient(90deg, #9370DB, #8A2BE2, #4B0082)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontFamily: 'Courier New, monospace', fontWeight: 'bold' } :
+                              option.type === 'diamond' ? { color: '#4A90E2', textShadow: '0 0 6px #87CEEB', fontFamily: 'Times New Roman, serif', fontWeight: 'bold', letterSpacing: '2px' } :
+                              option.type === 'legendary' ? { background: 'linear-gradient(45deg, #FFD700, #FFA500, #FF8C00)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontFamily: 'Palatino, serif', fontWeight: 'bold' } :
+                              option.type === 'glitch' ? { color: '#FF0080', fontFamily: 'Courier New, monospace', fontWeight: 'bold' } :
+                              option.type === 'stardust' ? { color: '#9932CC', textShadow: '0 0 6px #DA70D6', fontFamily: 'Georgia, serif', fontWeight: 'bold', fontStyle: 'italic' } :
+                              option.type === 'nitro' ? { background: 'linear-gradient(90deg, #5865F2, #7289DA, #99AAB5)', backgroundSize: '200% 100%', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', fontFamily: 'Arial, sans-serif', fontWeight: 'bold' } :
+                              option.type === 'typewriter' ? { color: '#22C55E', fontFamily: 'Courier New, monospace', fontWeight: 'bold' } :
+                              { color: option.color })
+                        }}
+                      >
+                        {userData?.username || 'MonNom'}
+                      </span>
+                    </div>
+                  )}
+                  
+                  {/* Aperçu pour couleurs non-animées */}
+                  {!option.animated && (
+                    <div className="bg-white rounded p-1 mb-2 border text-center">
+                      <div className="text-xs text-gray-500 mb-1">Aperçu:</div>
+                      <span 
+                        className="text-sm font-medium"
+                        style={{
+                          ...(option.type === 'solid' ? { color: option.color } :
+                              option.type === 'gradient' ? { 
+                                background: option.color, 
+                                WebkitBackgroundClip: 'text', 
+                                WebkitTextFillColor: 'transparent',
+                                backgroundClip: 'text'
+                              } :
+                              option.type === 'custom' ? { color: customColor } :
+                              { color: option.color })
+                        }}
+                      >
+                        {userData?.username || 'MonNom'}
+                      </span>
+                    </div>
+                  )}
+
                   {/* Indicateur d'animation */}
                   {option.animated && (
                     <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
@@ -436,8 +504,7 @@ const GemManager: React.FC = () => {
                       option.rarity === 'rare' ? 'bg-blue-600 hover:bg-blue-700' :
                       option.rarity === 'epic' ? 'bg-purple-600 hover:bg-purple-700' :
                       option.rarity === 'legendary' ? 'bg-orange-600 hover:bg-orange-700' :
-                      option.rarity === 'mythic' ? 'bg-yellow-600 hover:bg-yellow-700' :
-                      'bg-red-600 hover:bg-red-700'
+                      'bg-gray-600 hover:bg-gray-700'
                     }`}
                   >
                     {customization?.usernameColor.type === option.type && customization.usernameColor.isActive 
@@ -833,11 +900,219 @@ const GemManager: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Styles CSS pour l'animation rainbow */}
+      {/* Styles CSS pour toutes les animations améliorées */}
       <style jsx>{`
+        /* 🌈 RAINBOW - Arc-en-ciel */
         @keyframes rainbow {
-          0% { filter: hue-rotate(0deg); }
-          100% { filter: hue-rotate(360deg); }
+          0%, 100% { 
+            color: #FF4500;
+            font-family: 'Arial Black', sans-serif;
+            font-weight: 900;
+          }
+          20% { 
+            color: #FF8C00;
+          }
+          40% { 
+            color: #1E90FF;
+          }
+          60% { 
+            color: #32CD32;
+          }
+          80% { 
+            color: #FF1493;
+          }
+        }
+        
+        /* ⚡ NEON - Néon électrique */
+        @keyframes neon {
+          0%, 100% { 
+            color: #00FFFF;
+            text-shadow: 0 0 10px #00FFFF;
+            font-family: 'Impact', sans-serif;
+            font-weight: bold;
+          }
+          50% { 
+            color: #0080FF;
+            text-shadow: 0 0 15px #0080FF;
+          }
+        }
+        
+        /* 🍂 AUTOMNE - Couleurs d'automne */
+        @keyframes automne {
+          0%, 100% { 
+            color: #D2691E;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+          }
+          50% { 
+            color: #FF8C00;
+          }
+        }
+        
+        /* 🌌 GALAXY - Galaxie */
+        @keyframes galaxy {
+          0%, 100% { 
+            background: linear-gradient(45deg, #4B0082, #8A2BE2, #9370DB);
+            background-size: 200% 100%;
+            background-position: 0% 50%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Verdana', sans-serif;
+            font-weight: bold;
+          }
+          50% { 
+            background-position: 100% 50%;
+          }
+        }
+        
+        /* 🌌 COSMIC - Cosmique */
+        @keyframes cosmic {
+          0%, 100% { 
+            background: linear-gradient(90deg, #9370DB, #8A2BE2, #4B0082);
+            background-size: 200% 100%;
+            background-position: 0% 50%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+          }
+          50% { 
+            background-position: 100% 50%;
+          }
+        }
+        
+        /* 🔥 FIRE - Feu */
+        @keyframes fire {
+          0%, 100% { 
+            color: #FF4500;
+            text-shadow: 0 0 8px #FF6347;
+            font-family: 'Arial Black', sans-serif;
+            font-weight: 900;
+          }
+          50% { 
+            color: #FF6347;
+            text-shadow: 0 0 12px #FF4500;
+          }
+        }
+        
+        /* ❄️ ICE - Glace */
+        @keyframes ice {
+          0%, 100% { 
+            color: #0369A1;
+            font-family: 'Trebuchet MS', sans-serif;
+            font-weight: bold;
+            letter-spacing: 1px;
+          }
+          50% { 
+            color: #1E3A8A;
+          }
+        }
+        
+        /* ⚡ LIGHTNING - Éclair */
+        @keyframes lightning {
+          0%, 100% { 
+            color: #FFD700;
+            text-shadow: 0 0 8px #FFFF00;
+            font-family: 'Comic Sans MS', cursive;
+            font-weight: bold;
+          }
+          50% { 
+            color: #FFFF00;
+            text-shadow: 0 0 12px #FFD700;
+          }
+        }
+        
+        /* 💎 DIAMOND - Diamant */
+        @keyframes diamond {
+          0%, 100% { 
+            color: #4A90E2;
+            text-shadow: 0 0 8px #87CEEB;
+            font-family: 'Times New Roman', serif;
+            font-weight: bold;
+            letter-spacing: 2px;
+          }
+          50% { 
+            color: #1E90FF;
+            text-shadow: 0 0 12px #4169E1;
+          }
+        }
+        
+        /* 👑 LEGENDARY - Légendaire */
+        @keyframes legendary {
+          0%, 100% { 
+            background: linear-gradient(45deg, #FFD700, #FFA500, #FF8C00);
+            background-size: 200% 100%;
+            background-position: 0% 50%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Palatino', serif;
+            font-weight: bold;
+            letter-spacing: 2px;
+          }
+          50% { 
+            background-position: 100% 50%;
+          }
+        }
+        
+        /* 🕶️ GLITCH - Glitch cyberpunk */
+        @keyframes glitch {
+          0%, 100% { 
+            color: #FF0080;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+          }
+          50% { 
+            color: #00FFFF;
+          }
+        }
+        
+        /* 💫 STARDUST - Poussière d'étoiles */
+        @keyframes stardust {
+          0%, 100% { 
+            color: #9932CC;
+            text-shadow: 0 0 8px #DA70D6;
+            font-family: 'Georgia', serif;
+            font-weight: bold;
+            font-style: italic;
+          }
+          50% { 
+            color: #8A2BE2;
+            text-shadow: 0 0 12px #9932CC;
+          }
+        }
+        
+        /* 🌈 NITRO - Style Discord */
+        @keyframes nitro {
+          0%, 100% { 
+            background: linear-gradient(90deg, #5865F2, #7289DA, #99AAB5);
+            background-size: 200% 100%;
+            background-position: 0% 50%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'Arial', sans-serif;
+            font-weight: bold;
+            letter-spacing: 1px;
+          }
+          50% { 
+            background-position: 100% 50%;
+          }
+        }
+        
+        /* 🕰️ TYPEWRITER - Machine à écrire */
+        @keyframes typewriter {
+          0%, 100% { 
+            color: #22C55E;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+          }
+          50% { 
+            color: #10B981;
+          }
         }
       `}</style>
     </div>

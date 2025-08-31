@@ -8,22 +8,28 @@ export const GEM_CONFIG = {
     usernameColor: {
       // Couleurs basiques
       solid: 3,
-      gradient: 8,
+      gradient: 5,
       
-      // Couleurs rares
-      rainbow: 25,
-      neon: 35,
-      holographic: 50,
-      galaxy: 75,
-      fire: 100,
-      ice: 100,
-      lightning: 125,
-      cosmic: 150,
-      diamond: 200,
-      legendary: 500,
+      // Couleurs spéciales  
+      rainbow: 10,
+      neon: 15,
+      automne: 20,
+      galaxy: 25,
+      fire: 30,
+      ice: 30,
+      lightning: 35,
+      cosmic: 40,
+      diamond: 45,
+      legendary: 50,
+      
+      // Styles typographiques
+      glitch: 35,
+      stardust: 40,
+      nitro: 55,
+      typewriter: 25,
       
       // Couleurs personnalisées
-      custom: 15
+      custom: 8
     },
     profileImage: {
       'FoxyMecha.webp': 2,
@@ -50,7 +56,7 @@ export const GEM_CONFIG = {
   
   // Types de personnalisations disponibles
   CUSTOMIZATION_TYPES: {
-    usernameColor: ['solid', 'gradient', 'rainbow', 'neon', 'holographic', 'galaxy', 'fire', 'ice', 'lightning', 'cosmic', 'diamond', 'legendary', 'custom'],
+    usernameColor: ['solid', 'gradient', 'rainbow', 'neon', 'automne', 'galaxy', 'fire', 'ice', 'lightning', 'cosmic', 'diamond', 'legendary', 'glitch', 'stardust', 'nitro', 'typewriter', 'custom'],
     profileImage: [
       'FoxyMecha.webp',
       'FoxyTerreur.webp', 
@@ -70,7 +76,7 @@ export const GEM_CONFIG = {
     gradient: '#3B82F6',
     rainbow: 'rainbow',
     neon: '#00FF00',
-    holographic: '#FF00FF',
+    automne: '#FF6B35',
     galaxy: '#4C1D95',
     fire: '#DC2626',
     ice: '#0EA5E9',
