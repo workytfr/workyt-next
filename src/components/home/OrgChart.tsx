@@ -65,41 +65,34 @@ const members: Member[] = [
     },
     {
         id: 5,
-        name: 'Jade S.',
-        email: 'jade.savignat@workyt.fr',
-        role: 'Rédactrice en chef du blog',
+        name: 'Lorena G.',
+        email: 'lorena@workyt.fr',
+        role: 'Rédactrice en chef (Blog & Cours)',
         team: 'Responsables',
     },
     {
         id: 6,
-        name: 'Lorena G.',
-        email: 'lorena@workyt.fr',
-        role: 'Rédactrice en chef du Système cours',
-        team: 'Responsables',
-    },
-    {
-        id: 7,
         name: 'Antoine K.',
         role: 'Responsable en modération',
         email: 'agent6c@workyt.fr',
         team: 'Responsables',
     },
     {
-        id: 8,
+        id: 7,
         name: 'Nina C.',
         role: 'Responsable des Helpeurs',
         email: 'canoennina@workyt.fr',
         team: 'Responsables',
     },
     {
-        id: 9,
+        id: 8,
         name: 'Poste vacant',
         role: 'Responsable en communication',
         email: 'admin@workyt.fr',
         team: 'Responsables',
     },
     {
-        id: 10,
+        id: 9,
         name: 'Poste vacant',
         role: 'Responsable en recrutement',
         email: 'admin@workyt.fr',
@@ -126,7 +119,7 @@ const OrgNode: React.FC<OrgNodeProps> = ({ member, size = 'large' }) => {
                         <div className="flex justify-center">
                             <ProfileAvatar
                                 username={member.name}
-                                size={avatarSize}
+                                size="medium"
                                 showPoints={false}
                             />
                         </div>

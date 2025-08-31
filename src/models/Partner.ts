@@ -269,8 +269,7 @@ PartnerSchema.pre('save', function(next) {
 // Index pour améliorer les performances
 PartnerSchema.index({ city: 1, category: 1, isActive: 1 });
 PartnerSchema.index({ startDate: 1, endDate: 1 });
-PartnerSchema.index({ 'offers.free.promoCode': 1 });
-PartnerSchema.index({ 'offers.premium.promoCode': 1 });
+// Les index sur promoCode sont déjà créés par unique: true dans le schéma
 
 const Partner = mongoose.models.Partner || mongoose.model<IPartner>('Partner', PartnerSchema);
 
