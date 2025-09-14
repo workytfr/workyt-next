@@ -52,7 +52,7 @@ const UserSchema = new Schema<IUser>({
         lowercase: true,
         minlength: [5, 'L\'email doit contenir au moins 5 caractères'],
         maxlength: [100, 'L\'email ne peut pas dépasser 100 caractères'],
-        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Format d\'email invalide']
+        match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/, 'Format d\'email invalide']
     },
     username: {
         type: String,
