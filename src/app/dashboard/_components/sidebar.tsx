@@ -5,7 +5,8 @@ import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { cn } from "@/lib/utils"; // ShadCN helper
-import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot, Award, Layers, Store } from "lucide-react";
+import { Home, Book, FileText, Users, Settings, LibraryBig, CircleDot, Award, Layers, Store, Shield } from "lucide-react";
+
 
 const navItems = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
@@ -17,6 +18,7 @@ const navItems = [
     { name: "Certificats", href: "/dashboard/certificates", icon: Award },
     { name: "Partenaires", href: "/dashboard/partners", icon: Store, adminOnly: true },
     { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
+    { name: "Modération", href: "/dashboard/moderation", icon: Shield, moderatorOnly: true },
     { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -34,6 +36,9 @@ export default function Sidebar() {
     // Filtrer les éléments de navigation selon le rôle de l'utilisateur
     const filteredNavItems = navItems.filter(item => {
         if (item.adminOnly && session?.user?.role !== 'Admin') {
+            return false;
+        }
+        if (item.moderatorOnly && session?.user?.role !== 'Admin' && session?.user?.role !== 'Modérateur') {
             return false;
         }
         return true;

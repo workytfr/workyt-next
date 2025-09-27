@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { HeartIcon } from "@radix-ui/react-icons";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/Tooltip";
 import { useSession } from "next-auth/react";
@@ -84,12 +85,14 @@ const LikedByList: React.FC<LikedByProps> = ({ revisionId, likedBy, initialLikes
                         className="relative group"
                         style={{ zIndex: visibleUsers.length - index }}
                     >
-                        <div className="border-2 border-white shadow-md hover:scale-110 transition-transform duration-200 rounded-full">
-                            <ProfileAvatar
-                                username={like.userId.username}
-                                showPoints={false}
-                            />
-                        </div>
+                        <Link href={`/compte/${like.userId._id}`}>
+                            <div className="border-2 border-white shadow-md hover:scale-110 transition-transform duration-200 rounded-full cursor-pointer">
+                                <ProfileAvatar
+                                    username={like.userId.username}
+                                    showPoints={false}
+                                />
+                            </div>
+                        </Link>
                         <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
                     </div>
                 ))}

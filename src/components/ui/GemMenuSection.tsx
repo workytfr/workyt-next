@@ -59,6 +59,10 @@ const GemMenuSection: React.FC<GemMenuSectionProps> = ({ userId, className = '' 
           <Link 
             href="/gems" 
             className="text-xs text-blue-600 hover:text-blue-800 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              window.location.href = '/gems';
+            }}
           >
             Gérer →
           </Link>

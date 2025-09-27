@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/Badge";
@@ -20,6 +21,7 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
+import ReportButton from "@/components/ReportButton";
 import "katex/dist/katex.min.css";
 
 const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question: any, revisions: any[], setShowAnswerPopup: (show: boolean) => void }) => {
@@ -57,7 +59,9 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                     <div className="flex items-center gap-3">
                         <ProfileAvatar username={question.user.username} points={question.user.points} size="small" />
                         <div>
-                            <span className="font-medium text-gray-800">{question.user.username}</span>
+                            <Link href={`/compte/${question.user._id}`}>
+                                <span className="font-medium text-gray-800 hover:underline cursor-pointer">{question.user.username}</span>
+                            </Link>
                             <TimeAgo date={question.createdAt} />
                         </div>
                     </div>
@@ -75,6 +79,13 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                             {statusInfo.icon}
                             <span className="font-medium">{statusInfo.text}</span>
                         </div>
+
+                        <ReportButton 
+                            contentId={question._id} 
+                            contentType="forum_question"
+                            variant="button"
+                            size="sm"
+                        />
                     </div>
                 </div>
             </div>
@@ -188,7 +199,9 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                                         <h4 className="text-emerald-800 font-medium text-lg mb-3">{revision.title}</h4>
                                         <div className="flex items-center text-sm text-gray-700 mb-3">
                                             <ProfileAvatar username={revision.author.username} points={revision.author.points}/>
-                                            <span className="ml-2 font-medium">{revision.author.username}</span>
+                                            <Link href={`/compte/${revision.author._id}`}>
+                                                <span className="ml-2 font-medium hover:underline cursor-pointer">{revision.author.username}</span>
+                                            </Link>
                                             <span className="ml-auto text-gray-500"><TimeAgo date={revision.createdAt} /></span>
                                         </div>
                                         <p className="text-gray-700 line-clamp-3 text-sm">{revision.content}</p>

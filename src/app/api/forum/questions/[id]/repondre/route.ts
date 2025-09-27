@@ -145,6 +145,10 @@ export async function POST(
         // Vérification et attribution des badges
         await BadgeService.checkAndAwardBadges(user._id.toString());
 
+        // Notification de l'auteur de la question
+        const { NotificationService } = await import('@/lib/notificationService');
+        await NotificationService.notifyNewForumAnswer(question._id.toString(), user._id.toString());
+
         return NextResponse.json(
             { success: true, message: "Réponse ajoutée avec succès.", data: newAnswer },
             { status: 201 }

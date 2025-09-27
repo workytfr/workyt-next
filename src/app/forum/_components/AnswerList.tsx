@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import ProfileAvatar from "@/components/ui/profile";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { FaThumbsUp, FaCheckCircle, FaMedal, FaRegComment } from "react-icons/fa";
@@ -10,6 +11,7 @@ import remarkMath from "remark-math";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
+import ReportButton from "@/components/ReportButton";
 import "katex/dist/katex.min.css";
 
 interface AnswerListProps {
@@ -147,7 +149,10 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                     <div className="flex items-center gap-3 mb-4">
                                         <ProfileAvatar username={answer.user.username} points={answer.user.points} size="small" />
                                         <div>
-                                            <span className="block font-medium text-black">{answer.user.username}</span>                                            <TimeAgo date={answer.createdAt} />
+                                            <Link href={`/compte/${answer.user._id}`}>
+                                                <span className="block font-medium text-black hover:underline cursor-pointer">{answer.user.username}</span>
+                                            </Link>
+                                            <TimeAgo date={answer.createdAt} />
                                         </div>
                                     </div>
 
@@ -203,6 +208,12 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                                 </Tooltip>
                                             </TooltipProvider>
                                         )}
+
+                                        <ReportButton 
+                                            contentId={answer._id} 
+                                            contentType="forum_answer"
+                                            variant="dropdown"
+                                        />
                                     </div>
                                 </div>
                             </div>

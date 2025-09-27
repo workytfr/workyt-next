@@ -1,6 +1,7 @@
 "use client";
 // Improved cover image and certification badge styles
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { pdfjs } from "react-pdf";
 import ReactMarkdown from "react-markdown";
@@ -17,7 +18,7 @@ import FileViewer from "@/app/fiches/_components/FileViewer";
 import LikedByList from "@/app/fiches/_components/LikedByList";
 import CommentsList from "@/app/fiches/_components/CommentsList";
 import StatusChanger from "@/app/fiches/_components/StatusChanger";
-import Link from "next/link";
+import ReportButton from "@/components/ReportButton";
 
 // Configure PDF.js worker
 pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs"
@@ -334,11 +335,21 @@ export default function FicheView({ id }: FicheViewProps) {
                                 points={fiche.author?.points || 0}
                             />
                             <div>
-                                <p className="font-medium text-black">{fiche.author?.username || "Inconnu"}</p>
+                                <Link href={`/compte/${fiche.author?._id}`}>
+                                    <p className="font-medium text-black hover:underline cursor-pointer">{fiche.author?.username || "Inconnu"}</p>
+                                </Link>
                                 <p className="text-sm text-gray-500">Auteur</p>
                             </div>
                         </div>
-                        {renderStatusBadge(fiche.status)}
+                        <div className="flex items-center gap-3">
+                            {renderStatusBadge(fiche.status)}
+                            <ReportButton 
+                                contentId={fiche._id} 
+                                contentType="revision"
+                                variant="button"
+                                size="sm"
+                            />
+                        </div>
                     </div>
 
                     {/* Couverture améliorée pour remplir complètement l'espace */}

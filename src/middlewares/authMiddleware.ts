@@ -61,4 +61,36 @@ export const optionalAuthMiddleware = async (req: NextRequest) => {
     }
 };
 
+// Middleware pour vérifier les rôles admin/moderateur
+export const moderatorAuthMiddleware = async (req: NextRequest) => {
+    try {
+        const user = await authMiddleware(req);
+        
+        if (user.role !== 'Admin' && user.role !== 'Modérateur') {
+            throw new Error("Accès non autorisé. Rôle insuffisant.");
+        }
+        
+        return user;
+    } catch (error: any) {
+        console.error("Erreur dans moderatorAuthMiddleware :", error.message);
+        throw error;
+    }
+};
+
+// Middleware pour vérifier le rôle admin uniquement
+export const adminAuthMiddleware = async (req: NextRequest) => {
+    try {
+        const user = await authMiddleware(req);
+        
+        if (user.role !== 'Admin') {
+            throw new Error("Accès non autorisé. Rôle admin requis.");
+        }
+        
+        return user;
+    } catch (error: any) {
+        console.error("Erreur dans adminAuthMiddleware :", error.message);
+        throw error;
+    }
+};
+
 export default authMiddleware;

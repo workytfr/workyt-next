@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 
 interface CustomUsernameProps {
     username: string;
@@ -169,17 +170,23 @@ const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, class
     };
 
     if (loading) {
-        return <span className={className}>{username}</span>;
+        return (
+            <Link href={`/compte/${userId}`}>
+                <span className={`hover:underline cursor-pointer ${className}`}>{username}</span>
+            </Link>
+        );
     }
 
     return (
         <>
-            <span 
-                className={`font-semibold ${className}`}
-                style={getUsernameColorStyle()}
-            >
-                {username}
-            </span>
+            <Link href={`/compte/${userId}`}>
+                <span 
+                    className={`font-semibold hover:underline cursor-pointer ${className}`}
+                    style={getUsernameColorStyle()}
+                >
+                    {username}
+                </span>
+            </Link>
             
             {/* Styles CSS pour toutes les animations */}
             <style jsx>{`
