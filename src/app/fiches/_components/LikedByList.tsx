@@ -63,7 +63,7 @@ const LikedByList: React.FC<LikedByProps> = ({ revisionId, likedBy, initialLikes
 
             if (data.success) {
                 setLikes(data.likes); // Met à jour le nombre de likes
-                setHasLiked(!hasLiked); // Inverse l'état local
+                setHasLiked(true); // Une fois liké, on ne peut plus unliker
             } else {
                 console.error("Erreur lors du traitement du like :", data.message);
             }
@@ -75,47 +75,93 @@ const LikedByList: React.FC<LikedByProps> = ({ revisionId, likedBy, initialLikes
     };
 
     return (
-        <div className="flex items-center gap-4">
-            {/* Liste des utilisateurs visibles */}
-            {visibleUsers.map((like) => (
-                <ProfileAvatar
-                    key={like.userId._id}
-                    username={like.userId.username}
-                    showPoints={false} // On désactive les points pour ce contexte
-                />
-            ))}
-
-            {/* Tooltip pour les utilisateurs restants */}
-            {remainingUsers.length > 0 && (
-                <Tooltip>
-                    <TooltipTrigger>
-                        <div className="flex items-center justify-center w-10 h-10 bg-gray-300 rounded-full text-sm font-medium text-gray-600">
-                            +{remainingUsers.length}
+        <div className="flex flex-col sm:flex-row items-center gap-3 p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl border border-gray-200 shadow-sm">
+            {/* Liste des utilisateurs visibles avec design amélioré */}
+            <div className="flex items-center -space-x-2">
+                {visibleUsers.map((like, index) => (
+                    <div 
+                        key={like.userId._id}
+                        className="relative group"
+                        style={{ zIndex: visibleUsers.length - index }}
+                    >
+                        <div className="border-2 border-white shadow-md hover:scale-110 transition-transform duration-200 rounded-full">
+                            <ProfileAvatar
+                                username={like.userId.username}
+                                showPoints={false}
+                            />
                         </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p className="text-sm">
-                            {remainingUsers.map((like) => like.userId.username).join(", ")}
-                        </p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
+                        <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-400 border-2 border-white rounded-full"></div>
+                    </div>
+                ))}
 
-            {/* Bouton de like */}
+                {/* Tooltip pour les utilisateurs restants avec design amélioré */}
+                {remainingUsers.length > 0 && (
+                    <Tooltip>
+                        <TooltipTrigger>
+                            <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full text-sm font-bold text-white shadow-lg hover:scale-110 transition-all duration-200 border-2 border-white">
+                                +{remainingUsers.length}
+                            </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="bg-gray-900 text-white p-3 rounded-lg shadow-xl">
+                            <p className="text-sm font-medium">
+                                {remainingUsers.map((like) => like.userId.username).join(", ")}
+                            </p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+            </div>
+
+            {/* Séparateur visuel */}
+            <div className="hidden sm:block w-px h-8 bg-gray-300"></div>
+            <div className="block sm:hidden w-full h-px bg-gray-300"></div>
+
+            {/* Bouton de like avec design amélioré */}
             <button
                 onClick={handleLike}
-                disabled={loading}
-                className={`w-8 h-8 flex items-center justify-center rounded-full border ${
-                    hasLiked ? "bg-red-500 text-white" : "bg-gray-200 text-gray-600"
-                } shadow hover:bg-red-400 transition duration-300`}
-                aria-label={hasLiked ? "Retirer le like" : "Ajouter un like"}
+                disabled={loading || hasLiked}
+                className={`group relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 transform hover:scale-105 active:scale-95 ${
+                    hasLiked 
+                        ? "bg-gradient-to-br from-red-500 to-pink-600 text-white cursor-not-allowed shadow-lg" 
+                        : loading
+                        ? "bg-gray-300 text-gray-500 cursor-wait"
+                        : "bg-white text-gray-600 hover:bg-gradient-to-br hover:from-red-500 hover:to-pink-600 hover:text-white border-gray-300 hover:border-red-500 shadow-md hover:shadow-lg"
+                }`}
+                aria-label={hasLiked ? "Déjà liké" : loading ? "Chargement..." : "Ajouter un like"}
             >
-                <HeartIcon className="w-4 h-4" />
+                {/* Animation de pulsation pour le like */}
+                {hasLiked && (
+                    <div className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-20"></div>
+                )}
+                
+                {/* Animation de chargement */}
+                {loading && (
+                    <div className="w-5 h-5 border-2 border-gray-400 border-t-transparent rounded-full animate-spin"></div>
+                )}
+                
+                {/* Icône avec animation */}
+                {!loading && (
+                    <HeartIcon className={`w-5 h-5 transition-all duration-200 ${
+                        hasLiked ? "animate-pulse" : "group-hover:scale-110"
+                    }`} />
+                )}
+                
+                {/* Effet de particules au survol */}
+                {!hasLiked && !loading && (
+                    <div className="absolute inset-0 rounded-full bg-red-500 opacity-0 group-hover:opacity-20 transition-opacity duration-300"></div>
+                )}
             </button>
 
-            {/* Badge pour les likes */}
-            <div className="flex items-center">
-                <span className="text-lg font-bold">{likes}</span>
+            {/* Badge pour les likes avec design amélioré */}
+            <div className="flex items-center gap-2">
+                <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full shadow-md">
+                    <span className="text-sm font-bold text-white">❤️</span>
+                </div>
+                <div className="flex flex-col">
+                    <span className="text-2xl font-bold text-gray-800">{likes}</span>
+                    <span className="text-xs text-gray-500 font-medium">
+                        {likes === 1 ? 'like' : 'likes'}
+                    </span>
+                </div>
             </div>
         </div>
     );
