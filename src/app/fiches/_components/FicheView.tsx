@@ -18,6 +18,7 @@ import FileViewer from "@/app/fiches/_components/FileViewer";
 import LikedByList from "@/app/fiches/_components/LikedByList";
 import CommentsList from "@/app/fiches/_components/CommentsList";
 import StatusChanger from "@/app/fiches/_components/StatusChanger";
+import DeleteFicheButton from "@/app/fiches/_components/DeleteFicheButton";
 import ReportButton from "@/components/ReportButton";
 
 // Configure PDF.js worker
@@ -225,6 +226,10 @@ export default function FicheView({ id }: FicheViewProps) {
 
     const allowedRoles = ["Rédacteur", "Correcteur", "Admin"];
     const userHasPermission = allowedRoles.includes(currentUser?.role ?? "");
+    
+    // Vérifier si l'utilisateur est le créateur de la fiche ou un admin
+    const isCreator = currentUser && fiche && currentUser.id === fiche.author._id.toString();
+    const isAdmin = currentUser?.role === "Admin";
 
     // Style amélioré pour les badges de statut
     const getStatusBadgeStyle = (status: string) => {
@@ -462,20 +467,42 @@ export default function FicheView({ id }: FicheViewProps) {
                     </div>
                 )}
 
-                {/* Changer le statut (visible uniquement pour les utilisateurs autorisés) */}
-                {userHasPermission && (
+                {/* Actions sur la fiche (visible uniquement pour les utilisateurs autorisés) */}
+                {(userHasPermission || isCreator) && (
                     <div className="mt-6 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
                         <h2 className="text-xl font-semibold mb-4 flex items-center text-black">
                             <LockClosedIcon className="h-4 w-4 mr-2" />
-                            Changer le statut
+                            Actions sur la fiche
                         </h2>
-                        <StatusChanger
-                            ficheId={fiche._id}
-                            currentStatus={fiche.status}
-                            onStatusChange={(newStatus) => {
-                                setFiche((prev: any) => ({ ...prev, status: newStatus }));
-                            }}
-                        />
+                        
+                        <div className="space-y-4">
+                            {/* Bouton pour changer le statut (visible uniquement pour les utilisateurs autorisés) */}
+                            {userHasPermission && (
+                                <div>
+                                    <h3 className="text-lg font-medium mb-2 text-gray-700">Changer le statut</h3>
+                                    <StatusChanger
+                                        ficheId={fiche._id}
+                                        currentStatus={fiche.status}
+                                        onStatusChange={(newStatus) => {
+                                            setFiche((prev: any) => ({ ...prev, status: newStatus }));
+                                        }}
+                                    />
+                                </div>
+                            )}
+                            
+                            {/* Bouton pour supprimer la fiche (visible pour les créateurs et admins) */}
+                            {(isCreator || isAdmin) && (
+                                <div className="border-t pt-4">
+                                    <h3 className="text-lg font-medium mb-2 text-gray-700">Supprimer la fiche</h3>
+                                    <DeleteFicheButton
+                                        ficheId={fiche._id}
+                                        ficheTitle={fiche.title}
+                                        isCreator={isCreator}
+                                        isAdmin={isAdmin}
+                                    />
+                                </div>
+                            )}
+                        </div>
                     </div>
                 )}
 
