@@ -22,12 +22,29 @@ export async function GET(req: NextRequest) {
         const limit = parseInt(searchParams.get("limit") || "10", 10);
         const skip = (page - 1) * limit;
 
-        // Construction du filtre
+        // Construction du filtre avec recherche améliorée
         let filter: any = {};
         if (subject) filter.subject = subject;
         if (classLevel) filter.classLevel = classLevel;
         if (status) filter.status = status;
-        if (title) filter.title = { $regex: title, $options: "i" }; // Recherche insensible à la casse
+        
+        // Recherche améliorée : titre + contenu + description
+        if (title) {
+            const searchTerms = title.trim().split(/\s+/);
+            const regexPatterns = searchTerms.map(term => ({
+                $or: [
+                    { title: { $regex: term, $options: "i" } },
+                    { "description.whatIDid": { $regex: term, $options: "i" } },
+                    { "description.whatINeed": { $regex: term, $options: "i" } }
+                ]
+            }));
+            
+            if (regexPatterns.length === 1) {
+                filter.$or = regexPatterns[0].$or;
+            } else {
+                filter.$and = regexPatterns;
+            }
+        }
 
         // Récupération des questions avec pagination et tri
         const questions = await Question.find(filter)

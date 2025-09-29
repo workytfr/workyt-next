@@ -1,11 +1,12 @@
 import Notification, { INotification } from '@/models/Notification';
 import Question from '@/models/Question';
+import Answer from '@/models/Answer';
 import Revision from '@/models/Revision';
 import User from '@/models/User';
 import mongoose from 'mongoose';
 
 export interface CreateNotificationData {
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated';
     recipientId: string;
     senderId: string;
     relatedEntityType: 'question' | 'answer' | 'fiche' | 'comment';
@@ -114,6 +115,43 @@ export class NotificationService {
     }
 
     /**
+     * Notifie l'auteur d'une réponse qu'elle a été validée
+     */
+    static async notifyAnswerValidated(
+        answerId: string,
+        validatorId: string,
+        questionTitle: string,
+        points: number
+    ): Promise<void> {
+        try {
+            // Récupérer la réponse avec l'auteur
+            const answer = await Answer.findById(answerId).populate('user', 'username');
+            if (!answer) return;
+
+            const answerAuthorId = answer.user._id.toString();
+            
+            // Ne pas notifier si le validateur est le même que l'auteur de la réponse
+            if (answerAuthorId === validatorId) return;
+
+            // Récupérer le validateur
+            const validator = await User.findById(validatorId, 'username');
+            if (!validator) return;
+
+            await this.createNotification({
+                type: 'answer_validated',
+                recipientId: answerAuthorId,
+                senderId: validatorId,
+                relatedEntityType: 'answer',
+                relatedEntityId: answerId,
+                title: 'Votre réponse a été validée !',
+                message: `${validator.username} a validé votre réponse sur "${questionTitle}". Vous avez gagné ${points} points !`
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification de validation de réponse:', error);
+        }
+    }
+
+    /**
      * Récupère les notifications d'un utilisateur
      */
     static async getUserNotifications(
@@ -195,19 +233,128 @@ export class NotificationService {
     }
 
     /**
-     * Supprime les anciennes notifications (plus de 30 jours)
+     * Système d'optimisation des notifications en 3 niveaux
      */
-    static async cleanupOldNotifications(): Promise<void> {
+    static async optimizeNotifications(): Promise<void> {
         try {
-            const thirtyDaysAgo = new Date();
-            thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+            const now = new Date();
+            const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
+            // Niveau 1: Archiver les notifications lues après 7 jours (soft delete)
+            await Notification.updateMany(
+                {
+                    createdAt: { $lt: sevenDaysAgo },
+                    isRead: true,
+                    isArchived: { $ne: true }
+                },
+                {
+                    isArchived: true,
+                    archivedAt: new Date()
+                }
+            );
+
+            // Niveau 2: Supprimer définitivement les notifications archivées après 30 jours
             await Notification.deleteMany({
-                createdAt: { $lt: thirtyDaysAgo },
-                isRead: true
+                isArchived: true,
+                archivedAt: { $lt: thirtyDaysAgo }
             });
+
+            // Niveau 3: Supprimer les notifications non lues très anciennes (90 jours)
+            await Notification.deleteMany({
+                createdAt: { $lt: ninetyDaysAgo },
+                isRead: false
+            });
+
+            console.log('✅ Optimisation des notifications terminée');
         } catch (error) {
-            console.error('Erreur lors du nettoyage des anciennes notifications:', error);
+            console.error('Erreur lors de l\'optimisation des notifications:', error);
+        }
+    }
+
+    /**
+     * Récupère les notifications actives (non archivées) d'un utilisateur
+     */
+    static async getUserActiveNotifications(
+        userId: string, 
+        page: number = 1, 
+        limit: number = 10
+    ): Promise<{
+        notifications: INotification[];
+        totalCount: number;
+        unreadCount: number;
+    }> {
+        try {
+            const skip = (page - 1) * limit;
+
+            const [notifications, totalCount, unreadCount] = await Promise.all([
+                Notification.find({ 
+                    recipient: new mongoose.Types.ObjectId(userId),
+                    isArchived: { $ne: true }
+                })
+                    .populate('sender', 'username')
+                    .sort({ createdAt: -1 })
+                    .skip(skip)
+                    .limit(limit),
+                Notification.countDocuments({ 
+                    recipient: new mongoose.Types.ObjectId(userId),
+                    isArchived: { $ne: true }
+                }),
+                Notification.countDocuments({ 
+                    recipient: new mongoose.Types.ObjectId(userId), 
+                    isRead: false,
+                    isArchived: { $ne: true }
+                })
+            ]);
+
+            return {
+                notifications,
+                totalCount,
+                unreadCount
+            };
+        } catch (error) {
+            console.error('Erreur lors de la récupération des notifications actives:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Récupère les notifications archivées d'un utilisateur
+     */
+    static async getUserArchivedNotifications(
+        userId: string, 
+        page: number = 1, 
+        limit: number = 20
+    ): Promise<{
+        notifications: INotification[];
+        totalCount: number;
+    }> {
+        try {
+            const skip = (page - 1) * limit;
+
+            const [notifications, totalCount] = await Promise.all([
+                Notification.find({ 
+                    recipient: new mongoose.Types.ObjectId(userId),
+                    isArchived: true
+                })
+                    .populate('sender', 'username')
+                    .sort({ archivedAt: -1 })
+                    .skip(skip)
+                    .limit(limit),
+                Notification.countDocuments({ 
+                    recipient: new mongoose.Types.ObjectId(userId),
+                    isArchived: true
+                })
+            ]);
+
+            return {
+                notifications,
+                totalCount
+            };
+        } catch (error) {
+            console.error('Erreur lors de la récupération des notifications archivées:', error);
+            throw error;
         }
     }
 }

@@ -220,15 +220,49 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                     </div>
                 )}
 
-                {/* Bouton "Répondre" toujours visible et attirant l'attention */}
-                <div className="mt-8 flex justify-center">
-                    <Button
-                        onClick={() => setShowAnswerPopup(true)}
-                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
-                    >
-                        Répondre à cette question
-                    </Button>
-                </div>
+                {/* Bouton "Répondre" - visible seulement si la question n'est pas fermée */}
+                {question.status === "Non validée" && (
+                    <div className="mt-8 flex justify-center">
+                        <Button
+                            onClick={() => setShowAnswerPopup(true)}
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                        >
+                            Répondre à cette question
+                        </Button>
+                    </div>
+                )}
+
+                {/* Message si la question est fermée */}
+                {(question.status === "Résolue" || question.status === "Validée") && (
+                    <div className="mt-8 flex justify-center">
+                        <div className={`border rounded-lg p-4 text-center ${
+                            question.status === "Résolue" 
+                                ? "bg-green-50 border-green-200" 
+                                : "bg-blue-50 border-blue-200"
+                        }`}>
+                            <div className={`flex items-center justify-center gap-2 mb-2 ${
+                                question.status === "Résolue" 
+                                    ? "text-green-700" 
+                                    : "text-blue-700"
+                            }`}>
+                                <FaCheckCircle className="text-lg" />
+                                <span className="font-medium">
+                                    {question.status === "Résolue" ? "Question résolue" : "Question validée"}
+                                </span>
+                            </div>
+                            <p className={`text-sm ${
+                                question.status === "Résolue" 
+                                    ? "text-green-600" 
+                                    : "text-blue-600"
+                            }`}>
+                                {question.status === "Résolue" 
+                                    ? "Cette question a été résolue par l'auteur. Vous ne pouvez plus y répondre."
+                                    : "Cette question a été validée par le staff. Vous ne pouvez plus y répondre."
+                                }
+                            </p>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

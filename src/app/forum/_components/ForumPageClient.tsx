@@ -16,7 +16,13 @@ import {
     FaSearch,
     FaFilter,
     FaChevronRight,
-    FaChevronLeft
+    FaChevronLeft,
+    FaInfoCircle,
+    FaTimes,
+    FaTrophy,
+    FaUserGraduate,
+    FaLightbulb,
+    FaHeart
 } from "react-icons/fa";
 import ProfileAvatar from "@/components/ui/profile";
 import TimeAgo from "@/components/ui/TimeAgo";
@@ -66,7 +72,7 @@ interface QuestionsResponse {
 
 export default function ForumPageClient() {
     const router = useRouter();
-    const { data: session, status } = useSession();
+    const { data: session, status: sessionStatus } = useSession();
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
     const [page, setPage] = useState<number>(1);
@@ -74,15 +80,17 @@ export default function ForumPageClient() {
     const [search, setSearch] = useState<string>("");
     const [subject, setSubject] = useState<string>("");
     const [classLevel, setClassLevel] = useState<string>("");
+    const [status, setStatus] = useState<string>("");
     const [isFiltering, setIsFiltering] = useState<boolean>(false);
     const [showFilters, setShowFilters] = useState<boolean>(false);
+    const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
 
     useEffect(() => {
         async function fetchQuestions() {
             setLoading(true);
             setIsFiltering(true);
             try {
-                const response = await fetch(`/api/forum/questions?page=${page}&limit=10&title=${search}&subject=${subject}&classLevel=${classLevel}`);
+                const response = await fetch(`/api/forum/questions?page=${page}&limit=10&title=${search}&subject=${subject}&classLevel=${classLevel}&status=${status}`);
                 const data: QuestionsResponse = await response.json();
                 if (data.success) {
                     setQuestions(data.data);
@@ -96,7 +104,7 @@ export default function ForumPageClient() {
             }
         }
         fetchQuestions();
-    }, [page, search, subject, classLevel]);
+    }, [page, search, subject, classLevel, status]);
 
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -128,10 +136,21 @@ export default function ForumPageClient() {
             <div className="max-w-6xl mx-auto">
                 {/* Header avec titre et stats */}
                 <div className="mb-6 md:mb-8 text-center sm:text-left">
-                    <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Forum d&apos;entraide</h1>
-                    <p className="text-sm sm:text-base text-gray-600 max-w-2xl">
-                        Posez vos questions, partagez vos connaissances et gagnez des points en aidant les autres
-                    </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">Forum d&apos;entraide</h1>
+                            <p className="text-sm sm:text-base text-gray-600 max-w-2xl">
+                                Posez vos questions, partagez vos connaissances et gagnez des points en aidant les autres
+                            </p>
+                        </div>
+                        <Button
+                            onClick={() => setShowInfoModal(true)}
+                            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md transition-all duration-200 flex items-center gap-2 self-start sm:self-auto"
+                        >
+                            <FaInfoCircle className="text-sm" />
+                            <span className="text-sm">Comment ça marche ?</span>
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Barre de recherche et filtres */}
@@ -142,19 +161,41 @@ export default function ForumPageClient() {
                                 <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                                 <Input
                                     type="text"
-                                    placeholder="Rechercher par mot-clé..."
+                                    placeholder="Rechercher dans les titres, descriptions et contenus..."
                                     value={search}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
                                     className="pl-10 py-2 sm:py-3 border-gray-300 bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 rounded-lg w-full text-current"
                                 />
+                                {search && (
+                                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                        <button
+                                            onClick={() => setSearch("")}
+                                            className="text-gray-400 hover:text-gray-600 text-sm"
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                             <div className="flex gap-2 w-full sm:w-auto">
                                 <Button
                                     type="button"
                                     onClick={() => setShowFilters(!showFilters)}
-                                    className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 sm:px-4 py-2 rounded-lg flex-1 sm:flex-none"
+                                    className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg flex-1 sm:flex-none transition-all duration-200 ${
+                                        showFilters || subject || classLevel || status
+                                            ? "bg-orange-500 hover:bg-orange-600 text-white shadow-md"
+                                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                    }`}
                                 >
-                                    <FaFilter /> Filtres
+                                    <FaFilter className={showFilters ? "animate-pulse" : ""} /> 
+                                    <span>
+                                        {showFilters ? "Masquer les filtres" : "Filtres"}
+                                        {(subject || classLevel || status) && (
+                                            <span className="ml-1 text-xs bg-white text-orange-500 rounded-full px-1.5 py-0.5">
+                                                {[subject, classLevel, status].filter(Boolean).length}
+                                            </span>
+                                        )}
+                                    </span>
                                 </Button>
                                 {session && (
                                     <Button
@@ -168,55 +209,226 @@ export default function ForumPageClient() {
                             </div>
                         </div>
 
-                        {/* Filtres dépliables */}
+                        {/* Filtres ludiques dépliables */}
                         {showFilters && (
                             <motion.div
-                                initial={{ height: 0, opacity: 0 }}
-                                animate={{ height: "auto", opacity: 1 }}
-                                exit={{ height: 0, opacity: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 pt-3 sm:pt-4 border-t border-gray-200"
+                                initial={{ height: 0, opacity: 0, y: -20 }}
+                                animate={{ height: "auto", opacity: 1, y: 0 }}
+                                exit={{ height: 0, opacity: 0, y: -20 }}
+                                transition={{ 
+                                    duration: 0.4,
+                                    ease: "easeInOut",
+                                    staggerChildren: 0.1
+                                }}
+                                className="pt-4 sm:pt-6 border-t border-gray-200"
                             >
-                                <div>
-                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Matière</label>
-                                    <select
-                                        value={subject}
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                            setSubject(e.target.value);
-                                            setPage(1);
-                                        }}
-                                        className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 text-sm sm:text-base"
+                                {/* Filtres par badges colorés */}
+                                <div className="space-y-6">
+                                    {/* Filtre Matières - Style badges */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.1 }}
                                     >
-                                        <option value="">Toutes les matières</option>
-                                        {educationData.subjects.map((subj, index) => (
-                                            <option key={index} value={subj} className="text-gray-900">{subj}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Niveau</label>
-                                    <select
-                                        value={classLevel}
-                                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                                            setClassLevel(e.target.value);
-                                            setPage(1);
-                                        }}
-                                        className="w-full p-2 sm:p-3 border border-gray-300 rounded-lg bg-gray-50 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-gray-900 text-sm sm:text-base"
+                                        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span>
+                                            Choisir une matière
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setSubject("");
+                                                    setPage(1);
+                                                }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    subject === "" 
+                                                        ? "bg-orange-500 text-white shadow-md transform scale-105" 
+                                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                                }`}
+                                            >
+                                                🎯 Toutes
+                                            </button>
+                                            {educationData.subjects.map((subj, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => {
+                                                        setSubject(subj);
+                                                        setPage(1);
+                                                    }}
+                                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                        subject === subj 
+                                                            ? "bg-blue-500 text-white shadow-md transform scale-105" 
+                                                            : "bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-700"
+                                                    }`}
+                                                >
+                                                    {subj}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+
+                                    {/* Filtre Niveaux - Style étoiles */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.2 }}
                                     >
-                                        <option value="">Tous niveaux</option>
-                                        {educationData.levels.map((lvl, index) => (
-                                            <option key={index} value={lvl} className="text-gray-900">{lvl}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div className="md:col-span-2 flex justify-end">
-                                    <Button
-                                        type="submit"
-                                        className="bg-orange-500 hover:bg-orange-600 text-white px-4 sm:px-6 text-sm sm:text-base"
-                                        disabled={isFiltering}
+                                        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                            Sélectionner un niveau
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setClassLevel("");
+                                                    setPage(1);
+                                                }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    classLevel === "" 
+                                                        ? "bg-orange-500 text-white shadow-md transform scale-105" 
+                                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                                }`}
+                                            >
+                                                ⭐ Tous
+                                            </button>
+                                            {educationData.levels.map((lvl, index) => (
+                                                <button
+                                                    key={index}
+                                                    onClick={() => {
+                                                        setClassLevel(lvl);
+                                                        setPage(1);
+                                                    }}
+                                                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                        classLevel === lvl 
+                                                            ? "bg-green-500 text-white shadow-md transform scale-105" 
+                                                            : "bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700"
+                                                    }`}
+                                                >
+                                                    {lvl}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </motion.div>
+
+                                    {/* Filtre Statuts - Style badges avec icônes */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.3 }}
                                     >
-                                        {isFiltering ? "Filtrage..." : "Appliquer les filtres"}
-                                    </Button>
+                                        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></span>
+                                            Filtrer par statut
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setStatus("");
+                                                    setPage(1);
+                                                }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    status === "" 
+                                                        ? "bg-orange-500 text-white shadow-md transform scale-105" 
+                                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                                }`}
+                                            >
+                                                🔍 Tous
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setStatus("Non validée");
+                                                    setPage(1);
+                                                }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    status === "Non validée" 
+                                                        ? "bg-yellow-500 text-white shadow-md transform scale-105" 
+                                                        : "bg-gray-100 text-gray-600 hover:bg-yellow-100 hover:text-yellow-700"
+                                                }`}
+                                            >
+                                                ⏳ Non validée
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setStatus("Validée");
+                                                    setPage(1);
+                                                }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    status === "Validée" 
+                                                        ? "bg-blue-500 text-white shadow-md transform scale-105" 
+                                                        : "bg-gray-100 text-gray-600 hover:bg-blue-100 hover:text-blue-700"
+                                                }`}
+                                            >
+                                                ✅ Validée
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    setStatus("Résolue");
+                                                    setPage(1);
+                                                }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    status === "Résolue" 
+                                                        ? "bg-green-500 text-white shadow-md transform scale-105" 
+                                                        : "bg-gray-100 text-gray-600 hover:bg-green-100 hover:text-green-700"
+                                                }`}
+                                            >
+                                                🏆 Résolue
+                                            </button>
+                                        </div>
+                                    </motion.div>
+
+                                    {/* Actions */}
+                                    <motion.div 
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.4 }}
+                                        className="flex flex-col sm:flex-row justify-between items-center gap-3 pt-4 border-t border-gray-100"
+                                    >
+                                        <div className="flex items-center gap-2 text-sm text-gray-500">
+                                            <span>Filtres actifs :</span>
+                                            <div className="flex gap-1">
+                                                {subject && (
+                                                    <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
+                                                        {subject}
+                                                    </span>
+                                                )}
+                                                {classLevel && (
+                                                    <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs">
+                                                        {classLevel}
+                                                    </span>
+                                                )}
+                                                {status && (
+                                                    <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs">
+                                                        {status}
+                                                    </span>
+                                                )}
+                                                {!subject && !classLevel && !status && (
+                                                    <span className="text-gray-400">Aucun</span>
+                                                )}
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                type="button"
+                                                onClick={() => {
+                                                    setSearch("");
+                                                    setSubject("");
+                                                    setClassLevel("");
+                                                    setStatus("");
+                                                    setPage(1);
+                                                }}
+                                                className="text-gray-600 hover:text-gray-800 text-sm bg-gray-100 hover:bg-gray-200"
+                                            >
+                                                🗑️ Effacer tout
+                                            </Button>
+                                            <Button
+                                                type="submit"
+                                                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 sm:px-6 text-sm sm:text-base shadow-md"
+                                                disabled={isFiltering}
+                                            >
+                                                {isFiltering ? "🔄 Filtrage..." : "✨ Appliquer"}
+                                            </Button>
+                                        </div>
+                                    </motion.div>
                                 </div>
                             </motion.div>
                         )}
@@ -321,15 +533,25 @@ export default function ForumPageClient() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mt-4 sm:mt-5">
                                         <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-3 sm:p-4 rounded-xl border border-blue-200 flex items-start gap-2 sm:gap-3">
                                             <FaQuestionCircle className="text-blue-600 mt-1 flex-shrink-0" />
-                                            <p className="text-xs sm:text-sm text-gray-700 line-clamp-3">
-                                                {question.description.whatIDid.substring(0, 150)}...
-                                            </p>
+                                            <div>
+                                                <p className="text-xs font-medium text-blue-800 mb-1">Ce que j&apos;ai fait :</p>
+                                                <p className="text-xs sm:text-sm text-gray-700 line-clamp-3">
+                                                    {question.description.whatIDid.length > 150 
+                                                        ? question.description.whatIDid.substring(0, 150) + "..." 
+                                                        : question.description.whatIDid}
+                                                </p>
+                                            </div>
                                         </div>
                                         <div className="bg-gradient-to-r from-red-50 to-red-100 p-3 sm:p-4 rounded-xl border border-red-200 flex items-start gap-2 sm:gap-3">
                                             <FaExclamationCircle className="text-red-600 mt-1 flex-shrink-0" />
-                                            <p className="text-xs sm:text-sm text-gray-700 line-clamp-3">
-                                                {question.description.whatINeed.substring(0, 150)}...
-                                            </p>
+                                            <div>
+                                                <p className="text-xs font-medium text-red-800 mb-1">Ce dont j&apos;ai besoin :</p>
+                                                <p className="text-xs sm:text-sm text-gray-700 line-clamp-3">
+                                                    {question.description.whatINeed.length > 150 
+                                                        ? question.description.whatINeed.substring(0, 150) + "..." 
+                                                        : question.description.whatINeed}
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -403,6 +625,257 @@ export default function ForumPageClient() {
                                 <FaChevronRight className="ml-1" />
                             </Button>
                         </div>
+                    </div>
+                )}
+
+                {/* Modal d'information */}
+                {showInfoModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                        >
+                            {/* Header de la modal */}
+                            <div className="sticky top-0 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-6 rounded-t-xl">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-3">
+                                        <FaInfoCircle className="text-2xl" />
+                                        <h2 className="text-xl font-bold">Guide du Forum Workyt</h2>
+                                    </div>
+                                    <button
+                                        onClick={() => setShowInfoModal(false)}
+                                        className="text-white hover:text-gray-200 transition-colors"
+                                    >
+                                        <FaTimes className="text-xl" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Contenu de la modal */}
+                            <div className="p-6 space-y-6">
+                                {/* Système de Points du Forum */}
+                                <div className="bg-gradient-to-r from-amber-50 to-orange-50 p-6 rounded-xl border border-amber-200">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <FaCoins className="text-2xl text-amber-600" />
+                                        <h3 className="text-lg font-bold text-gray-800">Système de Points du Forum</h3>
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="bg-white p-4 rounded-lg border border-amber-200">
+                                            <h4 className="font-semibold text-gray-700 mb-3">💰 Comment ça marche :</h4>
+                                            <div className="space-y-2 text-sm text-gray-600">
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-amber-500 mt-1">•</span>
+                                                    <span><strong>Vous misez des points</strong> (1 à 15) quand vous posez une question</span>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-amber-500 mt-1">•</span>
+                                                    <span><strong>Les Helpeurs répondent</strong> et gagnent +2 points par réponse</span>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-amber-500 mt-1">•</span>
+                                                    <span><strong>Vous validez la meilleure réponse</strong> → elle reçoit TOUS vos points misés !</span>
+                                                </div>
+                                                <div className="flex items-start gap-2">
+                                                    <span className="text-amber-500 mt-1">•</span>
+                                                    <span><strong>Les likes</strong> donnent +1 point à l&apos;auteur de la réponse</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                                <h4 className="font-semibold text-green-700 mb-2">✅ Gagner des points :</h4>
+                                                <div className="space-y-1 text-sm text-green-600">
+                                                    <div>• <strong>+2 pts</strong> - Répondre à une question</div>
+                                                    <div>• <strong>+1 pt</strong> - Recevoir un like</div>
+                                                    <div>• <strong>+X pts</strong> - Avoir sa réponse validée (X = points misés)</div>
+                                                </div>
+                                            </div>
+                                            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                                <h4 className="font-semibold text-blue-700 mb-2">🎯 Utiliser ses points :</h4>
+                                                <div className="space-y-1 text-sm text-blue-600">
+                                                    <div>• <strong>Miser 1-15 pts</strong> - Pour poser une question</div>
+                                                    <div>• <strong>Débloquer des badges</strong> - En participant</div>
+                                                    <div>• <strong>Monter dans les classements</strong></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Comment poser une bonne question */}
+                                <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-xl border border-green-200">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <FaQuestionCircle className="text-2xl text-green-600" />
+                                        <h3 className="text-lg font-bold text-gray-800">Comment poser une belle question ?</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <h4 className="font-semibold text-gray-700 mb-3">✅ À faire :</h4>
+                                            <ul className="space-y-2 text-sm text-gray-600">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-green-500 mt-1">•</span>
+                                                    <span><strong>Titre clair</strong> : &quot;Problème de calcul avec les fractions&quot;</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-green-500 mt-1">•</span>
+                                                    <span><strong>Décrivez ce que vous avez fait</strong> : Montrez vos tentatives</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-green-500 mt-1">•</span>
+                                                    <span><strong>Précisez ce dont vous avez besoin</strong> : Aide, explication, correction...</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-green-500 mt-1">•</span>
+                                                    <span><strong>Ajoutez des images</strong> : Photos de votre travail, schémas</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-green-500 mt-1">•</span>
+                                                    <span><strong>Choisissez la bonne matière et le bon niveau</strong></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-gray-700 mb-3">❌ À éviter :</h4>
+                                            <ul className="space-y-2 text-sm text-gray-600">
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-red-500 mt-1">•</span>
+                                                    <span><strong>Titre vague</strong> : &quot;Aide maths&quot; ou &quot;Urgent !&quot;</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-red-500 mt-1">•</span>
+                                                    <span><strong>Demander directement la réponse</strong> sans essayer</span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-red-500 mt-1">•</span>
+                                                    <span><strong>Poster plusieurs fois la même question</strong></span>
+                                                </li>
+                                                <li className="flex items-start gap-2">
+                                                    <span className="text-red-500 mt-1">•</span>
+                                                    <span><strong>Être impoli ou impatient</strong></span>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Statuts des Questions */}
+                                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl border border-purple-200">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <FaTrophy className="text-2xl text-purple-600" />
+                                        <h3 className="text-lg font-bold text-gray-800">Statuts des Questions</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                                                <h4 className="font-semibold text-yellow-700">Non validée</h4>
+                                            </div>
+                                            <p className="text-sm text-yellow-600">Question en attente de réponses. Les Helpeurs peuvent répondre et gagner des points.</p>
+                                        </div>
+                                        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+                                                <h4 className="font-semibold text-blue-700">Validée</h4>
+                                            </div>
+                                            <p className="text-sm text-blue-600">Une réponse a été validée par le <strong>staff</strong> (Admin, Correcteur, Helpeur). <strong>Les points sont distribués</strong> et personne ne peut plus répondre.</p>
+                                        </div>
+                                        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                                                <h4 className="font-semibold text-green-700">Résolue</h4>
+                                            </div>
+                                            <p className="text-sm text-green-600">L&apos;<strong>auteur de la question</strong> a choisi une &quot;Meilleure Réponse&quot;. Les points sont distribués et <strong>personne ne peut plus répondre</strong>.</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Rôle d'un Helpeur */}
+                                <div className="bg-gradient-to-r from-indigo-50 to-cyan-50 p-6 rounded-xl border border-indigo-200">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <FaUserGraduate className="text-2xl text-indigo-600" />
+                                        <h3 className="text-lg font-bold text-gray-800">Le rôle d&apos;un Helpeur</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div className="text-center">
+                                            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                <FaLightbulb className="text-blue-600 text-xl" />
+                                            </div>
+                                            <h4 className="font-semibold text-gray-700 mb-2">Expliquer</h4>
+                                            <p className="text-sm text-gray-600">Donnez des explications claires et détaillées, pas juste la réponse</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                <FaHeart className="text-green-600 text-xl" />
+                                            </div>
+                                            <h4 className="font-semibold text-gray-700 mb-2">Encourager</h4>
+                                            <p className="text-sm text-gray-600">Soyez patient et encourageant avec les autres élèves</p>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                                                <FaTrophy className="text-yellow-600 text-xl" />
+                                            </div>
+                                            <h4 className="font-semibold text-gray-700 mb-2">Valider</h4>
+                                            <p className="text-sm text-gray-600">Seul l&apos;auteur de la question peut valider une réponse comme &quot;Meilleure Réponse&quot;</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Conseils pratiques du Forum */}
+                                <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200">
+                                    <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                                        <FaLightbulb className="text-yellow-500" />
+                                        Conseils pratiques du Forum
+                                    </h3>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                        <div>
+                                            <h4 className="font-semibold text-gray-700 mb-2">Pour poser une question :</h4>
+                                            <ul className="space-y-1 text-gray-600">
+                                                <li>• <strong>Misez des points</strong> (1-15) selon l&apos;urgence</li>
+                                                <li>• <strong>Plus de points</strong> = plus d&apos;Helpeurs motivés</li>
+                                                <li>• <strong>Validez la meilleure réponse</strong> pour distribuer vos points</li>
+                                                <li>• <strong>Utilisez les filtres</strong> pour voir des questions similaires</li>
+                                            </ul>
+                                        </div>
+                                        <div>
+                                            <h4 className="font-semibold text-gray-700 mb-2">Pour répondre (Helpeurs) :</h4>
+                                            <ul className="space-y-1 text-gray-600">
+                                                <li>• <strong>+2 points</strong> automatiques par réponse</li>
+                                                <li>• <strong>+X points</strong> si votre réponse est validée</li>
+                                                <li>• <strong>Lisez attentivement</strong> la question avant de répondre</li>
+                                                <li>• <strong>Donnez des explications</strong> détaillées, pas juste la réponse</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                                        <h4 className="font-semibold text-blue-700 mb-2">💡 Différence importante :</h4>
+                                        <div className="text-sm text-blue-600 space-y-2">
+                                            <p>
+                                                <strong>🔵 Validée par le staff :</strong> La question passe en statut &quot;Validée&quot;, 
+                                                <strong>les points sont distribués</strong> et personne ne peut plus répondre.
+                                            </p>
+                                            <p>
+                                                <strong>🟢 Résolue par l&apos;auteur :</strong> L&apos;auteur choisit une &quot;Meilleure Réponse&quot;, 
+                                                <strong>les points sont distribués</strong> et personne ne peut plus répondre.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Footer de la modal */}
+                            <div className="sticky bottom-0 bg-gray-50 p-4 rounded-b-xl border-t border-gray-200">
+                                <div className="flex justify-end">
+                                    <Button
+                                        onClick={() => setShowInfoModal(false)}
+                                        className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2"
+                                    >
+                                        J&apos;ai compris !
+                                    </Button>
+                                </div>
+                            </div>
+                        </motion.div>
                     </div>
                 )}
             </div>

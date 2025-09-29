@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export interface INotification extends Document {
     notificationId: string;
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated';
     recipient: ObjectId; // Utilisateur qui reçoit la notification
     sender: ObjectId; // Utilisateur qui déclenche la notification
     title: string;
@@ -16,8 +16,10 @@ export interface INotification extends Document {
         id: ObjectId;
     };
     isRead: boolean;
+    isArchived: boolean;
     createdAt: Date;
     readAt?: Date;
+    archivedAt?: Date;
 }
 
 /**
@@ -31,7 +33,7 @@ const NotificationSchema: Schema<INotification> = new Schema({
     },
     type: {
         type: String,
-        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked'],
+        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated'],
         required: true
     },
     recipient: {
@@ -67,18 +69,26 @@ const NotificationSchema: Schema<INotification> = new Schema({
         type: Boolean,
         default: false
     },
+    isArchived: {
+        type: Boolean,
+        default: false
+    },
     createdAt: {
         type: Date,
         default: Date.now
     },
     readAt: {
         type: Date
+    },
+    archivedAt: {
+        type: Date
     }
 });
 
 // Index pour optimiser les requêtes
-NotificationSchema.index({ recipient: 1, isRead: 1, createdAt: -1 });
+NotificationSchema.index({ recipient: 1, isRead: 1, isArchived: 1, createdAt: -1 });
 NotificationSchema.index({ recipient: 1, type: 1 });
+NotificationSchema.index({ isArchived: 1, archivedAt: -1 });
 
 /**
  * Création du modèle Notification
