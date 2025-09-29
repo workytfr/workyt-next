@@ -36,6 +36,7 @@ interface Report {
     createdAt: string;
     updatedAt: string;
     resolvedAt?: string;
+    questionId?: string; // ID de la question pour les réponses forum
 }
 
 const STATUS_COLORS = {
@@ -170,15 +171,17 @@ export default function ModerationPage() {
         }
     };
 
-    const getContentLink = (type: string, id: string) => {
+    const getContentLink = (type: string, id: string, questionId?: string) => {
         switch (type) {
             case 'revision':
                 return `/fiches/${id}`;
             case 'course':
                 return `/cours/${id}`;
-            case 'forum_answer':
             case 'forum_question':
                 return `/forum/${id}`;
+            case 'forum_answer':
+                // Pour une réponse, rediriger vers la question associée
+                return questionId ? `/forum/${questionId}` : `/forum`;
             default:
                 return '#';
         }
@@ -237,7 +240,7 @@ export default function ModerationPage() {
                                                     </CardDescription>
                                                     <div className="mt-2">
                                                         <Link 
-                                                            href={getContentLink(report.reportedContent.type, report.reportedContent.id)}
+                                                            href={getContentLink(report.reportedContent.type, report.reportedContent.id, report.questionId)}
                                                             target="_blank"
                                                             rel="noopener noreferrer"
                                                             className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline"
@@ -290,7 +293,7 @@ export default function ModerationPage() {
                                                                 <label className="text-sm font-medium">Lien vers le contenu</label>
                                                                 <div className="mt-1">
                                                                     <Link 
-                                                                        href={getContentLink(report.reportedContent.type, report.reportedContent.id)}
+                                                                        href={getContentLink(report.reportedContent.type, report.reportedContent.id, report.questionId)}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
                                                                         className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 hover:underline bg-blue-50 px-3 py-2 rounded-md"

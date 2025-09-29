@@ -14,6 +14,8 @@ export interface IUser extends Document {
     badges: string[];
     isAdmin: boolean;
     bio: string;
+    discordId?: string;
+    verified: boolean;
     createdAt: Date;
     resetPasswordToken?: string;
     resetPasswordExpiry?: Date;
@@ -62,7 +64,7 @@ const UserSchema = new Schema<IUser>({
         lowercase: true,
         minlength: [3, 'Le nom d\'utilisateur doit contenir au moins 3 caractères'],
         maxlength: [20, 'Le nom d\'utilisateur ne peut pas dépasser 20 caractères'],
-        match: [/^[a-z][a-z0-9_]*$/, 'Le nom d\'utilisateur doit commencer par une lettre et ne contenir que des lettres minuscules, chiffres et underscores'],
+        match: [/^[a-zA-Z0-9][a-z0-9_]*$/, 'Le nom d\'utilisateur doit contenir seulement des lettres, chiffres et underscores (première lettre peut être majuscule)'],
         validate: {
             validator: async function(this: IUser, username: string) {
                 if (!this.isNew && !this.isModified('username')) {
@@ -85,6 +87,17 @@ const UserSchema = new Schema<IUser>({
         default: "",
         select: false,
         minlength: [6, 'Le mot de passe doit contenir au moins 6 caractères']
+    },
+    discordId: {
+        type: String,
+        required: false,
+        unique: true,
+        sparse: true // Permet plusieurs documents avec discordId null
+    },
+    verified: {
+        type: Boolean,
+        required: true,
+        default: false
     },
     role: {
         type: String,

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
-import { FcGoogle } from "react-icons/fc";
+import { FaDiscord } from "react-icons/fa";
 import PrivacyConsent from "./PrivacyConsent";
 
 // Fonction pour normaliser le username côté client
@@ -31,13 +31,13 @@ function validateUsername(username: string): { isValid: boolean; error?: string 
         return { isValid: false, error: "Maximum 20 caractères" };
     }
 
-    const validPattern = /^[a-z0-9_]+$/;
+    const validPattern = /^[a-zA-Z0-9][a-z0-9_]*$/;
     if (!validPattern.test(username)) {
-        return { isValid: false, error: "Seules les lettres, chiffres et _ sont autorisés" };
+        return { isValid: false, error: "Seules les lettres, chiffres et _ sont autorisés (première lettre peut être majuscule)" };
     }
 
-    if (username.startsWith('_') || /^[0-9]/.test(username)) {
-        return { isValid: false, error: "Doit commencer par une lettre" };
+    if (username.startsWith('_')) {
+        return { isValid: false, error: "Ne peut pas commencer par un underscore" };
     }
 
     return { isValid: true };
@@ -204,8 +204,8 @@ export default function AuthPage() {
         }
     };
 
-    const handleGoogleSignIn = async () => {
-        await signIn("google", { callbackUrl: "/" });
+    const handleDiscordSignIn = async () => {
+        await signIn("discord", { callbackUrl: "/" });
     };
 
     return (
@@ -388,12 +388,12 @@ export default function AuthPage() {
 
             <div className="flex justify-center mt-4">
                 <Button
-                    onClick={handleGoogleSignIn}
-                    className="flex items-center space-x-2"
+                    onClick={handleDiscordSignIn}
+                    className="flex items-center space-x-2 bg-[#5865F2] hover:bg-[#4752C4] text-white"
                     disabled={isLoading}
                 >
-                    <FcGoogle />
-                    <span>{isRegister ? "S'inscrire avec Google" : "Se connecter avec Google"}</span>
+                    <FaDiscord />
+                    <span>{isRegister ? "S'inscrire avec Discord" : "Se connecter avec Discord"}</span>
                 </Button>
             </div>
 
