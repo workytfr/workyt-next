@@ -8,6 +8,7 @@ interface Comment {
     id: string;
     username: string;
     content: string;
+    userId: string;
 }
 
 interface CommentsListProps {
@@ -53,7 +54,7 @@ const CommentsList: React.FC<CommentsListProps> = ({ revisionId }) => {
         <div className="bg-white shadow rounded-lg p-6 border border-gray-300 space-y-4">
             <div>
                 {comments.map((comment) => (
-                    <CommentItem key={comment.id} username={comment.username} content={comment.content} />
+                    <CommentItem key={comment.id} username={comment.username} content={comment.content} userId={comment.userId} />
                 ))}
             </div>
             {hasMore && (

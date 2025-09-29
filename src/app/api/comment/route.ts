@@ -58,6 +58,10 @@ export async function POST(req: NextRequest) {
 
         await revision.save();
 
+        // Notification de l'auteur de la fiche
+        const { NotificationService } = await import('@/lib/notificationService');
+        await NotificationService.notifyNewFicheComment(revisionId, user._id.toString());
+
         return NextResponse.json(
             { success: true, data: newComment },
             { status: 201 }
@@ -100,7 +104,7 @@ export async function GET(req: NextRequest) {
         const comments = await Comment.find({ revision: revisionId })
             .populate({
                 path: "author", // Récupère les données de l'utilisateur
-                select: "username name", // Champs à inclure
+                select: "username name _id", // Champs à inclure
             })
             .sort({ createdAt: -1 }) // Trier par date de création (les plus récents en premier)
             .skip(skip) // Ignorer les commentaires précédents
@@ -116,6 +120,7 @@ export async function GET(req: NextRequest) {
                 id: comment._id,
                 content: comment.content,
                 username: (comment.author as any)?.username || "Utilisateur inconnu",
+                userId: (comment.author as any)?._id || null,
                 createdAt: comment.createdAt,
             })),
             pagination: {

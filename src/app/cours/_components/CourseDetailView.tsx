@@ -10,6 +10,7 @@ import { BookOpen, Users, Calendar, ArrowLeft, Play, FileText } from "lucide-rea
 import Link from "next/link";
 import Image from "next/image";
 import ProfileAvatar from "@/components/ui/profile";
+import ReportButton from "@/components/ReportButton";
 
 interface Section {
     _id: string;
@@ -181,6 +182,12 @@ export default function CourseDetailView() {
                                     <Badge variant={course.status === "publie" ? "default" : "secondary"}>
                                         {course.status}
                                     </Badge>
+                                    <ReportButton 
+                                        contentId={course._id} 
+                                        contentType="course"
+                                        variant="button"
+                                        size="sm"
+                                    />
                                 </div>
                             </div>
                             

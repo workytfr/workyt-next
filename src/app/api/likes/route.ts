@@ -59,60 +59,63 @@ function cleanExpiredCache() {
     }
 }
 
-// Fonction pour ajouter un like avec transaction
+// Fonction pour ajouter un like avec opérations atomiques
 async function likeRevision(revision: any, userId: mongoose.Types.ObjectId) {
-    const session = await mongoose.startSession();
-
     try {
-        await session.withTransaction(async () => {
-            // Vérifier à nouveau que l'utilisateur n'a pas déjà liké (double-check)
-            const updatedRevision = await Revision.findById(revision._id).session(session);
+        // Vérifier à nouveau que l'utilisateur n'a pas déjà liké (double-check)
+        const updatedRevision = await Revision.findById(revision._id);
 
-            if (!updatedRevision) {
-                throw new Error("Révision introuvable");
-            }
+        if (!updatedRevision) {
+            throw new Error("Révision introuvable");
+        }
 
-            const alreadyLiked = updatedRevision.likedBy.some((like: any) =>
-                like.userId.toString() === userId.toString()
-            );
+        const alreadyLiked = updatedRevision.likedBy.some((like: any) =>
+            like.userId.toString() === userId.toString()
+        );
 
-            if (alreadyLiked) {
-                throw new Error("Déjà liké");
-            }
+        if (alreadyLiked) {
+            throw new Error("Déjà liké");
+        }
 
-            // Mettre à jour la révision
-            await Revision.findByIdAndUpdate(
-                revision._id,
-                {
-                    $inc: { likes: 1 },
-                    $push: { likedBy: { userId: userId.toString(), likedAt: new Date() } }
-                },
-                { session }
-            );
+        // Mettre à jour la révision de manière atomique
+        const revisionResult = await Revision.findByIdAndUpdate(
+            revision._id,
+            {
+                $inc: { likes: 1 },
+                $push: { likedBy: { userId: userId.toString(), likedAt: new Date() } }
+            },
+            { new: true }
+        );
 
-            // Mettre à jour les points de l'auteur
-            await User.findByIdAndUpdate(
-                revision.author,
-                { $inc: { points: 5 } },
-                { session }
-            );
+        if (!revisionResult) {
+            throw new Error("Erreur lors de la mise à jour de la révision");
+        }
 
-            // Créer la transaction de points
-            await PointTransaction.create([{
-                user: revision.author,
-                revision: revision._id,
-                action: 'likeRevision',
-                type: 'gain',
-                points: 5
-            }], { session });
+        // Mettre à jour les points de l'auteur
+        await User.findByIdAndUpdate(
+            revision.author,
+            { $inc: { points: 5 } }
+        );
+
+        // Créer la transaction de points
+        await PointTransaction.create({
+            user: revision.author,
+            revision: revision._id,
+            action: 'likeRevision',
+            type: 'gain',
+            points: 5
         });
 
+        // Mettre à jour l'objet local pour la réponse
         revision.likes += 1;
         revision.likedBy.push({ userId: userId.toString(), likedAt: new Date() });
-    } finally {
-        await session.endSession();
+
+    } catch (error) {
+        console.error("Erreur lors de l'ajout du like :", error);
+        throw error;
     }
 }
+
 
 export async function POST(req: NextRequest) {
     try {

@@ -59,9 +59,12 @@ const connectDB = async (): Promise<void> => {
 // Initialisation unique pour éviter des connexions multiples
 let initialized = false;
 
-export default async (): Promise<void> => {
+const defaultExport = async (): Promise<void> => {
     if (!initialized) {
         await connectDB();
         initialized = true; // Marquer comme initialisé
     }
 };
+
+export { connectDB };
+export default defaultExport;

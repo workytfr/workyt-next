@@ -191,8 +191,8 @@ export default function QuestionDetailPage({ id: propId }: { id?: string }) {
                 </div>
             )}
 
-            {/* Bouton flottant pour répondre, visible uniquement si l'utilisateur est connecté */}
-            {session && !showAnswerPopup && (
+            {/* Bouton flottant pour répondre, visible uniquement si l'utilisateur est connecté et que la question n'est pas fermée */}
+            {session && !showAnswerPopup && question && question.status === "Non validée" && (
                 <button
                     className="fixed bottom-16 right-8 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-all transform hover:scale-105 hover:rotate-90 z-30"
                     onClick={() => setShowAnswerPopup(true)}

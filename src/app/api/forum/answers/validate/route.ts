@@ -103,6 +103,15 @@ export async function POST(req: NextRequest) {
             // 🔹 Vérifier les badges pour l'auteur de la réponse
             await BadgeService.triggerBadgeCheck(answer.user.toString());
 
+            // 🔹 Notifier l'auteur de la réponse
+            const { NotificationService } = await import('@/lib/notificationService');
+            await NotificationService.notifyAnswerValidated(
+                answer._id.toString(),
+                user._id.toString(),
+                question.title,
+                question.points
+            );
+
             return NextResponse.json(
                 { success: true, message: "Réponse désignée comme Meilleure Réponse.", data: answer },
                 { status: 200 }
@@ -120,8 +129,31 @@ export async function POST(req: NextRequest) {
                 await question.save();
             }
 
+            // 🔹 Ajouter les points au répondant (même logique que pour "Résolue")
+            await User.findByIdAndUpdate(answer.user, { $inc: { points: question.points } });
+
+            // 🔹 Enregistrer la transaction de points
+            await PointTransaction.create({
+                user: answer.user,
+                question: question._id,
+                answer: answer._id,
+                action: "validateAnswer",
+                type: "gain",
+                points: question.points,
+                createdAt: new Date(),
+            });
+
             // 🔹 Vérifier les badges pour l'auteur de la réponse
             await BadgeService.triggerBadgeCheck(answer.user.toString());
+
+            // 🔹 Notifier l'auteur de la réponse
+            const { NotificationService } = await import('@/lib/notificationService');
+            await NotificationService.notifyAnswerValidated(
+                answer._id.toString(),
+                user._id.toString(),
+                question.title,
+                question.points
+            );
 
             return NextResponse.json(
                 { success: true, message: "Réponse validée par le staff.", data: answer },

@@ -93,6 +93,14 @@ export async function POST(
             );
         }
 
+        // Vérification que la question n'est pas résolue ou validée
+        if (question.status === "Résolue" || question.status === "Validée") {
+            return NextResponse.json(
+                { success: false, message: "Cette question est fermée. Vous ne pouvez plus y répondre." },
+                { status: 400 }
+            );
+        }
+
         // Vérification que l'utilisateur n'est pas l'auteur de la question
         const isOwner = user._id.toString() === question.user.toString();
 
@@ -144,6 +152,10 @@ export async function POST(
 
         // Vérification et attribution des badges
         await BadgeService.checkAndAwardBadges(user._id.toString());
+
+        // Notification de l'auteur de la question
+        const { NotificationService } = await import('@/lib/notificationService');
+        await NotificationService.notifyNewForumAnswer(question._id.toString(), user._id.toString());
 
         return NextResponse.json(
             { success: true, message: "Réponse ajoutée avec succès.", data: newAnswer },

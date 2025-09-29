@@ -4,7 +4,7 @@ import Revision from "@/models/Revision";
 import authMiddleware from "@/middlewares/authMiddleware";
 import User from "@/models/User";
 import Comment from "@/models/Comment"; // Assurez-vous d'importer le modèle
-import { generateSignedUrl } from "@/lib/b2Utils"; // Fonction pour générer des URLs signées
+import { generateSignedUrl, deleteFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils"; // Fonctions pour générer des URLs signées et supprimer des fichiers
 
 // Connexion à MongoDB
 connectDB();
@@ -94,6 +94,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
 /**
  * Gérer la méthode DELETE pour supprimer une fiche
+ * Permet aux créateurs de supprimer leurs propres fiches et aux admins de supprimer toutes les fiches
  */
 export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
@@ -105,21 +106,60 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
     try {
         const user = await authMiddleware(req); // Authentification de l'utilisateur
 
-        if (user.role !== "Admin") {
-            return NextResponse.json(
-                { success: false, message: "Accès refusé. Seuls les administrateurs peuvent supprimer cette fiche." },
-                { status: 403 }
-            );
-        }
-
-        const fiche = await Revision.findByIdAndDelete(id);
+        // Récupérer la fiche pour vérifier le créateur
+        const fiche = await Revision.findById(id);
         if (!fiche) {
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
 
-        await User.findByIdAndUpdate(fiche.author, { $inc: { points: -10 } });
+        // Vérifier les permissions : Admin ou créateur de la fiche
+        const isAdmin = user.role === "Admin";
+        const isCreator = fiche.author.toString() === user._id.toString();
 
-        return NextResponse.json({ success: true, message: "Fiche supprimée avec succès." }, { status: 200 });
+        if (!isAdmin && !isCreator) {
+            return NextResponse.json(
+                { success: false, message: "Accès refusé. Seuls les créateurs de fiches et les administrateurs peuvent supprimer cette fiche." },
+                { status: 403 }
+            );
+        }
+
+        // Supprimer les fichiers associés du cloud storage
+        if (fiche.files && fiche.files.length > 0) {
+            console.log(`Suppression de ${fiche.files.length} fichier(s) associé(s) à la fiche...`);
+            
+            const deletionPromises = fiche.files.map(async (fileUrl: string) => {
+                try {
+                    const fileKey = extractFileKeyFromUrl(fileUrl);
+                    const deletionSuccess = await deleteFileFromStorage(process.env.S3_BUCKET_NAME!, fileKey);
+                    
+                    if (deletionSuccess) {
+                        console.log(`Fichier supprimé avec succès: ${fileKey}`);
+                    } else {
+                        console.warn(`Échec de la suppression du fichier: ${fileKey}`);
+                    }
+                } catch (error) {
+                    console.error(`Erreur lors de la suppression du fichier ${fileUrl}:`, error);
+                }
+            });
+
+            await Promise.all(deletionPromises);
+        }
+
+        // Supprimer les commentaires associés à la fiche
+        await Comment.deleteMany({ revision: id });
+
+        // Supprimer la fiche de la base de données
+        await Revision.findByIdAndDelete(id);
+
+        // Retirer les points à l'auteur (seulement si ce n'est pas un admin qui supprime)
+        if (!isAdmin) {
+            await User.findByIdAndUpdate(fiche.author, { $inc: { points: -10 } });
+        }
+
+        return NextResponse.json({ 
+            success: true, 
+            message: "Fiche et fichiers associés supprimés avec succès." 
+        }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur DELETE :", error.message);
         return NextResponse.json({ success: false, message: "Erreur lors de la suppression." }, { status: 500 });

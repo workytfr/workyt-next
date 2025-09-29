@@ -25,7 +25,7 @@ import { educationData, subjectColors, levelColors } from "@/data/educationData"
 interface Fiche {
     id: string;
     title: string;
-    authors: { username: string; points: number };
+    authors: { username: string; points: number; _id: string };
     content: string;
     likes: number;
     comments: number;
@@ -299,10 +299,12 @@ export default function SearchPage() {
                                 )}
 
                                 {/* Avatar et contenu */}
-                                <ProfileAvatar
-                                    username={fiche.authors?.username || "Inconnu"}
-                                    points={fiche.authors?.points || 0}
-                                />
+                                <Link href={`/compte/${fiche.authors?._id}`}>
+                                    <ProfileAvatar
+                                        username={fiche.authors?.username || "Inconnu"}
+                                        points={fiche.authors?.points || 0}
+                                    />
+                                </Link>
                                 <div className="flex-1">
                                     <Link href={`/fiches/${fiche.id}`}>
                                         <h2 className="text-xl font-semibold text-gray-800 hover:text-orange-500 transition-colors mb-1">

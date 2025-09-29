@@ -1,6 +1,7 @@
 // src/utils/authOptions.ts
 import NextAuth, { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import DiscordProvider from "next-auth/providers/discord";
 import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
@@ -26,6 +27,10 @@ function generateJWT(user: any) {
 // Configuration NextAuth
 export const authOptions: NextAuthOptions = {
     providers: [
+        DiscordProvider({
+            clientId: process.env.DISCORD_CLIENT_ID!,
+            clientSecret: process.env.DISCORD_CLIENT_SECRET!,
+        }),
         CredentialsProvider({
             name: "Email and Password",
             credentials: {
@@ -60,7 +65,73 @@ export const authOptions: NextAuthOptions = {
         }),
     ],
     callbacks: {
-        async jwt({ token, user }) {
+        async signIn({ user, account, profile }) {
+            // Si c'est une connexion Discord
+            if (account?.provider === "discord") {
+                try {
+                    await connectDB();
+                    
+                    // Vérifier si l'utilisateur existe déjà
+                    let existingUser = await User.findOne({ 
+                        $or: [
+                            { email: user.email },
+                            { discordId: account.providerAccountId }
+                        ]
+                    });
+
+                    if (existingUser) {
+                        // Mettre à jour l'utilisateur existant avec les infos Discord
+                        existingUser.discordId = account.providerAccountId;
+                        // Ne pas modifier le nom existant
+                        await existingUser.save();
+                    } else {
+                        // Générer un username valide basé sur le nom Discord
+                        const baseUsername = user.name?.toLowerCase()
+                            .replace(/\s+/g, '_')           // Remplacer espaces par _
+                            .replace(/[^a-z0-9_]/g, '')     // Garder seulement lettres, chiffres, _
+                            .replace(/^_+/, '')             // Supprimer underscores au début
+                            .replace(/_+/g, '_')            // Remplacer multiples underscores par un seul
+                            .substring(0, 15) || 'discorduser';
+                        
+                        // S'assurer qu'on a au moins un caractère valide
+                        const finalBaseUsername = baseUsername.length > 0 ? baseUsername : 'discorduser';
+                        
+                        // Vérifier si le username est disponible, sinon ajouter des chiffres
+                        let finalUsername = finalBaseUsername;
+                        let counter = 1;
+                        
+                        while (await User.findOne({ username: finalUsername })) {
+                            finalUsername = `${finalBaseUsername}${counter}`;
+                            counter++;
+                        }
+                        
+                        // Créer un nouvel utilisateur
+                        const newUser = new User({
+                            name: user.name,
+                            email: user.email,
+                            username: finalUsername,
+                            discordId: account.providerAccountId,
+                            role: 'user',
+                            points: 0,
+                            badges: [],
+                            bio: '',
+                            isAdmin: false,
+                            verified: true, // Les comptes Discord sont considérés comme vérifiés
+                        });
+                        await newUser.save();
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('Erreur lors de la connexion Discord:', error);
+                    return false;
+                }
+            }
+            
+            // Pour les autres providers, autoriser la connexion
+            return true;
+        },
+        async jwt({ token, user, account }) {
             if (user) {
                 token.id = user.id;
                 token.username = user.username;
@@ -68,6 +139,28 @@ export const authOptions: NextAuthOptions = {
                 token.role = user.role;
                 token.points = user.points;
                 token.accessToken = generateJWT(user);
+                
+                // Si c'est une connexion Discord, récupérer les données utilisateur depuis la DB
+                if (account?.provider === "discord") {
+                    await connectDB();
+                    const dbUser = await User.findOne({ 
+                        $or: [
+                            { email: user.email },
+                            { discordId: account.providerAccountId }
+                        ]
+                    });
+                    
+                    if (dbUser) {
+                        token.id = dbUser._id.toString();
+                        token.username = dbUser.username;
+                        token.role = dbUser.role;
+                        token.points = dbUser.points;
+                        token.badges = dbUser.badges;
+                        token.bio = dbUser.bio;
+                        token.isAdmin = dbUser.isAdmin;
+                        token.accessToken = generateJWT(dbUser);
+                    }
+                }
             }
             return token;
         },
@@ -78,9 +171,9 @@ export const authOptions: NextAuthOptions = {
                 email: token.email as string,
                 role: token.role as string,
                 points: token.points as number || 0,
-                badges: [],
-                bio: "",
-                isAdmin: false,
+                badges: token.badges as any[] || [],
+                bio: token.bio as string || "",
+                isAdmin: token.isAdmin as boolean || false,
             };
             session.accessToken = token.accessToken as string;
             return session;
