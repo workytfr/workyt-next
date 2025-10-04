@@ -147,7 +147,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                 <div className="p-6">
                                     {/* Utilisateur et métadonnées */}
                                     <div className="flex items-center gap-3 mb-4">
-                                        <ProfileAvatar username={answer.user.username} points={answer.user.points} size="small" />
+                                        <ProfileAvatar username={answer.user.username} points={answer.user.points} size="small" userId={answer.user._id} />
                                         <div>
                                             <Link href={`/compte/${answer.user._id}`}>
                                                 <span className="block font-medium text-black hover:underline cursor-pointer">{answer.user.username}</span>

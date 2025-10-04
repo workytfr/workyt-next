@@ -303,6 +303,7 @@ export default function SearchPage() {
                                     <ProfileAvatar
                                         username={fiche.authors?.username || "Inconnu"}
                                         points={fiche.authors?.points || 0}
+                                        userId={fiche.authors?._id}
                                     />
                                 </Link>
                                 <div className="flex-1">

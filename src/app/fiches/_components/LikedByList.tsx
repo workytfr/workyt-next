@@ -90,6 +90,7 @@ const LikedByList: React.FC<LikedByProps> = ({ revisionId, likedBy, initialLikes
                                 <ProfileAvatar
                                     username={like.userId.username}
                                     showPoints={false}
+                                    userId={like.userId._id}
                                 />
                             </div>
                         </Link>

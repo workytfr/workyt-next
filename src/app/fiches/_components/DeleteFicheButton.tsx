@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { TrashIcon, ExclamationTriangleIcon } from "@radix-ui/react-icons";
 import {
@@ -31,6 +32,7 @@ export default function DeleteFicheButton({
 }: DeleteFicheButtonProps) {
     const [isDeleting, setIsDeleting] = useState(false);
     const router = useRouter();
+    const { data: session } = useSession();
 
     const handleDelete = async () => {
         setIsDeleting(true);
@@ -41,6 +43,7 @@ export default function DeleteFicheButton({
                 headers: {
                     'Content-Type': 'application/json',
                 },
+                credentials: 'include', // Important pour inclure les cookies de session
             });
 
             const data = await response.json();

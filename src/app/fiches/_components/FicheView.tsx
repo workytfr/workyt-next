@@ -338,6 +338,7 @@ export default function FicheView({ id }: FicheViewProps) {
                             <ProfileAvatar
                                 username={fiche.author?.username || "Inconnu"}
                                 points={fiche.author?.points || 0}
+                                userId={fiche.author?._id}
                             />
                             <div>
                                 <Link href={`/compte/${fiche.author?._id}`}>

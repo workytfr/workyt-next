@@ -14,7 +14,7 @@ const CommentItem: React.FC<CommentProps> = ({ username, content, userId}) => {
     return (
         <div className="flex items-center gap-4 p-4 border-b last:border-b-0">
             {/* Avatar avec ProfileAvatar */}
-            <ProfileAvatar username={username} showPoints={false} />
+            <ProfileAvatar username={username} showPoints={false} userId={userId} />
 
             {/* Commentaire */}
             <div>

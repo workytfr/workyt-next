@@ -92,10 +92,14 @@ export async function POST(req: NextRequest) {
       updateData['profileImage.filename'] = itemValue;
       updateData['profileImage.isActive'] = true;
     } else if (itemType === 'profileBorder') {
-      // Mapper les valeurs aux fichiers SVG
+      // Mapper les valeurs aux fichiers SVG/PNG
       const borderFileMap: { [key: string]: string } = {
         'gold': 'gold.svg',
-        'silver': 'silver.svg'
+        'silver': 'silver.svg',
+        'eclair_green': 'eclair_green.apng',
+        'fumee': 'fumee.png',
+        'poison_orange': 'poison_orange.png',
+        'halloween_pumpkins_apng': 'halloween_pumpkins_apng.png'
       };
       const filename = borderFileMap[itemValue] || itemValue;
       updateData['profileBorder.filename'] = filename;
