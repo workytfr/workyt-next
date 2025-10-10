@@ -72,6 +72,10 @@ export class BadgeService {
       case 'seniority':
         return await this.checkSeniority(user.createdAt, value);
       
+      case 'event':
+        // Les badges d'événements sont attribués manuellement
+        return false;
+      
       default:
         console.warn(`Type de condition non reconnu: ${type}`);
         return false;
