@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import ProfileAvatar from "@/components/ui/profile";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import { fetchPdfAsBlob } from "@/utils/fetchPdf";
 import "react-pdf/dist/esm/Page/AnnotationLayer.css";
 import { TokensIcon, CalendarIcon, MixIcon, LockClosedIcon, ReloadIcon } from "@radix-ui/react-icons";
@@ -342,7 +343,11 @@ export default function FicheView({ id }: FicheViewProps) {
                             />
                             <div>
                                 <Link href={`/compte/${fiche.author?._id}`}>
-                                    <p className="font-medium text-black hover:underline cursor-pointer">{fiche.author?.username || "Inconnu"}</p>
+                                    <UsernameDisplay 
+                                        username={fiche.author?.username || "Inconnu"}
+                                        userId={fiche.author?._id}
+                                        className="font-medium hover:underline cursor-pointer block"
+                                    />
                                 </Link>
                                 <p className="text-sm text-gray-500">Auteur</p>
                             </div>

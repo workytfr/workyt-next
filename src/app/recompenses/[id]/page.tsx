@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import ProfileAvatar from "@/components/ui/profile";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import { Separator } from '@/components/ui/Separator';
 
 interface Reward {
@@ -442,10 +443,13 @@ export default function RewardDetailPage() {
                                                     <div className="flex justify-center mb-3">
                                                         {getRankIcon(rank)}
                                                     </div>
-                                                    <ProfileAvatar username={ entry.username } />
+                                                    <ProfileAvatar username={ entry.username } userId={entry.userId} />
 
                                                     <h4 className="font-bold text-lg mb-1">
-                                                        {entry.username}
+                                                        <UsernameDisplay 
+                                                            username={entry.username}
+                                                            userId={entry.userId}
+                                                        />
                                                         {isMe && <span className="text-blue-600 text-sm ml-1">(Vous)</span>}
                                                     </h4>
                                                     <p className="text-2xl font-bold text-gray-800">
@@ -482,12 +486,15 @@ export default function RewardDetailPage() {
                                             >
                                                 <div className="flex items-center gap-3">
                                                     {getRankIcon(rank)}
-                                                    <ProfileAvatar username={ entry.username } />
+                                                    <ProfileAvatar username={ entry.username } userId={entry.userId} />
                                                 </div>
 
                                                 <div className="flex-1">
                                                     <p className={`font-semibold ${isMe ? 'text-blue-900' : 'text-gray-900'}`}>
-                                                        {entry.username}
+                                                        <UsernameDisplay 
+                                                            username={entry.username}
+                                                            userId={entry.userId}
+                                                        />
                                                         {isMe && <span className="text-blue-600 ml-2">(Vous)</span>}
                                                     </p>
                                                     <p className="text-sm text-gray-600">

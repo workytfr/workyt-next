@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import ProfileAvatar from "@/components/ui/profile";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { FaThumbsUp, FaCheckCircle, FaMedal, FaRegComment } from "react-icons/fa";
 import ReactMarkdown from "react-markdown";
@@ -150,7 +151,11 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                         <ProfileAvatar username={answer.user.username} points={answer.user.points} size="small" userId={answer.user._id} />
                                         <div>
                                             <Link href={`/compte/${answer.user._id}`}>
-                                                <span className="block font-medium text-black hover:underline cursor-pointer">{answer.user.username}</span>
+                                                <UsernameDisplay 
+                                                    username={answer.user.username}
+                                                    userId={answer.user._id}
+                                                    className="block font-medium hover:underline cursor-pointer"
+                                                />
                                             </Link>
                                             <TimeAgo date={answer.createdAt} />
                                         </div>
