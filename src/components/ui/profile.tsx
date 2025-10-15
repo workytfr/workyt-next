@@ -76,6 +76,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         } else if (propCustomization) {
             setCustomization(propCustomization);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId, propCustomization]);
 
     const loadCustomization = async () => {
@@ -83,12 +84,12 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         
         try {
             setLoading(true);
-            const response = await fetch('/api/gems/balance');
+            const response = await fetch(`/api/users/${userId}/customization`);
             if (response.ok) {
                 const data = await response.json();
-                        if (data.success && data.data.user.id === userId) {
-          setCustomization(data.data.customization);
-        }
+                if (data.success) {
+                    setCustomization(data.data.customization);
+                }
             }
         } catch (error) {
             console.error('Erreur lors du chargement de la personnalisation:', error);
@@ -250,16 +251,16 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                     </Badge>
                 )}
 
-                
-
-                {/* Avatar principal */}
+                {/* Avatar principal (en arrière-plan) */}
                 <div
-                    className="rounded-full w-full h-full flex items-center justify-center text-white font-bold overflow-hidden relative"
+                    className="rounded-full w-full h-full flex items-center justify-center text-white font-bold overflow-hidden relative z-0"
                     style={{
                         backgroundColor: profileImage ? 'transparent' : bgColor,
                         backgroundImage: `url('/noise.webp')`,
                         backgroundSize: "cover",
                         backgroundBlendMode: "overlay",
+                        // Réduire légèrement la taille pour laisser voir le contour
+                        transform: 'scale(0.85)',
                     }}
                 >
                     {profileImage ? (
@@ -273,12 +274,12 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                     )}
                 </div>
 
-                {/* Contour personnalisé */}
+                {/* Contour personnalisé (en premier plan) */}
                 {profileBorder && (
                     <img 
                         src={profileBorder}
                         alt="Contour de profil"
-                        className="absolute inset-0 w-full h-full"
+                        className="absolute inset-0 w-full h-full z-10"
                     />
                 )}
             </div>

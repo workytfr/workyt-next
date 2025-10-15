@@ -170,6 +170,16 @@ const badges: Partial<IBadge>[] = [
     condition: { type: 'seniority', value: 2 },
     rarity: 'épique',
   },
+  // Événements spéciaux
+  {
+    slug: 'halloween_2025',
+    name: 'Halloween 2025',
+    description: 'A participé et gagné l\'événement Halloween 2025.',
+    icon: '/badge/halloween2025.png',
+    category: 'special',
+    condition: { type: 'event', value: 1 },
+    rarity: 'légendaire',
+  },
 ];
 
 export default badges; 

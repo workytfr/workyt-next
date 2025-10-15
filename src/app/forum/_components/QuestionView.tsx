@@ -14,6 +14,7 @@ import {
     FaExclamationCircle
 } from "react-icons/fa";
 import ProfileAvatar from "@/components/ui/profile";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { getSubjectColor, getLevelColor } from "@/data/educationData";
 import ReactMarkdown from "react-markdown";
@@ -57,10 +58,14 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
             <div className="bg-gray-50 p-4 border-b border-gray-200">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div className="flex items-center gap-3">
-                        <ProfileAvatar username={question.user.username} points={question.user.points} size="small" />
+                        <ProfileAvatar username={question.user.username} points={question.user.points} size="small" userId={question.user._id} />
                         <div>
                             <Link href={`/compte/${question.user._id}`}>
-                                <span className="font-medium text-gray-800 hover:underline cursor-pointer">{question.user.username}</span>
+                                <UsernameDisplay 
+                                    username={question.user.username}
+                                    userId={question.user._id}
+                                    className="font-medium hover:underline cursor-pointer"
+                                />
                             </Link>
                             <TimeAgo date={question.createdAt} />
                         </div>
@@ -198,9 +203,13 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                                     <div className="p-4">
                                         <h4 className="text-emerald-800 font-medium text-lg mb-3">{revision.title}</h4>
                                         <div className="flex items-center text-sm text-gray-700 mb-3">
-                                            <ProfileAvatar username={revision.author.username} points={revision.author.points}/>
+                                            <ProfileAvatar username={revision.author.username} points={revision.author.points} userId={revision.author._id} />
                                             <Link href={`/compte/${revision.author._id}`}>
-                                                <span className="ml-2 font-medium hover:underline cursor-pointer">{revision.author.username}</span>
+                                                <UsernameDisplay 
+                                                    username={revision.author.username}
+                                                    userId={revision.author._id}
+                                                    className="ml-2 font-medium hover:underline cursor-pointer"
+                                                />
                                             </Link>
                                             <span className="ml-auto text-gray-500"><TimeAgo date={revision.createdAt} /></span>
                                         </div>

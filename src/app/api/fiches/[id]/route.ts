@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Revision from "@/models/Revision";
-import authMiddleware from "@/middlewares/authMiddleware";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 import User from "@/models/User";
 import Comment from "@/models/Comment"; // Assurez-vous d'importer le modèle
 import { generateSignedUrl, deleteFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils"; // Fonctions pour générer des URLs signées et supprimer des fichiers
@@ -68,9 +69,13 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     try {
-        const user = await authMiddleware(req); // Authentification de l'utilisateur
+        const session = await getServerSession(authOptions); // Authentification de l'utilisateur
 
-        if (!user.role || typeof user.role !== 'string' || !["Admin", "Correcteur", "Rédacteur"].includes(user.role)) {
+        if (!session?.user?.id) {
+            return NextResponse.json({ success: false, message: "Non autorisé." }, { status: 401 });
+        }
+
+        if (!session.user.role || typeof session.user.role !== 'string' || !["Admin", "Correcteur", "Rédacteur"].includes(session.user.role)) {
             return NextResponse.json(
                 { success: false, message: "Accès refusé. Vous n'avez pas les permissions nécessaires pour modifier cette fiche." },
                 { status: 403 }
@@ -104,7 +109,11 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
     }
 
     try {
-        const user = await authMiddleware(req); // Authentification de l'utilisateur
+        const session = await getServerSession(authOptions); // Authentification de l'utilisateur
+
+        if (!session?.user?.id) {
+            return NextResponse.json({ success: false, message: "Non autorisé." }, { status: 401 });
+        }
 
         // Récupérer la fiche pour vérifier le créateur
         const fiche = await Revision.findById(id);
@@ -113,8 +122,8 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
         }
 
         // Vérifier les permissions : Admin ou créateur de la fiche
-        const isAdmin = user.role === "Admin";
-        const isCreator = fiche.author.toString() === user._id.toString();
+        const isAdmin = session.user.role === "Admin";
+        const isCreator = fiche.author.toString() === session.user.id;
 
         if (!isAdmin && !isCreator) {
             return NextResponse.json(
@@ -129,7 +138,18 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
             
             const deletionPromises = fiche.files.map(async (fileUrl: string) => {
                 try {
+                    // Ignorer les URLs invalides
+                    if (!fileUrl || fileUrl.includes('undefined')) {
+                        console.warn(`URL de fichier invalide ignorée: ${fileUrl}`);
+                        return;
+                    }
+
                     const fileKey = extractFileKeyFromUrl(fileUrl);
+                    if (!fileKey) {
+                        console.warn(`Impossible d'extraire la clé du fichier: ${fileUrl}`);
+                        return;
+                    }
+
                     const deletionSuccess = await deleteFileFromStorage(process.env.S3_BUCKET_NAME!, fileKey);
                     
                     if (deletionSuccess) {

@@ -42,7 +42,15 @@ async function uploadFileToR2(file: File) {
             })
         );
 
-        return `${process.env.R2_PUBLIC_URL}/${fileKey}`;
+        // Vérifier que nous avons une URL de base valide
+        const baseUrl = process.env.R2_PUBLIC_URL || process.env.S3_ENDPOINT;
+        
+        if (!baseUrl) {
+            console.error("Aucune URL de base configurée pour R2. Vérifiez R2_PUBLIC_URL ou S3_ENDPOINT dans vos variables d'environnement.");
+            throw new Error("Configuration R2 manquante");
+        }
+        
+        return `${baseUrl}/${fileKey}`;
     } catch (error) {
         console.error("Erreur lors du téléversement :", error);
         throw new Error("Échec du téléversement du fichier.");

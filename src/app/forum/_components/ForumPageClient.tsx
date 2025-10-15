@@ -25,6 +25,7 @@ import {
     FaHeart
 } from "react-icons/fa";
 import ProfileAvatar from "@/components/ui/profile";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -511,7 +512,11 @@ export default function ForumPageClient() {
                                                 userId={question.user._id}
                                             />
                                             <div>
-                                                <p className="font-semibold text-gray-800 text-sm sm:text-base">{question.user.username}</p>
+                                                <UsernameDisplay 
+                                                    username={question.user.username}
+                                                    userId={question.user._id}
+                                                    className="font-semibold text-sm sm:text-base block"
+                                                />
                                                 <TimeAgo date={question.createdAt}/>
                                             </div>
                                         </div>

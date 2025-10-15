@@ -747,7 +747,7 @@ const GemManager: React.FC = () => {
           {/* Contour de profil */}
           <div className="space-y-3">
             <h3 className="font-semibold">Contour de profil</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
               {/* Contour doré */}
               <div className="border rounded-lg p-3 text-center">
                 <Crown className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
@@ -778,6 +778,126 @@ const GemManager: React.FC = () => {
                   {customization?.profileBorder.filename === 'silver.svg' && customization.profileBorder.isActive 
                     ? 'Actif' 
                     : 'Acheter (2 gemmes)'
+                  }
+                </Button>
+              </div>
+              
+              {/* Contour éclair vert (animé) */}
+              <div className="border border-green-400 rounded-lg p-3 text-center relative">
+                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-600">
+                  ★★★
+                </div>
+                <div className="relative">
+                  <Image
+                    src="/profile/contour/eclair_green.apng"
+                    alt="Contour éclair vert"
+                    width={32}
+                    height={32}
+                    className="mx-auto mb-2"
+                    unoptimized
+                  />
+                </div>
+                <div className="text-sm text-gray-600 mb-1">Contour éclair vert</div>
+                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
+                <Button
+                  size="sm"
+                  onClick={() => purchaseCustomization('profileBorder', 'eclair_green')}
+                  disabled={purchasing || (gemData?.balance || 0) < 15}
+                  className="w-full bg-green-600 hover:bg-green-700"
+                >
+                  {customization?.profileBorder.filename === 'eclair_green.apng' && customization.profileBorder.isActive 
+                    ? 'Actif' 
+                    : 'Acheter (15 gemmes)'
+                  }
+                </Button>
+              </div>
+              
+              {/* Contour fumée (animé) */}
+              <div className="border border-gray-400 rounded-lg p-3 text-center relative">
+                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-600">
+                  ★★
+                </div>
+                <div className="relative">
+                  <Image
+                    src="/profile/contour/fumee.png"
+                    alt="Contour fumée"
+                    width={32}
+                    height={32}
+                    className="mx-auto mb-2"
+                    unoptimized
+                  />
+                </div>
+                <div className="text-sm text-gray-600 mb-1">Contour fumée</div>
+                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
+                <Button
+                  size="sm"
+                  onClick={() => purchaseCustomization('profileBorder', 'fumee')}
+                  disabled={purchasing || (gemData?.balance || 0) < 10}
+                  className="w-full bg-gray-700 hover:bg-gray-800"
+                >
+                  {customization?.profileBorder.filename === 'fumee.png' && customization.profileBorder.isActive 
+                    ? 'Actif' 
+                    : 'Acheter (10 gemmes)'
+                  }
+                </Button>
+              </div>
+              
+              {/* Contour poison orange (animé) */}
+              <div className="border border-orange-400 rounded-lg p-3 text-center relative">
+                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-600">
+                  ★★★★
+                </div>
+                <div className="relative">
+                  <Image
+                    src="/profile/contour/poison_orange.png"
+                    alt="Contour poison orange"
+                    width={32}
+                    height={32}
+                    className="mx-auto mb-2"
+                    unoptimized
+                  />
+                </div>
+                <div className="text-sm text-gray-600 mb-1">Contour poison orange</div>
+                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
+                <Button
+                  size="sm"
+                  onClick={() => purchaseCustomization('profileBorder', 'poison_orange')}
+                  disabled={purchasing || (gemData?.balance || 0) < 20}
+                  className="w-full bg-orange-600 hover:bg-orange-700"
+                >
+                  {customization?.profileBorder.filename === 'poison_orange.png' && customization.profileBorder.isActive 
+                    ? 'Actif' 
+                    : 'Acheter (20 gemmes)'
+                  }
+                </Button>
+              </div>
+              
+              {/* Contour Halloween citrouilles (animé) */}
+              <div className="border border-orange-300 rounded-lg p-3 text-center relative">
+                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-600">
+                  ★
+                </div>
+                <div className="relative">
+                  <Image
+                    src="/profile/contour/halloween_pumpkins_apng.png"
+                    alt="Contour Halloween citrouilles"
+                    width={32}
+                    height={32}
+                    className="mx-auto mb-2"
+                    unoptimized
+                  />
+                </div>
+                <div className="text-sm text-gray-600 mb-1">Contour Halloween citrouilles</div>
+                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
+                <Button
+                  size="sm"
+                  onClick={() => purchaseCustomization('profileBorder', 'halloween_pumpkins_apng')}
+                  disabled={purchasing || (gemData?.balance || 0) < 3}
+                  className="w-full bg-orange-500 hover:bg-orange-600"
+                >
+                  {customization?.profileBorder.filename === 'halloween_pumpkins_apng.png' && customization.profileBorder.isActive 
+                    ? 'Actif' 
+                    : 'Acheter (3 gemmes)'
                   }
                 </Button>
               </div>

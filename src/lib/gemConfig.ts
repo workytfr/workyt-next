@@ -43,7 +43,11 @@ export const GEM_CONFIG = {
     },
     profileBorder: {
       gold: 3,
-      silver: 2
+      silver: 2,
+      eclair_green: 15,
+      fumee: 10,
+      poison_orange: 20,
+      halloween_pumpkins_apng: 3
     }
   },
   
@@ -67,7 +71,7 @@ export const GEM_CONFIG = {
       'FoxyWaterMelon.webp',
       'FoxySably.webp',
     ],
-    profileBorder: ['gold', 'silver', 'bronze', 'rainbow']
+    profileBorder: ['gold', 'silver', 'eclair_green', 'fumee', 'poison_orange', 'bronze', 'rainbow', 'halloween_pumpkins_apng']
   },
   
   // Couleurs par défaut

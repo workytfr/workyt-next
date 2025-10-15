@@ -9,7 +9,7 @@ const myServices = [
         title: "Cours en ligne",
         description: "Développer des compétences pour une véritable évolution dans vos études.",
         imageSrc: "/workytcours.png",
-        link: "https://cours.workyt.fr/"
+        link: "https://workyt.fr/cours"
     },
     {
         title: "Forum",

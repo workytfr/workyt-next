@@ -10,6 +10,7 @@ import { BookOpen, Users, Calendar, ArrowLeft, Play, FileText } from "lucide-rea
 import Link from "next/link";
 import Image from "next/image";
 import ProfileAvatar from "@/components/ui/profile";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import ReportButton from "@/components/ReportButton";
 
 interface Section {
@@ -204,7 +205,10 @@ export default function CourseDetailView() {
                                                     userId={author._id}
                                                     showPoints={false}
                                                 />
-                                                <span>{author.username}</span>
+                                                <UsernameDisplay 
+                                                    username={author.username}
+                                                    userId={author._id}
+                                                />
                                                 {index < course.authors.length - 1 && <span>,</span>}
                                             </div>
                                         ))}

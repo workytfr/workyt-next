@@ -58,6 +58,12 @@ export async function deleteFileFromStorage(bucketName: string, fileKey: string)
  */
 export function extractFileKeyFromUrl(fileUrl: string): string {
     try {
+        // Vérifier si l'URL est valide
+        if (!fileUrl || fileUrl.includes('undefined')) {
+            console.warn(`URL de fichier invalide: ${fileUrl}`);
+            return '';
+        }
+
         // Pour les URLs de type: https://domain.com/bucket/fiches/uuid-filename
         const url = new URL(fileUrl);
         const pathParts = url.pathname.split('/');
@@ -77,6 +83,6 @@ export function extractFileKeyFromUrl(fileUrl: string): string {
         return pathParts[pathParts.length - 1];
     } catch (error) {
         console.error(`Erreur lors de l'extraction de la clé du fichier depuis l'URL ${fileUrl}:`, error);
-        return fileUrl;
+        return '';
     }
 }
