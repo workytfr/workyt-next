@@ -30,14 +30,19 @@ export async function GET(req: NextRequest) {
         
         // Recherche améliorée : titre + contenu + description
         if (title) {
+            // Échapper les caractères spéciaux de regex pour éviter les erreurs
+            const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const searchTerms = title.trim().split(/\s+/);
-            const regexPatterns = searchTerms.map(term => ({
-                $or: [
-                    { title: { $regex: term, $options: "i" } },
-                    { "description.whatIDid": { $regex: term, $options: "i" } },
-                    { "description.whatINeed": { $regex: term, $options: "i" } }
-                ]
-            }));
+            const regexPatterns = searchTerms.map(term => {
+                const escapedTerm = escapeRegex(term);
+                return {
+                    $or: [
+                        { title: { $regex: escapedTerm, $options: "i" } },
+                        { "description.whatIDid": { $regex: escapedTerm, $options: "i" } },
+                        { "description.whatINeed": { $regex: escapedTerm, $options: "i" } }
+                    ]
+                };
+            });
             
             if (regexPatterns.length === 1) {
                 filter.$or = regexPatterns[0].$or;

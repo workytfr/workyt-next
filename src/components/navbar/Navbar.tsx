@@ -30,6 +30,7 @@ import {
     StarFilledIcon
 } from "@radix-ui/react-icons";
 import ProfileAvatar from "@/components/ui/profile";
+import ProfileCard from "@/components/ui/ProfileCard";
 import GemIndicator from "@/components/ui/GemIndicator";
 import CustomUsername from "@/components/ui/CustomUsername";
 import NotificationBell from "@/components/NotificationBell";
@@ -205,18 +206,14 @@ export default function Navbar() {
                         {session ? (
                             <div className="flex items-center space-x-3">
                                 <NotificationBell />
-                                <GemIndicator userId={session.user.id} />
                                 
                                 <DropdownMenu.Root open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-                                    <DropdownMenu.Trigger className="flex items-center space-x-2 text-gray-700 hover:text-blue-600 transition-colors">
-                                        <ProfileAvatar
+                                    <DropdownMenu.Trigger className="text-gray-700 hover:opacity-80 transition-opacity">
+                                        <ProfileCard
                                             username={session.user.username}
                                             points={session.user.points}
                                             userId={session.user.id}
-                                            size="small"
                                         />
-                                        <CustomUsername username={session.user.username} userId={session.user.id} />
-                                        <ChevronDownIcon className={`w-4 h-4 transition-transform ${isProfileOpen ? 'rotate-180' : ''}`} />
                                     </DropdownMenu.Trigger>
                                     <DropdownMenu.Portal>
                                         <DropdownMenu.Content
@@ -352,17 +349,12 @@ export default function Navbar() {
                                     <div className="space-y-3">
                                         <div className="flex items-center space-x-3">
                                             <NotificationBell />
-                                            <GemIndicator userId={session.user.id} />
                                         </div>
-                                        <div className="flex items-center space-x-3">
-                                            <ProfileAvatar
-                                                username={session.user.username}
-                                                points={session.user.points}
-                                                userId={session.user.id}
-                                                size="small"
-                                            />
-                                            <CustomUsername username={session.user.username} userId={session.user.id} />
-                                        </div>
+                                        <ProfileCard
+                                            username={session.user.username}
+                                            points={session.user.points}
+                                            userId={session.user.id}
+                                        />
                                         <div className="space-y-2">
                                             <Link href={`/compte/${session.user.id}`} className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
                                                 Mon Compte

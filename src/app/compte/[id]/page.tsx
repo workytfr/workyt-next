@@ -93,6 +93,8 @@ import { Toast } from "@/components/ui/UseToast";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
+import { calculateUserRank } from "@/lib/rankSystem";
+import useSWR from "swr";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
@@ -116,6 +118,76 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
         image: "",
     });
 
+    // Récupérer les gems (seulement si c'est le profil de l'utilisateur connecté)
+    const fetcher = (url: string) => fetch(url).then(res => res.json()).catch(() => null);
+    const { data: gemData } = useSWR(
+        id && session?.user?.id === id ? '/api/gems/balance' : null,
+        fetcher,
+        {
+            refreshInterval: 60000,
+            revalidateOnFocus: false,
+        }
+    );
+
+    const gems = gemData?.success && gemData?.data?.user?.id === id 
+        ? gemData.data.gems.balance || 0 
+        : 0;
+
+    // Fonction pour formater les points
+    const formatPoints = (points: number): string => {
+        if (points < 1000) return points.toString();
+        if (points < 1000000) return Math.floor(points / 1000) + "K";
+        return Math.floor(points / 1000000) + "M";
+    };
+
+    const userRank = calculateUserRank(formData.points);
+
+    // Fonction pour générer un gradient unique basé sur l'ID utilisateur
+    const generateUniqueGradient = (userId: string | null, variant: 'main' | 'avatar' = 'main'): string => {
+        if (!userId) return variant === 'main' ? 'from-purple-600 via-purple-500 to-indigo-600' : 'from-purple-400 to-pink-400';
+        
+        // Hash simple de l'ID pour générer des valeurs cohérentes
+        let hash = 0;
+        for (let i = 0; i < userId.length; i++) {
+            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // Gradients pour le fond principal
+        const mainGradients = [
+            'from-purple-600 via-purple-500 to-indigo-600',
+            'from-blue-600 via-blue-500 to-cyan-600',
+            'from-pink-600 via-pink-500 to-rose-600',
+            'from-green-600 via-green-500 to-emerald-600',
+            'from-orange-600 via-orange-500 to-amber-600',
+            'from-red-600 via-red-500 to-pink-600',
+            'from-indigo-600 via-indigo-500 to-purple-600',
+            'from-teal-600 via-teal-500 to-cyan-600',
+            'from-violet-600 via-violet-500 to-purple-600',
+            'from-rose-600 via-rose-500 to-pink-600',
+            'from-amber-600 via-amber-500 to-yellow-600',
+            'from-emerald-600 via-emerald-500 to-green-600',
+        ];
+        
+        // Gradients pour l'avatar (plus clairs)
+        const avatarGradients = [
+            'from-purple-400 to-pink-400',
+            'from-blue-400 to-cyan-400',
+            'from-pink-400 to-rose-400',
+            'from-green-400 to-emerald-400',
+            'from-orange-400 to-amber-400',
+            'from-red-400 to-pink-400',
+            'from-indigo-400 to-purple-400',
+            'from-teal-400 to-cyan-400',
+            'from-violet-400 to-purple-400',
+            'from-rose-400 to-pink-400',
+            'from-amber-400 to-yellow-400',
+            'from-emerald-400 to-green-400',
+        ];
+        
+        const gradients = variant === 'main' ? mainGradients : avatarGradients;
+        return gradients[Math.abs(hash) % gradients.length];
+    };
+
     // Resolve params promise
     useEffect(() => {
         async function resolveParams() {
@@ -124,6 +196,10 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
         }
         resolveParams();
     }, [params]);
+
+    // Calculer les gradients une fois que l'ID est disponible
+    const uniqueGradient = generateUniqueGradient(id, 'main');
+    const avatarGradient = generateUniqueGradient(id, 'avatar');
 
     useEffect(() => {
         if (!id) return; // Wait for id to be resolved
@@ -245,66 +321,131 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     }
 
     return (
-        <div className="bg-white text-black">
-            {/* Cover Section */}
-            <div className="relative w-full h-48 bg-blue-500">
-                <Image
-                    src="/avatars/background.png"
-                    alt="Cover Image"
-                    fill
-                    className="object-cover"
-                />
-                <div className="absolute top-16 left-8 flex items-center">
-                    <ProfileAvatar
-                        username={formData.username}
-                        size="large"
-                        userId={id}
-                    />
+        <div className="bg-gradient-to-b from-purple-50 via-white to-white min-h-screen">
+            {/* Cover Section avec gradient unique */}
+            <div className={`relative w-full h-64 bg-gradient-to-br ${uniqueGradient} overflow-hidden`}>
+                <div className="absolute inset-0 bg-[url('/noise.webp')] opacity-10"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                
+                <div className="container mx-auto relative z-10 h-full flex items-end pb-8 px-4">
+                    <div className="flex items-end gap-6 w-full">
+                        {/* Avatar */}
+                        <div className="relative">
+                            <div className={`absolute -inset-2 bg-gradient-to-r ${avatarGradient} rounded-full blur opacity-75 animate-pulse`}></div>
+                            <ProfileAvatar
+                                username={formData.username}
+                                size="large"
+                                userId={id}
+                            />
+                        </div>
+                        
+                        {/* Informations utilisateur */}
+                        <div className="flex-1 pb-2">
+                            <CustomUsername 
+                                username={formData.username} 
+                                userId={id} 
+                                className="text-3xl font-bold text-white drop-shadow-lg mb-2" 
+                            />
+                            {formData.bio && (
+                                <p className="text-white/90 text-sm max-w-2xl mb-3">{formData.bio}</p>
+                            )}
+                            
+                            {/* Statistiques principales */}
+                            <div className="flex items-center gap-4 flex-wrap">
+                                {/* Niveau */}
+                                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                                    <span className="text-white font-semibold text-sm">Nv {userRank.level}</span>
+                                </div>
+                                
+                                {/* Points */}
+                                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                                    <Image 
+                                        src="/badge/points.png" 
+                                        alt="Points" 
+                                        width={16} 
+                                        height={16} 
+                                        className="object-contain"
+                                    />
+                                    <span className="text-white font-semibold text-sm">{formatPoints(formData.points)}</span>
+                                </div>
+                                
+                                {/* Gems */}
+                                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                                    <Image 
+                                        src="/badge/diamond.png" 
+                                        alt="Diamants" 
+                                        width={16} 
+                                        height={16} 
+                                        className="object-contain"
+                                    />
+                                    <span className="text-white font-semibold text-sm">{gems}</span>
+                                </div>
+                                
+                                {/* Badges count */}
+                                <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm px-3 py-1.5 rounded-full">
+                                    <span className="text-white font-semibold text-sm">🏆 {formData.badges?.length || 0} badges</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             {/* User Details Section */}
-            <div className="container mx-auto mt-16 space-y-6 px-4">
-                <div className="flex flex-col items-center text-center">
-                    <CustomUsername username={formData.username} userId={id} className="text-2xl font-bold" />
-                    <p className="text-gray-700">{formData.points} points</p>
-                    <p className="text-gray-700 mt-2 max-w-lg">{formData.bio}</p>
-                </div>
-
-                <Separator className="my-6" />
-
+            <div className="container mx-auto -mt-8 space-y-6 px-4 pb-8">
                 {/* Rank Section */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Niveau & Rank</h2>
-                    <UserRank points={formData.points} />
-                </div>
-
-                <Separator className="my-6" />
+                <Card className="border-2 border-purple-200 shadow-lg mt-8">
+                    <CardHeader className="bg-gradient-to-r from-purple-50 to-indigo-50 border-b">
+                        <CardTitle className="text-xl font-bold text-purple-900 flex items-center gap-2">
+                            <Crown className="w-6 h-6 text-purple-600" />
+                            Progression & Niveau
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <UserRank points={formData.points} />
+                    </CardContent>
+                </Card>
 
                 {/* Badges Section */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Badges</h2>
-                    <BadgeProgress badgesCount={formData.badges.length} totalBadges={18} />
-                    <div className="mt-4">
-                        <BadgeDisplay userId={id} showProgress={true} />
-                    </div>
-                </div>
-
-                <Separator className="my-6" />
+                <Card className="border-2 border-yellow-200 shadow-lg">
+                    <CardHeader className="bg-gradient-to-r from-yellow-50 to-amber-50 border-b">
+                        <CardTitle className="text-xl font-bold text-yellow-900 flex items-center gap-2">
+                            <Gift className="w-6 h-6 text-yellow-600" />
+                            Badges & Récompenses
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <BadgeProgress badgesCount={formData.badges?.length || 0} totalBadges={18} />
+                        <div className="mt-6">
+                            <BadgeDisplay userId={id} showProgress={true} />
+                        </div>
+                    </CardContent>
+                </Card>
 
                 {/* Contribution Graph Section */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Activité & Contributions</h2>
-                    <ContributionGraph userId={id} />
-                </div>
-
-                <Separator className="my-6" />
+                <Card className="border-2 border-green-200 shadow-lg">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                        <CardTitle className="text-xl font-bold text-green-900 flex items-center gap-2">
+                            <Activity className="w-6 h-6 text-green-600" />
+                            Activité & Contributions
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
+                        <ContributionGraph userId={id} />
+                    </CardContent>
+                </Card>
 
                 {/* Editable Fields - Only for owner or admin */}
                 {(isOwner || isAdmin) && (
-                    <div>
-                        <h2 className="text-lg font-bold">Modifier votre profil</h2>
-                        <div className="mt-4 space-y-4">
+                    <Card className="border-2 border-gray-200 shadow-lg">
+                        <CardHeader className="bg-gradient-to-r from-gray-50 to-slate-50 border-b">
+                            <CardTitle className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                                <Settings className="w-6 h-6 text-gray-600" />
+                                Paramètres du profil
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-6">
+                        <div className="space-y-4">
                             <div>
                                 <Label htmlFor="name">Nom</Label>
                                 <Input
@@ -351,14 +492,19 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                 )}
                             </div>
                         </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 )}
 
-                <Separator className="my-6" />
-
                 {/* User Revisions */}
-                <div>
-                    <h2 className="text-lg font-bold mb-4">Fiches de révision</h2>
+                <Card className="border-2 border-indigo-200 shadow-lg">
+                    <CardHeader className="bg-gradient-to-r from-indigo-50 to-blue-50 border-b">
+                        <CardTitle className="text-xl font-bold text-indigo-900 flex items-center gap-2">
+                            <File className="w-6 h-6 text-indigo-600" />
+                            Fiches de révision
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
                     {revisions.length > 0 ? (
                         <div className="space-y-4">
                             {revisions.map((fiche) => (
@@ -368,13 +514,18 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                     ) : (
                         <p className="text-sm text-gray-500">Aucune fiche de révision publiée.</p>
                     )}
-                </div>
+                    </CardContent>
+                </Card>
 
                 {/* 📌 Questions posées */}
-                <div>
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-blue-600">
-                        <HelpCircle className="text-blue-600" /> Questions posées
-                    </h2>
+                <Card className="border-2 border-blue-200 shadow-lg">
+                    <CardHeader className="bg-gradient-to-r from-blue-50 to-cyan-50 border-b">
+                        <CardTitle className="text-xl font-bold text-blue-900 flex items-center gap-2">
+                            <HelpCircle className="w-6 h-6 text-blue-600" />
+                            Questions posées
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
 
                     {questions.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -395,13 +546,18 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                     ) : (
                         <p className="text-sm text-gray-500">Aucune question posée.</p>
                     )}
-                </div>
+                    </CardContent>
+                </Card>
 
                 {/* 📌 Réponses données */}
-                <div className="mt-6">
-                    <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-green-600">
-                        <MessageCircle className="text-green-600" /> Réponses données
-                    </h2>
+                <Card className="border-2 border-green-200 shadow-lg">
+                    <CardHeader className="bg-gradient-to-r from-green-50 to-emerald-50 border-b">
+                        <CardTitle className="text-xl font-bold text-green-900 flex items-center gap-2">
+                            <MessageCircle className="w-6 h-6 text-green-600" />
+                            Réponses données
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="p-6">
 
                     {answers.length > 0 ? (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -422,7 +578,8 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                     ) : (
                         <p className="text-sm text-gray-500">Aucune réponse donnée.</p>
                     )}
-                </div>
+                    </CardContent>
+                </Card>
 
                 {/* Pagination */}
                 <Pagination>
