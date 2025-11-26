@@ -34,6 +34,7 @@ import ProfileCard from "@/components/ui/ProfileCard";
 import GemIndicator from "@/components/ui/GemIndicator";
 import CustomUsername from "@/components/ui/CustomUsername";
 import NotificationBell from "@/components/NotificationBell";
+import QuestsPanel from "@/components/quests/QuestsPanel";
 import { Button } from "@/components/ui/button";
 
 export default function Navbar() {
@@ -245,6 +246,10 @@ export default function Navbar() {
                                                     Gemmes
                                                 </Link>
                                             </DropdownMenu.Item>
+                                            
+                                            <DropdownMenu.Separator className="my-1" />
+                                            
+                                            <QuestsPanel />
                                             
                                             <DropdownMenu.Separator className="my-1" />
                                             

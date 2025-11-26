@@ -103,6 +103,10 @@ export async function POST(req: NextRequest) {
             // 🔹 Vérifier les badges pour l'auteur de la réponse
             await BadgeService.triggerBadgeCheck(answer.user.toString());
 
+            // 🔹 Mettre à jour la progression des quêtes pour l'auteur de la réponse
+            const { QuestService } = await import('@/lib/questService');
+            await QuestService.updateQuestProgress(answer.user.toString(), 'forum_answer_validated');
+
             // 🔹 Notifier l'auteur de la réponse
             const { NotificationService } = await import('@/lib/notificationService');
             await NotificationService.notifyAnswerValidated(
@@ -145,6 +149,10 @@ export async function POST(req: NextRequest) {
 
             // 🔹 Vérifier les badges pour l'auteur de la réponse
             await BadgeService.triggerBadgeCheck(answer.user.toString());
+
+            // 🔹 Mettre à jour la progression des quêtes pour l'auteur de la réponse
+            const { QuestService } = await import('@/lib/questService');
+            await QuestService.updateQuestProgress(answer.user.toString(), 'forum_answer_validated');
 
             // 🔹 Notifier l'auteur de la réponse
             const { NotificationService } = await import('@/lib/notificationService');

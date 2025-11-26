@@ -106,6 +106,10 @@ async function likeRevision(revision: any, userId: mongoose.Types.ObjectId) {
             points: 5
         });
 
+        // Mettre à jour la progression des quêtes pour l'auteur de la fiche
+        const { QuestService } = await import('@/lib/questService');
+        await QuestService.updateQuestProgress(revision.author.toString(), 'fiche_like_received');
+
         // Mettre à jour l'objet local pour la réponse
         revision.likes += 1;
         revision.likedBy.push({ userId: userId.toString(), likedAt: new Date() });
