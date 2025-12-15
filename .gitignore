@@ -26,7 +26,34 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
+.env.production
+.env.development
+.env.test
+
+# Secrets et clés
+*.key
+*.pem
+*.p12
+*.pfx
+*.crt
+*.cer
+
+# Fichiers de configuration sensibles
+config.json
+secrets.json
+credentials.json
+
+# Logs contenant des informations sensibles
+*.log
+logs/
+
+# Fichiers de sauvegarde
+*.bak
+*.backup
+*.swp
+*~
 
 # vercel
 .vercel
