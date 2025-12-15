@@ -153,6 +153,10 @@ export async function POST(
         // Vérification et attribution des badges
         await BadgeService.checkAndAwardBadges(user._id.toString());
 
+        // Mettre à jour la progression des quêtes
+        const { QuestService } = await import('@/lib/questService');
+        await QuestService.updateQuestProgress(user._id.toString(), 'forum_answer');
+
         // Notification de l'auteur de la question
         const { NotificationService } = await import('@/lib/notificationService');
         await NotificationService.notifyNewForumAnswer(question._id.toString(), user._id.toString());

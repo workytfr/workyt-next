@@ -1,9 +1,19 @@
 import { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 import User from "@/models/User";
+import connectDB from "@/lib/mongodb";
+import mongoose from "mongoose";
 
 const authMiddleware = async (req: NextRequest) => {
     try {
+        // S'assurer que MongoDB est connecté
+        await connectDB();
+        
+        // Vérifier que la connexion est active
+        if (mongoose.connection.readyState !== 1) {
+            throw new Error("Connexion à la base de données non disponible.");
+        }
+
         const authHeader = req.headers.get("authorization");
         if (!authHeader) {
             throw new Error("Non autorisé. Aucun token fourni.");
@@ -26,7 +36,10 @@ const authMiddleware = async (req: NextRequest) => {
 
         return user;
     } catch (error: any) {
-        console.error("Erreur dans authMiddleware :", error.message);
+        // Ne logger que les erreurs non liées à l'authentification
+        if (!error.message.includes("Non autorisé") && !error.message.includes("Token invalide") && !error.message.includes("Utilisateur non trouvé")) {
+            console.error("Erreur dans authMiddleware :", error.message);
+        }
         throw error;
     }
 };
@@ -34,6 +47,14 @@ const authMiddleware = async (req: NextRequest) => {
 // Version optionnelle qui ne lance pas d'erreur si aucun token n'est fourni
 export const optionalAuthMiddleware = async (req: NextRequest) => {
     try {
+        // S'assurer que MongoDB est connecté
+        await connectDB();
+        
+        // Vérifier que la connexion est active
+        if (mongoose.connection.readyState !== 1) {
+            return null;
+        }
+
         const authHeader = req.headers.get("authorization");
         if (!authHeader) {
             return null; // Retourne null au lieu de lancer une erreur

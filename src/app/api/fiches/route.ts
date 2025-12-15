@@ -105,6 +105,11 @@ export async function POST(req: NextRequest) {
             type:     'gain',
             points:   10
         });
+
+        // Mettre à jour la progression des quêtes
+        const { QuestService } = await import('@/lib/questService');
+        await QuestService.updateQuestProgress(user._id.toString(), 'fiche_create', { subject });
+
         return NextResponse.json(newRevision, { status: 201 });
     } catch (error) {
         return NextResponse.json({ error: "Erreur lors de la création de la fiche." }, { status: 500 });

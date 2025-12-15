@@ -6,10 +6,10 @@ import User from '@/models/User';
 import mongoose from 'mongoose';
 
 export interface CreateNotificationData {
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed';
     recipientId: string;
     senderId: string;
-    relatedEntityType: 'question' | 'answer' | 'fiche' | 'comment';
+    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest';
     relatedEntityId: string;
     title: string;
     message: string;
@@ -25,17 +25,22 @@ export class NotificationService {
      */
     static async createNotification(data: CreateNotificationData): Promise<INotification> {
         try {
-            const notification = await Notification.create({
+            const notificationData: any = {
                 type: data.type,
                 recipient: new mongoose.Types.ObjectId(data.recipientId),
                 sender: new mongoose.Types.ObjectId(data.senderId),
                 title: data.title,
                 message: data.message,
-                relatedEntity: {
+            };
+
+            if (data.relatedEntityType) {
+                notificationData.relatedEntity = {
                     type: data.relatedEntityType,
                     id: new mongoose.Types.ObjectId(data.relatedEntityId)
-                }
-            });
+                };
+            }
+
+            const notification = await Notification.create(notificationData);
 
             return notification;
         } catch (error) {
@@ -355,6 +360,29 @@ export class NotificationService {
         } catch (error) {
             console.error('Erreur lors de la récupération des notifications archivées:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Notifie un utilisateur qu'une quête a été complétée
+     */
+    static async notifyQuestCompleted(
+        userId: string,
+        questId: string,
+        questName: string
+    ): Promise<void> {
+        try {
+            await this.createNotification({
+                type: 'quest_completed',
+                recipientId: userId,
+                senderId: userId, // L'utilisateur lui-même
+                relatedEntityType: 'quest',
+                relatedEntityId: questId,
+                title: 'Quête complétée ! 🎉',
+                message: `Félicitations ! Vous avez complété la quête "${questName}". Réclamez vos récompenses maintenant !`
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification de quête complétée:', error);
         }
     }
 }

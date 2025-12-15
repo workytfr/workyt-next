@@ -6,13 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export interface INotification extends Document {
     notificationId: string;
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed';
     recipient: ObjectId; // Utilisateur qui reçoit la notification
     sender: ObjectId; // Utilisateur qui déclenche la notification
     title: string;
     message: string;
-    relatedEntity: {
-        type: 'question' | 'answer' | 'fiche' | 'comment';
+    relatedEntity?: {
+        type: 'question' | 'answer' | 'fiche' | 'comment' | 'quest';
         id: ObjectId;
     };
     isRead: boolean;
@@ -33,7 +33,7 @@ const NotificationSchema: Schema<INotification> = new Schema({
     },
     type: {
         type: String,
-        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated'],
+        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated', 'quest_completed'],
         required: true
     },
     recipient: {
@@ -57,12 +57,10 @@ const NotificationSchema: Schema<INotification> = new Schema({
     relatedEntity: {
         type: {
             type: String,
-            enum: ['question', 'answer', 'fiche', 'comment'],
-            required: true
+            enum: ['question', 'answer', 'fiche', 'comment', 'quest']
         },
         id: {
-            type: mongoose.Schema.Types.ObjectId,
-            required: true
+            type: mongoose.Schema.Types.ObjectId
         }
     },
     isRead: {

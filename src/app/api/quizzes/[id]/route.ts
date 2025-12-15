@@ -270,10 +270,24 @@ export async function POST(
         // Vérifier les badges après avoir complété le quiz
         await BadgeService.triggerBadgeCheck(user._id.toString());
 
+        // Mettre à jour la progression des quêtes
+        const { QuestService } = await import('@/lib/questService');
+        await QuestService.updateQuestProgress(user._id.toString(), 'quiz_complete');
+        // Mettre à jour aussi pour les quêtes avec score minimum
+        const percentage = Math.round((totalScore / maxScore) * 100);
+        if (percentage >= 80) {
+            await QuestService.updateQuestProgress(user._id.toString(), 'quiz_score', { quizScore: percentage });
+        }
+        
+        // Vérifier si le cours est complété après ce quiz
+        if (sectionData?.courseId) {
+            await QuestService.updateCourseCompletionQuest(user._id.toString(), sectionData.courseId.toString());
+        }
+
         return NextResponse.json({
             score: totalScore,
             maxScore: maxScore,
-            percentage: Math.round((totalScore / maxScore) * 100),
+            percentage: percentage,
             answers: evaluatedAnswers
         });
     } catch (error) {

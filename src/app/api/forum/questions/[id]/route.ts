@@ -68,7 +68,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const totalAnswers = await Answer.countDocuments({ question: resolvedParams.id });
 
         // 🔹 Extraction des mots-clés du titre pour rechercher des fiches de révision
-        const titleWords = question.title.split(" ").slice(0, 4).join("|");
+        // Échapper les caractères spéciaux de regex pour éviter les erreurs
+        const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const titleWords = question.title
+            .split(" ")
+            .slice(0, 4)
+            .map((word: string) => escapeRegex(word))
+            .join("|");
 
         const relatedRevisions = await Revision.find({
             subject: question.subject,
