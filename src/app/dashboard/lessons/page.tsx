@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from "@/components/ui/Badge";
 import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, CheckCircle, Clock, FileText, Video, Users, Calendar, Edit } from "lucide-react";
 import { useSession, signIn } from "next-auth/react";
+import { handleApiError } from "@/utils/apiErrorHandler";
 import LessonForm from "./../_components/LessonForm";
 import { ILesson } from "@/models/Lesson";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
@@ -145,11 +146,13 @@ export default function LessonsPage() {
                         Authorization: `Bearer ${session.accessToken}`,
                     },
                 });
-                if (res.status === 401) {
-                    console.error("JWT expiré, rafraîchissement de la session...");
-                    await update();
-                    return;
+                
+                // Vérifier si le JWT est expiré et forcer la déconnexion si nécessaire
+                const wasLoggedOut = await handleApiError(res);
+                if (wasLoggedOut) {
+                    return; // La déconnexion a été déclenchée, on arrête ici
                 }
+                
                 if (res.ok) {
                     const data = await res.json();
                     setLessons(data.lessons || []);

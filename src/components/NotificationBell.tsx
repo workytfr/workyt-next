@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
-import { Bell, BellRing } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Bell, BellRing, Trash2 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -40,7 +40,7 @@ export default function NotificationBell() {
     const [loading, setLoading] = useState(false);
 
     // Récupération des notifications
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         if (!session?.accessToken) return;
 
         try {
@@ -57,7 +57,7 @@ export default function NotificationBell() {
         } catch (error) {
             console.error('Erreur lors de la récupération des notifications:', error);
         }
-    };
+    }, [session?.accessToken]);
 
     // Marquer une notification comme lue
     const markAsRead = async (notificationId: string) => {
@@ -124,12 +124,51 @@ export default function NotificationBell() {
         }
     };
 
+    // Supprimer une notification
+    const deleteNotification = async (notificationId: string, e: React.MouseEvent) => {
+        e.stopPropagation(); // Empêcher le clic de déclencher le marquage comme lu
+        
+        if (!session?.accessToken) return;
+
+        try {
+            const response = await fetch(`/api/notifications/${notificationId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${session.accessToken}`
+                }
+            });
+
+            if (response.ok) {
+                // Mettre à jour l'état local
+                setNotifications(prev => {
+                    if (!prev) return prev;
+                    const filteredNotifications = prev.notifications.filter(
+                        notif => notif._id !== notificationId
+                    );
+                    const deletedNotif = prev.notifications.find(
+                        notif => notif._id === notificationId
+                    );
+                    return {
+                        ...prev,
+                        notifications: filteredNotifications,
+                        totalCount: prev.totalCount - 1,
+                        unreadCount: deletedNotif && !deletedNotif.isRead 
+                            ? Math.max(0, prev.unreadCount - 1) 
+                            : prev.unreadCount
+                    };
+                });
+            }
+        } catch (error) {
+            console.error('Erreur lors de la suppression de la notification:', error);
+        }
+    };
+
     // Récupération initiale des notifications
     useEffect(() => {
         if (session?.accessToken) {
             fetchNotifications();
         }
-    }, [session?.accessToken]);
+    }, [session?.accessToken, fetchNotifications]);
 
     // Polling toutes les 30 secondes
     useEffect(() => {
@@ -137,7 +176,7 @@ export default function NotificationBell() {
 
         const interval = setInterval(fetchNotifications, 30000);
         return () => clearInterval(interval);
-    }, [session?.accessToken]);
+    }, [session?.accessToken, fetchNotifications]);
 
     // Formatage du type de notification
     const getNotificationIcon = (type: string) => {
@@ -206,6 +245,7 @@ export default function NotificationBell() {
                                 key={notification._id}
                                 className={`p-3 cursor-pointer ${!notification.isRead ? 'bg-blue-50' : ''}`}
                                 onClick={() => markAsRead(notification._id)}
+                                onSelect={(e) => e.preventDefault()}
                             >
                                 <div className="flex items-start space-x-3 w-full">
                                     <span className="text-lg">
@@ -225,9 +265,19 @@ export default function NotificationBell() {
                                             })}
                                         </p>
                                     </div>
-                                    {!notification.isRead && (
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0 mt-1" />
-                                    )}
+                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                        {!notification.isRead && (
+                                            <div className="w-2 h-2 bg-blue-500 rounded-full mt-1" />
+                                        )}
+                                        <button
+                                            onClick={(e) => deleteNotification(notification._id, e)}
+                                            className="p-1 hover:bg-red-100 rounded transition-colors text-gray-400 hover:text-red-600"
+                                            title="Supprimer la notification"
+                                            aria-label="Supprimer la notification"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
                                 </div>
                             </DropdownMenuItem>
                         ))

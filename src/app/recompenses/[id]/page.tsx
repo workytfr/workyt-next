@@ -221,7 +221,7 @@ export default function RewardDetailPage() {
                     <Button
                         variant="outline"
                         onClick={() => router.push('/recompenses')}
-                        className="bg-white/80 backdrop-blur-sm text-black"
+                        className="bg-white/70 backdrop-blur-xl border-white/30 shadow-lg hover:bg-white/90 hover:shadow-xl transition-all duration-300 text-black"
                     >
                         <ArrowLeft className="w-4 h-4 mr-2" />
                         Retour aux récompenses
@@ -229,7 +229,7 @@ export default function RewardDetailPage() {
                     <Button
                         variant="outline"
                         onClick={shareReward}
-                        className="bg-white/80 backdrop-blur-sm text-black"
+                        className="bg-white/70 backdrop-blur-xl border-white/30 shadow-lg hover:bg-white/90 hover:shadow-xl transition-all duration-300 text-black"
                     >
                         <Share2 className="w-4 h-4 mr-2" />
                         Partager
@@ -238,7 +238,7 @@ export default function RewardDetailPage() {
 
                 {/* Header Card */}
                 <Card
-                    className={`overflow-hidden shadow-lg border-0 transition-all duration-700 ${
+                    className={`overflow-hidden bg-white/60 backdrop-blur-xl border border-white/30 shadow-2xl transition-all duration-700 hover:shadow-3xl hover:bg-white/70 ${
                         animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                     }`}
                     style={{ transitionDelay: '100ms' }}
@@ -255,7 +255,7 @@ export default function RewardDetailPage() {
                                 <div className="absolute bottom-4 left-4">
                                     <Badge
                                         variant="secondary"
-                                        className={`bg-white/90 backdrop-blur-sm text-${statusInfo.color}-700 border-${statusInfo.color}-200`}
+                                        className={`bg-white/80 backdrop-blur-xl shadow-lg border border-white/40 text-${statusInfo.color}-700 border-${statusInfo.color}-200`}
                                     >
                                         {statusInfo.text}
                                     </Badge>
@@ -267,11 +267,11 @@ export default function RewardDetailPage() {
                             <div className="space-y-4">
                                 <div className="flex items-center gap-3">
                                     {getMethodIcon(reward.method)}
-                                    <Badge variant="outline" className="text-sm">
+                                    <Badge variant="outline" className="text-sm bg-white/60 backdrop-blur-sm border-white/30 shadow-sm">
                                         {getMethodLabel(reward.method)}
                                     </Badge>
                                     {reward.category && (
-                                        <Badge variant="secondary">
+                                        <Badge variant="secondary" className="bg-white/60 backdrop-blur-sm border-white/30 shadow-sm">
                                             {reward.category}
                                         </Badge>
                                     )}
@@ -291,8 +291,8 @@ export default function RewardDetailPage() {
 
                             {/* Info Grid */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl border border-green-100">
-                                    <div className="p-3 bg-green-100 rounded-xl">
+                                <div className="flex items-center gap-4 p-6 bg-white/50 backdrop-blur-xl rounded-2xl border border-white/30 shadow-lg hover:shadow-xl hover:bg-white/60 transition-all duration-300">
+                                    <div className="p-3 bg-gradient-to-br from-green-100 to-emerald-100 rounded-xl shadow-md">
                                         <Trophy className="w-8 h-8 text-green-600" />
                                     </div>
                                     <div>
@@ -301,8 +301,8 @@ export default function RewardDetailPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-4 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl border border-blue-100">
-                                    <div className="p-3 bg-blue-100 rounded-xl">
+                                <div className="flex items-center gap-4 p-6 bg-white/50 backdrop-blur-xl rounded-2xl border border-white/30 shadow-lg hover:shadow-xl hover:bg-white/60 transition-all duration-300">
+                                    <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl shadow-md">
                                         <Calendar className="w-8 h-8 text-blue-600" />
                                     </div>
                                     <div>
@@ -324,19 +324,19 @@ export default function RewardDetailPage() {
                                     </div>
                                 </div>
 
-                                <div className={`flex items-center gap-4 p-6 rounded-2xl border transition-colors duration-300 ${
+                                <div className={`flex items-center gap-4 p-6 bg-white/50 backdrop-blur-xl rounded-2xl border border-white/30 shadow-lg hover:shadow-xl hover:bg-white/60 transition-all duration-300 ${
                                     statusInfo.status === 'ended'
-                                        ? 'bg-gradient-to-r from-red-50 to-rose-50 border-red-100'
+                                        ? ''
                                         : statusInfo.status === 'upcoming'
-                                            ? 'bg-gradient-to-r from-blue-50 to-cyan-50 border-blue-100'
-                                            : 'bg-gradient-to-r from-orange-50 to-amber-50 border-orange-100'
+                                            ? ''
+                                            : ''
                                 }`}>
-                                    <div className={`p-3 rounded-xl ${
+                                    <div className={`p-3 rounded-xl shadow-md ${
                                         statusInfo.status === 'ended'
-                                            ? 'bg-red-100'
+                                            ? 'bg-gradient-to-br from-red-100 to-rose-100'
                                             : statusInfo.status === 'upcoming'
-                                                ? 'bg-blue-100'
-                                                : 'bg-orange-100'
+                                                ? 'bg-gradient-to-br from-blue-100 to-cyan-100'
+                                                : 'bg-gradient-to-br from-orange-100 to-amber-100'
                                     }`}>
                                         <Clock className={`w-8 h-8 ${
                                             statusInfo.status === 'ended'
@@ -375,7 +375,7 @@ export default function RewardDetailPage() {
                             </div>
 
                             {/* How to participate */}
-                            <div className="p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-100">
+                            <div className="p-6 bg-white/50 backdrop-blur-xl rounded-2xl border border-white/30 shadow-lg hover:shadow-xl hover:bg-white/60 transition-all duration-300">
                                 <h3 className="text-lg font-semibold text-purple-800 mb-2 flex items-center gap-2">
                                     <Target className="w-5 h-5" />
                                     Comment participer
@@ -390,7 +390,7 @@ export default function RewardDetailPage() {
 
                 {/* Leaderboard Card */}
                 <Card
-                    className={`shadow-lg border-0 transition-all duration-700 ${
+                    className={`bg-white/60 backdrop-blur-xl border border-white/30 shadow-2xl transition-all duration-700 hover:shadow-3xl hover:bg-white/70 ${
                         animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                     }`}
                     style={{ transitionDelay: '300ms' }}
@@ -406,7 +406,7 @@ export default function RewardDetailPage() {
                                     </CardDescription>
                                 </div>
                             </div>
-                            <Button variant="outline" size="sm" onClick={fetchData}>
+                            <Button variant="outline" size="sm" onClick={fetchData} className="bg-white/70 backdrop-blur-sm border-white/30 hover:bg-white/90 shadow-md">
                                 Actualiser
                             </Button>
                         </div>
@@ -423,22 +423,23 @@ export default function RewardDetailPage() {
                                 {/* Top 3 podium */}
                                 {leaderboard.top10.length >= 3 && (
                                     <div className="grid grid-cols-3 gap-4 mb-8">
-                                        {[1, 0, 2].map((index) => {
+                                        {[1, 0, 2].map((index, podiumIndex) => {
                                             const entry = leaderboard.top10[index];
                                             if (!entry) return null;
-                                            const rank = index === 1 ? 1 : index === 0 ? 2 : 3;
+                                            // podiumIndex 0 = 2ème place, podiumIndex 1 = 1ère place, podiumIndex 2 = 3ème place
+                                            const rank = podiumIndex === 1 ? 1 : podiumIndex === 0 ? 2 : 3;
                                             const isMe = leaderboard.me?.userId === entry.userId;
 
                                             return (
                                                 <div
                                                     key={entry.userId}
-                                                    className={`text-center p-6 rounded-2xl border-2 transition-all duration-300 ${
+                                                    className={`text-center p-6 rounded-2xl border-2 bg-white/60 backdrop-blur-xl shadow-xl transition-all duration-300 hover:shadow-2xl hover:bg-white/70 ${
                                                         rank === 1
-                                                            ? 'bg-gradient-to-b from-yellow-50 to-amber-50 border-yellow-200 transform scale-105'
+                                                            ? 'border-yellow-300 transform scale-105'
                                                             : rank === 2
-                                                                ? 'bg-gradient-to-b from-gray-50 to-slate-50 border-gray-200'
-                                                                : 'bg-gradient-to-b from-orange-50 to-amber-50 border-orange-200'
-                                                    } ${isMe ? 'ring-2 ring-blue-300' : ''}`}
+                                                                ? 'border-gray-300'
+                                                                : 'border-orange-300'
+                                                    } ${isMe ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
                                                 >
                                                     <div className="flex justify-center mb-3">
                                                         {getRankIcon(rank)}
@@ -476,12 +477,12 @@ export default function RewardDetailPage() {
                                         return (
                                             <div
                                                 key={entry.userId}
-                                                className={`flex items-center gap-4 p-4 rounded-xl transition-all duration-300 hover:shadow-md ${
+                                                className={`flex items-center gap-4 p-4 rounded-xl bg-white/50 backdrop-blur-xl border border-white/30 shadow-lg transition-all duration-300 hover:shadow-xl hover:bg-white/60 hover:scale-[1.01] ${
                                                     isMe
-                                                        ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 shadow-sm'
+                                                        ? 'border-2 border-blue-300 ring-2 ring-blue-200 ring-opacity-50'
                                                         : rank <= 3
-                                                            ? 'bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-100'
-                                                            : 'bg-gray-50 hover:bg-gray-100 border border-gray-100'
+                                                            ? 'border-amber-200'
+                                                            : ''
                                                 }`}
                                             >
                                                 <div className="flex items-center gap-3">
@@ -525,10 +526,12 @@ export default function RewardDetailPage() {
                         {/* Personal rank if outside top 10 */}
                         {leaderboard?.me &&
                             !leaderboard.top10.find(e => e.userId === leaderboard.me?.userId) && (
-                                <div className="mt-8 p-6 bg-gradient-to-r from-purple-50 to-pink-50 border-2 border-purple-200 rounded-2xl">
+                                <div className="mt-8 p-6 bg-white/60 backdrop-blur-xl border-2 border-purple-300 rounded-2xl shadow-xl hover:shadow-2xl hover:bg-white/70 transition-all duration-300">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
-                                            <Award className="w-8 h-8 text-purple-600" />
+                                            <div className="p-2 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl shadow-md">
+                                                <Award className="w-8 h-8 text-purple-600" />
+                                            </div>
                                             <div>
                                                 <h4 className="text-lg font-bold text-purple-800">Votre position</h4>
                                                 <p className="text-purple-600">Continuez vos efforts pour grimper au classement !</p>

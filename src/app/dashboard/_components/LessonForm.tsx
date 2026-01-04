@@ -41,12 +41,52 @@ export default function LessonForm({ lesson, onSuccess }: LessonFormProps) {
     const [loading, setLoading] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
 
+    // Fonction pour transformer le HTML brut en HTML parsable par TipTap
+    const transformHtmlForTipTap = (html: string): string => {
+        if (!html) return html;
+        
+        // Créer un élément temporaire pour parser le HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+        
+        // Traiter chaque bloc personnalisé
+        const customBlocks = tempDiv.querySelectorAll('[data-custom-block], [blocktype]');
+        customBlocks.forEach((block) => {
+            const element = block as HTMLElement;
+            // Remplacer les <br> par des séparateurs de paragraphes
+            const content = element.innerHTML;
+            // Diviser par les <br><br> (double saut de ligne) pour créer des paragraphes
+            const paragraphs = content.split(/<br\s*\/?>\s*<br\s*\/?>/i);
+            
+            // Si on a plusieurs paragraphes, les envelopper dans des <p>
+            if (paragraphs.length > 1) {
+                element.innerHTML = paragraphs
+                    .map(p => {
+                        const trimmed = p.trim();
+                        if (!trimmed) return '';
+                        // Remplacer les <br> simples par des espaces
+                        const cleaned = trimmed.replace(/<br\s*\/?>/gi, ' ');
+                        return `<p>${cleaned}</p>`;
+                    })
+                    .filter(p => p)
+                    .join('');
+            } else {
+                // Un seul paragraphe, remplacer les <br> par des espaces
+                element.innerHTML = content.replace(/<br\s*\/?>/gi, ' ');
+            }
+        });
+        
+        return tempDiv.innerHTML;
+    };
+
     // Lorsqu'une leçon est passée en mode édition, on met à jour les états
     useEffect(() => {
         if (lesson) {
             setSectionId(lesson.sectionId.toString());
             setTitle(lesson.title || "");
-            setContent(lesson.content || "");
+            // Transformer le HTML pour TipTap
+            const transformedContent = transformHtmlForTipTap(lesson.content || "");
+            setContent(transformedContent);
         }
     }, [lesson]);
 

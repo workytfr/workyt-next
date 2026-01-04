@@ -9,6 +9,8 @@ import QuizCard from "./../_components/QuizCard";
 import QuizViewer from "./../_components/QuizViewer";
 import { Skeleton } from "@/components/ui/skeleton";
 import ReactMarkdown from "react-markdown";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
 import { ArrowLeft, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { useSession } from "next-auth/react";
 
@@ -32,9 +34,11 @@ const OrangeGradient: React.FC<{ className?: string; children?: React.ReactNode 
                                                                                           children,
                                                                                       }) => (
     <div className={`relative overflow-hidden ${className}`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-100 to-orange-50 opacity-80" />
-        <Noise opacity={0.07} />
-        <div className="relative z-10">{children}</div>
+        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-100 to-orange-50 opacity-80 z-0" />
+        <div className="absolute inset-0 z-0">
+            <Noise opacity={0.07} />
+        </div>
+        <div className="relative z-10 h-full">{children}</div>
     </div>
 );
 
@@ -146,22 +150,24 @@ function ContentView({ content, onBack }: { content: any; onBack: () => void }) 
     }
 
     return (
-        <div className="w-full max-w-none overflow-hidden">
+        <div className="w-full max-w-none overflow-x-hidden">
             <button
                 onClick={onBack}
-                className="mb-4 sm:mb-6 px-3 sm:px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-full flex items-center text-sm font-medium shadow-sm"
+                className="mb-4 sm:mb-6 px-3 sm:px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-full flex items-center text-sm font-medium shadow-sm w-fit"
             >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Retour
             </button>
             
-            <div className="w-full overflow-hidden">
+            <div className="w-full max-w-full overflow-x-hidden -mt-2">
                 {content.type === 'exercises' ? (
                     <ExerciseList exercises={content.exercises} title={content.title} />
                 ) : content.type === 'quizzes' ? (
                     <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
                 ) : "content" in content ? (
-                    <LessonView title={content.title} content={content.content || ""} />
+                    <div className="w-full max-w-full overflow-x-hidden">
+                        <LessonView title={content.title} content={content.content || ""} />
+                    </div>
                 ) : "exercises" in content ? (
                     <ExerciseList exercises={content.exercises} title={content.title} />
                 ) : "quizzes" in content && quizzes.length > 0 ? (
@@ -256,7 +262,13 @@ function CourseHeader({ cours }: { cours: Course }) {
             <div className="border-t border-orange-100 bg-orange-50/50 p-4 sm:p-6 md:p-8 relative">
                 <Noise opacity={0.04} />
                 <div className="prose prose-sm md:prose-base text-gray-700 max-w-full overflow-hidden prose-headings:text-orange-800 prose-a:text-orange-600">
-                    <ReactMarkdown className="break-words">{cours.description}</ReactMarkdown>
+                    <ReactMarkdown 
+                        className="break-words"
+                        remarkPlugins={[remarkMath]}
+                        rehypePlugins={[rehypeKatex]}
+                    >
+                        {cours.description || ""}
+                    </ReactMarkdown>
                 </div>
             </div>
         </div>
@@ -297,14 +309,14 @@ export function SidebarWrapper({
 }) {
     return (
         <div className="h-full flex flex-col overflow-hidden sidebar-wrapper">
-            <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 relative">
+            <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 relative z-10 bg-white/80 backdrop-blur-sm">
                 <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
                     Sommaire du cours
                     <span className="inline-block w-2 h-2 rounded-full bg-orange-500 ml-2" />
                 </h2>
                 <div className="h-1 w-20 sm:w-28 bg-gradient-to-r from-orange-400 to-amber-500 rounded-full mt-2 sm:mt-3" />
             </div>
-            <div className="flex-grow relative overflow-hidden sidebar">
+            <div className="flex-1 min-h-0 relative sidebar" style={{ zIndex: 10 }}>
                 <Sidebar
                     course={course}
                     onSelectContent={(c) => {
@@ -346,6 +358,46 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
   html, body, #__next, .root-container { width:100%; height:100%; margin:0; padding:0; overflow:hidden !important; }
   main { height:100%; flex:1; overflow-y:auto; overflow-x:hidden; }
   img { max-width:100%; height:auto; }
+  /* Styles pour le scroll de la sidebar */
+  .sidebar-wrapper { 
+    height: 100%; 
+    display: flex; 
+    flex-direction: column; 
+    min-height: 0;
+  }
+  .sidebar { 
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  /* Conteneur scrollable de la sidebar */
+  .sidebar-scrollable {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto !important; 
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 184, 107, 0.5) transparent;
+    position: relative;
+    z-index: 10;
+  }
+  .sidebar-scrollable::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-scrollable::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scrollable::-webkit-scrollbar-thumb {
+    background: rgba(255, 184, 107, 0.5);
+    border-radius: 3px;
+  }
+  .sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 184, 107, 0.7);
+  }
 `;
         document.head.appendChild(styleTag);
         return () => {
@@ -387,7 +439,7 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
             >
                 <OrangeGradient className="h-full">
                     {/* bouton fermer mobile */}
-                    <div className="flex justify-end p-3 md:hidden">
+                    <div className="flex justify-end p-3 md:hidden relative z-20">
                         <button
                             onClick={() => setShowSidebar(false)}
                             aria-label="Cacher menu"
@@ -396,13 +448,15 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
                             <ChevronLeft />
                         </button>
                     </div>
-                    <SidebarWrapper
-                        course={cours}
-                        onSelectContent={(c) => {
-                            setSelectedContent(c);
-                            setShowSidebar(false); // masque sur mobile à la sélection
-                        }}
-                    />
+                    <div className="relative z-10 h-full flex flex-col min-h-0">
+                        <SidebarWrapper
+                            course={cours}
+                            onSelectContent={(c) => {
+                                setSelectedContent(c);
+                                setShowSidebar(false); // masque sur mobile à la sélection
+                            }}
+                        />
+                    </div>
                 </OrangeGradient>
             </div>
 
