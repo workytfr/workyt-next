@@ -36,6 +36,16 @@ const authMiddleware = async (req: NextRequest) => {
 
         return user;
     } catch (error: any) {
+        // Détecter spécifiquement l'erreur JWT expiré
+        if (error.message === "jwt expired" || error.name === "TokenExpiredError") {
+            console.error("Erreur dans authMiddleware : jwt expired");
+            // Créer une erreur spéciale pour forcer la déconnexion
+            const expiredError: any = new Error("Session expirée. Veuillez vous reconnecter.");
+            expiredError.code = "JWT_EXPIRED";
+            expiredError.statusCode = 401;
+            throw expiredError;
+        }
+        
         // Ne logger que les erreurs non liées à l'authentification
         if (!error.message.includes("Non autorisé") && !error.message.includes("Token invalide") && !error.message.includes("Utilisateur non trouvé")) {
             console.error("Erreur dans authMiddleware :", error.message);
@@ -77,6 +87,14 @@ export const optionalAuthMiddleware = async (req: NextRequest) => {
 
         return user;
     } catch (error: any) {
+        // Si le JWT est expiré, on doit quand même lancer l'erreur pour forcer la déconnexion
+        if (error.message === "jwt expired" || error.name === "TokenExpiredError") {
+            console.error("Erreur dans optionalAuthMiddleware : jwt expired");
+            const expiredError: any = new Error("Session expirée. Veuillez vous reconnecter.");
+            expiredError.code = "JWT_EXPIRED";
+            expiredError.statusCode = 401;
+            throw expiredError;
+        }
         // En cas d'erreur, on retourne null au lieu de lancer une erreur
         return null;
     }

@@ -65,6 +65,18 @@ const injectCustomCss = () => {
                 min-height: 100vh;
                 color: #222;
                 padding-bottom: 4rem !important;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+                padding-top: 0 !important;
+            }
+            @keyframes gradient-shift {
+                0%, 100% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+            }
+            @keyframes shimmer {
+                0% { transform: translateX(-100%); }
+                100% { transform: translateX(100%); }
             }
             .lesson-header {
                 position: relative;
@@ -72,48 +84,104 @@ const injectCustomCss = () => {
                 display: flex;
                 align-items: center;
                 gap: 1rem;
-                padding: 1.5rem 1rem;
-                margin: 1rem 0.5rem 1.5rem 0.5rem;
+                padding: 1.25rem 1.5rem;
+                margin: 0 0.5rem 1.5rem 0.5rem;
                 width: fit-content;
-                border-radius: 1.5rem;
-                background: rgba(255,255,255,0.25);
-                box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
-                backdrop-filter: blur(8px) saturate(1.1);
-                -webkit-backdrop-filter: blur(8px) saturate(1.1);
-                border: 1.5px solid rgba(255,255,255,0.18);
-                animation: fadeInUp 1s cubic-bezier(.4,0,.2,1);
+                max-width: 100%;
+                border-radius: 1rem;
+                background: linear-gradient(135deg, rgba(255, 184, 107, 0.15) 0%, rgba(255, 237, 153, 0.1) 50%, rgba(255, 184, 107, 0.15) 100%);
+                background-size: 200% 200%;
+                animation: gradient-shift 8s ease infinite, fadeInUp 0.6s cubic-bezier(.4,0,.2,1);
+                box-shadow: 
+                    0 4px 20px rgba(255, 184, 107, 0.2),
+                    0 0 0 1px rgba(255, 184, 107, 0.1) inset,
+                    0 2px 8px rgba(0, 0, 0, 0.05);
+                backdrop-filter: blur(10px) saturate(1.2);
+                -webkit-backdrop-filter: blur(10px) saturate(1.2);
+                border: 1px solid rgba(255, 184, 107, 0.2);
+                overflow: hidden;
+            }
+            .lesson-header::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: -100%;
+                width: 100%;
+                height: 100%;
+                background: linear-gradient(
+                    90deg,
+                    transparent,
+                    rgba(255, 255, 255, 0.4),
+                    transparent
+                );
+                animation: shimmer 3s infinite;
+            }
+            .lesson-header::after {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 3px;
+                background: linear-gradient(
+                    90deg,
+                    #ffb86b,
+                    #ffd89b,
+                    #ffb86b
+                );
+                background-size: 200% 100%;
+                animation: gradient-shift 3s ease infinite;
             }
             .lesson-header h1 {
-                font-family: 'Montserrat', 'Playfair Display', serif;
+                font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
                 font-size: 1.5rem;
                 font-weight: 800;
-                letter-spacing: 0.04em;
-                color: #222;
-                background: none;
-                -webkit-background-clip: unset;
-                background-clip: unset;
-                filter: none;
-                text-shadow: 0 2px 12px #fffbe6cc, 0 1px 0 #fff;
-                animation: none;
-                transition: none;
+                letter-spacing: -0.02em;
+                background: linear-gradient(135deg, #ff6b35 0%, #ffb86b 50%, #ff8c42 100%);
+                background-size: 200% 200%;
+                -webkit-background-clip: text;
+                background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: gradient-shift 5s ease infinite;
+                text-shadow: none;
+                position: relative;
+                z-index: 1;
+                line-height: 1.2;
+                margin: 0;
             }
             .lesson-header .text-3xl {
                 font-size: 1.5rem;
-                filter: drop-shadow(0 2px 8px #fffbe6cc);
-                color: #ffb86b;
             }
             .lesson-block {
                 position: relative;
-                padding: 1rem 0.75rem 1rem 1.5rem;
-                margin: 1rem 0.5rem;
-                border-radius: 1rem;
-                box-shadow: 0 4px 24px 0 rgba(112,145,245,0.06);
+                padding: 1.75rem 1.5rem;
+                margin: 1.75rem 0;
+                border-radius: 20px;
                 overflow: hidden;
-                transition: box-shadow 0.2s, transform 0.2s;
+                transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
                 animation: zoomIn 0.7s cubic-bezier(.4,0,.2,1);
                 z-index: 2;
-                background: #fffbe6;
-                color: #222;
+                /* Glassmorphism Apple 2025 */
+                background: rgba(255, 255, 255, 0.7);
+                backdrop-filter: blur(20px) saturate(180%);
+                -webkit-backdrop-filter: blur(20px) saturate(180%);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 
+                    0 8px 32px 0 rgba(0, 0, 0, 0.06),
+                    0 2px 8px 0 rgba(0, 0, 0, 0.04),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+                color: #1d1d1f;
+            }
+            .lesson-block::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 4px;
+                background: linear-gradient(90deg, transparent, currentColor, transparent);
+                opacity: 0.3;
+                border-radius: 20px 20px 0 0;
             }
             .lesson-block.sequential-appear {
                 opacity: 0;
@@ -121,75 +189,297 @@ const injectCustomCss = () => {
                 animation: fadeInUp 0.7s cubic-bezier(.4,0,.2,1) forwards;
             }
             .lesson-block:hover {
-                box-shadow: 0 8px 32px 0 rgba(112,145,245,0.10);
+                transform: translateY(-2px);
+                box-shadow: 
+                    0 12px 40px 0 rgba(0, 0, 0, 0.08),
+                    0 4px 12px 0 rgba(0, 0, 0, 0.06),
+                    inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+                border-color: rgba(255, 255, 255, 0.4);
             }
             .lesson-block-title {
                 font-weight: 700;
-                margin-bottom: 0.5rem;
+                margin-bottom: 0.75rem;
                 display: flex;
                 align-items: center;
-                gap: 0.75rem;
-                font-size: 1.1rem;
-                color: #d97706;
+                gap: 0.875rem;
+                font-size: 1.125rem;
+                letter-spacing: -0.01em;
+                color: #1d1d1f;
+            }
+            .lesson-block-title .block-icon {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                width: 36px;
+                height: 36px;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.5);
+                backdrop-filter: blur(10px);
+                -webkit-backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.3);
+                box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+                flex-shrink: 0;
             }
             .lesson-block-content {
-                color: #222;
-                font-weight: 500;
+                color: #1d1d1f;
+                font-weight: 400;
                 font-size: 1rem;
+                line-height: 1.7;
+                margin-top: 0.5rem;
             }
             .lesson-block-description {
-                font-size: 0.9rem;
-                color: #b26a00;
-                margin-bottom: 0.5rem;
-                font-style: italic;
+                font-size: 0.875rem;
+                color: rgba(29, 29, 31, 0.65);
+                margin-bottom: 0.75rem;
+                font-style: normal;
+                font-weight: 500;
+                letter-spacing: -0.01em;
             }
-            /* Blocs spécifiques : fond très pâle, bordure colorée douce */
+            /* Blocs spécifiques avec glassmorphism coloré */
             .definition-box {
-                background: #fffbe6;
-                border-left: 6px solid #ffb86b;
-                color: #222;
+                background: linear-gradient(135deg, rgba(255, 184, 107, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+                border-color: rgba(255, 184, 107, 0.3);
+            }
+            .definition-box::before {
+                background: linear-gradient(90deg, transparent, rgba(255, 184, 107, 0.6), transparent);
+            }
+            .definition-box .block-icon {
+                background: linear-gradient(135deg, rgba(255, 184, 107, 0.2), rgba(255, 184, 107, 0.1));
+                border-color: rgba(255, 184, 107, 0.3);
             }
             .propriete-box {
-                background: #fffbe6;
-                border-left: 6px solid #6ec1e4;
-                color: #222;
+                background: linear-gradient(135deg, rgba(110, 193, 228, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+                border-color: rgba(110, 193, 228, 0.3);
+            }
+            .propriete-box::before {
+                background: linear-gradient(90deg, transparent, rgba(110, 193, 228, 0.6), transparent);
+            }
+            .propriete-box .block-icon {
+                background: linear-gradient(135deg, rgba(110, 193, 228, 0.2), rgba(110, 193, 228, 0.1));
+                border-color: rgba(110, 193, 228, 0.3);
             }
             .theoreme-box {
-                background: #fffbe6;
-                border-left: 6px solid #7ed957;
-                color: #222;
+                background: linear-gradient(135deg, rgba(126, 217, 87, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+                border-color: rgba(126, 217, 87, 0.3);
+            }
+            .theoreme-box::before {
+                background: linear-gradient(90deg, transparent, rgba(126, 217, 87, 0.6), transparent);
+            }
+            .theoreme-box .block-icon {
+                background: linear-gradient(135deg, rgba(126, 217, 87, 0.2), rgba(126, 217, 87, 0.1));
+                border-color: rgba(126, 217, 87, 0.3);
             }
             .remarque-box {
-                background: #fffbe6;
-                border-left: 6px dashed #b26a00;
-                color: #222;
+                background: linear-gradient(135deg, rgba(178, 106, 0, 0.12) 0%, rgba(255, 255, 255, 0.7) 100%);
+                border-color: rgba(178, 106, 0, 0.25);
+                border-style: dashed;
+            }
+            .remarque-box::before {
+                background: linear-gradient(90deg, transparent, rgba(178, 106, 0, 0.5), transparent);
+            }
+            .remarque-box .block-icon {
+                background: linear-gradient(135deg, rgba(178, 106, 0, 0.15), rgba(178, 106, 0, 0.08));
+                border-color: rgba(178, 106, 0, 0.25);
             }
             .attention-box {
-                background: #fffbe6;
-                border-left: 6px solid #ff7f50;
-                color: #222;
+                background: linear-gradient(135deg, rgba(255, 127, 80, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+                border-color: rgba(255, 127, 80, 0.3);
+            }
+            .attention-box::before {
+                background: linear-gradient(90deg, transparent, rgba(255, 127, 80, 0.6), transparent);
+            }
+            .attention-box .block-icon {
+                background: linear-gradient(135deg, rgba(255, 127, 80, 0.2), rgba(255, 127, 80, 0.1));
+                border-color: rgba(255, 127, 80, 0.3);
             }
             .exemple-box {
-                background: #fffbe6;
-                border-left: 6px solid #6ec1e4;
+                background: linear-gradient(135deg, rgba(110, 193, 228, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+                border-color: rgba(110, 193, 228, 0.3);
+            }
+            .exemple-box::before {
+                background: linear-gradient(90deg, transparent, rgba(110, 193, 228, 0.6), transparent);
+            }
+            .exemple-box .block-icon {
+                background: linear-gradient(135deg, rgba(110, 193, 228, 0.2), rgba(110, 193, 228, 0.1));
+                border-color: rgba(110, 193, 228, 0.3);
+            }
+            .lesson-content {
+                line-height: 1.8;
+                width: 100%;
+                max-width: 100%;
+                overflow-x: hidden;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                /* Ne pas définir color ici pour préserver les styles inline */
+            }
+            .lesson-content p:not([style]) {
+                margin-bottom: 1.25rem;
                 color: #222;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
             }
-            .lesson-content, .lesson-content *, .lesson-content :not([class^='lesson-block']) {
-                color: #222 !important;
-                background: transparent !important;
+            .lesson-content p[style] {
+                margin-bottom: 1.25rem;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                /* La couleur vient du style inline */
             }
-            .lesson-content a {
-                color: #b26a00 !important;
-                text-decoration: underline !important;
+            .lesson-content p:last-child {
+                margin-bottom: 0;
+            }
+            /* Ne pas surcharger les styles inline - les laisser intacts */
+            .lesson-content :not([class^='lesson-block']):not([style]) {
+                color: #222;
+                background: transparent;
+            }
+            /* Les éléments avec style inline gardent leur style - IMPORTANT: ne pas utiliser !important */
+            .lesson-content [style] {
+                /* Les styles inline ont automatiquement la priorité la plus élevée */
+            }
+            /* S'assurer que les spans avec style inline gardent leur couleur */
+            .lesson-content span[style*="color"],
+            .lesson-content p[style*="color"],
+            .lesson-content div[style*="color"],
+            .lesson-content strong[style*="color"],
+            .lesson-content em[style*="color"] {
+                /* Les styles inline ont la priorité absolue */
+            }
+            .lesson-content a:not([style]) {
+                color: #b26a00;
+                text-decoration: underline;
+            }
+            /* Les liens avec style inline gardent leur couleur */
+            .lesson-content a[style*="color"] {
+                /* La couleur vient du style inline */
             }
             .lesson-content img {
                 filter: none !important;
                 opacity: 1 !important;
                 background: none !important;
                 box-shadow: 0 2px 12px #ffecd1cc;
-                max-width: 100%;
-                height: auto;
+                max-width: 100% !important;
+                width: 100% !important;
+                height: auto !important;
+                margin: 1.5rem 0;
+                display: block;
+                object-fit: contain;
             }
+            .lesson-content div {
+                margin-bottom: 1.25rem;
+            }
+            .lesson-content div:last-child {
+                margin-bottom: 0;
+            }
+            /* Styles pour les listes à puce - décalage pour différenciation */
+            .lesson-content ul,
+            .lesson-content ol {
+                margin-left: 1.5rem;
+                margin-right: 0;
+                margin-top: 1rem;
+                margin-bottom: 1.25rem;
+                padding-left: 0.5rem;
+                list-style-position: outside;
+            }
+            .lesson-content ul {
+                list-style-type: disc;
+            }
+            .lesson-content ol {
+                list-style-type: decimal;
+            }
+            .lesson-content li {
+                margin-bottom: 0.5rem;
+                padding-left: 0.5rem;
+                line-height: 1.8;
+            }
+            .lesson-content li:last-child {
+                margin-bottom: 0;
+            }
+            /* Listes imbriquées */
+            .lesson-content ul ul,
+            .lesson-content ol ol,
+            .lesson-content ul ol,
+            .lesson-content ol ul {
+                margin-top: 0.5rem;
+                margin-bottom: 0.5rem;
+                margin-left: 1.25rem;
+            }
+            /* Styles pour les tableaux - design moderne et cohérent */
+            .lesson-content table {
+                width: 100%;
+                max-width: 100%;
+                margin: 1.5rem 0;
+                border-collapse: separate;
+                border-spacing: 0;
+                background: #fff;
+                border-radius: 0.75rem;
+                overflow: hidden;
+                box-shadow: 
+                    0 2px 8px rgba(255, 184, 107, 0.1),
+                    0 0 0 1px rgba(255, 184, 107, 0.15);
+                font-size: 0.95rem;
+            }
+            .lesson-content table thead {
+                background: linear-gradient(135deg, rgba(255, 184, 107, 0.2) 0%, rgba(255, 237, 153, 0.15) 100%);
+            }
+            .lesson-content table th {
+                padding: 0.875rem 1rem;
+                text-align: left;
+                font-weight: 700;
+                color: #b26a00;
+                font-size: 0.9rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                border-bottom: 2px solid rgba(255, 184, 107, 0.3);
+                background: linear-gradient(135deg, rgba(255, 184, 107, 0.15) 0%, rgba(255, 237, 153, 0.1) 100%);
+            }
+            .lesson-content table th:first-child {
+                border-top-left-radius: 0.75rem;
+            }
+            .lesson-content table th:last-child {
+                border-top-right-radius: 0.75rem;
+            }
+            .lesson-content table tbody tr {
+                transition: background-color 0.2s ease;
+            }
+            .lesson-content table tbody tr:nth-child(even) {
+                background: rgba(255, 247, 237, 0.5);
+            }
+            .lesson-content table tbody tr:nth-child(odd) {
+                background: #fff;
+            }
+            .lesson-content table tbody tr:hover {
+                background: rgba(255, 184, 107, 0.1);
+            }
+            .lesson-content table td {
+                padding: 0.875rem 1rem;
+                border-bottom: 1px solid rgba(255, 184, 107, 0.1);
+                color: #222;
+                line-height: 1.6;
+            }
+            .lesson-content table tbody tr:last-child td {
+                border-bottom: none;
+            }
+            .lesson-content table tbody tr:last-child td:first-child {
+                border-bottom-left-radius: 0.75rem;
+            }
+            .lesson-content table tbody tr:last-child td:last-child {
+                border-bottom-right-radius: 0.75rem;
+            }
+            /* Tableaux responsives */
+            .lesson-content table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            .lesson-content table thead,
+            .lesson-content table tbody,
+            .lesson-content table tr {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+            /* Les styles inline sont automatiquement préservés par le navigateur */
+            /* On évite de les surcharger avec des règles CSS */
             .lesson-content h2 {
                 font-size: 1.5rem;
                 font-weight: 800;
@@ -241,30 +531,39 @@ const injectCustomCss = () => {
             @media (min-width: 640px) {
                 .lesson-header {
                     gap: 1.5rem;
-                    padding: 2rem 2rem;
-                    margin: 1.5rem 1rem 2rem 1rem;
-                    border-radius: 2rem;
+                    padding: 1.5rem 2rem;
+                    margin: 0 1rem 1.75rem 1rem;
+                    border-radius: 1.25rem;
                 }
                 .lesson-header h1 {
                     font-size: 2rem;
+                    letter-spacing: -0.025em;
                 }
                 .lesson-header .text-3xl {
                     font-size: 2rem;
                 }
                 .lesson-block {
-                    padding: 1.25rem 1rem 1.25rem 2rem;
-                    margin: 1.25rem 1rem;
-                    border-radius: 1.1rem;
+                    padding: 2rem 1.75rem;
+                    margin: 2rem 0;
+                    border-radius: 24px;
                 }
                 .lesson-block-title {
                     gap: 1rem;
                     font-size: 1.25rem;
+                    margin-bottom: 0.875rem;
+                }
+                .lesson-block-title .block-icon {
+                    width: 40px;
+                    height: 40px;
+                    border-radius: 12px;
                 }
                 .lesson-block-content {
-                    font-size: 1.08rem;
+                    font-size: 1.05rem;
+                    line-height: 1.75;
                 }
                 .lesson-block-description {
-                    font-size: 0.95rem;
+                    font-size: 0.9375rem;
+                    margin-bottom: 0.875rem;
                 }
                 .lesson-content h2 {
                     font-size: 1.8rem;
@@ -283,18 +582,39 @@ const injectCustomCss = () => {
                     padding: 0.18em 0.6em;
                 }
                 .definition-box, .propriete-box, .theoreme-box, .remarque-box, .attention-box, .exemple-box {
-                    border-left-width: 7px;
+                    border-width: 1.5px;
+                }
+                .definition-box::before, .propriete-box::before, .theoreme-box::before, 
+                .remarque-box::before, .attention-box::before, .exemple-box::before {
+                    height: 5px;
+                }
+                .lesson-content ul,
+                .lesson-content ol {
+                    margin-left: 2rem;
+                    padding-left: 0.75rem;
+                }
+                .lesson-content li {
+                    padding-left: 0.75rem;
+                }
+                .lesson-content table {
+                    font-size: 1rem;
+                }
+                .lesson-content table th,
+                .lesson-content table td {
+                    padding: 1rem 1.25rem;
                 }
             }
             
             @media (min-width: 768px) {
                 .lesson-header {
-                    gap: 1.5rem;
-                    padding: 2.2rem 3.5rem;
-                    margin: 2.5rem 2rem 2.5rem 2rem;
+                    gap: 1.75rem;
+                    padding: 1.75rem 2.5rem;
+                    margin: 0 2rem 2rem 2rem;
+                    border-radius: 1.5rem;
                 }
                 .lesson-header h1 {
                     font-size: 2.5rem;
+                    letter-spacing: -0.03em;
                 }
                 .lesson-header .text-3xl {
                     font-size: 2.5rem;
@@ -326,20 +646,41 @@ const injectCustomCss = () => {
                     padding: 0.18em 0.7em;
                 }
                 .definition-box, .propriete-box, .theoreme-box, .remarque-box, .attention-box, .exemple-box {
-                    border-left-width: 8px;
+                    border-width: 2px;
+                }
+                .definition-box::before, .propriete-box::before, .theoreme-box::before, 
+                .remarque-box::before, .attention-box::before, .exemple-box::before {
+                    height: 6px;
+                }
+                .lesson-content ul,
+                .lesson-content ol {
+                    margin-left: 2.5rem;
+                    padding-left: 1rem;
+                }
+                .lesson-content li {
+                    padding-left: 1rem;
+                }
+                .lesson-content table {
+                    font-size: 1.05rem;
+                }
+                .lesson-content table th,
+                .lesson-content table td {
+                    padding: 1.125rem 1.5rem;
                 }
             }
             
             @media (min-width: 1024px) {
                 .lesson-header {
-                    padding: 2.2rem 3.5rem;
-                    margin: 2.5rem 3rem 2.5rem 3rem;
+                    padding: 2rem 3rem;
+                    margin: 0 3rem 2rem 3rem;
+                    border-radius: 1.75rem;
                 }
                 .lesson-header h1 {
                     font-size: 2.8rem;
+                    letter-spacing: -0.035em;
                 }
                 .lesson-header .text-3xl {
-                    font-size: 2.5rem;
+                    font-size: 2.8rem;
                 }
                 .lesson-block {
                     padding: 1.5rem 1rem 1.5rem 2.5rem;
@@ -391,17 +732,136 @@ const blockTypeConfig = {
 function enhancedStylePlugin() {
     return (tree: any) => {
         visit(tree, (node: any) => {
-            if (node.type === "element" && node.tagName === "div" && node.properties?.blocktype) {
-                const blockType = node.properties.blocktype;
-                const config = blockTypeConfig[blockType as keyof typeof blockTypeConfig] || blockTypeConfig.remarque;
-                if (node.children && node.children.length > 0) {
-                    const firstChild = node.children[0];
-                    let title = config.title;
-                    let remainingChildren = node.children;
-                    if (firstChild.type === 'element' && firstChild.tagName === 'strong') {
-                        title = firstChild.children[0]?.value || config.title;
-                        remainingChildren = node.children.slice(1);
+            // Préserver les styles inline pour tous les éléments
+            if (node.type === "element" && node.properties) {
+                // S'assurer que les attributs style sont préservés comme des chaînes
+                if (node.properties.style) {
+                    if (typeof node.properties.style === 'object' && !Array.isArray(node.properties.style)) {
+                        // Convertir l'objet style en chaîne
+                        const styleObj = node.properties.style;
+                        const styleString = Object.entries(styleObj)
+                            .map(([key, value]) => {
+                                // Convertir camelCase en kebab-case
+                                const kebabKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                                return `${kebabKey}: ${value}`;
+                            })
+                            .join('; ');
+                        node.properties.style = styleString;
                     }
+                    // Si c'est déjà une chaîne, on la garde telle quelle
+                }
+            }
+            
+            // Traitement des blocs personnalisés
+            // Vérifier à la fois blocktype et data-custom-block
+            if (node.type === "element" && node.tagName === "div") {
+                // Vérifier si c'est un bloc personnalisé
+                let blockType: string | null = null;
+                
+                // Log de débogage pour voir toutes les propriétés (uniquement en développement)
+                if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
+                    const hasCustomBlock = node.properties?.className && 
+                        (Array.isArray(node.properties.className) 
+                            ? node.properties.className.some((c: any) => String(c).includes('custom-block'))
+                            : String(node.properties.className).includes('custom-block'));
+                    
+                    if (hasCustomBlock) {
+                        console.log('Bloc personnalisé détecté:', {
+                            className: node.properties.className,
+                            blocktype: node.properties?.blocktype,
+                            allProperties: Object.keys(node.properties || {}),
+                            properties: node.properties
+                        });
+                    }
+                }
+                
+                // Méthode 1: Vérifier la classe CSS en premier (plus fiable)
+                if (node.properties?.className) {
+                    let className: string;
+                    if (Array.isArray(node.properties.className)) {
+                        className = node.properties.className.join(' ');
+                    } else {
+                        className = String(node.properties.className);
+                    }
+                    
+                    if (className.includes('custom-block')) {
+                        // Essayer plusieurs patterns pour extraire le type
+                        const patterns = [
+                            /custom-block\s+(\w+)/,  // "custom-block exemple"
+                            /\b(\w+)\s+custom-block/, // "exemple custom-block"
+                            /custom-block-(\w+)/,     // "custom-block-exemple"
+                        ];
+                        
+                        for (const pattern of patterns) {
+                            const match = className.match(pattern);
+                            if (match && match[1]) {
+                                blockType = match[1];
+                                break;
+                            }
+                        }
+                        
+                        // Si aucun pattern ne fonctionne, chercher le mot après "custom-block"
+                        if (!blockType) {
+                            const parts = className.split(/\s+/);
+                            const customBlockIndex = parts.findIndex(p => p.includes('custom-block'));
+                            if (customBlockIndex >= 0 && customBlockIndex < parts.length - 1) {
+                                const nextPart = parts[customBlockIndex + 1];
+                                // Vérifier si c'est un type de bloc valide
+                                if (nextPart && blockTypeConfig[nextPart as keyof typeof blockTypeConfig]) {
+                                    blockType = nextPart;
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                // Méthode 2: Vérifier l'attribut blocktype directement
+                if (!blockType && node.properties?.blocktype) {
+                    blockType = String(node.properties.blocktype);
+                }
+                
+                // Méthode 3: Vérifier toutes les propriétés pour trouver blocktype (peut être dans différentes formes)
+                if (!blockType && node.properties) {
+                    // Vérifier toutes les clés des propriétés
+                    for (const key in node.properties) {
+                        if (key.toLowerCase() === 'blocktype') {
+                            blockType = String(node.properties[key]);
+                            break;
+                        }
+                    }
+                }
+                
+                // Méthode 4: Vérifier l'attribut data-custom-block
+                if (!blockType && node.properties?.['data-custom-block'] !== undefined) {
+                    // Si data-custom-block existe mais qu'on n'a pas trouvé le type, utiliser 'remarque' par défaut
+                    blockType = 'remarque';
+                }
+                
+                // Si on a trouvé un blockType, traiter le bloc
+                if (blockType) {
+                    const config = blockTypeConfig[blockType as keyof typeof blockTypeConfig] || blockTypeConfig.remarque;
+                    
+                    // Gérer le cas où il n'y a pas d'enfants
+                    let title = config.title;
+                    let remainingChildren = node.children || [];
+                    
+                    if (remainingChildren.length > 0) {
+                        const firstChild = remainingChildren[0];
+                        // Si le premier enfant est un strong, l'utiliser comme titre
+                        if (firstChild.type === 'element' && firstChild.tagName === 'strong') {
+                            // Extraire le texte du strong
+                            const extractText = (child: any): string => {
+                                if (child.type === 'text') return child.value || '';
+                                if (child.type === 'element' && child.children) {
+                                    return child.children.map(extractText).join('');
+                                }
+                                return '';
+                            };
+                            title = extractText(firstChild) || config.title;
+                            remainingChildren = remainingChildren.slice(1);
+                        }
+                    }
+                    
                     // Structure SANS icône (l'icône sera injectée côté React)
                     node.children = [
                         {
@@ -440,16 +900,17 @@ function enhancedStylePlugin() {
                             children: remainingChildren
                         }
                     ];
+                    
+                    const blockClasses = [
+                        `lesson-block`,
+                        `${blockType}-box`,
+                        "whitespace-normal"
+                    ];
+                    node.properties = {
+                        ...node.properties,
+                        className: blockClasses
+                    };
                 }
-                const blockClasses = [
-                    `lesson-block`,
-                    `${blockType}-box`,
-                    "whitespace-normal"
-                ];
-                node.properties = {
-                    ...node.properties,
-                    className: blockClasses
-                };
             }
         });
     };
@@ -505,13 +966,130 @@ export default function LessonView({ title, content }: LessonViewProps) {
         }, 400);
     }, []);
 
-    // Transformation du contenu (ancienne version)
-    const processedHtml = unified()
-        .use(rehypeParse, { fragment: true })
-        .use(enhancedStylePlugin)
-        .use(rehypeStringify)
-        .processSync(content)
-        .toString();
+    // Transformation du contenu avec préservation des styles inline
+    // On traite le HTML pour transformer les blocs personnalisés tout en préservant les styles inline
+    let processedHtml: string;
+    
+    try {
+        // Pré-traiter le HTML pour s'assurer que les attributs blocktype sont bien présents
+        // Rehype peut ne pas parser correctement les attributs personnalisés
+        let preprocessedContent = content;
+        
+        // Transformer directement les blocs personnalisés en HTML stylisé avant le parsing
+        // Cette approche garantit que les blocs sont transformés même si rehype ne les parse pas correctement
+        // Utiliser une approche récursive pour gérer les divs imbriqués
+        const transformCustomBlocks = (html: string): string => {
+            // Pattern pour trouver les divs avec custom-block
+            const pattern = /<div\s+([^>]*(?:data-custom-block|blocktype|class="[^"]*custom-block[^"]*")[^>]*)>([\s\S]*?)<\/div>/gi;
+            let result = html;
+            let match;
+            const processed: Set<number> = new Set();
+            
+            // Trouver toutes les correspondances
+            const matches: Array<{ start: number; end: number; attrs: string; content: string }> = [];
+            while ((match = pattern.exec(html)) !== null) {
+                const start = match.index;
+                const end = start + match[0].length;
+                matches.push({
+                    start,
+                    end,
+                    attrs: match[1],
+                    content: match[2]
+                });
+            }
+            
+            // Traiter les correspondances de la fin vers le début pour éviter les problèmes d'index
+            for (let i = matches.length - 1; i >= 0; i--) {
+                const { start, end, attrs, content } = matches[i];
+                
+                // Extraire le type depuis blocktype ou la classe
+                let blockType: string | null = null;
+                
+                // Vérifier blocktype dans les attributs
+                const blocktypeMatch = attrs.match(/blocktype="([^"]*)"/i);
+                if (blocktypeMatch && blocktypeMatch[1]) {
+                    blockType = blocktypeMatch[1];
+                }
+                
+                // Sinon, extraire depuis la classe
+                if (!blockType) {
+                    const classMatch = attrs.match(/class="([^"]*)"/i);
+                    if (classMatch && classMatch[1]) {
+                        const className = classMatch[1];
+                        const typeMatch = className.match(/custom-block\s+(\w+)/);
+                        if (typeMatch && typeMatch[1]) {
+                            blockType = typeMatch[1];
+                        }
+                    }
+                }
+                
+                // Si on a trouvé un type de bloc valide, transformer le HTML
+                if (blockType && blockTypeConfig[blockType as keyof typeof blockTypeConfig]) {
+                    const config = blockTypeConfig[blockType as keyof typeof blockTypeConfig];
+                    
+                    // Extraire le titre si le premier élément est un <strong>
+                    let title = config.title;
+                    let blockContent = content.trim();
+                    const strongMatch = blockContent.match(/^<strong>([^<]*)<\/strong>/);
+                    if (strongMatch && strongMatch[1]) {
+                        title = strongMatch[1];
+                        blockContent = blockContent.replace(/^<strong>([^<]*)<\/strong>\s*/, '');
+                    }
+                    
+                    // Construire le HTML transformé
+                    const transformedHtml = `<div class="lesson-block ${blockType}-box whitespace-normal">
+                        <div class="lesson-block-title">
+                            <span class="block-icon" data-blocktype="${blockType}"></span>
+                            <span>${title}</span>
+                        </div>
+                        <div class="lesson-block-description">${config.description}</div>
+                        <div class="lesson-block-content">${blockContent}</div>
+                    </div>`;
+                    
+                    // Remplacer dans le résultat
+                    result = result.substring(0, start) + transformedHtml + result.substring(end);
+                }
+            }
+            
+            return result;
+        };
+        
+        preprocessedContent = transformCustomBlocks(preprocessedContent);
+        
+        // Utiliser une approche qui préserve les attributs style et les attributs personnalisés
+        const tree = unified()
+            .use(rehypeParse, { 
+                fragment: true,
+                space: 'html'
+            })
+            .use(() => {
+                // Plugin pour préserver les attributs personnalisés comme blocktype
+                return (tree: any) => {
+                    visit(tree, (node: any) => {
+                        if (node.type === "element" && node.properties) {
+                            // S'assurer que tous les attributs sont préservés
+                            // rehype-parse devrait déjà les préserver, mais on s'assure qu'ils sont bien là
+                        }
+                    });
+                };
+            })
+            .use(enhancedStylePlugin)
+            .parse(preprocessedContent);
+        
+        // Convertir l'arbre en HTML en préservant les styles inline
+        processedHtml = unified()
+            .use(rehypeStringify)
+            .stringify(tree);
+            
+        // Vérification de débogage : s'assurer que les styles inline sont présents
+        if (typeof window !== 'undefined' && processedHtml.includes('style=')) {
+            // Les styles inline sont présents dans le HTML généré
+        }
+    } catch (error) {
+        // En cas d'erreur, utiliser le contenu original
+        console.warn('Erreur lors du traitement HTML, utilisation du contenu original:', error);
+        processedHtml = content;
+    }
 
     // Fonction pour transformer le LaTeX en HTML KaTeX
     const transformLatex = (html: string): string => {
@@ -534,17 +1112,25 @@ export default function LessonView({ title, content }: LessonViewProps) {
     return (
         <>
             <div className="lesson-bg-animated" />
-            <div className="lesson-container p-4 sm:p-6 md:p-8 min-h-screen animate-fadeInUp">
+            <div className="lesson-container px-4 sm:px-6 md:px-8 pt-0 pb-8 min-h-screen animate-fadeInUp">
                 {/* Titre principal */}
                 <div className="lesson-header">
-                    <FaBook className="text-2xl sm:text-3xl" />
-                    <h1 className="animated-gradient-text font-montserrat">
-                        {title}
-                    </h1>
+                    <div className="relative z-10 flex items-center gap-3 sm:gap-4">
+                        <div className="flex-shrink-0 p-2 rounded-lg bg-gradient-to-br from-orange-400/20 to-amber-400/20 backdrop-blur-sm border border-orange-300/30">
+                            <FaBook className="text-xl sm:text-2xl md:text-3xl text-orange-600" />
+                        </div>
+                        <h1 className="animated-gradient-text font-montserrat">
+                            {title}
+                        </h1>
+                    </div>
                 </div>
                 {/* Contenu principal */}
                 <div
-                    className="lesson-content max-w-none"
+                    className="lesson-content max-w-none prose prose-lg max-w-none"
+                    style={{ 
+                        lineHeight: '1.8'
+                        // Ne pas définir color ici pour éviter de surcharger les styles inline des enfants
+                    } as React.CSSProperties}
                     dangerouslySetInnerHTML={{ __html: finalHtml }}
                 />
             </div>

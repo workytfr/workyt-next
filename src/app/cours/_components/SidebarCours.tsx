@@ -13,9 +13,9 @@ interface SidebarProps {
 
 export function Sidebar({ course, onSelectContent }: SidebarProps) {
     return (
-        <div className="w-full md:w-80 h-full flex flex-col">
+        <div className="w-full md:w-80 h-full flex flex-col relative" style={{ zIndex: 10, minHeight: 0 }}>
             {/* Course information at top */}
-            <div className="flex-shrink-0 mb-4 px-4">
+            <div className="flex-shrink-0 mb-4 px-4 relative z-10">
                 <div className="flex items-center space-x-2 mb-1">
                     <div className="flex-shrink-0 bg-gradient-to-r from-orange-400 to-amber-500 p-1 rounded-full">
                         <Sparkles className="w-3 h-3 text-white" />
@@ -27,29 +27,31 @@ export function Sidebar({ course, onSelectContent }: SidebarProps) {
             </div>
 
             {/* Sections list - main scrollable area */}
-            <div className="flex-grow overflow-y-auto pr-2">
-                <Accordion
-                    type="single"
-                    collapsible
-                    className="px-2 space-y-3"
-                >
-                    {course.sections.map((section) => (
-                        <SectionAccordion
-                            key={section._id}
-                            courseId={course._id}
-                            sectionInitial={section}
-                            onSelectContent={onSelectContent}
-                        />
-                    ))}
-                </Accordion>
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden sidebar-scrollable relative z-10" style={{ minHeight: 0 }}>
+                <div className="px-2 pr-4">
+                    <Accordion
+                        type="single"
+                        collapsible
+                        className="space-y-3"
+                    >
+                        {course.sections.map((section) => (
+                            <SectionAccordion
+                                key={section._id}
+                                courseId={course._id}
+                                sectionInitial={section}
+                                onSelectContent={onSelectContent}
+                            />
+                        ))}
+                    </Accordion>
 
-                {/* Add padding at the bottom to ensure all content is accessible when scrolling */}
-                <div className="h-16"></div>
+                    {/* Add padding at the bottom to ensure all content is accessible when scrolling */}
+                    <div className="h-16"></div>
+                </div>
             </div>
 
             {/* Decorative elements */}
-            <div className="absolute bottom-10 right-4 w-24 h-24 bg-orange-200/10 rounded-full blur-xl pointer-events-none"></div>
-            <div className="absolute top-20 left-0 w-16 h-16 bg-amber-300/10 rounded-full blur-xl pointer-events-none"></div>
+            <div className="absolute bottom-10 right-4 w-24 h-24 bg-orange-200/10 rounded-full blur-xl pointer-events-none z-0"></div>
+            <div className="absolute top-20 left-0 w-16 h-16 bg-amber-300/10 rounded-full blur-xl pointer-events-none z-0"></div>
         </div>
     );
 }

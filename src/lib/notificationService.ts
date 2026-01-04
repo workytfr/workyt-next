@@ -238,6 +238,25 @@ export class NotificationService {
     }
 
     /**
+     * Supprime définitivement une notification
+     */
+    static async deleteNotification(notificationId: string, userId: string): Promise<void> {
+        try {
+            const result = await Notification.findOneAndDelete({
+                _id: new mongoose.Types.ObjectId(notificationId),
+                recipient: new mongoose.Types.ObjectId(userId)
+            });
+
+            if (!result) {
+                throw new Error('Notification non trouvée ou non autorisée');
+            }
+        } catch (error) {
+            console.error('Erreur lors de la suppression de la notification:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Système d'optimisation des notifications en 3 niveaux
      */
     static async optimizeNotifications(): Promise<void> {

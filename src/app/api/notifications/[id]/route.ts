@@ -58,3 +58,67 @@ export async function PUT(
         );
     }
 }
+
+/**
+ * DELETE /api/notifications/[id]
+ * Supprime définitivement une notification
+ */
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        // S'assurer que MongoDB est connecté
+        await connectDB();
+
+        // Authentification
+        const user = await authMiddleware(req);
+        if (!user || !user._id) {
+            return NextResponse.json(
+                { error: 'Non autorisé' },
+                { status: 401 }
+            );
+        }
+
+        // Récupération de l'ID de la notification
+        const { id } = await params;
+        if (!id) {
+            return NextResponse.json(
+                { error: 'ID de notification requis' },
+                { status: 400 }
+            );
+        }
+
+        // Supprimer la notification
+        await NotificationService.deleteNotification(id, user._id.toString());
+
+        return NextResponse.json({
+            success: true,
+            message: 'Notification supprimée'
+        });
+
+    } catch (error: any) {
+        console.error('Erreur lors de la suppression de la notification:', error);
+        
+        // Gérer les erreurs de connexion MongoDB spécifiquement
+        if (error.message?.includes('MongoDB') || error.message?.includes('connection') || error.message?.includes('ENOTFOUND')) {
+            return NextResponse.json(
+                { error: 'Erreur de connexion à la base de données' },
+                { status: 503 }
+            );
+        }
+
+        // Gérer les erreurs de notification non trouvée
+        if (error.message?.includes('non trouvée') || error.message?.includes('non autorisée')) {
+            return NextResponse.json(
+                { error: 'Notification non trouvée ou non autorisée' },
+                { status: 404 }
+            );
+        }
+        
+        return NextResponse.json(
+            { error: 'Erreur serveur' },
+            { status: 500 }
+        );
+    }
+}

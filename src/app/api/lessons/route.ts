@@ -5,6 +5,7 @@ import Course from "@/models/Course";
 import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
+import { handleApiError } from "@/utils/apiErrorResponse";
 
 /**
  * 🚀 GET - Récupérer les leçons avec pagination et recherche avancée
@@ -190,11 +191,7 @@ export async function GET(req: NextRequest) {
         }, { status: 200 });
 
     } catch (error: any) {
-        console.error("Erreur lors de la récupération des leçons :", error.message);
-        return NextResponse.json(
-            { error: "Impossible de récupérer les leçons.", details: error.message },
-            { status: 500 }
-        );
+        return handleApiError(error, "Impossible de récupérer les leçons.");
     }
 }
 
@@ -238,9 +235,8 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json(newLesson, { status: 201 });
 
-    } catch (error) {
-        console.error("Erreur lors de la création de la leçon :", error);
-        return NextResponse.json({ error: "Impossible de créer la leçon.", details: "" }, { status: 500 });
+    } catch (error: any) {
+        return handleApiError(error, "Impossible de créer la leçon.");
     }
 }
 
@@ -308,10 +304,6 @@ export async function PATCH(req: NextRequest) {
         );
 
     } catch (error: any) {
-        console.error("Erreur lors de la mise à jour du statut :", error.message);
-        return NextResponse.json(
-            { error: "Erreur interne du serveur.", details: error.message },
-            { status: 500 }
-        );
+        return handleApiError(error, "Erreur interne du serveur.");
     }
 }

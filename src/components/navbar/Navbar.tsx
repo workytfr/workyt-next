@@ -68,6 +68,19 @@ export default function Navbar() {
         };
     }, [isMenuOpen]);
 
+    // Ouvrir automatiquement le dialog de connexion si la session a expiré
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('session_expired') === 'true' && !session) {
+                setIsAuthOpen(true);
+                // Nettoyer l'URL en retirant le paramètre
+                const newUrl = window.location.pathname;
+                window.history.replaceState({}, '', newUrl);
+            }
+        }
+    }, [session]);
+
     const closeMobileMenu = () => {
         setIsMenuOpen(false);
     };
@@ -370,12 +383,16 @@ export default function Navbar() {
                                             <Link href="/gems" className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
                                                 Gemmes
                                             </Link>
+                                            <div className="border-t border-gray-200 my-2"></div>
+                                            <QuestsPanel />
+                                            <div className="border-t border-gray-200 my-2"></div>
                                             <Link href="/fiches/creer" className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
                                                 Partager une fiche
                                             </Link>
                                             <Link href="/forum/creer" className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
                                                 Déposer une question
                                             </Link>
+                                            <div className="border-t border-gray-200 my-2"></div>
                                             <button onClick={handleSignOut} className="block text-red-600 hover:text-red-700 transition-colors">
                                                 Déconnexion
                                             </button>

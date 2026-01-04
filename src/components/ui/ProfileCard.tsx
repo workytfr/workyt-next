@@ -28,12 +28,13 @@ const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 const ProfileCard: React.FC<ProfileCardProps> = ({
     username,
-    points,
+    points: initialPoints,
     userId,
     image,
     className = ""
 }) => {
     const [gems, setGems] = useState<number>(0);
+    const [currentPoints, setCurrentPoints] = useState<number>(initialPoints);
     
     // Récupérer les gems
     const { data: gemData } = useSWR(
@@ -46,15 +47,32 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         }
     );
 
+    // Récupérer les points à jour depuis la base de données
+    const { data: pointsData } = useSWR(
+        userId ? '/api/user/me/points' : null,
+        fetcher,
+        {
+            refreshInterval: 30000, // Rafraîchir toutes les 30 secondes
+            revalidateOnFocus: true, // Rafraîchir quand la fenêtre reprend le focus
+            revalidateOnReconnect: true,
+        }
+    );
+
     useEffect(() => {
         if (gemData?.success && gemData?.data?.user?.id === userId) {
             setGems(gemData.data.gems.balance || 0);
         }
     }, [gemData, userId]);
 
-    const userRank = calculateUserRank(points);
+    useEffect(() => {
+        if (pointsData?.success && pointsData?.data?.points !== undefined) {
+            setCurrentPoints(pointsData.data.points);
+        }
+    }, [pointsData]);
+
+    const userRank = calculateUserRank(currentPoints);
     const level = userRank.level;
-    const formattedPoints = formatPoints(points);
+    const formattedPoints = formatPoints(currentPoints);
 
     return (
         <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-orange-50 border border-orange-100/60 ${className}`}>
@@ -62,7 +80,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
             <div className="flex-shrink-0">
                 <ProfileAvatar
                     username={username}
-                    points={points}
+                    points={currentPoints}
                     userId={userId}
                     image={image}
                     showPoints={false}

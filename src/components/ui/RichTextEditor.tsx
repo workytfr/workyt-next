@@ -80,6 +80,13 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         },
     });
 
+    // Mettre à jour le contenu de l'éditeur quand il change depuis l'extérieur
+    useEffect(() => {
+        if (editor && content !== editor.getHTML()) {
+            editor.commands.setContent(content, { emitUpdate: false });
+        }
+    }, [content, editor]);
+
     return (
         <>
             <style jsx global>{`
@@ -119,10 +126,25 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
                 .ProseMirror .custom-block:hover {
                     transform: scale(1.01);
                 }
-                .ProseMirror .custom-block > strong {
-                    display: block;
-                    margin-bottom: 0.5rem;
+                /* Styles pour le contenu à l'intérieur des blocs custom */
+                .ProseMirror .custom-block p {
+                    margin: 0.5rem 0;
+                    line-height: 1.6;
+                }
+                .ProseMirror .custom-block p:first-child {
+                    margin-top: 0;
+                }
+                .ProseMirror .custom-block p:last-child {
+                    margin-bottom: 0;
+                }
+                .ProseMirror .custom-block strong {
                     font-weight: 600;
+                    color: inherit;
+                }
+                .ProseMirror .custom-block br {
+                    display: block;
+                    margin: 0.5rem 0;
+                    content: "";
                 }
 
                 /* Couleurs par type de bloc */
