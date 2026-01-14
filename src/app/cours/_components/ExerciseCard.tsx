@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -89,10 +90,10 @@ export default function ExerciseCard({ exercise, index }: ExerciseProps) {
                     {/* Main content */}
                     <CardContent className="bg-white/70 backdrop-blur-md rounded-xl p-3 sm:p-4 md:p-6 shadow-md border border-gray-100">
                         <h3 className={`text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 ${difficulty.text}`}>{exercise.title}</h3>
-                        <div className="prose max-w-none text-gray-800 leading-relaxed text-sm sm:text-base">
+                        <div className="prose max-w-none text-gray-800 leading-relaxed text-sm sm:text-base overflow-x-auto">
                             <ReactMarkdown
                                 rehypePlugins={[rehypeKatex]}
-                                remarkPlugins={[remarkMath]}
+                                remarkPlugins={[remarkMath, remarkGfm]}
                             >
                                 {exercise.content}
                             </ReactMarkdown>
@@ -133,10 +134,10 @@ export default function ExerciseCard({ exercise, index }: ExerciseProps) {
                                         <span className="inline-block w-1 h-4 sm:h-6 bg-orange-500 mr-2 sm:mr-3 rounded-full"></span>
                                         Correction
                                     </h3>
-                                    <div className="prose max-w-none text-gray-800 leading-relaxed text-sm sm:text-base">
+                                    <div className="prose max-w-none text-gray-800 leading-relaxed text-sm sm:text-base overflow-x-auto">
                                         <ReactMarkdown
                                             rehypePlugins={[rehypeKatex]}
-                                            remarkPlugins={[remarkMath]}
+                                            remarkPlugins={[remarkMath, remarkGfm]}
                                         >
                                             {exercise.correction.text}
                                         </ReactMarkdown>

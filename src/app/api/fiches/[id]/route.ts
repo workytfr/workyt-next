@@ -23,7 +23,7 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     try {
         // Récupérer la fiche et peupler les données nécessaires
         const fiche = await Revision.findById(id)
-            .populate("author", "username points") // Inclure le champ "points" avec "username"
+            .populate("author", "username points role") // Inclure le champ "points", "role" avec "username"
             .populate({
                 path: "likedBy.userId",
                 select: "username",
@@ -75,7 +75,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Non autorisé." }, { status: 401 });
         }
 
-        if (!session.user.role || typeof session.user.role !== 'string' || !["Admin", "Correcteur", "Rédacteur"].includes(session.user.role)) {
+        if (!session.user.role || typeof session.user.role !== 'string' || !["Admin", "Correcteur", "Rédacteur", "Helpeur"].includes(session.user.role)) {
             return NextResponse.json(
                 { success: false, message: "Accès refusé. Vous n'avez pas les permissions nécessaires pour modifier cette fiche." },
                 { status: 403 }

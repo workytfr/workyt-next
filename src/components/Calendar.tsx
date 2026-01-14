@@ -19,7 +19,11 @@ import {
 
 interface CalendarDay {
   date: string;
-  reward: { type: 'points' | 'gems'; amount: number };
+  reward: { 
+    type: 'points' | 'gems' | 'chest'; 
+    amount?: number;
+    chestType?: 'common' | 'rare';
+  };
   theme: string;
   isSpecial: boolean;
   specialName?: string;
@@ -149,9 +153,26 @@ const Calendar: React.FC = () => {
       }
 
       const result = await response.json();
-      const rewardText = result.rewardType === 'gems' 
-        ? `${result.amount} diamant${result.amount > 1 ? 's' : ''}`
-        : `${result.amount} point${result.amount > 1 ? 's' : ''}`;
+      let rewardText = '';
+      
+      if (result.rewardType === 'chest') {
+        const chestTypeName = result.chestType === 'rare' ? 'rare' : 'commun';
+        if (result.chestReward) {
+          if (result.chestReward.rewardType === 'gems') {
+            rewardText = `${result.chestReward.amount} diamant${result.chestReward.amount > 1 ? 's' : ''} du coffre ${chestTypeName}`;
+          } else if (result.chestReward.rewardType === 'points') {
+            rewardText = `${result.chestReward.amount} point${result.chestReward.amount > 1 ? 's' : ''} du coffre ${chestTypeName}`;
+          } else {
+            rewardText = `un cosmétique du coffre ${chestTypeName}`;
+          }
+        } else {
+          rewardText = `un coffre ${chestTypeName}`;
+        }
+      } else if (result.rewardType === 'gems') {
+        rewardText = `${result.amount} diamant${result.amount > 1 ? 's' : ''}`;
+      } else {
+        rewardText = `${result.amount} point${result.amount > 1 ? 's' : ''}`;
+      }
       
       showToast({ 
         title: 'Récompense réclamée ! 🎉', 
@@ -276,7 +297,7 @@ const Calendar: React.FC = () => {
         // Créer un jour par défaut si non trouvé
         daysArray.push({
           date: dateStr,
-          reward: { type: 'points', amount: 5 },
+          reward: { type: 'points', amount: 3 },
           theme: 'default',
           isSpecial: false,
           claimed: false
@@ -444,7 +465,20 @@ const Calendar: React.FC = () => {
                   
                   {/* Récompense */}
                   <div className="text-center">
-                    {day.reward.type === 'gems' ? (
+                    {day.reward.type === 'chest' ? (
+                      <div className="flex items-center justify-center gap-1">
+                        <Image 
+                          src={`/coffre/${day.reward.chestType || 'common'}_f.png`}
+                          alt={`Coffre ${day.reward.chestType || 'commun'}`}
+                          width={20} 
+                          height={20} 
+                          className="object-contain"
+                        />
+                        <span className="text-[10px] font-semibold capitalize">
+                          {day.reward.chestType === 'rare' ? 'Rare' : 'Commun'}
+                        </span>
+                      </div>
+                    ) : day.reward.type === 'gems' ? (
                       <div className="flex items-center justify-center gap-1">
                         <Image 
                           src="/badge/diamond.png" 

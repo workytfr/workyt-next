@@ -8,8 +8,8 @@ export interface ICalendarClaim extends Document {
   user: ObjectId; // Référence à l'utilisateur
   calendar: ObjectId; // Référence au jour du calendrier
   date: Date; // Date de la réclamation (sans heure)
-  rewardType: 'points' | 'gems';
-  rewardAmount: number;
+  rewardType: 'points' | 'gems' | 'chest';
+  rewardAmount?: number; // Optionnel pour les coffres car ils donnent des récompenses variables
   claimedAt: Date;
   createdAt: Date;
 }
@@ -31,12 +31,11 @@ const CalendarClaimSchema = new Schema<ICalendarClaim>({
   },
   rewardType: {
     type: String,
-    enum: ['points', 'gems'],
+    enum: ['points', 'gems', 'chest'],
     required: true
   },
   rewardAmount: {
     type: Number,
-    required: true,
     min: 0
   },
   claimedAt: {

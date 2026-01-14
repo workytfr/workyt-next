@@ -26,7 +26,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 /**
- * 🚀 PUT - Mettre à jour un exercice (Réservé aux Rédacteurs, Correcteurs, Admins)
+ * 🚀 PUT - Mettre à jour un exercice (Réservé aux Helpeurs, Rédacteurs, Correcteurs, Admins)
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -37,7 +37,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!user.role || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user.role || typeof user.role !== 'string' || !["Helpeur", "Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

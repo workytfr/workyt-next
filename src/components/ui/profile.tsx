@@ -46,6 +46,7 @@ interface ProfileAvatarProps {
     size?: "small" | "medium" | "large";
     userId?: string; // ID de l'utilisateur pour charger les personnalisations
     customization?: ProfileCustomization; // Personnalisations passées en props
+    role?: string; // Rôle de l'utilisateur pour afficher l'icône
 }
 
 const sizeClasses = {
@@ -61,7 +62,8 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     showPoints = true,
     size = "medium",
     userId,
-    customization: propCustomization
+    customization: propCustomization,
+    role
 }) => {
     const [customization, setCustomization] = useState<ProfileCustomization | null>(null);
     const [loading, setLoading] = useState(false);
@@ -276,6 +278,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 
                 {/* Contour personnalisé (en premier plan) */}
                 {profileBorder && (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img 
                         src={profileBorder}
                         alt="Contour de profil"

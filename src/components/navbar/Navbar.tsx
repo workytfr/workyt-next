@@ -227,6 +227,7 @@ export default function Navbar() {
                                             username={session.user.username}
                                             points={session.user.points}
                                             userId={session.user.id}
+                                            role={session.user.role}
                                         />
                                     </DropdownMenu.Trigger>
                                     <DropdownMenu.Portal>
@@ -372,6 +373,7 @@ export default function Navbar() {
                                             username={session.user.username}
                                             points={session.user.points}
                                             userId={session.user.id}
+                                            role={session.user.role}
                                         />
                                         <div className="space-y-2">
                                             <Link href={`/compte/${session.user.id}`} className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>

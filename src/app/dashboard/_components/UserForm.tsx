@@ -21,7 +21,7 @@ interface User {
     name: string;
     email: string;
     username: string;
-    role: "Apprenti" | "Rédacteur" | "Correcteur" | "Admin";
+    role: "Apprenti" | "Helpeur" | "Rédacteur" | "Correcteur" | "Modérateur" | "Admin";
     points: number;
     badges: string[];
     bio: string;
@@ -40,7 +40,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
     const [name, setName] = useState(user?.name || "");
     const [email, setEmail] = useState(user?.email || "");
     const [username, setUsername] = useState(user?.username || "");
-    const [role, setRole] = useState<"Apprenti" | "Rédacteur" | "Correcteur" | "Admin">(user?.role || "Apprenti");
+    const [role, setRole] = useState<"Apprenti" | "Helpeur" | "Rédacteur" | "Correcteur" | "Modérateur" | "Admin">(user?.role || "Apprenti");
     const [points, setPoints] = useState(user?.points || 20);
     const [badges, setBadges] = useState(user?.badges?.join(", ") || "");
     const [bio, setBio] = useState(user?.bio || "");
@@ -205,7 +205,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
                         <Select
                             value={role}
                             onValueChange={(value) =>
-                                setRole(value as "Apprenti" | "Rédacteur" | "Correcteur" | "Admin")
+                                setRole(value as "Apprenti" | "Helpeur" | "Rédacteur" | "Correcteur" | "Modérateur" | "Admin")
                             }
                         >
                             <SelectTrigger>
@@ -213,8 +213,10 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="Apprenti">Apprenti</SelectItem>
+                                <SelectItem value="Helpeur">Helpeur</SelectItem>
                                 <SelectItem value="Rédacteur">Rédacteur</SelectItem>
                                 <SelectItem value="Correcteur">Correcteur</SelectItem>
+                                <SelectItem value="Modérateur">Modérateur</SelectItem>
                                 <SelectItem value="Admin">Admin</SelectItem>
                             </SelectContent>
                         </Select>

@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { getRoleIconPath } from "@/lib/roleIcon";
+import Image from "next/image";
 
 // Interface pour les personnalisations
 interface ProfileCustomization {
@@ -16,13 +18,15 @@ interface UsernameDisplayProps {
     userId?: string;
     className?: string;
     customization?: ProfileCustomization;
+    role?: string; // Rôle de l'utilisateur pour afficher l'icône
 }
 
 const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
     username,
     userId,
     className = "",
-    customization: propCustomization
+    customization: propCustomization,
+    role
 }) => {
     const [customization, setCustomization] = useState<ProfileCustomization | null>(null);
 
@@ -166,13 +170,26 @@ const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
         }
     };
 
+    const roleIconPath = getRoleIconPath(role);
+
     return (
         <>
-            <span 
-                className={className}
-                style={getUsernameColorStyle()}
-            >
-                {username}
+            <span className="inline-flex items-center gap-1.5">
+                <span 
+                    className={className}
+                    style={getUsernameColorStyle()}
+                >
+                    {username}
+                </span>
+                {roleIconPath && (
+                    <Image
+                        src={roleIconPath}
+                        alt={`Rôle ${role}`}
+                        width={16}
+                        height={16}
+                        className="rounded-full flex-shrink-0"
+                    />
+                )}
             </span>
 
             {/* Styles CSS pour toutes les animations */}

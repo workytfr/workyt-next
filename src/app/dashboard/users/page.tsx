@@ -46,7 +46,7 @@ interface User {
     name: string;
     email: string;
     username: string;
-    role: "Apprenti" | "Rédacteur" | "Correcteur" | "Admin";
+    role: "Apprenti" | "Helpeur" | "Rédacteur" | "Correcteur" | "Modérateur" | "Admin";
     points: number;
     badges: string[];
     bio: string;

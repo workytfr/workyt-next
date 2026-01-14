@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, ObjectId } from 'mongoose';
 /**
  * Types de récompenses du calendrier
  */
-export type CalendarRewardType = 'points' | 'gems';
+export type CalendarRewardType = 'points' | 'gems' | 'chest';
 
 /**
  * Types de décorations thématiques
@@ -28,7 +28,8 @@ export interface ICalendar extends Document {
   date: Date; // Date du jour (sans heure)
   reward: {
     type: CalendarRewardType;
-    amount: number; // Points ou diamants à gagner
+    amount?: number; // Points ou diamants à gagner (optionnel pour les coffres)
+    chestType?: 'common' | 'rare'; // Type de coffre (si type = 'chest')
   };
   theme: CalendarTheme; // Thème de décoration
   isSpecial: boolean; // Si c'est un jour spécial (fête)
@@ -48,13 +49,16 @@ const CalendarSchema = new Schema<ICalendar>({
   reward: {
     type: {
       type: String,
-      enum: ['points', 'gems'],
+      enum: ['points', 'gems', 'chest'],
       required: true
     },
     amount: {
       type: Number,
-      required: true,
       min: 0
+    },
+    chestType: {
+      type: String,
+      enum: ['common', 'rare']
     }
   },
   theme: {

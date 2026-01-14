@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const status = (user.role && typeof user.role === 'string' && ["Rédacteur", "Correcteur", "Admin"].includes(user.role)) ? "Certifiée" : "Non Certifiée";
+        const status = (user.role && typeof user.role === 'string' && ["Helpeur", "Rédacteur", "Correcteur", "Admin"].includes(user.role)) ? "Certifiée" : "Non Certifiée";
 
         const newRevision = await Revision.create({
             title,

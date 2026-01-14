@@ -45,6 +45,11 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
         }
 
+        // Vérifier que l'utilisateur a les droits appropriés
+        if (session.user.role !== 'Admin' && session.user.role !== 'Rédacteur' && session.user.role !== 'Correcteur' && session.user.role !== 'Helpeur') {
+            return NextResponse.json({ error: 'Accès refusé. Seuls les Admins, rédacteurs, correcteurs et helpeurs peuvent créer des quiz.' }, { status: 403 });
+        }
+
         await connectDB();
 
         const body = await request.json();
