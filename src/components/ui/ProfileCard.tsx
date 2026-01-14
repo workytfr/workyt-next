@@ -22,6 +22,7 @@ interface ProfileCardProps {
     userId: string;
     image?: string;
     className?: string;
+    role?: string; // Rôle de l'utilisateur pour afficher l'icône
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -31,7 +32,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     points: initialPoints,
     userId,
     image,
-    className = ""
+    className = "",
+    role
 }) => {
     const [gems, setGems] = useState<number>(0);
     const [currentPoints, setCurrentPoints] = useState<number>(initialPoints);
@@ -85,6 +87,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                     image={image}
                     showPoints={false}
                     size="small"
+                    role={role}
                 />
             </div>
 
@@ -96,6 +99,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                         username={username} 
                         userId={userId}
                         className="text-sm font-semibold text-orange-900 leading-tight"
+                        role={role}
                     />
                 </div>
 

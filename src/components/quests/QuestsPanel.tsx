@@ -484,7 +484,9 @@ function ChestsInfo({ chests }: { chests: any[] }) {
         'FoxyMecha.webp': 'Image Foxy Mécha',
         'FoxyWaMe.webp': 'Image Foxy WaMe',
         'FoxyWaterMelon.webp': 'Image Foxy Pastèque',
-        'FoxySably.webp': 'Image Foxy Sably'
+        'FoxySably.webp': 'Image Foxy Sably',
+        'FoxyLmdpc.webp': 'Image Foxy Lmdpc (Partenaire)',
+        'FoxyStagey.webp': 'Image Foxy Stagey (Partenaire)'
       },
       username_color: {
         rainbow: 'Couleur Arc-en-ciel',

@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
     try {
         const user = await authMiddleware(req);
 
-        // 🔒 Vérification des permissions (Accès réservé aux Rédacteurs, Correcteurs, Admins)
-        if (!user || typeof user.role !== 'string' || !['Rédacteur', 'Correcteur', 'Admin'].includes(user.role)) {
+        // 🔒 Vérification des permissions (Accès réservé aux Helpeurs, Rédacteurs, Correcteurs, Admins)
+        if (!user || typeof user.role !== 'string' || !['Helpeur', 'Rédacteur', 'Correcteur', 'Admin'].includes(user.role)) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 

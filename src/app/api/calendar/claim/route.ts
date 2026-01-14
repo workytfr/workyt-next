@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       rewardType: result.rewardType,
-      amount: result.amount
+      amount: result.amount,
+      chestType: result.chestType,
+      chestReward: result.chestReward
     });
   } catch (error: any) {
     console.error('Erreur lors de la réclamation:', error);

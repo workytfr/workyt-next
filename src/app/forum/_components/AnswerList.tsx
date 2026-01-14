@@ -9,6 +9,7 @@ import { FaThumbsUp, FaCheckCircle, FaMedal, FaRegComment } from "react-icons/fa
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
@@ -162,9 +163,9 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                     </div>
 
                                     {/* Contenu de la réponse avec style amélioré */}
-                                    <div className="mt-2 prose prose-indigo prose-sm max-w-none text-gray-800">
+                                    <div className="mt-2 prose prose-indigo prose-sm max-w-none text-gray-800 overflow-x-auto">
                                         <ReactMarkdown
-                                            remarkPlugins={[remarkMath]}
+                                            remarkPlugins={[remarkMath, remarkGfm]}
                                             rehypePlugins={[rehypeKatex]}
                                         >
                                             {answer.content}

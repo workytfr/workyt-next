@@ -7,6 +7,8 @@ import CalendarClaim from '@/models/CalendarClaim';
 import User from '@/models/User';
 import Gem from '@/models/Gem';
 import PointTransaction from '@/models/PointTransaction';
+import Chest from '@/models/Chest';
+import ChestReward from '@/models/ChestReward';
 import dbConnect from '@/lib/mongodb';
 
 /**
@@ -16,8 +18,9 @@ export interface HolidayConfig {
   date: Date;
   theme: 'default' | 'christmas' | 'newyear' | 'chinese_newyear' | 'eastern' | 'indian' | 'japanese' | 'canadian' | 'french_civil' | 'french_cultural';
   reward: {
-    type: 'points' | 'gems';
-    amount: number;
+    type: 'points' | 'gems' | 'chest';
+    amount?: number;
+    chestType?: 'common' | 'rare';
   };
   isSpecial: boolean;
   specialName: string;
@@ -223,31 +226,57 @@ export async function initializeCalendarPeriod(startDate: Date, endDate: Date): 
         { upsert: true, new: true }
       );
     } else {
-      // Jour normal - récompenses équilibrées
-      // Utiliser une fonction déterministe basée sur la date pour que ce soit cohérent
-      const dateHash = currentDate.getTime();
+      // Vérifier si c'est le jour du coffre mensuel (15 de chaque mois)
+      const dayOfMonth = currentDate.getDate();
+      const isChestDay = dayOfMonth === 15;
       
-      // Points de base : 5-10 points pour les jours normaux
-      const basePoints = 5 + (Math.abs(Math.sin(dateHash * 0.1)) * 5) | 0;
-      
-      // Les diamants sont rares : seulement 1 chance sur 20 pour les jours normaux
-      const gemChance = Math.abs(Math.sin(dateHash * 0.3)) * 100;
-      const isGemDay = gemChance < 5; // 5% de chance d'avoir un diamant
-
-      await Calendar.findOneAndUpdate(
-        { date: new Date(currentDate) },
-        {
-          date: new Date(currentDate),
-          reward: {
-            type: isGemDay ? 'gems' : 'points',
-            amount: isGemDay ? 1 : basePoints
+      if (isChestDay) {
+        // Jour de coffre mensuel - alterner entre commun et rare
+        // Utiliser le mois comme déterminant pour alterner
+        const month = currentDate.getMonth();
+        const chestType = (month % 2 === 0) ? 'common' : 'rare' as 'common' | 'rare';
+        
+        await Calendar.findOneAndUpdate(
+          { date: new Date(currentDate) },
+          {
+            date: new Date(currentDate),
+            reward: {
+              type: 'chest',
+              chestType: chestType
+            },
+            theme: 'default',
+            isSpecial: false,
+            updatedAt: new Date()
           },
-          theme: 'default',
-          isSpecial: false,
-          updatedAt: new Date()
-        },
-        { upsert: true, new: true }
-      );
+          { upsert: true, new: true }
+        );
+      } else {
+        // Jour normal - récompenses équilibrées
+        // Utiliser une fonction déterministe basée sur la date pour que ce soit cohérent
+        const dateHash = currentDate.getTime();
+        
+        // Points de base : 1-3 points pour les jours normaux
+        const basePoints = 1 + (Math.abs(Math.sin(dateHash * 0.1)) * 2) | 0;
+        
+        // Les diamants sont rares : seulement 1 chance sur 20 pour les jours normaux
+        const gemChance = Math.abs(Math.sin(dateHash * 0.3)) * 100;
+        const isGemDay = gemChance < 5; // 5% de chance d'avoir un diamant
+
+        await Calendar.findOneAndUpdate(
+          { date: new Date(currentDate) },
+          {
+            date: new Date(currentDate),
+            reward: {
+              type: isGemDay ? 'gems' : 'points',
+              amount: isGemDay ? 1 : basePoints
+            },
+            theme: 'default',
+            isSpecial: false,
+            updatedAt: new Date()
+          },
+          { upsert: true, new: true }
+        );
+      }
     }
 
     // Passer au jour suivant
@@ -259,10 +288,98 @@ export async function initializeCalendarPeriod(startDate: Date, endDate: Date): 
  * Réclame la récompense du jour pour un utilisateur
  * Retourne null si déjà réclamé ou si le jour n'existe pas
  */
+/**
+ * Ouvre un coffre et génère une récompense aléatoire
+ */
+async function openChest(userId: string, chestType: 'common' | 'rare'): Promise<any> {
+  const chest = await Chest.findOne({
+    type: chestType,
+    isActive: true
+  });
+
+  if (!chest) {
+    throw new Error('Coffre non trouvé');
+  }
+
+  // Calculer le total des poids
+  const totalWeight = chest.possibleRewards.reduce((sum: number, reward: any) => sum + reward.weight, 0);
+
+  // Générer un nombre aléatoire
+  let random = Math.random() * totalWeight;
+
+  // Sélectionner la récompense basée sur les poids
+  let selectedReward = null;
+  for (const reward of chest.possibleRewards) {
+    random -= reward.weight;
+    if (random <= 0) {
+      selectedReward = reward;
+      break;
+    }
+  }
+
+  if (!selectedReward) {
+    // Fallback sur la première récompense
+    selectedReward = chest.possibleRewards[0];
+  }
+
+  // Créer l'enregistrement de récompense
+  const chestReward = new ChestReward({
+    user: userId,
+    chest: chest._id,
+    rewardType: selectedReward.type,
+    amount: selectedReward.amount,
+    cosmeticType: selectedReward.cosmeticType,
+    cosmeticId: selectedReward.cosmeticId,
+    claimed: false
+  });
+  await chestReward.save();
+
+  // Appliquer la récompense immédiatement
+  if (selectedReward.type === 'points') {
+    await User.findByIdAndUpdate(userId, {
+      $inc: { points: selectedReward.amount || 0 }
+    });
+
+    const transaction = new PointTransaction({
+      user: userId,
+      action: 'completeQuiz',
+      type: 'gain',
+      points: selectedReward.amount || 0
+    });
+    await transaction.save();
+  } else if (selectedReward.type === 'gems') {
+    let gem = await Gem.findOne({ user: userId });
+    if (!gem) {
+      gem = new Gem({
+        user: userId,
+        balance: 0,
+        totalEarned: 0,
+        totalSpent: 0
+      });
+    }
+    gem.balance += selectedReward.amount || 0;
+    gem.totalEarned += selectedReward.amount || 0;
+    await gem.save();
+  }
+
+  chestReward.claimed = true;
+  chestReward.claimedAt = new Date();
+  await chestReward.save();
+
+  return {
+    rewardType: selectedReward.type,
+    amount: selectedReward.amount,
+    cosmeticType: selectedReward.cosmeticType,
+    cosmeticId: selectedReward.cosmeticId
+  };
+}
+
 export async function claimDailyReward(userId: string, date: Date): Promise<{
   success: boolean;
-  rewardType?: 'points' | 'gems';
+  rewardType?: 'points' | 'gems' | 'chest';
   amount?: number;
+  chestType?: 'common' | 'rare';
+  chestReward?: any;
   message?: string;
 }> {
   await dbConnect();
@@ -320,16 +437,19 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     }
 
     // Appliquer la récompense
+    let defaultRewardAmount = defaultDay.reward.amount || 0;
+    let defaultChestReward = null;
+
     if (defaultDay.reward.type === 'points') {
       await User.findByIdAndUpdate(userId, {
-        $inc: { points: defaultDay.reward.amount }
+        $inc: { points: defaultRewardAmount }
       });
 
       const transaction = new PointTransaction({
         user: userId,
         action: 'completeQuiz', // Action temporaire pour le calendrier
         type: 'gain',
-        points: defaultDay.reward.amount
+        points: defaultRewardAmount
       });
       await transaction.save();
     } else if (defaultDay.reward.type === 'gems') {
@@ -342,9 +462,13 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
           totalSpent: 0
         });
       }
-      gem.balance += defaultDay.reward.amount;
-      gem.totalEarned += defaultDay.reward.amount;
+      gem.balance += defaultRewardAmount;
+      gem.totalEarned += defaultRewardAmount;
       await gem.save();
+    } else if (defaultDay.reward.type === 'chest' && defaultDay.reward.chestType) {
+      // Ouvrir le coffre
+      defaultChestReward = await openChest(userId, defaultDay.reward.chestType);
+      defaultRewardAmount = defaultChestReward.amount || 0;
     }
 
     // Enregistrer la réclamation
@@ -353,28 +477,33 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
       calendar: defaultDay._id,
       date: normalizedDate,
       rewardType: defaultDay.reward.type,
-      rewardAmount: defaultDay.reward.amount
+      rewardAmount: defaultRewardAmount
     });
     await claim.save();
 
     return {
       success: true,
       rewardType: defaultDay.reward.type,
-      amount: defaultDay.reward.amount
+      amount: defaultRewardAmount,
+      chestType: defaultDay.reward.chestType,
+      chestReward: defaultChestReward
     };
   }
 
   // Appliquer la récompense
+  let rewardAmount = calendarDay.reward.amount || 0;
+  let chestReward = null;
+
   if (calendarDay.reward.type === 'points') {
     await User.findByIdAndUpdate(userId, {
-      $inc: { points: calendarDay.reward.amount }
+      $inc: { points: rewardAmount }
     });
 
     const transaction = new PointTransaction({
       user: userId,
       action: 'completeQuiz',
       type: 'gain',
-      points: calendarDay.reward.amount
+      points: rewardAmount
     });
     await transaction.save();
   } else if (calendarDay.reward.type === 'gems') {
@@ -387,9 +516,13 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
         totalSpent: 0
       });
     }
-    gem.balance += calendarDay.reward.amount;
-    gem.totalEarned += calendarDay.reward.amount;
+    gem.balance += rewardAmount;
+    gem.totalEarned += rewardAmount;
     await gem.save();
+  } else if (calendarDay.reward.type === 'chest' && calendarDay.reward.chestType) {
+    // Ouvrir le coffre
+    chestReward = await openChest(userId, calendarDay.reward.chestType);
+    rewardAmount = chestReward.amount || 0;
   }
 
   // Enregistrer la réclamation
@@ -398,14 +531,16 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     calendar: calendarDay._id,
     date: normalizedDate,
     rewardType: calendarDay.reward.type,
-    rewardAmount: calendarDay.reward.amount
+    rewardAmount: rewardAmount
   });
   await claim.save();
 
   return {
     success: true,
     rewardType: calendarDay.reward.type,
-    amount: calendarDay.reward.amount
+    amount: rewardAmount,
+    chestType: calendarDay.reward.chestType,
+    chestReward: chestReward
   };
 }
 
@@ -419,7 +554,11 @@ export async function getCalendarData(
 ): Promise<{
   days: Array<{
     date: Date;
-    reward: { type: 'points' | 'gems'; amount: number };
+    reward: { 
+      type: 'points' | 'gems' | 'chest'; 
+      amount?: number;
+      chestType?: 'common' | 'rare';
+    };
     theme: string;
     isSpecial: boolean;
     specialName?: string;
@@ -461,7 +600,11 @@ export async function getCalendarData(
   // Construire la réponse
   const days = calendarDays.map(day => ({
     date: day.date,
-    reward: day.reward,
+    reward: {
+      type: day.reward.type,
+      amount: day.reward.amount,
+      chestType: day.reward.chestType
+    },
     theme: day.theme,
     isSpecial: day.isSpecial,
     specialName: day.specialName,

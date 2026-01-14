@@ -225,7 +225,7 @@ export default function FicheView({ id }: FicheViewProps) {
         );
     }
 
-    const allowedRoles = ["Rédacteur", "Correcteur", "Admin"];
+    const allowedRoles = ["Helpeur", "Rédacteur", "Correcteur", "Admin"];
     const userHasPermission = allowedRoles.includes(currentUser?.role ?? "");
     
     // Vérifier si l'utilisateur est le créateur de la fiche ou un admin
@@ -340,6 +340,7 @@ export default function FicheView({ id }: FicheViewProps) {
                                 username={fiche.author?.username || "Inconnu"}
                                 points={fiche.author?.points || 0}
                                 userId={fiche.author?._id}
+                                role={fiche.author?.role}
                             />
                             <div>
                                 <Link href={`/compte/${fiche.author?._id}`}>
@@ -347,6 +348,7 @@ export default function FicheView({ id }: FicheViewProps) {
                                         username={fiche.author?.username || "Inconnu"}
                                         userId={fiche.author?._id}
                                         className="font-medium hover:underline cursor-pointer block"
+                                        role={fiche.author?.role}
                                     />
                                 </Link>
                                 <p className="text-sm text-gray-500">Auteur</p>

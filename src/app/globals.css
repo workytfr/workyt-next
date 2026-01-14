@@ -440,3 +440,170 @@ html, body {
   scrollbar-width: thin;
   scrollbar-color: #c1c1c1 #f1f1f1;
 }
+
+/* Styles pour les tableaux markdown */
+.prose {
+  /* Conteneur pour tableaux responsives */
+  overflow-x: auto;
+}
+
+.prose table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin: 1.5rem 0;
+  background-color: white;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  min-width: 100%;
+  display: table;
+}
+
+.prose table thead {
+  background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.prose table th {
+  border: none;
+  border-bottom: 2px solid #e2e8f0;
+  padding: 0.875rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #475569;
+  background-color: transparent;
+  white-space: nowrap;
+}
+
+.prose table th:first-child {
+  padding-left: 1.25rem;
+}
+
+.prose table th:last-child {
+  padding-right: 1.25rem;
+}
+
+.prose table td {
+  border: none;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.875rem 1rem;
+  color: #334155;
+  font-size: 0.9375rem;
+  vertical-align: middle;
+}
+
+.prose table td:first-child {
+  padding-left: 1.25rem;
+}
+
+.prose table td:last-child {
+  padding-right: 1.25rem;
+}
+
+.prose table tbody tr {
+  transition: background-color 0.15s ease-in-out;
+}
+
+.prose table tbody tr:nth-child(even) {
+  background-color: #f8fafc;
+}
+
+.prose table tbody tr:hover {
+  background-color: #f1f5f9;
+}
+
+.prose table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Conteneur wrapper pour tableaux responsives */
+.prose > * {
+  overflow-x: visible;
+}
+
+.prose table-wrapper {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+.prose table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.prose table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.prose table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.prose table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Responsive pour les tableaux sur mobile */
+@media (max-width: 768px) {
+  .prose {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .prose table {
+    font-size: 0.8125rem;
+    margin: 1rem 0;
+    min-width: 600px; /* Force un scroll horizontal sur mobile */
+    display: table;
+  }
+  
+  .prose table th {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .prose table th:first-child {
+    padding-left: 1rem;
+  }
+  
+  .prose table th:last-child {
+    padding-right: 1rem;
+  }
+  
+  .prose table td {
+    padding: 0.625rem 0.75rem;
+    font-size: 0.8125rem;
+  }
+  
+  .prose table td:first-child {
+    padding-left: 1rem;
+  }
+  
+  .prose table td:last-child {
+    padding-right: 1rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .prose table {
+    font-size: 0.75rem;
+    min-width: 500px;
+  }
+  
+  .prose table th {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.6875rem;
+  }
+  
+  .prose table td {
+    padding: 0.5rem 0.625rem;
+    font-size: 0.75rem;
+  }
+}

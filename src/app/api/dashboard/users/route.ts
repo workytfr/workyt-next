@@ -146,7 +146,7 @@ export async function PATCH(req: NextRequest) {
         const updateObj: any = {};
 
         if (role) {
-            if (!['Apprenti', 'Rédacteur', 'Correcteur', 'Admin'].includes(role)) {
+            if (!['Apprenti', 'Helpeur', 'Rédacteur', 'Correcteur', 'Modérateur', 'Admin'].includes(role)) {
                 return NextResponse.json({ error: 'Rôle invalide.' }, { status: 400 });
             }
             updateObj.role = role;

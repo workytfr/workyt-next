@@ -20,6 +20,7 @@ import { getSubjectColor, getLevelColor } from "@/data/educationData";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
+import remarkGfm from "remark-gfm";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import ReportButton from "@/components/ReportButton";
@@ -108,8 +109,8 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                             <Image src="/badge/Exercice.svg" alt="Exercice" width={28} height={28} className="opacity-90" />
                             <h3 className="text-blue-800 font-semibold">Ce que j&apos;ai fait</h3>
                         </div>
-                        <div className="text-gray-700 prose prose-blue prose-sm max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        <div className="text-gray-700 prose prose-blue prose-sm max-w-none overflow-x-auto">
+                            <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm]} rehypePlugins={[rehypeKatex]}>
                                 {question.description.whatIDid}
                             </ReactMarkdown>
                         </div>
@@ -121,8 +122,8 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                             <Image src="/badge/Exercice2.svg" alt="Besoin" width={28} height={28} className="opacity-90" />
                             <h3 className="text-rose-800 font-semibold">Ce dont j&apos;ai besoin</h3>
                         </div>
-                        <div className="text-gray-700 prose prose-rose prose-sm max-w-none">
-                            <ReactMarkdown remarkPlugins={[remarkMath]} rehypePlugins={[rehypeKatex]}>
+                        <div className="text-gray-700 prose prose-rose prose-sm max-w-none overflow-x-auto">
+                            <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm]} rehypePlugins={[rehypeKatex]}>
                                 {question.description.whatINeed}
                             </ReactMarkdown>
                         </div>

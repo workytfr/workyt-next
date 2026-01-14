@@ -9,7 +9,7 @@ export interface IUser extends Document {
     email: string;
     username: string;
     password: string;
-    role: 'Apprenti' | 'Rédacteur' | 'Correcteur' | 'Modérateur' | 'Admin';
+    role: 'Apprenti' | 'Helpeur' | 'Rédacteur' | 'Correcteur' | 'Modérateur' | 'Admin';
     points: number;
     badges: string[];
     isAdmin: boolean;
@@ -102,7 +102,7 @@ const UserSchema = new Schema<IUser>({
     role: {
         type: String,
         enum: {
-            values: ['Apprenti', 'Rédacteur', 'Correcteur', 'Modérateur', 'Admin'],
+            values: ['Apprenti', 'Helpeur', 'Rédacteur', 'Correcteur', 'Modérateur', 'Admin'],
             message: 'Rôle invalide'
         },
         required: true,

@@ -76,7 +76,7 @@ export default function CalendarPageClient() {
                   <div>
                     <p className="font-semibold">Points</p>
                     <p className="text-sm text-muted-foreground">
-                      Gagnez entre 5 et 20 points par jour pendant les fêtes. Les jours normaux, vous gagnez 5 points.
+                      Gagnez entre 5 et 20 points par jour pendant les fêtes. Les jours normaux, vous gagnez jusqu&apos;à 3 points.
                     </p>
                   </div>
                 </div>

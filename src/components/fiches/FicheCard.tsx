@@ -13,7 +13,7 @@ import { levelColors, subjectColors } from "@/data/educationData";
 interface Fiche {
     _id: string;
     title: string;
-    authors: { username: string; points: number };
+    authors: { username: string; points: number; role?: string; _id?: string };
     content: string;
     likes: number;
     comments: number;
@@ -57,7 +57,11 @@ const FicheCard = ({ fiche, username }: { fiche: Fiche; username: string }) => {
             )}
 
             {/* Contenu de la carte */}
-            <ProfileAvatar username={username || "Inconnu"}/>
+            <ProfileAvatar 
+                username={username || "Inconnu"}
+                role={fiche.authors?.role}
+                userId={fiche.authors?._id}
+            />
             <div className="flex-1">
                 {/* Titre cliquable */}
                 <Link href={`/fiches/${fiche._id}`}>

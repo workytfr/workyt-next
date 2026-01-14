@@ -105,7 +105,7 @@ async function seedQuests() {
           target: 3
         },
         rewards: [
-          { type: 'points' as const, amount: 30 }, // Modeste : 30 points
+          { type: 'points' as const, amount: 10 }, // Modeste : 10 points
           { type: 'chest' as const, chestType: 'common' as const } // Coffre commun (récompenses modestes)
         ],
         isActive: true
@@ -120,7 +120,7 @@ async function seedQuests() {
           target: 2
         },
         rewards: [
-          { type: 'points' as const, amount: 50 } // Modeste : 50 points (pas de gemme pour une quête journalière)
+          { type: 'points' as const, amount: 15 } // Modeste : 15 points (pas de gemme pour une quête journalière)
         ],
         isActive: true
       },
@@ -134,7 +134,7 @@ async function seedQuests() {
           target: 1
         },
         rewards: [
-          { type: 'points' as const, amount: 20 } // Modeste : 20 points seulement (pas de coffre)
+          { type: 'points' as const, amount: 8 } // Modeste : 8 points seulement (pas de coffre)
         ],
         isActive: true
       },
@@ -148,7 +148,7 @@ async function seedQuests() {
           target: 5
         },
         rewards: [
-          { type: 'points' as const, amount: 40 }, // 40 points
+          { type: 'points' as const, amount: 15 }, // 15 points
           { type: 'chest' as const, chestType: 'common' as const } // Coffre commun
         ],
         isActive: true
@@ -166,7 +166,7 @@ async function seedQuests() {
           }
         },
         rewards: [
-          { type: 'points' as const, amount: 30 } // 30 points
+          { type: 'points' as const, amount: 10 } // 10 points
         ],
         isActive: true
       },
@@ -180,7 +180,7 @@ async function seedQuests() {
           target: 3
         },
         rewards: [
-          { type: 'points' as const, amount: 25 } // 25 points
+          { type: 'points' as const, amount: 8 } // 8 points
         ],
         isActive: true
       },
@@ -194,7 +194,7 @@ async function seedQuests() {
           target: 1
         },
         rewards: [
-          { type: 'points' as const, amount: 40 }, // 40 points
+          { type: 'points' as const, amount: 15 }, // 15 points
           { type: 'chest' as const, chestType: 'common' as const } // Coffre commun
         ],
         isActive: true
@@ -209,7 +209,7 @@ async function seedQuests() {
           target: 3
         },
         rewards: [
-          { type: 'points' as const, amount: 60 }, // 60 points
+          { type: 'points' as const, amount: 20 }, // 20 points
           { type: 'chest' as const, chestType: 'common' as const } // Coffre commun
         ],
         isActive: true
@@ -229,7 +229,7 @@ async function seedQuests() {
           target: 5
         },
         rewards: [
-          { type: 'points' as const, amount: 150 }, // 150 points
+          { type: 'points' as const, amount: 50 }, // 50 points
           { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
           { type: 'chest' as const, chestType: 'rare' as const } // Coffre rare
         ],
@@ -248,7 +248,7 @@ async function seedQuests() {
           }
         },
         rewards: [
-          { type: 'points' as const, amount: 100 }, // 100 points
+          { type: 'points' as const, amount: 40 }, // 40 points
           { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
           { type: 'chest' as const, chestType: 'epic' as const } // Coffre épique
         ],
@@ -264,7 +264,7 @@ async function seedQuests() {
           target: 10
         },
         rewards: [
-          { type: 'points' as const, amount: 100 }, // 100 points
+          { type: 'points' as const, amount: 40 }, // 40 points
           { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
           { type: 'chest' as const, chestType: 'rare' as const } // Coffre rare
         ],
@@ -285,8 +285,8 @@ async function seedQuests() {
           target: 50
         },
         rewards: [
-          { type: 'points' as const, amount: 300 }, // 300 points
-          { type: 'gems' as const, amount: 3 }, // 3 gemmes (équivaut à 300 points)
+          { type: 'points' as const, amount: 100 }, // 100 points
+          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
           { type: 'chest' as const, chestType: 'epic' as const } // Coffre épique
         ],
         isActive: true
@@ -301,8 +301,8 @@ async function seedQuests() {
           target: 30
         },
         rewards: [
-          { type: 'points' as const, amount: 200 }, // 200 points
-          { type: 'gems' as const, amount: 2 }, // 2 gemmes (équivaut à 200 points)
+          { type: 'points' as const, amount: 80 }, // 80 points
+          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
           { type: 'chest' as const, chestType: 'legendary' as const } // Coffre légendaire
         ],
         isActive: true
@@ -317,8 +317,8 @@ async function seedQuests() {
           target: 20
         },
         rewards: [
-          { type: 'points' as const, amount: 300 }, // 300 points
-          { type: 'gems' as const, amount: 3 }, // 3 gemmes (équivaut à 300 points)
+          { type: 'points' as const, amount: 100 }, // 100 points
+          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
           { type: 'chest' as const, chestType: 'legendary' as const } // Coffre légendaire
         ],
         isActive: true

@@ -344,7 +344,8 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                             <CustomUsername 
                                 username={formData.username} 
                                 userId={id} 
-                                className="text-3xl font-bold text-white drop-shadow-lg mb-2" 
+                                className="text-3xl font-bold text-white drop-shadow-lg mb-2"
+                                role={user?.role}
                             />
                             {formData.bio && (
                                 <p className="text-white/90 text-sm max-w-2xl mb-3">{formData.bio}</p>

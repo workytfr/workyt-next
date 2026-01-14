@@ -70,6 +70,8 @@ export const GEM_CONFIG = {
       'FoxyWaMe.webp',
       'FoxyWaterMelon.webp',
       'FoxySably.webp',
+      'FoxyLmdpc.webp',
+      'FoxyStagey.webp',
     ],
     profileBorder: ['gold', 'silver', 'eclair_green', 'fumee', 'poison_orange', 'bronze', 'rainbow', 'halloween_pumpkins_apng']
   },

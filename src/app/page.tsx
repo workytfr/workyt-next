@@ -45,7 +45,7 @@ export default function Home() {
     return (
         <div className="grid bg-white">
             <BannerWithButton
-                tTitle="🎉 Bienvenue sur Workyt v4.0.0 Beta !"
+                tTitle="🎉 Bienvenue sur Workyt v4.0.6 Beta !"
                 tDetails="Après une année d'absence, les cours font leur retour sur Workyt, désormais enrichis de fonctionnalités innovantes."
                 tButton="Voir les fiches"
                 linkHref="/cours"

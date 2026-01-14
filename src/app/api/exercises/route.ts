@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * 🚀 POST - Créer un nouvel exercice (Réservé aux Rédacteurs, Correcteurs, Admins)
+ * 🚀 POST - Créer un nouvel exercice (Réservé aux Helpeurs, Rédacteurs, Correcteurs, Admins)
  */
 export async function POST(req: NextRequest) {
     try {
@@ -46,7 +46,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!user.role || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user.role || typeof user.role !== 'string' || !["Helpeur", "Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

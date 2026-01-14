@@ -36,7 +36,7 @@ export const GET = async (req: NextRequest) => {
         }
 
         const fiches = await Revision.find(filter)
-            .populate("author", "username points _id") // Populate `author` avec l'ID
+            .populate("author", "username points role _id") // Populate `author` avec l'ID et le rôle
             .select("title content likes comments status level subject createdAt") // Exclude `files`
             .sort({ createdAt: -1 })
             .skip(skip)

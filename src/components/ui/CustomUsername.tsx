@@ -2,11 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
+import { getRoleIconPath } from "@/lib/roleIcon";
 
 interface CustomUsernameProps {
     username: string;
     userId: string;
     className?: string;
+    role?: string; // Rôle de l'utilisateur pour afficher l'icône
 }
 
 interface ProfileCustomization {
@@ -17,7 +20,7 @@ interface ProfileCustomization {
     };
 }
 
-const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, className = '' }) => {
+const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, className = '', role }) => {
     const [customization, setCustomization] = useState<ProfileCustomization | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -177,15 +180,26 @@ const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, class
         );
     }
 
+    const roleIconPath = getRoleIconPath(role);
+
     return (
         <>
-            <Link href={`/compte/${userId}`}>
+            <Link href={`/compte/${userId}`} className="inline-flex items-center gap-1.5">
                 <span 
                     className={`font-semibold hover:underline cursor-pointer ${className}`}
                     style={getUsernameColorStyle()}
                 >
                     {username}
                 </span>
+                {roleIconPath && (
+                    <Image
+                        src={roleIconPath}
+                        alt={`Rôle ${role}`}
+                        width={16}
+                        height={16}
+                        className="rounded-full flex-shrink-0"
+                    />
+                )}
             </Link>
             
             {/* Styles CSS pour toutes les animations */}
