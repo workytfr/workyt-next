@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la récupération des cours :", error.message);
         return NextResponse.json(
-            { error: "Impossible de récupérer les cours.", details: error.message },
+            { error: "Impossible de récupérer les cours." },
             { status: 500 }
         );
     }

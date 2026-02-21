@@ -1,16 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    poweredByHeader: false,
     images: {
         remotePatterns: [
             {
                 protocol: "https",
                 hostname: "workyt.8002d4938b63d45290e9963164b4e90f.r2.cloudflarestorage.com",
-                pathname: "/**", // Autorise toutes les images de ce domaine
+                pathname: "/**",
             },
             {
                 protocol: "https",
                 hostname: "utfs.io",
-                pathname: "/**", // Autorise toutes les images de ce domaine
+                pathname: "/**",
             },
         ],
     },
@@ -28,7 +29,7 @@ const nextConfig = {
     experimental: {
         optimizeCss: true,
     },
-    // Headers pour améliorer le SEO
+    // Headers de sécurité
     async headers() {
         return [
             {
@@ -43,12 +44,16 @@ const nextConfig = {
                         value: "DENY",
                     },
                     {
-                        key: "X-XSS-Protection",
-                        value: "1; mode=block",
-                    },
-                    {
                         key: "Referrer-Policy",
                         value: "strict-origin-when-cross-origin",
+                    },
+                    {
+                        key: "Content-Security-Policy",
+                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://code.tidio.co https://*.tidio.co https://www.googletagmanager.com https://www.google-analytics.com https://cdn.cookie-script.com https://chimpstatic.com https://*.list-manage.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; connect-src 'self' https: wss:; frame-src 'self' https://www.google.com https://td.doubleclick.net; media-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self';",
+                    },
+                    {
+                        key: "Permissions-Policy",
+                        value: "camera=(), microphone=(), geolocation=()",
                     },
                 ],
             },

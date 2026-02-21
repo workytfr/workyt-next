@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("❌ Erreur lors de la récupération des questions :", error.message);
         return NextResponse.json(
-            { success: false, message: "Impossible de récupérer les questions.", details: error.message },
+            { success: false, message: "Impossible de récupérer les questions." },
             { status: 500 }
         );
     }

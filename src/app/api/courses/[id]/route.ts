@@ -18,7 +18,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     } catch (error: any) {
         console.error("Erreur lors de la récupération du cours :", error.message);
         return NextResponse.json(
-            { error: "Impossible de récupérer le cours.", details: error.message },
+            { error: "Impossible de récupérer le cours." },
             { status: 500 }
         );
     }
@@ -59,7 +59,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     } catch (error: any) {
         console.error("Erreur lors de la mise à jour du cours :", error.message);
         return NextResponse.json(
-            { error: "Impossible de mettre à jour le cours.", details: error.message },
+            { error: "Impossible de mettre à jour le cours." },
             { status: 500 }
         );
     }
@@ -91,7 +91,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     } catch (error: any) {
         console.error("Erreur lors de la suppression du cours :", error.message);
         return NextResponse.json(
-            { error: "Impossible de supprimer le cours.", details: error.message },
+            { error: "Impossible de supprimer le cours." },
             { status: 500 }
         );
     }

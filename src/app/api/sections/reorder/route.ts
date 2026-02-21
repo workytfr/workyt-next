@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors du réarrangement des sections :", error.message);
         return NextResponse.json(
-            { error: "Impossible de réorganiser les sections.", details: error.message },
+            { error: "Impossible de réorganiser les sections." },
             { status: 500 }
         );
     }

@@ -190,7 +190,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la récupération des cours :", error.message);
         return NextResponse.json(
-            { error: "Impossible de récupérer les cours.", details: error.message },
+            { error: "Impossible de récupérer les cours." },
             { status: 500 }
         );
     }
@@ -239,7 +239,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la création du cours :", error.message);
         return NextResponse.json(
-            { error: "Impossible de créer le cours.", details: error.message },
+            { error: "Impossible de créer le cours." },
             { status: 500 }
         );
     }
@@ -308,7 +308,7 @@ export async function PATCH(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la mise à jour du statut :", error.message);
         return NextResponse.json(
-            { error: "Erreur interne du serveur.", details: error.message },
+            { error: "Erreur interne du serveur." },
             { status: 500 }
         );
     }

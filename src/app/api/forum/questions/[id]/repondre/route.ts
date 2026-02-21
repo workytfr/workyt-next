@@ -171,7 +171,7 @@ export async function POST(
             {
                 success: false,
                 message: "Impossible d'ajouter la réponse.",
-                details: error.message,
+
             },
             { status: 500 }
         );

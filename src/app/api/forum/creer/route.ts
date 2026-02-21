@@ -80,10 +80,27 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Points insuffisants." }, { status: 400 });
         }
 
-        // Upload des fichiers
+        // Upload des fichiers avec validation
+        const ALLOWED_MIME_TYPES = [
+            'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'application/pdf',
+            'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        ];
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+        const MAX_FILES = 5;
+
         const fileURLs: string[] = [];
         for (const [_, value] of formData.entries()) {
             if (value instanceof File && value.size > 0) {
+                if (fileURLs.length >= MAX_FILES) {
+                    return NextResponse.json({ error: `Maximum ${MAX_FILES} fichiers autorisés.` }, { status: 400 });
+                }
+                if (!ALLOWED_MIME_TYPES.includes(value.type)) {
+                    return NextResponse.json({ error: `Type de fichier non autorisé : ${value.type}` }, { status: 400 });
+                }
+                if (value.size > MAX_FILE_SIZE) {
+                    return NextResponse.json({ error: `Fichier trop volumineux (max 10 MB) : ${value.name}` }, { status: 400 });
+                }
                 const url = await uploadFileToR2(value);
                 fileURLs.push(url);
             }
@@ -143,6 +160,6 @@ export async function POST(req: NextRequest) {
         return NextResponse.json(question, { status: 201 });
     } catch (err: any) {
         console.error("Erreur création question :", err);
-        return NextResponse.json({ error: "Échec création question.", details: err.message }, { status: 500 });
+        return NextResponse.json({ error: "Échec création question." }, { status: 500 });
     }
 }

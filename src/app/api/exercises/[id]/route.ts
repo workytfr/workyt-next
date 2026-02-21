@@ -19,7 +19,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     } catch (error: any) {
         console.error("Erreur lors de la récupération de l'exercice :", error.message);
         return NextResponse.json(
-            { error: "Impossible de récupérer l'exercice.", details: error.message },
+            { error: "Impossible de récupérer l'exercice." },
             { status: 500 }
         );
     }
@@ -102,7 +102,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     } catch (error: any) {
         console.error("Erreur lors de la mise à jour de l'exercice :", error.message);
         return NextResponse.json(
-            { error: "Impossible de mettre à jour l'exercice.", details: error.message },
+            { error: "Impossible de mettre à jour l'exercice." },
             { status: 500 }
         );
     }
