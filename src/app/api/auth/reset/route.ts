@@ -16,7 +16,9 @@ export async function POST(req: Request) {
 
         const user = await User.findOne({ email });
         if (!user) {
-            return NextResponse.json({ error: "Haha ! Vous n'avez pas de compte chez nous" }, { status: 404 });        }
+            // Retourner le même message que si l'utilisateur existait pour éviter l'énumération
+            return NextResponse.json({ message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' }, { status: 200 });
+        }
 
         const resetToken = crypto.randomBytes(32).toString('hex');
         const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
@@ -52,7 +54,7 @@ export async function POST(req: Request) {
 
         await transporter.sendMail(mailOptions);
 
-        return NextResponse.json({ message: 'Un email de réinitialisation a été envoyé' } , { status: 200 });
+        return NextResponse.json({ message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' } , { status: 200 });
     } catch (error) {
         console.error('Error:', error);
         return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

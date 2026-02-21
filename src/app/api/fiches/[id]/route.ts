@@ -87,7 +87,17 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
 
-        const updatedData = await req.json(); // Données de la mise à jour
+        const body = await req.json();
+
+        // Whitelister les champs autorisés pour éviter le mass assignment
+        const allowedFields = ['title', 'content', 'subject', 'level', 'status', 'files'];
+        const updatedData: Record<string, any> = {};
+        for (const field of allowedFields) {
+            if (body[field] !== undefined) {
+                updatedData[field] = body[field];
+            }
+        }
+
         const updatedFiche = await Revision.findByIdAndUpdate(id, updatedData, { new: true });
 
         return NextResponse.json({ success: true, data: updatedFiche }, { status: 200 });

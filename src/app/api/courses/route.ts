@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import Course from "@/models/Course";
 import Section from "@/models/Section";
 import connectDB from "@/lib/mongodb";
+import { escapeRegex } from "@/utils/escapeRegex";
 
 /**
  * 🚀 GET - Récupérer les cours avec pagination et recherche avancée (Réservé au staff)
@@ -38,9 +39,10 @@ export async function GET(req: NextRequest) {
         
         // Recherche textuelle
         if (search) {
+            const escaped = escapeRegex(search);
             filters.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { description: { $regex: search, $options: "i" } },
+                { title: { $regex: escaped, $options: "i" } },
+                { description: { $regex: escaped, $options: "i" } },
             ];
         }
         
@@ -254,6 +256,10 @@ export async function PATCH(req: NextRequest) {
         // 🔒 Vérification des permissions (Accès Admin uniquement)
         if (!session?.user?.email) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+        }
+
+        if (session.user.role !== 'Admin') {
+            return NextResponse.json({ error: "Accès refusé. Réservé aux administrateurs." }, { status: 403 });
         }
 
         // 📌 Extraire les données du body

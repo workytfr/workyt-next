@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import authMiddleware from '@/middlewares/authMiddleware';
+import { escapeRegex } from '@/utils/escapeRegex';
 
 // Forcer le rendu dynamique pour cette route
 export const dynamic = "force-dynamic";
@@ -38,11 +41,12 @@ export async function GET(req: NextRequest) {
 
         // Recherche textuelle
         if (searchParam) {
+            const escaped = escapeRegex(searchParam);
             query.$or = [
-                { name: { $regex: searchParam, $options: 'i' } },
-                { email: { $regex: searchParam, $options: 'i' } },
-                { username: { $regex: searchParam, $options: 'i' } },
-                { bio: { $regex: searchParam, $options: 'i' } },
+                { name: { $regex: escaped, $options: 'i' } },
+                { email: { $regex: escaped, $options: 'i' } },
+                { username: { $regex: escaped, $options: 'i' } },
+                { bio: { $regex: escaped, $options: 'i' } },
             ];
         }
 
@@ -214,7 +218,7 @@ export async function POST(req: NextRequest) {
             bio: bio || '',
             points: points || 20,
             badges: badges || [],
-            password: 'temp_password_123', // Mot de passe temporaire
+            password: await bcrypt.hash(crypto.randomBytes(16).toString('hex'), 12),
         });
 
         await newUser.save();

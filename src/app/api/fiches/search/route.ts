@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Revision from "@/models/Revision";
+import { escapeRegex } from "@/utils/escapeRegex";
 
 connectDB();
 
@@ -20,9 +21,10 @@ export const GET = async (req: NextRequest) => {
         const filter: any = {};
 
         if (query) {
+            const escaped = escapeRegex(query);
             filter.$or = [
-                { title: { $regex: query, $options: "i" } },
-                { content: { $regex: query, $options: "i" } },
+                { title: { $regex: escaped, $options: "i" } },
+                { content: { $regex: escaped, $options: "i" } },
             ];
         }
 

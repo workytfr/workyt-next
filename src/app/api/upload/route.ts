@@ -85,15 +85,29 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Aucun fichier fourni' }, { status: 400 });
         }
 
+        // Validation du type de fichier
+        const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.pdf'];
+        const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+
+        const extension = path.extname(filePart.filename).toLowerCase() || '.jpg';
+
+        if (!ALLOWED_EXTENSIONS.includes(extension)) {
+            return NextResponse.json({ error: 'Type de fichier non autorisé. Extensions acceptées : ' + ALLOWED_EXTENSIONS.join(', ') }, { status: 400 });
+        }
+
+        if (filePart.data.length > MAX_FILE_SIZE) {
+            return NextResponse.json({ error: 'Fichier trop volumineux. Taille maximale : 10 MB' }, { status: 400 });
+        }
+
         // Définir le dossier d'upload et le créer s'il n'existe pas
         const uploadDir = path.join(process.cwd(), 'public/uploads/cours/lessons');
         if (!fs.existsSync(uploadDir)) {
             fs.mkdirSync(uploadDir, { recursive: true });
         }
 
-        // Générer un nom de fichier unique
-        const extension = path.extname(filePart.filename) || '.jpg';
-        const newFilename = `${Date.now()}-upload${extension}`;
+        // Générer un nom de fichier unique (nettoyer le nom pour éviter le path traversal)
+        const safeName = path.basename(filePart.filename);
+        const newFilename = `${Date.now()}-upload${path.extname(safeName).toLowerCase() || '.jpg'}`;
         const filePath = path.join(uploadDir, newFilename);
 
         // Écrire le fichier sur le disque

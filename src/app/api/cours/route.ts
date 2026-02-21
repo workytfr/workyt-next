@@ -5,6 +5,7 @@ import Section from "@/models/Section";
 import User from "@/models/User";
 import { optionalAuthMiddleware } from "@/middlewares/authMiddleware";
 import { Types, isValidObjectId } from "mongoose";
+import { escapeRegex } from "@/utils/escapeRegex";
 
 // Forcer le rendu dynamique pour éviter l'erreur
 export const dynamic = "force-dynamic";
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest) {
 
         // Construction des filtres de recherche
         const filters: any = {};
-        if (search) filters.title = { $regex: search, $options: "i" };
+        if (search) filters.title = { $regex: escapeRegex(search), $options: "i" };
         if (niveau) filters.niveau = niveau;
         if (matiere) filters.matiere = matiere;
 
