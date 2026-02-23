@@ -128,6 +128,7 @@ export default function CourseForm({ course, onSuccess, onError }: CourseFormPro
                 <MDEditor
                     value={formData.description}
                     onChange={(value) => setFormData({ ...formData, description: value || "" })}
+                    highlightEnable={false}
                     previewOptions={{
                         remarkPlugins: [remarkMath],
                         rehypePlugins: [rehypeKatex],

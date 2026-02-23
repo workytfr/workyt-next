@@ -2,7 +2,6 @@ import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Configuration du client S3 pour Cloudflare R2 via AWS SDK
-// Utilise la même config que les routes d'upload pour que les URLs signées soient cohérentes
 const s3 = new S3Client({
     region: process.env.S3_REGION || "auto",
     endpoint: process.env.S3_ENDPOINT || "",
@@ -76,32 +75,34 @@ export async function getFileFromStorage(bucketName: string, fileKey: string) {
  */
 export function extractFileKeyFromUrl(fileUrl: string): string {
     try {
-        // Vérifier si l'URL est valide
         if (!fileUrl || fileUrl.includes('undefined')) {
-            console.warn(`URL de fichier invalide: ${fileUrl}`);
             return '';
         }
 
-        // Pour les URLs de type: https://domain.com/bucket/fiches/uuid-filename
+        // Déjà une clé (ex: fiches/uuid-file.pdf ou uploads/uuid-file.pdf)
+        if (!fileUrl.startsWith('http://') && !fileUrl.startsWith('https://')) {
+            const key = fileUrl.replace(/^\/+/, '');
+            return stripBucketPrefix(key) || '';
+        }
+
+        // URL complète: https://domain.com/fiches/uuid-filename ou .../workyt/uploads/...
         const url = new URL(fileUrl);
-        const pathParts = url.pathname.split('/');
-        
-        // Retourner le chemin complet sans le slash initial
-        // Ex: /workyt/fiches/uuid-file.pdf → workyt/fiches/uuid-file.pdf
         const fullKey = url.pathname.replace(/^\/+/, '');
-        if (fullKey) {
-            return fullKey;
-        }
+        if (fullKey) return stripBucketPrefix(fullKey);
 
-        // Fallback: prendre les deux dernières parties du chemin
-        if (pathParts.length >= 2) {
-            return pathParts.slice(-2).join('/');
-        }
-
-        // Dernier fallback: prendre la dernière partie
-        return pathParts[pathParts.length - 1];
-    } catch (error) {
-        console.error(`Erreur lors de l'extraction de la clé du fichier depuis l'URL ${fileUrl}:`, error);
+        const pathParts = url.pathname.split('/').filter(Boolean);
+        if (pathParts.length >= 2) return stripBucketPrefix(pathParts.slice(-2).join('/'));
+        return pathParts[pathParts.length - 1] || '';
+    } catch {
         return '';
     }
+}
+
+/** Retire le préfixe bucket du chemin si présent (ex: workyt/fiches/ -> fiches/) */
+function stripBucketPrefix(key: string): string {
+    const bucket = process.env.S3_BUCKET_NAME || 'workyt';
+    if (key.startsWith(`${bucket}/`)) {
+        return key.slice(bucket.length + 1);
+    }
+    return key;
 }

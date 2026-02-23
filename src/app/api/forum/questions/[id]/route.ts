@@ -3,7 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Answer from "@/models/Answer";
 import Revision from "@/models/Revision";
-import { generateSignedUrl } from "@/lib/b2Utils"; // Fonction pour générer des URLs signées
+import { generateSignedUrl, extractFileKeyFromUrl } from "@/lib/b2Utils";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -44,11 +44,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             signedFileURLs = await Promise.all(
                 question.attachments.map(async (fileUrl: string) => {
                     try {
-                        const rawKey = decodeURIComponent(fileUrl.split("/").slice(-1)[0]); // 🔹 Extraire le nom de fichier proprement
-                        const fileKey = `uploads/${rawKey}`; // 🔹 Vérifier si `uploads/` est déjà inclus
+                        let fileKey = extractFileKeyFromUrl(fileUrl);
+                        if (!fileKey) {
+                            const rawKey = fileUrl.split("/").pop()?.split("?")[0] || "";
+                            fileKey = rawKey.includes("/") ? rawKey : `uploads/${decodeURIComponent(rawKey)}`;
+                        }
                         return await generateSignedUrl(process.env.S3_BUCKET_NAME!, fileKey);
                     } catch (err) {
-                        console.error("❌ Erreur de signature de l'URL :", err);
+                        console.error("Erreur signature URL pièce jointe:", err);
                         return null;
                     }
                 })

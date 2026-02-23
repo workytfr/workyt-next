@@ -33,12 +33,15 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
 
-        // Générer des URLs signées pour les fichiers
+        // Générer des URLs signées pour les fichiers (format upload: fiches/uuid-file.pdf)
         const signedFileURLs = await Promise.all(
             (fiche.files || []).map(async (fileUrl: string) => {
                 try {
-                    const rawKey = fileUrl.split("/").slice(-1)[0];
-                    const fileKey = `workyt/fiches/${decodeURIComponent(rawKey)}`;
+                    let fileKey = extractFileKeyFromUrl(fileUrl);
+                    if (!fileKey) {
+                        const rawKey = fileUrl.split("/").pop()?.split("?")[0] || "";
+                        fileKey = rawKey.includes("/") ? rawKey : `fiches/${decodeURIComponent(rawKey)}`;
+                    }
                     return await generateSignedUrl(process.env.S3_BUCKET_NAME!, fileKey);
                 } catch (err) {
                     return null;

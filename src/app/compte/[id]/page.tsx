@@ -82,33 +82,6 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
 
     const userRank = calculateUserRank(formData.points);
 
-    // Fonction pour générer un gradient unique basé sur l'ID utilisateur
-    const generateUniqueGradient = (userId: string | null): string => {
-        if (!userId) return 'from-purple-600 via-purple-500 to-indigo-600';
-
-        let hash = 0;
-        for (let i = 0; i < userId.length; i++) {
-            hash = userId.charCodeAt(i) + ((hash << 5) - hash);
-        }
-
-        const gradients = [
-            'from-purple-600 via-purple-500 to-indigo-600',
-            'from-blue-600 via-blue-500 to-cyan-600',
-            'from-pink-600 via-pink-500 to-rose-600',
-            'from-green-600 via-green-500 to-emerald-600',
-            'from-orange-600 via-orange-500 to-amber-600',
-            'from-red-600 via-red-500 to-pink-600',
-            'from-indigo-600 via-indigo-500 to-purple-600',
-            'from-teal-600 via-teal-500 to-cyan-600',
-            'from-violet-600 via-violet-500 to-purple-600',
-            'from-rose-600 via-rose-500 to-pink-600',
-            'from-amber-600 via-amber-500 to-yellow-600',
-            'from-emerald-600 via-emerald-500 to-green-600',
-        ];
-
-        return gradients[Math.abs(hash) % gradients.length];
-    };
-
     // Resolve params promise
     useEffect(() => {
         async function resolveParams() {
@@ -117,8 +90,6 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
         }
         resolveParams();
     }, [params]);
-
-    const uniqueGradient = generateUniqueGradient(id);
 
     useEffect(() => {
         if (!id) return; // Wait for id to be resolved
@@ -241,40 +212,26 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
 
     return (
         <div className="bg-gray-50 min-h-screen">
-            {/* Cover Section */}
-            <div className={`relative z-0 w-full h-48 bg-gradient-to-br ${uniqueGradient} overflow-hidden`}>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" aria-hidden></div>
-                <div className="absolute inset-0 bg-[url('/noise.webp')] opacity-10 pointer-events-none" aria-hidden></div>
-            </div>
-
-            {/* Profile Header - z-20 pour être au-dessus du cover */}
-            <div className="container mx-auto px-4 relative z-20">
-                <div className="relative -mt-16 mb-6">
-                    <div className="flex items-end gap-5">
-                        {/* Avatar */}
-                        <div className="relative flex-shrink-0">
-                            <div className="rounded-full ring-4 ring-white">
-                                <ProfileAvatar
-                                    username={formData.username}
-                                    size="large"
-                                    userId={id}
-                                />
-                            </div>
-                        </div>
-
-                        {/* User info */}
-                        <div className="pt-18 pb-1">
-                            <CustomUsername
-                                username={formData.username}
-                                userId={id}
-                                className="text-2xl font-bold text-gray-900"
-                                role={user?.role}
-                            />
-                        </div>
+            <div className="container mx-auto px-4 pt-6 pb-8">
+                {/* Photo de profil en haut */}
+                <div className="flex flex-col items-center mb-6">
+                    <div className="rounded-full ring-4 ring-white shadow-lg">
+                        <ProfileAvatar
+                            username={formData.username}
+                            size="large"
+                            userId={id}
+                        />
                     </div>
+                    <CustomUsername
+                        username={formData.username}
+                        userId={id}
+                        className="text-2xl font-bold text-gray-900 mt-3"
+                        role={user?.role}
+                    />
+                </div>
 
-                    {/* Stats pills */}
-                    <div className="flex items-center gap-3 flex-wrap mt-3">
+                {/* Stats pills */}
+                <div className="flex items-center justify-center gap-3 flex-wrap mb-4">
                         <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                             Nv {userRank.level}
                         </span>
@@ -289,13 +246,12 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                         <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                             🏆 {formData.badges?.length || 0} badges
                         </span>
-                    </div>
-
-                    {/* Bio */}
-                    {formData.bio && (
-                        <p className="text-gray-500 text-sm mt-2 max-w-2xl">{formData.bio}</p>
-                    )}
                 </div>
+
+                {/* Bio */}
+                {formData.bio && (
+                    <p className="text-gray-500 text-sm text-center max-w-2xl mx-auto mb-6">{formData.bio}</p>
+                )}
 
                 {/* Content */}
                 <div className="space-y-6 pb-8">

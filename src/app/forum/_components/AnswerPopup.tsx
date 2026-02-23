@@ -173,11 +173,12 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
 
                         {/* Éditeur Markdown */}
                         <div className="mb-4">
-                            <MDEditor
-                                value={content}
-                                onChange={(value) => setContent(value || "")}
-                                height={250}
-                                preview="edit"
+<MDEditor
+                            value={content}
+                            onChange={(value) => setContent(value || "")}
+                            height={250}
+                            highlightEnable={false}
+                            preview="edit"
                                 className="border border-gray-300 dark:border-gray-600 rounded-lg shadow-sm"
                                 previewOptions={{
                                     remarkPlugins: [remarkMath],

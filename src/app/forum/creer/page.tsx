@@ -217,6 +217,7 @@ export default function ForumPostPage() {
                                 value={whatIDid}
                                 onChange={setWhatIDid}
                                 height={150}
+                                highlightEnable={false}
                                 previewOptions={{
                                     remarkPlugins: [remarkMath],
                                     rehypePlugins: [rehypeKatex],
@@ -235,6 +236,7 @@ export default function ForumPostPage() {
                                 value={whatINeed}
                                 onChange={setWhatINeed}
                                 height={150}
+                                highlightEnable={false}
                                 previewOptions={{
                                     remarkPlugins: [remarkMath],
                                     rehypePlugins: [rehypeKatex],

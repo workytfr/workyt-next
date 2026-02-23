@@ -127,6 +127,7 @@ export default function UploadForm() {
                             value={content}
                             onChange={setContent}
                             height={300}
+                            highlightEnable={false}
                         />
                     </div>
                     <div className="flex space-x-4">

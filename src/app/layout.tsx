@@ -4,7 +4,7 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ReactNode } from "react";
-import { Metadata } from "next";
+import { Metadata, Viewport } from "next";
 import { Funnel_Display, Montserrat } from "next/font/google";
 
 const funnelDisplay = Funnel_Display({
@@ -58,6 +58,12 @@ export const metadata: Metadata = {
     alternates: {
         canonical: "https://workyt.fr",
     },
+};
+
+export const viewport: Viewport = {
+    width: "device-width",
+    initialScale: 1,
+    viewportFit: "cover", // Pour safe-area sur iPhone (notch, home indicator)
 };
 
 interface RootLayoutProps {
