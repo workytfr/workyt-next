@@ -36,13 +36,14 @@ export default function CoursesPage() {
             if (selectedSubject) params.append("matiere", selectedSubject);
             if (selectedClass) params.append("niveau", selectedClass);
             params.append("page", currentPage.toString());
-            params.append("limit", "30");
+            const pageLimit = 12;
+            params.append("limit", pageLimit.toString());
 
             const response = await fetch(`/api/cours?${params.toString()}`, { cache: "no-store" });
             const data = await response.json();
 
             setCourses(data.courses);
-            setTotalPages(Math.ceil(data.total / 6));
+            setTotalPages(Math.ceil(data.total / pageLimit));
             setPage(currentPage);
         } catch (error) {
             console.error("Erreur lors de la récupération des cours :", error);

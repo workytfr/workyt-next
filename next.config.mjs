@@ -25,6 +25,8 @@ const nextConfig = {
             },
         ];
     },
+    // Exclure pdf-parse du bundling serveur (nécessite le worker pdf.js en natif)
+    serverExternalPackages: ["pdf-parse"],
     // Configuration pour le SEO
     experimental: {
         optimizeCss: true,

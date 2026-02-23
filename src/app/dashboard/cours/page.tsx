@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/Badge";
-import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, CheckCircle, Clock, XCircle, FileText, Users, Calendar } from "lucide-react";
+import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, CheckCircle, Clock, XCircle, FileText, Users, Calendar, Sparkles } from "lucide-react";
+import Link from "next/link";
 import {
     ToastProvider,
     ToastViewport,
@@ -380,6 +381,12 @@ export default function CoursesPage() {
                             <Download className="mr-2 h-4 w-4" />
                             Exporter
                         </Button>
+                        <Link href="/cours/generer">
+                            <Button className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
+                                <Sparkles className="mr-2 h-4 w-4" />
+                                Générer avec l&apos;IA
+                            </Button>
+                        </Link>
                         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
                                 <Button onClick={() => {
