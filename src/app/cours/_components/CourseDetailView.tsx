@@ -12,6 +12,7 @@ import Image from "next/image";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import ReportButton from "@/components/ReportButton";
+import BookmarkButton from "@/components/BookmarkButton";
 
 interface Section {
     _id: string;
@@ -183,12 +184,15 @@ export default function CourseDetailView() {
                                     <Badge variant={course.status === "publie" ? "default" : "secondary"}>
                                         {course.status}
                                     </Badge>
-                                    <ReportButton 
-                                        contentId={course._id} 
-                                        contentType="course"
-                                        variant="button"
-                                        size="sm"
-                                    />
+                                    <div className="flex items-center gap-2">
+                                        <BookmarkButton courseId={course._id} size="sm" />
+                                        <ReportButton 
+                                            contentId={course._id} 
+                                            contentType="course"
+                                            variant="button"
+                                            size="sm"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                             

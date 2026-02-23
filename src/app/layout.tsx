@@ -4,6 +4,61 @@ import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ReactNode } from "react";
+import { Metadata } from "next";
+import { Funnel_Display, Montserrat } from "next/font/google";
+
+const funnelDisplay = Funnel_Display({
+    subsets: ["latin"],
+    variable: "--font-funnel-display",
+    display: "swap",
+});
+
+const montserrat = Montserrat({
+    subsets: ["latin"],
+    variable: "--font-montserrat",
+    display: "swap",
+});
+
+export const metadata: Metadata = {
+    metadataBase: new URL("https://workyt.fr"),
+    title: {
+        default: "Workyt - Plateforme d'entraide scolaire gratuite",
+        template: "%s | Workyt",
+    },
+    description: "Workyt est une plateforme d'entraide scolaire gratuite. Cours, fiches de révision, forum d'aide aux devoirs et outils pour réussir au collège et au lycée.",
+    keywords: "entraide scolaire, aide devoirs, cours gratuits, fiches de révision, forum scolaire, bac, brevet, lycée, collège",
+    authors: [{ name: "Workyt" }],
+    creator: "Workyt",
+    publisher: "Workyt",
+    robots: {
+        index: true,
+        follow: true,
+    },
+    openGraph: {
+        type: "website",
+        locale: "fr_FR",
+        url: "https://workyt.fr",
+        siteName: "Workyt",
+        title: "Workyt - Plateforme d'entraide scolaire gratuite",
+        description: "Cours, fiches de révision, forum d'aide aux devoirs et outils pour réussir au collège et au lycée.",
+        images: [
+            {
+                url: "/default-thumbnail.png",
+                width: 1200,
+                height: 630,
+                alt: "Workyt",
+            },
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        creator: "@workyt_fr",
+        site: "@workyt_fr",
+    },
+    alternates: {
+        canonical: "https://workyt.fr",
+    },
+};
 
 interface RootLayoutProps {
     children: ReactNode;
@@ -12,7 +67,8 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html lang="fr" suppressHydrationWarning>
-        <body className="overflow-x-hidden">
+        <body className={`${funnelDisplay.variable} ${montserrat.variable} font-sans overflow-x-hidden`}>
+        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <ClientProviders>
             {children}
         </ClientProviders>

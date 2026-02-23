@@ -1,9 +1,7 @@
 "use client";
-// Improved cover image and certification badge styles
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { pdfjs } from "react-pdf";
 import ReactMarkdown from "react-markdown";
 import rehypeSanitize from "rehype-sanitize";
 import { Badge } from "@/components/ui/Badge";
@@ -11,9 +9,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
-import { fetchPdfAsBlob } from "@/utils/fetchPdf";
-import "react-pdf/dist/esm/Page/AnnotationLayer.css";
-import { TokensIcon, CalendarIcon, MixIcon, LockClosedIcon, ReloadIcon } from "@radix-ui/react-icons";
+import SubjectIcon from "@/components/fiches/SubjectIcon";
+import { CalendarIcon, LockClosedIcon, ReloadIcon } from "@radix-ui/react-icons";
+import { FileText, ArrowLeft } from "lucide-react";
 import CommentForm from "@/app/fiches/_components/CommentForm";
 import FileViewer from "@/app/fiches/_components/FileViewer";
 import LikedByList from "@/app/fiches/_components/LikedByList";
@@ -21,9 +19,8 @@ import CommentsList from "@/app/fiches/_components/CommentsList";
 import StatusChanger from "@/app/fiches/_components/StatusChanger";
 import DeleteFicheButton from "@/app/fiches/_components/DeleteFicheButton";
 import ReportButton from "@/components/ReportButton";
-
-// Configure PDF.js worker
-pdfjs.GlobalWorkerOptions.workerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@4.8.69/build/pdf.worker.min.mjs"
+import BookmarkButton from "@/components/BookmarkButton";
+import { subjectGradients } from "@/data/educationData";
 
 interface FicheViewProps {
     id: string;
@@ -36,7 +33,6 @@ export default function FicheView({ id }: FicheViewProps) {
     const [fiche, setFiche] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [pdfCover, setPdfCover] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
 
@@ -52,7 +48,6 @@ export default function FicheView({ id }: FicheViewProps) {
         setIsRetrying(retryCount > 0);
 
         try {
-            // Ajout d'un paramètre de cache-busting pour éviter les problèmes de cache
             const cacheBuster = new Date().getTime();
             const response = await fetch(`/api/fiches/${id}?t=${cacheBuster}`, {
                 signal: AbortSignal.timeout(15000)
@@ -70,18 +65,6 @@ export default function FicheView({ id }: FicheViewProps) {
             }
 
             setFiche(data.data);
-
-            // Générer la couverture pour un PDF
-            if (data.data.files?.length > 0) {
-                const isPdfFile = (url: string): boolean => {
-                    const baseUrl = url.split('?')[0];
-                    return baseUrl.toLowerCase().endsWith('.pdf');
-                };
-
-                if (isPdfFile(data.data.files[0])) {
-                    await generatePdfCover(data.data.files[0]);
-                }
-            }
         } catch (err) {
             console.error("Erreur lors de la récupération de la fiche :", err);
             const errorMessage = err instanceof Error ? err.message : "Erreur de connexion au serveur";
@@ -101,55 +84,13 @@ export default function FicheView({ id }: FicheViewProps) {
         fetchFiche();
     }, [id, retryCount]);
 
-    const generatePdfCover = async (pdfUrl: string) => {
-        try {
-            // Récupérer le PDF en mode no-cors
-            const blob = await fetchPdfAsBlob(pdfUrl);
-            const pdfData = new Uint8Array(await blob.arrayBuffer());
-
-            // Charger le document avec pdf.js
-            const loadingTask = pdfjs.getDocument({ data: pdfData });
-            const pdf = await loadingTask.promise;
-            const page = await pdf.getPage(1);
-
-            // Générer une vue de la première page avec une échelle améliorée pour remplir l'espace
-            const viewport = page.getViewport({ scale: 1.5 }); // Échelle augmentée pour un meilleur remplissage
-            const canvas = document.createElement("canvas");
-            const context = canvas.getContext("2d");
-
-            if (!context) {
-                console.error("Impossible de créer un contexte de rendu.");
-                return;
-            }
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
-
-            const renderContext = {
-                canvasContext: context,
-                viewport,
-            };
-
-            await page.render(renderContext).promise;
-
-            const image = canvas.toDataURL("image/png");
-            setPdfCover(image);
-        } catch (err) {
-            console.error("Erreur lors de la génération de la couverture PDF :", err);
-            setPdfCover(null);
-        }
-    };
-
     const handleRetry = () => {
         setRetryCount(prevCount => prevCount + 1);
     };
 
     if (loading) {
         return (
-            <div className="min-h-screen" style={{
-                backgroundImage: `linear-gradient(to right, rgba(255, 140, 66, 0.8), rgba(255, 94, 120, 0.8)), url(/noise.webp)`,
-                backgroundSize: "cover, 2%",
-                backgroundBlendMode: "overlay",
-            }}>
+            <div className="min-h-screen bg-gradient-to-r from-orange-400 to-pink-500">
                 <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 space-y-6">
                     <div className="p-8 bg-white rounded-xl shadow-lg space-y-6 relative overflow-hidden">
                         {isRetrying && (
@@ -157,7 +98,6 @@ export default function FicheView({ id }: FicheViewProps) {
                                 <div className="h-full bg-gradient-to-r from-orange-400 to-pink-500 animate-progress"></div>
                             </div>
                         )}
-
                         <div className="flex flex-col gap-4">
                             <Skeleton className="h-10 w-3/4 rounded-lg bg-gray-200" />
                             <Skeleton className="h-6 w-1/2 rounded-lg bg-gray-200" />
@@ -169,11 +109,6 @@ export default function FicheView({ id }: FicheViewProps) {
                             <Skeleton className="h-6 w-full rounded-lg bg-gray-200" />
                             <Skeleton className="h-6 w-11/12 rounded-lg bg-gray-200" />
                             <Skeleton className="h-6 w-10/12 rounded-lg bg-gray-200" />
-                        </div>
-                        <div className="flex gap-4">
-                            <Skeleton className="h-8 w-16 rounded-full bg-gray-200" />
-                            <Skeleton className="h-8 w-16 rounded-full bg-gray-200" />
-                            <Skeleton className="h-8 w-16 rounded-full bg-gray-200" />
                         </div>
                     </div>
                 </div>
@@ -194,7 +129,6 @@ export default function FicheView({ id }: FicheViewProps) {
                             </div>
                             <h2 className="text-2xl font-bold text-gray-800 mb-2">Une erreur est survenue</h2>
                             <p className="text-gray-600 mb-6">{error}</p>
-
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                 <Button
                                     onClick={handleRetry}
@@ -202,21 +136,20 @@ export default function FicheView({ id }: FicheViewProps) {
                                 >
                                     <ReloadIcon className="h-4 w-4" /> Réessayer
                                 </Button>
-
                                 <Link href="/fiches">
                                     <Button variant="outline" className="flex items-center justify-center gap-2">
-                                        Retour aux fiches
+                                        <ArrowLeft size={16} /> Retour aux fiches
                                     </Button>
                                 </Link>
                             </div>
                         </div>
-
                         <div className="border-t border-gray-200 pt-6 mt-6">
                             <h3 className="text-sm font-medium text-gray-900 mb-2">Suggestions:</h3>
                             <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
                                 <li>Vérifiez votre connexion internet</li>
                                 <li>Le serveur peut être momentanément surchargé</li>
-                                <li>L&apos;identifiant de la fiche est peut-être incorrect</li>                                <li>La fiche a peut-être été supprimée</li>
+                                <li>L&apos;identifiant de la fiche est peut-être incorrect</li>
+                                <li>La fiche a peut-être été supprimée</li>
                             </ul>
                         </div>
                     </div>
@@ -227,12 +160,9 @@ export default function FicheView({ id }: FicheViewProps) {
 
     const allowedRoles = ["Helpeur", "Rédacteur", "Correcteur", "Admin"];
     const userHasPermission = allowedRoles.includes(currentUser?.role ?? "");
-    
-    // Vérifier si l'utilisateur est le créateur de la fiche ou un admin
     const isCreator = currentUser && fiche && currentUser.id === fiche.author._id.toString();
     const isAdmin = currentUser?.role === "Admin";
 
-    // Style amélioré pour les badges de statut
     const getStatusBadgeStyle = (status: string) => {
         switch (status) {
             case "Certifiée":
@@ -244,40 +174,16 @@ export default function FicheView({ id }: FicheViewProps) {
         }
     };
 
-    // Style pour le conteneur de l'image de couverture
-    const getCoverContainerStyle = (status: string) => {
-        switch (status) {
-            case "Certifiée":
-                return "border-2 border-blue-300 bg-blue-50";
-            case "Vérifiée":
-                return "border-2 border-green-300 bg-green-50";
-            default:
-                return "border-2 border-gray-200 bg-gray-50";
-        }
-    };
+    const subjectGradient = subjectGradients[fiche.subject] || "from-orange-500 to-pink-500";
 
-    const headerStyle = {
-        backgroundImage: `linear-gradient(to right, #FF8C42, #FF5E78), url(/noise.webp)`,
-        backgroundSize: "cover, 3%",
-        backgroundBlendMode: "overlay",
-    };
-
-    // Nouveau style pour le badge brillant de certification
     const renderStatusBadge = (status: string) => {
         if (status === "Certifiée") {
             return (
                 <div className="relative flex items-center gap-2">
-                    <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)} relative z-10`}>
-                        {status}
-                    </Badge>
+                    <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)} relative z-10`}>{status}</Badge>
                     <div className="relative">
                         <div className="absolute inset-0 rounded-full bg-blue-400 opacity-25 animate-pulse"></div>
-                        <img
-                            src={`/badge/${status}.svg`}
-                            alt={`Statut: ${status}`}
-                            className="h-12 w-12 relative z-10 filter drop-shadow-lg"
-                        />
-                        {/* Reflet brillant sur le badge */}
+                        <img src={`/badge/${status}.svg`} alt={`Statut: ${status}`} className="h-12 w-12 relative z-10 filter drop-shadow-lg" />
                         <div className="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-60 rounded-full animate-shine"></div>
                     </div>
                 </div>
@@ -285,173 +191,97 @@ export default function FicheView({ id }: FicheViewProps) {
         } else if (status === "Vérifiée") {
             return (
                 <div className="flex items-center gap-2">
-                    <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)}`}>
-                        {status}
-                    </Badge>
-                    <img
-                        src={`/badge/${status}.svg`}
-                        alt={`Statut: ${status}`}
-                        className="h-10 w-10 filter drop-shadow"
-                    />
-                </div>
-            );
-        } else {
-            return (
-                <div className="flex items-center gap-2">
-                    <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)}`}>
-                        {status}
-                    </Badge>
-                    <img
-                        src={`/badge/${status}.svg`}
-                        alt={`Statut: ${status}`}
-                        className="h-8 w-8"
-                    />
+                    <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)}`}>{status}</Badge>
+                    <img src={`/badge/${status}.svg`} alt={`Statut: ${status}`} className="h-10 w-10 filter drop-shadow" />
                 </div>
             );
         }
+        return (
+            <div className="flex items-center gap-2">
+                <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)}`}>{status}</Badge>
+                <img src={`/badge/${status}.svg`} alt={`Statut: ${status}`} className="h-8 w-8" />
+            </div>
+        );
     };
+
+    // Détecter le type du premier fichier
+    const firstFileUrl = fiche.files?.[0] || "";
+    const firstFileBase = firstFileUrl.split("?")[0].toLowerCase();
+    const hasPdfFile = fiche.files?.length > 0 && firstFileBase.endsWith(".pdf");
+    const hasImageFile = fiche.files?.length > 0 && (firstFileBase.endsWith(".jpg") || firstFileBase.endsWith(".jpeg") || firstFileBase.endsWith(".png") || firstFileBase.endsWith(".webp"));
 
     return (
         <div className="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden text-black">
-            {/* En-tête avec dégradé */}
+            {/* En-tête */}
             <div
-                className="w-full py-12"
-                style={{
-                    ...headerStyle,
-                    textShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)"
-                }}
+                className={`w-full py-10 md:py-14 bg-gradient-to-r ${subjectGradient}`}
+                style={{ textShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)" }}
             >
                 <div className="max-w-4xl mx-auto px-4 md:px-8">
-                    <h1 className="text-3xl font-bold text-white mb-2">{fiche.title}</h1>
-                    <div className="flex items-center text-white opacity-90">
-                        <CalendarIcon className="mr-2" />
-                        <span>Publié le {new Date(fiche.createdAt).toLocaleDateString("fr-FR")}</span>
+                    <Link href="/fiches" className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm mb-4 transition-colors">
+                        <ArrowLeft size={16} />
+                        <span>Retour aux fiches</span>
+                    </Link>
+                    <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                                    <SubjectIcon subject={fiche.subject} size={24} className="text-white" />
+                                </div>
+                                <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1 rounded-full text-sm">{fiche.subject}</Badge>
+                                <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1 rounded-full text-sm">{fiche.level}</Badge>
+                            </div>
+                            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{fiche.title}</h1>
+                            <div className="flex items-center text-white/80 text-sm">
+                                <CalendarIcon className="mr-2" />
+                                <span>Publié le {new Date(fiche.createdAt).toLocaleDateString("fr-FR")}</span>
+                            </div>
+                        </div>
+                        <BookmarkButton revisionId={fiche._id} size="lg" className="mt-2 p-2 bg-white/20 backdrop-blur-sm rounded-full" />
                     </div>
                 </div>
             </div>
 
-            <div className="max-w-4xl w-full mx-auto px-4 md:px-8 -mt-10 mb-12 relative z-10">
-                {/* Carte principale avec un design moderne */}
+            <div className="max-w-4xl w-full mx-auto px-4 md:px-8 -mt-8 mb-12 relative z-10">
+                {/* Carte principale */}
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                    {/* Informations de l'auteur et badge de statut amélioré */}
-                    <div className="p-6 flex items-center justify-between border-b border-gray-100">
+                    {/* Auteur + statut */}
+                    <div className="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-100">
                         <div className="flex items-center gap-3">
-                            <ProfileAvatar
-                                username={fiche.author?.username || "Inconnu"}
-                                points={fiche.author?.points || 0}
-                                userId={fiche.author?._id}
-                                role={fiche.author?.role}
-                            />
+                            <ProfileAvatar username={fiche.author?.username || "Inconnu"} points={fiche.author?.points || 0} userId={fiche.author?._id} role={fiche.author?.role} />
                             <div>
                                 <Link href={`/compte/${fiche.author?._id}`}>
-                                    <UsernameDisplay 
-                                        username={fiche.author?.username || "Inconnu"}
-                                        userId={fiche.author?._id}
-                                        className="font-medium hover:underline cursor-pointer block"
-                                        role={fiche.author?.role}
-                                    />
+                                    <UsernameDisplay username={fiche.author?.username || "Inconnu"} userId={fiche.author?._id} className="font-medium hover:underline cursor-pointer block" role={fiche.author?.role} />
                                 </Link>
                                 <p className="text-sm text-gray-500">Auteur</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-3">
                             {renderStatusBadge(fiche.status)}
-                            <ReportButton 
-                                contentId={fiche._id} 
-                                contentType="revision"
-                                variant="button"
-                                size="sm"
-                            />
+                            <ReportButton contentId={fiche._id} contentType="revision" variant="button" size="sm" />
                         </div>
                     </div>
 
-                    {/* Couverture améliorée pour remplir complètement l'espace */}
-                    <div className={`relative ${getCoverContainerStyle(fiche.status)}`}>
-                        {pdfCover ? (
-                            <div className="aspect-video w-full overflow-hidden">
-                                <img
-                                    src={pdfCover}
-                                    alt="Couverture du PDF"
-                                    className="w-full h-full object-cover"
-                                />
-                                {/* Overlay subtil selon le statut */}
-                                <div className={`absolute inset-0 ${
-                                    fiche.status === "Certifiée"
-                                        ? "bg-blue-500 opacity-5"
-                                        : fiche.status === "Vérifiée"
-                                            ? "bg-green-500 opacity-5"
-                                            : ""
-                                }`}></div>
+                    {/* Aperçu image (seulement pour les images, pas les PDF) */}
+                    {hasImageFile && (
+                        <div className="relative border-b border-gray-100">
+                            <div className="aspect-video w-full overflow-hidden bg-gray-50">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={`/api/file-proxy?ficheId=${fiche._id}&index=0`} alt="Aperçu" className="w-full h-full object-contain" />
                             </div>
-                        ) : fiche.files?.[0]?.endsWith(".jpg") || fiche.files?.[0]?.endsWith(".png") ? (
-                            <div className="aspect-video w-full overflow-hidden">
-                                <img
-                                    src={fiche.files[0]}
-                                    alt="Couverture"
-                                    className="w-full h-full object-cover"
-                                />
-                                {/* Overlay subtil selon le statut */}
-                                <div className={`absolute inset-0 ${
-                                    fiche.status === "Certifiée"
-                                        ? "bg-blue-500 opacity-5"
-                                        : fiche.status === "Vérifiée"
-                                            ? "bg-green-500 opacity-5"
-                                            : ""
-                                }`}></div>
-                            </div>
-                        ) : (
-                            <div className="aspect-video w-full bg-gray-100 flex items-center justify-center text-gray-400">
-                                <div className="text-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                    <p className="font-medium">Aucun aperçu disponible</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Badges sur la couverture avec design amélioré */}
-                        <div className="absolute top-4 left-4 flex flex-col gap-2">
-                            <Badge className="bg-white bg-opacity-90 backdrop-blur-sm text-gray-800 px-3 py-1.5 shadow-sm flex items-center gap-1.5 rounded-full">
-                                <TokensIcon className="h-3.5 w-3.5" /> {fiche.subject}
-                            </Badge>
-                            <Badge className="bg-white bg-opacity-90 backdrop-blur-sm text-gray-800 px-3 py-1.5 shadow-sm flex items-center gap-1.5 rounded-full">
-                                <MixIcon className="h-3.5 w-3.5" /> {fiche.level}
-                            </Badge>
                         </div>
-
-                        {/* Badge de statut flottant pour les fiches certifiées ou vérifiées */}
-                        {(fiche.status === "Certifiée" || fiche.status === "Vérifiée") && (
-                            <div className="absolute top-4 right-4">
-                                <div className={`px-4 py-2 rounded-full ${
-                                    fiche.status === "Certifiée"
-                                        ? "bg-blue-500 text-white"
-                                        : "bg-green-500 text-white"
-                                } font-bold shadow-lg flex items-center gap-2`}>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                    </svg>
-                                    {fiche.status}
-                                </div>
-                            </div>
-                        )}
-                    </div>
+                    )}
 
                     {/* Contenu de la fiche */}
-                    <div className="p-6 md:p-8">
-                        <div className="prose max-w-none text-black">
-                            <ReactMarkdown rehypePlugins={[rehypeSanitize]}>
-                                {fiche.content}
-                            </ReactMarkdown>
-                        </div>
+                    <div className="p-5 md:p-8">
+                        {fiche.content && (
+                            <div className="prose max-w-none text-black">
+                                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{fiche.content}</ReactMarkdown>
+                            </div>
+                        )}
 
-                        {/* Likes et commentaires */}
                         <div className="mt-8 pt-6 border-t border-gray-100 flex gap-4 flex-wrap">
-                            <LikedByList
-                                revisionId={fiche._id}
-                                likedBy={fiche.likedBy || []}
-                                initialLikes={fiche.likes || 0}
-                            />
+                            <LikedByList revisionId={fiche._id} likedBy={fiche.likedBy || []} initialLikes={fiche.likes || 0} />
                             <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 text-black">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
@@ -462,128 +292,72 @@ export default function FicheView({ id }: FicheViewProps) {
                     </div>
                 </div>
 
-                {/* Fichiers attachés */}
+                {/* Fichiers attachés - le PDF viewer est ici directement */}
                 {fiche.files?.length > 0 && (
-                    <div className="mt-6 bg-white rounded-xl shadow-sm p-6 overflow-hidden">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center text-black">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                            </svg>
-                            Fichiers attachés
+                    <div className="mt-6 bg-white rounded-xl shadow-sm p-5 md:p-6 overflow-hidden">
+                        <h2 className="text-lg font-semibold mb-4 flex items-center text-black">
+                            <FileText size={20} className="mr-2 text-gray-500" />
+                            {hasPdfFile ? "Document" : "Fichiers attachés"} ({fiche.files.length})
                         </h2>
-                        <FileViewer files={fiche.files}/>
+                        <FileViewer ficheId={fiche._id} files={fiche.files} />
                     </div>
                 )}
 
-                {/* Actions sur la fiche (visible uniquement pour les utilisateurs autorisés) */}
+                {/* Actions */}
                 {(userHasPermission || isCreator) && (
-                    <div className="mt-6 bg-white rounded-xl shadow-sm p-6 border border-gray-200">
-                        <h2 className="text-xl font-semibold mb-4 flex items-center text-black">
+                    <div className="mt-6 bg-white rounded-xl shadow-sm p-5 md:p-6 border border-gray-200">
+                        <h2 className="text-lg font-semibold mb-4 flex items-center text-black">
                             <LockClosedIcon className="h-4 w-4 mr-2" />
                             Actions sur la fiche
                         </h2>
-                        
                         <div className="space-y-4">
-                            {/* Bouton pour changer le statut (visible uniquement pour les utilisateurs autorisés) */}
                             {userHasPermission && (
                                 <div>
-                                    <h3 className="text-lg font-medium mb-2 text-gray-700">Changer le statut</h3>
-                                    <StatusChanger
-                                        ficheId={fiche._id}
-                                        currentStatus={fiche.status}
-                                        onStatusChange={(newStatus) => {
-                                            setFiche((prev: any) => ({ ...prev, status: newStatus }));
-                                        }}
-                                    />
+                                    <h3 className="text-base font-medium mb-2 text-gray-700">Changer le statut</h3>
+                                    <StatusChanger ficheId={fiche._id} currentStatus={fiche.status} onStatusChange={(newStatus) => setFiche((prev: any) => ({ ...prev, status: newStatus }))} />
                                 </div>
                             )}
-                            
-                            {/* Bouton pour supprimer la fiche (visible pour les créateurs et admins) */}
                             {(isCreator || isAdmin) && (
                                 <div className="border-t pt-4">
-                                    <h3 className="text-lg font-medium mb-2 text-gray-700">Supprimer la fiche</h3>
-                                    <DeleteFicheButton
-                                        ficheId={fiche._id}
-                                        ficheTitle={fiche.title}
-                                        isCreator={isCreator}
-                                        isAdmin={isAdmin}
-                                    />
+                                    <h3 className="text-base font-medium mb-2 text-gray-700">Supprimer la fiche</h3>
+                                    <DeleteFicheButton ficheId={fiche._id} ficheTitle={fiche.title} isCreator={isCreator} isAdmin={isAdmin} />
                                 </div>
                             )}
                         </div>
                     </div>
                 )}
 
-                {/* Section commentaires */}
-                <div className="mt-6 bg-white rounded-xl shadow-sm p-6 overflow-hidden">
-                    <h2 className="text-xl font-semibold mb-4 flex items-center text-black">
+                {/* Commentaires */}
+                <div className="mt-6 bg-white rounded-xl shadow-sm p-5 md:p-6 overflow-hidden">
+                    <h2 className="text-lg font-semibold mb-4 flex items-center text-black">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                         </svg>
                         Commentaires
                     </h2>
-
                     {currentUser ? (
-                        <CommentForm revisionId={fiche._id} currentUser={currentUser}/>
+                        <CommentForm revisionId={fiche._id} currentUser={currentUser} />
                     ) : (
                         <div className="bg-gray-50 rounded-lg p-4 text-center mb-6">
                             <p className="text-gray-600 mb-3">Veuillez vous connecter pour poster un commentaire.</p>
                             <Link href="/connexion">
-                                <Button className="bg-gradient-to-r from-orange-400 to-pink-500 hover:opacity-90 text-white">
-                                    Se connecter
-                                </Button>
+                                <Button className="bg-gradient-to-r from-orange-400 to-pink-500 hover:opacity-90 text-white">Se connecter</Button>
                             </Link>
                         </div>
                     )}
-
-                    {/* Liste des commentaires */}
                     <div className="mt-6">
-                        <CommentsList revisionId={fiche._id}/>
+                        <CommentsList revisionId={fiche._id} />
                     </div>
                 </div>
             </div>
 
-            {/* Styles pour les animations */}
             <style jsx global>{`
-                @keyframes shine {
-                    0% { transform: translateX(-100%) rotate(45deg); }
-                    100% { transform: translateX(100%) rotate(45deg); }
-                }
-                
-                @keyframes pulse {
-                    0%, 100% { transform: scale(1); opacity: 0.8; }
-                    50% { transform: scale(1.1); opacity: 1; }
-                }
-                
-                @keyframes progress {
-                    0% { width: 0%; }
-                    100% { width: 100%; }
-                }
-                
-                .animate-shine::after {
-                    content: '';
-                    position: absolute;
-                    top: -50%;
-                    left: -50%;
-                    width: 200%;
-                    height: 200%;
-                    background: linear-gradient(
-                        to right,
-                        rgba(255, 255, 255, 0) 0%,
-                        rgba(255, 255, 255, 0.3) 50%,
-                        rgba(255, 255, 255, 0) 100%
-                    );
-                    transform: rotate(45deg);
-                    animation: shine 2s infinite;
-                }
-                
-                .animate-pulse {
-                    animation: pulse 2s infinite;
-                }
-                
-                .animate-progress {
-                    animation: progress 1.5s linear;
-                }
+                @keyframes shine { 0% { transform: translateX(-100%) rotate(45deg); } 100% { transform: translateX(100%) rotate(45deg); } }
+                @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+                @keyframes progress { 0% { width: 0%; } 100% { width: 100%; } }
+                .animate-shine::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); transform: rotate(45deg); animation: shine 2s infinite; }
+                .animate-pulse { animation: pulse 2s infinite; }
+                .animate-progress { animation: progress 1.5s linear; }
             `}</style>
         </div>
     );

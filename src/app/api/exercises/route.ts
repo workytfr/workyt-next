@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la récupération des exercices :", error.message);
         return NextResponse.json(
-            { error: "Impossible de récupérer les exercices.", details: error.message },
+            { error: "Impossible de récupérer les exercices." },
             { status: 500 }
         );
     }
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la création de l'exercice :", error.message);
         return NextResponse.json(
-            { error: "Impossible de créer l'exercice.", details: error.message },
+            { error: "Impossible de créer l'exercice." },
             { status: 500 }
         );
     }

@@ -151,6 +151,63 @@ const badges: Partial<IBadge>[] = [
     condition: { type: 'fiche_created', value: 20 },
     rarity: 'épique',
   },
+  // Fiches – Likes reçus
+  {
+    slug: 'fiche_liked_1',
+    name: 'Apprécié',
+    description: 'A reçu 10 likes sur ses fiches.',
+    icon: '/badge/fiche_liked_1.svg',
+    category: 'engagement',
+    condition: { type: 'fiche_liked', value: 10 },
+    rarity: 'commun',
+  },
+  {
+    slug: 'fiche_liked_2',
+    name: 'Populaire',
+    description: 'A reçu 50 likes sur ses fiches.',
+    icon: '/badge/fiche_liked_2.svg',
+    category: 'engagement',
+    condition: { type: 'fiche_liked', value: 50 },
+    rarity: 'rare',
+  },
+  {
+    slug: 'fiche_liked_3',
+    name: 'Star des fiches',
+    description: 'A reçu 200 likes sur ses fiches.',
+    icon: '/badge/fiche_liked_3.svg',
+    category: 'engagement',
+    condition: { type: 'fiche_liked', value: 200 },
+    rarity: 'épique',
+  },
+  // Fiches – Mises en favoris par d'autres
+  {
+    slug: 'fiche_bookmarked_1',
+    name: 'Référence',
+    description: 'Ses fiches ont été mises en favoris 10 fois.',
+    icon: '/badge/fiche_bookmarked_1.svg',
+    category: 'engagement',
+    condition: { type: 'fiche_bookmarked', value: 10 },
+    rarity: 'rare',
+  },
+  {
+    slug: 'fiche_bookmarked_2',
+    name: 'Incontournable',
+    description: 'Ses fiches ont été mises en favoris 50 fois.',
+    icon: '/badge/fiche_bookmarked_2.svg',
+    category: 'engagement',
+    condition: { type: 'fiche_bookmarked', value: 50 },
+    rarity: 'épique',
+  },
+  // Fiches – Diversité des matières
+  {
+    slug: 'fiche_diverse_1',
+    name: 'Polyvalent',
+    description: 'A créé des fiches dans 5 matières différentes.',
+    icon: '/badge/fiche_diverse_1.svg',
+    category: 'engagement',
+    condition: { type: 'fiche_diverse', value: 5 },
+    rarity: 'rare',
+  },
   // Ancienneté
   {
     slug: 'seniority_1',

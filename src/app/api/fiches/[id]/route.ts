@@ -4,8 +4,8 @@ import Revision from "@/models/Revision";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import User from "@/models/User";
-import Comment from "@/models/Comment"; // Assurez-vous d'importer le modèle
-import { generateSignedUrl, deleteFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils"; // Fonctions pour générer des URLs signées et supprimer des fichiers
+import Comment from "@/models/Comment";
+import { generateSignedUrl, deleteFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils";
 
 // Connexion à MongoDB
 connectDB();
@@ -23,11 +23,11 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
     try {
         // Récupérer la fiche et peupler les données nécessaires
         const fiche = await Revision.findById(id)
-            .populate("author", "username points role") // Inclure le champ "points", "role" avec "username"
+            .populate("author", "username points role")
             .populate({
                 path: "likedBy.userId",
                 select: "username",
-            }); // Peupler les utilisateurs ayant liké
+            });
 
         if (!fiche) {
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
@@ -37,18 +37,18 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
         const signedFileURLs = await Promise.all(
             (fiche.files || []).map(async (fileUrl: string) => {
                 try {
-                    const rawKey = fileUrl.split("/").slice(-1)[0]; // Extraire le nom brut
-                    const fileKey = `fiches/${decodeURIComponent(rawKey)}`; // Ajouter le chemin et corriger l'encodage
-                    return await generateSignedUrl(process.env.S3_BUCKET_NAME!, fileKey); // Générer l'URL signée
+                    const rawKey = fileUrl.split("/").slice(-1)[0];
+                    const fileKey = `workyt/fiches/${decodeURIComponent(rawKey)}`;
+                    return await generateSignedUrl(process.env.S3_BUCKET_NAME!, fileKey);
                 } catch (err) {
                     return null;
                 }
             })
-        ).then((results) => results.filter(Boolean)); // Supprimer les fichiers pour lesquels une URL n'a pas pu être générée
+        ).then((results) => results.filter(Boolean));
 
         const data = {
             ...fiche.toObject(),
-            files: signedFileURLs, // Ajouter les URLs signées
+            files: signedFileURLs,
         };
 
         return NextResponse.json({ success: true, data }, { status: 200 });
@@ -69,7 +69,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     try {
-        const session = await getServerSession(authOptions); // Authentification de l'utilisateur
+        const session = await getServerSession(authOptions);
 
         if (!session?.user?.id) {
             return NextResponse.json({ success: false, message: "Non autorisé." }, { status: 401 });
@@ -87,7 +87,16 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
 
-        const updatedData = await req.json(); // Données de la mise à jour
+        const body = await req.json();
+
+        const allowedFields = ['title', 'content', 'subject', 'level', 'status', 'files'];
+        const updatedData: Record<string, any> = {};
+        for (const field of allowedFields) {
+            if (body[field] !== undefined) {
+                updatedData[field] = body[field];
+            }
+        }
+
         const updatedFiche = await Revision.findByIdAndUpdate(id, updatedData, { new: true });
 
         return NextResponse.json({ success: true, data: updatedFiche }, { status: 200 });
@@ -99,7 +108,6 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
 /**
  * Gérer la méthode DELETE pour supprimer une fiche
- * Permet aux créateurs de supprimer leurs propres fiches et aux admins de supprimer toutes les fiches
  */
 export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ id: string }> }) => {
     const { id } = await params;
@@ -109,19 +117,17 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
     }
 
     try {
-        const session = await getServerSession(authOptions); // Authentification de l'utilisateur
+        const session = await getServerSession(authOptions);
 
         if (!session?.user?.id) {
             return NextResponse.json({ success: false, message: "Non autorisé." }, { status: 401 });
         }
 
-        // Récupérer la fiche pour vérifier le créateur
         const fiche = await Revision.findById(id);
         if (!fiche) {
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
 
-        // Vérifier les permissions : Admin ou créateur de la fiche
         const isAdmin = session.user.role === "Admin";
         const isCreator = fiche.author.toString() === session.user.id;
 
@@ -132,13 +138,11 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
             );
         }
 
-        // Supprimer les fichiers associés du cloud storage
         if (fiche.files && fiche.files.length > 0) {
             console.log(`Suppression de ${fiche.files.length} fichier(s) associé(s) à la fiche...`);
-            
+
             const deletionPromises = fiche.files.map(async (fileUrl: string) => {
                 try {
-                    // Ignorer les URLs invalides
                     if (!fileUrl || fileUrl.includes('undefined')) {
                         console.warn(`URL de fichier invalide ignorée: ${fileUrl}`);
                         return;
@@ -151,7 +155,7 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
                     }
 
                     const deletionSuccess = await deleteFileFromStorage(process.env.S3_BUCKET_NAME!, fileKey);
-                    
+
                     if (deletionSuccess) {
                         console.log(`Fichier supprimé avec succès: ${fileKey}`);
                     } else {
@@ -165,20 +169,16 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
             await Promise.all(deletionPromises);
         }
 
-        // Supprimer les commentaires associés à la fiche
         await Comment.deleteMany({ revision: id });
-
-        // Supprimer la fiche de la base de données
         await Revision.findByIdAndDelete(id);
 
-        // Retirer les points à l'auteur (seulement si ce n'est pas un admin qui supprime)
         if (!isAdmin) {
             await User.findByIdAndUpdate(fiche.author, { $inc: { points: -10 } });
         }
 
-        return NextResponse.json({ 
-            success: true, 
-            message: "Fiche et fichiers associés supprimés avec succès." 
+        return NextResponse.json({
+            success: true,
+            message: "Fiche et fichiers associés supprimés avec succès."
         }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur DELETE :", error.message);

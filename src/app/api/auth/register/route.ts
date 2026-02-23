@@ -23,7 +23,7 @@ export async function POST(req: Request) {
 
         // Vérification de l'unicité de l'email (insensible à la casse)
         const existingUser = await User.findOne({
-            email: { $regex: `^${email}$`, $options: 'i' }
+            email: email.toLowerCase().trim()
         });
         if (existingUser) {
             return NextResponse.json({

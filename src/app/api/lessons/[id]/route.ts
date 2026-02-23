@@ -41,7 +41,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     } catch (error: any) {
         console.error("Erreur lors de la mise à jour de la leçon :", error.message);
         return NextResponse.json(
-            { error: "Impossible de mettre à jour la leçon.", details: error.message },
+            { error: "Impossible de mettre à jour la leçon." },
             { status: 500 }
         );
     }
@@ -75,7 +75,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     } catch (error: any) {
         console.error("Erreur lors de la suppression de la leçon :", error.message);
         return NextResponse.json(
-            { error: "Impossible de supprimer la leçon.", details: error.message },
+            { error: "Impossible de supprimer la leçon." },
             { status: 500 }
         );
     }

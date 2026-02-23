@@ -103,7 +103,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     } catch (error: any) {
         console.error("❌ Erreur lors de la récupération de la question :", error.message);
         return NextResponse.json(
-            { success: false, message: "Impossible de récupérer la question.", details: error.message },
+            { success: false, message: "Impossible de récupérer la question." },
             { status: 500 }
         );
     }

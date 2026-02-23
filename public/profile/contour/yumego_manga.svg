@@ -1,0 +1,92 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient principal rose/violet manga -->
+    <linearGradient id="mangaGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FF6B9D;stop-opacity:1"/>
+      <stop offset="50%" style="stop-color:#C084FC;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#60A5FA;stop-opacity:1"/>
+      <animate attributeName="x1" values="0%;100%;0%" dur="4s" repeatCount="indefinite"/>
+      <animate attributeName="y1" values="0%;100%;0%" dur="4s" repeatCount="indefinite"/>
+    </linearGradient>
+
+    <!-- Gradient secondaire pour pétales -->
+    <radialGradient id="sakuraGrad">
+      <stop offset="0%" style="stop-color:#FFB7D5;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#FF6B9D;stop-opacity:0.6"/>
+    </radialGradient>
+
+    <!-- Glow filter -->
+    <filter id="mangaGlow">
+      <feGaussianBlur stdDeviation="1.5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Pétale de sakura -->
+    <g id="petal">
+      <ellipse rx="2.5" ry="1.5" fill="url(#sakuraGrad)" opacity="0.85"/>
+      <ellipse rx="1.8" ry="1.2" cx="1" fill="#FFD1E3" opacity="0.5"/>
+    </g>
+  </defs>
+
+  <!-- Cercle principal animé -->
+  <circle cx="32" cy="32" r="30" fill="none" stroke="url(#mangaGrad)" stroke-width="3" filter="url(#mangaGlow)" stroke-linecap="round">
+    <animate attributeName="stroke-dasharray" values="0 188.5;94 94;188.5 0;94 94;0 188.5" dur="6s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Cercle intérieur fin -->
+  <circle cx="32" cy="32" r="27" fill="none" stroke="url(#mangaGrad)" stroke-width="1" opacity="0.4">
+    <animate attributeName="opacity" values="0.2;0.5;0.2" dur="3s" repeatCount="indefinite"/>
+  </circle>
+
+  <!-- Pétales de sakura flottants -->
+  <!-- Pétale 1 - haut -->
+  <use href="#petal" x="32" y="1">
+    <animateTransform attributeName="transform" type="rotate" values="0 32 32;360 32 32" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.9;0.3;0.9" dur="4s" repeatCount="indefinite"/>
+  </use>
+
+  <!-- Pétale 2 - droite -->
+  <use href="#petal" x="61" y="28">
+    <animateTransform attributeName="transform" type="rotate" values="120 32 32;480 32 32" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;0.9;0.3" dur="4s" repeatCount="indefinite"/>
+  </use>
+
+  <!-- Pétale 3 - bas gauche -->
+  <use href="#petal" x="8" y="56">
+    <animateTransform attributeName="transform" type="rotate" values="240 32 32;600 32 32" dur="8s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.6;0.9;0.6" dur="4s" repeatCount="indefinite"/>
+  </use>
+
+  <!-- Pétale 4 -->
+  <use href="#petal" x="52" y="52">
+    <animateTransform attributeName="transform" type="rotate" values="60 32 32;420 32 32" dur="10s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.8;0.4;0.8" dur="5s" repeatCount="indefinite"/>
+  </use>
+
+  <!-- Pétale 5 -->
+  <use href="#petal" x="6" y="18">
+    <animateTransform attributeName="transform" type="rotate" values="180 32 32;540 32 32" dur="9s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.5;0.9;0.5" dur="3.5s" repeatCount="indefinite"/>
+  </use>
+
+  <!-- Sparkles manga - petits éclats -->
+  <circle cx="12" cy="8" r="1" fill="white" opacity="0.8">
+    <animate attributeName="r" values="0.5;1.5;0.5" dur="2s" repeatCount="indefinite"/>
+    <animate attributeName="opacity" values="0.3;1;0.3" dur="2s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="54" cy="12" r="0.8" fill="white" opacity="0.6">
+    <animate attributeName="r" values="0.8;1.2;0.8" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+    <animate attributeName="opacity" values="0.2;0.9;0.2" dur="2.5s" repeatCount="indefinite" begin="0.5s"/>
+  </circle>
+  <circle cx="50" cy="52" r="0.6" fill="white" opacity="0.7">
+    <animate attributeName="r" values="0.3;1;0.3" dur="1.8s" repeatCount="indefinite" begin="1s"/>
+    <animate attributeName="opacity" values="0.4;1;0.4" dur="1.8s" repeatCount="indefinite" begin="1s"/>
+  </circle>
+  <circle cx="10" cy="50" r="0.7" fill="white" opacity="0.5">
+    <animate attributeName="r" values="0.5;1.3;0.5" dur="3s" repeatCount="indefinite" begin="0.3s"/>
+    <animate attributeName="opacity" values="0.3;0.8;0.3" dur="3s" repeatCount="indefinite" begin="0.3s"/>
+  </circle>
+</svg>

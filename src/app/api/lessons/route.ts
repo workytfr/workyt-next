@@ -6,6 +6,7 @@ import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
 import { handleApiError } from "@/utils/apiErrorResponse";
+import { escapeRegex } from "@/utils/escapeRegex";
 
 /**
  * 🚀 GET - Récupérer les leçons avec pagination et recherche avancée
@@ -39,9 +40,10 @@ export async function GET(req: NextRequest) {
         
         // Recherche textuelle
         if (search) {
+            const escaped = escapeRegex(search);
             filters.$or = [
-                { title: { $regex: search, $options: "i" } },
-                { content: { $regex: search, $options: "i" } },
+                { title: { $regex: escaped, $options: "i" } },
+                { content: { $regex: escaped, $options: "i" } },
             ];
         }
         

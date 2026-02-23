@@ -32,27 +32,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    if (user.points < points) {
-      return NextResponse.json({ 
-        error: 'Points insuffisants' 
-      }, { status: 400 });
-    }
-
     // Calculer les gemmes à recevoir
     const gemsToReceive = Math.floor(points / GEM_CONFIG.CONVERSION_RATE);
     const actualPointsUsed = gemsToReceive * GEM_CONFIG.CONVERSION_RATE;
 
-    // Opérations atomiques sans transactions (pour base locale)
-    
-    // Déduire les points de l'utilisateur
-    const updatedUser = await User.findByIdAndUpdate(
-      user._id,
+    // Déduire les points de manière atomique (vérification + déduction en une seule opération)
+    const updatedUser = await User.findOneAndUpdate(
+      { _id: user._id, points: { $gte: actualPointsUsed } },
       { $inc: { points: -actualPointsUsed } },
       { new: true }
     );
 
     if (!updatedUser) {
-      return NextResponse.json({ error: 'Erreur lors de la mise à jour des points' }, { status: 500 });
+      return NextResponse.json({
+        error: 'Points insuffisants'
+      }, { status: 400 });
     }
 
     // Créer ou mettre à jour le solde de gemmes

@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
-import { Trophy, Calendar, TrendingUp, Target } from 'lucide-react';
+import { Calendar, TrendingUp } from 'lucide-react';
 
 interface Contribution {
     date: string;
@@ -24,6 +22,8 @@ interface ContributionGraphProps {
     userId: string;
 }
 
+const DAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
 export default function ContributionGraph({ userId }: ContributionGraphProps) {
     const [contributions, setContributions] = useState<Contribution[]>([]);
     const [stats, setStats] = useState<ContributionStats | null>(null);
@@ -35,7 +35,7 @@ export default function ContributionGraph({ userId }: ContributionGraphProps) {
             try {
                 setLoading(true);
                 const response = await fetch(`/api/user/${userId}/contributions`);
-                
+
                 if (!response.ok) {
                     throw new Error('Erreur lors du chargement des contributions');
                 }
@@ -71,127 +71,120 @@ export default function ContributionGraph({ userId }: ContributionGraphProps) {
             month: 'long',
             day: 'numeric'
         });
-        
+
         if (contribution.points === 0) {
             return `${date}\nAucun point gagné`;
         }
-        
+
         return `${date}\n${contribution.points} point${contribution.points > 1 ? 's' : ''} gagné${contribution.points > 1 ? 's' : ''}`;
     };
 
     if (loading) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5 text-yellow-600" />
-                        Graphique de contribution
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="animate-pulse">
-                        <div className="grid grid-cols-13 gap-0.5 mb-4">
-                            {Array.from({ length: 91 }).map((_, i) => (
-                                <div key={i} className="w-2.5 h-2.5 bg-gray-200 rounded-sm" />
-                            ))}
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="animate-pulse space-y-3">
+                <div className="flex gap-2">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="h-8 flex-1 bg-gray-100 rounded" />
+                    ))}
+                </div>
+                <div className="h-24 bg-gray-100 rounded" />
+            </div>
         );
     }
 
     if (error) {
         return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-5 w-5 text-yellow-600" />
-                        Graphique de contribution
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center text-gray-500">
-                        <p>Erreur lors du chargement des contributions</p>
-                        <p className="text-sm">{error}</p>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="text-center py-6 text-gray-400 text-sm">
+                <p>Erreur lors du chargement des contributions</p>
+                <p className="text-xs mt-1">{error}</p>
+            </div>
         );
     }
 
+    // Map date -> contribution
+    const contributionsByDate = new Map(contributions.map(c => [c.date, c]));
+
+    // Trouver le premier lundi dans la plage
+    const firstDate = contributions[0]?.date;
+    const lastDate = contributions[contributions.length - 1]?.date;
+    if (!firstDate || !lastDate) {
+        return <div className="text-sm text-gray-400 py-4">Aucune donnée</div>;
+    }
+
+    const first = new Date(firstDate + 'T12:00:00');
+    let firstMonday = new Date(first);
+    const dayOfWeek = first.getDay();
+    const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+    firstMonday.setDate(first.getDate() - daysToMonday);
+
+    // Construire la grille : 7 lignes (Lun-Dim), colonnes = semaines
+    const grid: (Contribution | null)[][] = [];
+    for (let row = 0; row < 7; row++) grid.push([]);
+
+    let currentMonday = new Date(firstMonday);
+    const endDate = new Date(lastDate + 'T12:00:00');
+
+    while (currentMonday <= endDate) {
+        for (let d = 0; d < 7; d++) {
+            const cellDate = new Date(currentMonday);
+            cellDate.setDate(currentMonday.getDate() + d);
+            const dateKey = cellDate.toISOString().split('T')[0];
+            const contrib = contributionsByDate.get(dateKey) ?? null;
+            grid[d].push(contrib);
+        }
+        currentMonday.setDate(currentMonday.getDate() + 7);
+    }
+
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                    <Trophy className="h-5 w-5 text-yellow-600" />
-                    Graphique de contribution (3 derniers mois)
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {/* Statistiques */}
-                {stats && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-600">{stats.totalPoints}</div>
-                            <div className="text-sm text-gray-600">Points totaux</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-500">{stats.activeDays}</div>
-                            <div className="text-sm text-gray-600">Jours actifs</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-400">{stats.maxPointsInDay}</div>
-                            <div className="text-sm text-gray-600">Max/jour</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-orange-700">{stats.averagePointsPerDay}</div>
-                            <div className="text-sm text-gray-600">Moyenne/jour</div>
-                        </div>
-                    </div>
-                )}
-
-                {/* Graphique de contribution */}
-                <div className="space-y-2">
-                    <div className="flex items-center justify-between mb-3">
-                        <span className="text-sm text-gray-600">Moins</span>
-                        <div className="flex items-center gap-1">
-                            <div className="w-3 h-3 bg-gray-100 rounded-sm"></div>
-                            <div className="w-3 h-3 bg-orange-200 rounded-sm"></div>
-                            <div className="w-3 h-3 bg-orange-300 rounded-sm"></div>
-                            <div className="w-3 h-3 bg-orange-400 rounded-sm"></div>
-                            <div className="w-3 h-3 bg-orange-500 rounded-sm"></div>
-                        </div>
-                        <span className="text-sm text-gray-600">Plus</span>
-                    </div>
-
-                    {/* Grille de contribution avec moins d'espacement */}
-                    <div className="grid grid-cols-13 gap-0.5">
-                        {contributions.map((contribution, index) => (
-                            <div
-                                key={contribution.date}
-                                className={`w-2.5 h-2.5 rounded-sm transition-colors duration-200 hover:scale-150 cursor-pointer ${getLevelColor(contribution.level)}`}
-                                title={getTooltipText(contribution)}
-                                data-tooltip={getTooltipText(contribution)}
-                            />
-                        ))}
-                    </div>
-
-
+        <div className="space-y-3">
+            {/* Stats compactes style GitHub */}
+            {stats && (
+                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600">
+                    <span><strong className="text-gray-800">{stats.totalPoints}</strong> points</span>
+                    <span><strong className="text-gray-800">{stats.activeDays}</strong> jours actifs</span>
+                    <span><strong className="text-gray-800">{stats.maxPointsInDay}</strong> max/jour</span>
                 </div>
+            )}
 
-                {/* Informations supplémentaires */}
-                <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="h-4 w-4" />
-                        <span>Période : 3 derniers mois</span>
+            {/* Graphique style GitHub : Lun-Dim en lignes, label aligné avec chaque ligne */}
+            <div className="flex flex-col gap-[2px] w-full">
+                {grid.map((row, rowIndex) => (
+                    <div key={rowIndex} className="flex items-center gap-2">
+                        <div className="w-8 shrink-0 text-[10px] text-gray-400 flex items-center">
+                            {DAY_LABELS[rowIndex]}
+                        </div>
+                        <div className="flex gap-[2px] flex-1 min-w-0">
+                            {row.map((contrib, colIndex) => (
+                                <div
+                                    key={colIndex}
+                                    className={`aspect-square w-full min-w-[8px] rounded-[2px] transition-colors hover:ring-2 hover:ring-gray-300 cursor-pointer ${contrib ? getLevelColor(contrib.level) : 'bg-gray-100'}`}
+                                    title={contrib ? getTooltipText(contrib) : undefined}
+                                />
+                            ))}
+                        </div>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
-                        <TrendingUp className="h-4 w-4" />
-                        <span>{stats?.totalTransactions || 0} transactions de points</span>
-                    </div>
+                ))}
+            </div>
+
+            {/* Légende compacte */}
+            <div className="flex items-center justify-between text-[10px] text-gray-400">
+                <span className="flex items-center gap-1">
+                    <Calendar className="h-3 w-3" />
+                    3 derniers mois
+                    <span className="mx-0.5">·</span>
+                    <TrendingUp className="h-3 w-3" />
+                    {stats?.totalTransactions || 0} transactions
+                </span>
+                <div className="flex items-center gap-1">
+                    <span>Moins</span>
+                    <div className="w-2 h-2 bg-gray-100 rounded-[2px]" />
+                    <div className="w-2 h-2 bg-orange-200 rounded-[2px]" />
+                    <div className="w-2 h-2 bg-orange-300 rounded-[2px]" />
+                    <div className="w-2 h-2 bg-orange-400 rounded-[2px]" />
+                    <div className="w-2 h-2 bg-orange-500 rounded-[2px]" />
+                    <span>Plus</span>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
-} 
+}

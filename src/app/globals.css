@@ -19,6 +19,18 @@
 @import "md-editor-rt/lib/style.css";
 
 @layer base {
+  body {
+    font-family: var(--font-funnel-display), system-ui, sans-serif;
+  }
+
+  p, span, li, td, th, label, input, textarea, select, button, a {
+    font-family: var(--font-montserrat), system-ui, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-funnel-display), system-ui, sans-serif;
+  }
+
   :root {
     --background: 0 0% 100%;
     --foreground: 20 14.3% 4.1%;

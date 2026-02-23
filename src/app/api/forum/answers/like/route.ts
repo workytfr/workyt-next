@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("❌ Erreur lors du like/unlike :", error.message);
         return NextResponse.json(
-            { success: false, message: "Impossible de gérer le like/unlike.", details: error.message },
+            { success: false, message: "Impossible de gérer le like/unlike." },
             { status: 500 }
         );
     }

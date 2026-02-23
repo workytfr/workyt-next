@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la création du commentaire :", error.message);
         return NextResponse.json(
-            { error: "Erreur interne du serveur.", details: error.message },
+            { error: "Erreur interne du serveur." },
             { status: 500 }
         );
     }
@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur lors de la récupération des commentaires :", error.message);
         return NextResponse.json(
-            { error: "Erreur interne du serveur.", details: error.message },
+            { error: "Erreur interne du serveur." },
             { status: 500 }
         );
     }

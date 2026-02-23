@@ -47,7 +47,8 @@ export const GEM_CONFIG = {
       eclair_green: 15,
       fumee: 10,
       poison_orange: 20,
-      halloween_pumpkins_apng: 3
+      halloween_pumpkins_apng: 3,
+      yumego_manga: 5
     }
   },
   
@@ -73,7 +74,7 @@ export const GEM_CONFIG = {
       'FoxyLmdpc.webp',
       'FoxyStagey.webp',
     ],
-    profileBorder: ['gold', 'silver', 'eclair_green', 'fumee', 'poison_orange', 'bronze', 'rainbow', 'halloween_pumpkins_apng']
+    profileBorder: ['gold', 'silver', 'eclair_green', 'fumee', 'poison_orange', 'bronze', 'rainbow', 'halloween_pumpkins_apng', 'yumego_manga']
   },
   
   // Couleurs par défaut

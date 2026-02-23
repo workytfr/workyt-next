@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
         console.error("❌ Erreur lors de la validation de la réponse :", error.message);
         return NextResponse.json(
-            { success: false, message: "Impossible de valider la réponse.", details: error.message },
+            { success: false, message: "Impossible de valider la réponse." },
             { status: 500 }
         );
     }

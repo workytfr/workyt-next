@@ -134,12 +134,55 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
 
 // Composant de page mis à jour pour utiliser async/await avec les params
 export default async function QuestionPage({ params }: PageProps) {
-    // Attendre la résolution de la promesse params
     const { id } = await params;
 
+    // JSON-LD structured data (schema.org QAPage) pour les rich snippets Google
+    let jsonLd = null;
+    try {
+        await dbConnect();
+        const question: any = await Question.findById(id).populate('user', 'username').lean();
+
+        if (question) {
+            jsonLd = {
+                "@context": "https://schema.org",
+                "@type": "QAPage",
+                "mainEntity": {
+                    "@type": "Question",
+                    "name": question.title,
+                    "text": question.description?.whatINeed || question.description?.whatIDid || '',
+                    "dateCreated": question.createdAt?.toISOString(),
+                    "author": {
+                        "@type": "Person",
+                        "name": question.user?.username || "Anonyme",
+                    },
+                    "about": [
+                        { "@type": "Thing", "name": question.subject },
+                        { "@type": "Thing", "name": question.classLevel },
+                    ],
+                    "answerCount": 0,
+                    "upvoteCount": question.points || 0,
+                },
+                "publisher": {
+                    "@type": "Organization",
+                    "name": "Workyt",
+                    "url": "https://workyt.fr",
+                },
+                "inLanguage": "fr",
+            };
+        }
+    } catch {
+        // Ignorer l'erreur, on affiche la page sans JSON-LD
+    }
+
     return (
-        <div>
+        <>
+            {jsonLd && (
+                <script
+                    type="application/ld+json"
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                />
+            )}
             <QuestionDetailPage id={id} />
-        </div>
+        </>
     );
 }

@@ -49,25 +49,11 @@ export async function POST(req: NextRequest) {
       }, { status: 400 });
     }
 
-    // Vérifier que l'utilisateur a assez de gemmes
-    const gemDoc = await Gem.findOne({ user: user._id });
-    const currentBalance = gemDoc?.balance || 0;
-
-    if (currentBalance < price) {
-      return NextResponse.json({ 
-        error: 'Gemmes insuffisantes',
-        required: price,
-        current: currentBalance
-      }, { status: 400 });
-    }
-
-    // Opérations atomiques sans transactions (pour base locale)
-    
-    // Déduire les gemmes
-    const updatedGem = await Gem.findByIdAndUpdate(
-      gemDoc._id,
-      { 
-        $inc: { 
+    // Déduire les gemmes de manière atomique (vérification + déduction en une seule opération)
+    const updatedGem = await Gem.findOneAndUpdate(
+      { user: user._id, balance: { $gte: price } },
+      {
+        $inc: {
           balance: -price,
           totalSpent: price
         }
@@ -76,7 +62,12 @@ export async function POST(req: NextRequest) {
     );
 
     if (!updatedGem) {
-      return NextResponse.json({ error: 'Erreur lors de la déduction des gemmes' }, { status: 500 });
+      const gemDoc = await Gem.findOne({ user: user._id });
+      return NextResponse.json({
+        error: 'Gemmes insuffisantes',
+        required: price,
+        current: gemDoc?.balance || 0
+      }, { status: 400 });
     }
 
     // Créer ou mettre à jour la personnalisation
@@ -99,7 +90,8 @@ export async function POST(req: NextRequest) {
         'eclair_green': 'eclair_green.apng',
         'fumee': 'fumee.png',
         'poison_orange': 'poison_orange.png',
-        'halloween_pumpkins_apng': 'halloween_pumpkins_apng.png'
+        'halloween_pumpkins_apng': 'halloween_pumpkins_apng.png',
+        'yumego_manga': 'yumego_manga.svg'
       };
       const filename = borderFileMap[itemValue] || itemValue;
       updateData['profileBorder.filename'] = filename;

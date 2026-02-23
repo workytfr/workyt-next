@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import Section from '@/models/Section';
 import Course from '@/models/Course';
 import connectDB from '@/lib/mongodb';
+import { escapeRegex } from '@/utils/escapeRegex';
 
 // GET - Récupérer les sections avec pagination et filtres
 export async function GET(request: NextRequest) {
@@ -27,7 +28,7 @@ export async function GET(request: NextRequest) {
         let query: any = {};
         
         if (search) {
-            query.title = { $regex: search, $options: 'i' };
+            query.title = { $regex: escapeRegex(search), $options: 'i' };
         }
         
         if (courseId) {

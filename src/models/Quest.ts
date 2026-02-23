@@ -8,14 +8,15 @@ export type QuestType = 'daily' | 'weekly' | 'monthly';
 /**
  * Types d'actions pour les conditions de quête
  */
-export type QuestActionType = 
+export type QuestActionType =
   | 'forum_answer'           // Répondre sur le forum
   | 'forum_answer_validated' // Réponse validée sur le forum
   | 'quiz_complete'          // Compléter un quiz
   | 'quiz_score'             // Obtenir un score minimum dans un quiz
   | 'course_complete'        // Terminer un cours
   | 'fiche_create'           // Créer une fiche
-  | 'fiche_like_received';   // Recevoir un like sur une fiche
+  | 'fiche_like_received'    // Recevoir un like sur une fiche
+  | 'fiche_bookmark';        // Mettre une fiche en favoris
 
 /**
  * Types de récompenses
@@ -83,7 +84,8 @@ const QuestSchema = new Schema<IQuest>({
         'quiz_score',
         'course_complete',
         'fiche_create',
-        'fiche_like_received'
+        'fiche_like_received',
+        'fiche_bookmark'
       ],
       required: true
     },
