@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 import authMiddleware from "@/middlewares/authMiddleware";
+import User from "@/models/User";
+import connectDB from "@/lib/mongodb";
 import { callOpenRouter, extractJSON } from "@/lib/openrouter";
 
 const ALLOWED_ROLES = ["Admin"];
@@ -78,10 +82,26 @@ export async function POST(req: NextRequest) {
             };
 
             try {
-                // Étape 1 : Authentification
+                // Étape 1 : Authentification (Bearer token ou session cookies)
                 sendEvent("progress", { step: 1, message: "Vérification des permissions..." });
 
-                const user = await authMiddleware(req);
+                let user: { _id: any; role: string } | null = null;
+                const authHeader = req.headers.get("authorization");
+                if (authHeader?.startsWith("Bearer ")) {
+                    try {
+                        user = await authMiddleware(req);
+                    } catch {
+                        user = null;
+                    }
+                }
+                if (!user) {
+                    const session = await getServerSession(authOptions);
+                    if (session?.user?.id) {
+                        await connectDB();
+                        const dbUser = await User.findById(session.user.id).select("-password");
+                        if (dbUser) user = dbUser;
+                    }
+                }
                 if (!user || !user._id) {
                     sendEvent("error", { message: "Non autorisé. Veuillez vous connecter." });
                     controller.close();

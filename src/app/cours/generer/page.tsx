@@ -92,16 +92,32 @@ export default function GenerateCoursePage() {
         formData.append("niveau", niveau);
 
         try {
+            const accessToken = (session as any)?.accessToken;
             const res = await fetch("/api/cours/generate", {
                 method: "POST",
                 headers: {
-                    Authorization: `Bearer ${(session as any)?.accessToken}`,
+                    ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
                 },
+                credentials: "include",
                 body: formData,
             });
 
-            if (!res.ok || !res.body) {
-                setError("Erreur réseau. Veuillez réessayer.");
+            if (!res.ok) {
+                const text = await res.text();
+                let errMsg = "Erreur réseau. Veuillez réessayer.";
+                try {
+                    const json = JSON.parse(text);
+                    if (json.error?.message) errMsg = json.error.message;
+                    else if (json.message) errMsg = json.message;
+                } catch {
+                    if (res.status === 401) errMsg = "Session expirée. Veuillez vous reconnecter.";
+                }
+                setError(errMsg);
+                setStep("form");
+                return;
+            }
+            if (!res.body) {
+                setError("Erreur de connexion. Veuillez réessayer.");
                 setStep("form");
                 return;
             }
@@ -125,18 +141,21 @@ export default function GenerateCoursePage() {
                     if (line.startsWith("event: ")) {
                         eventType = line.slice(7).trim();
                     } else if (line.startsWith("data: ")) {
-                        const data = JSON.parse(line.slice(6));
-
-                        if (eventType === "progress") {
-                            setProgressStep(data.step);
-                            setProgressMessage(data.message);
-                        } else if (eventType === "done") {
-                            setDraft(data.draft);
-                            setPdfInfo(data.pdfInfo);
-                            setStep("editing");
-                        } else if (eventType === "error") {
-                            setError(data.message);
-                            setStep("form");
+                        try {
+                            const data = JSON.parse(line.slice(6));
+                            if (eventType === "progress") {
+                                setProgressStep(data.step);
+                                setProgressMessage(data.message);
+                            } else if (eventType === "done") {
+                                setDraft(data.draft);
+                                setPdfInfo(data.pdfInfo);
+                                setStep("editing");
+                            } else if (eventType === "error") {
+                                setError(data.message || "Erreur lors de la génération.");
+                                setStep("form");
+                            }
+                        } catch {
+                            // Ignorer les données malformées
                         }
                     }
                 }
