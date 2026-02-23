@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { educationData } from "@/data/educationData";
 import { Calculator, FlaskConical, Code, Book, Globe, Microscope, Wrench, Languages, Brain, DollarSign } from "lucide-react";
 
-const subjectIcons: Record<string, JSX.Element> = {
+const subjectIcons: Record<string, React.ReactNode> = {
     "Mathématiques": <Calculator className="h-6 w-6" />,
     "Physique-Chimie": <FlaskConical className="h-6 w-6" />,
     "Informatique": <Code className="h-6 w-6" />,

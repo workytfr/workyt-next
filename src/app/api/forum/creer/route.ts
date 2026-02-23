@@ -45,11 +45,12 @@ async function uploadFileToR2(file: File): Promise<string> {
     });
     await s3Client.send(cmd);
 
-    const publicHost = process.env.R2_PUBLIC_URL
-        ? process.env.R2_PUBLIC_URL
-        : process.env.R2_ENDPOINT?.replace("https://", "");
+    const publicHost = (process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL)
+        ? (process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL)
+        : (process.env.R2_ENDPOINT || process.env.S3_ENDPOINT)?.replace(/^https?:\/\//, "");
+    const bucket = process.env.R2_BUCKET_NAME || process.env.S3_BUCKET_NAME;
 
-    return `https://${publicHost}/${process.env.R2_BUCKET_NAME}/${key}`;
+    return `https://${publicHost}/${bucket}/${key}`;
 }
 
 // Route POST: création d'une question

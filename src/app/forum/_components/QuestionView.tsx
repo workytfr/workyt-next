@@ -147,18 +147,17 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                             {question.attachments.map((url: string, index: number) => {
                                 const fileExtension = getFileExtension(url);
                                 const isImage = ["jpeg", "jpg", "png", "gif", "webp"].includes(fileExtension || "");
+                                const proxyUrl = `/api/file-proxy?questionId=${String(question._id ?? question.id ?? "")}&index=${index}`;
 
                                 return (
                                     <div key={index} className="group relative bg-gray-50 rounded-lg overflow-hidden border border-gray-200 transition-all hover:shadow-md">
                                         {isImage ? (
                                             <div className="aspect-[4/3] bg-gray-100 relative overflow-hidden">
-                                                <Image
-                                                    src={url}
+                                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                                <img
+                                                    src={proxyUrl}
                                                     alt={`Pièce jointe ${index + 1}`}
-                                                    fill
-                                                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                                                    className="object-cover"
-                                                    unoptimized
+                                                    className="w-full h-full object-cover"
                                                 />
                                             </div>
                                         ) : (
@@ -173,7 +172,7 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                                         )}
                                         <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-opacity flex items-center justify-center opacity-0 group-hover:opacity-100">
                                             <a
-                                                href={url}
+                                                href={proxyUrl}
                                                 target="_blank"
                                                 rel="noopener noreferrer"
                                                 download

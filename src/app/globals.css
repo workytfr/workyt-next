@@ -1,3 +1,18 @@
+@import "md-editor-rt/lib/style.css";
+
+/* Fix décalage curseur/lettre dans l'éditeur Markdown (@uiw/react-md-editor)
+   Les couches texte (textarea + overlay syntax highlighting) doivent partager
+   la même police, taille et line-height pour que le curseur s'aligne correctement.
+   Voir: https://github.com/uiwjs/react-md-editor/issues/503 et #578 */
+.w-md-editor-text-pre,
+.w-md-editor-text-input,
+.w-md-editor-text > .w-md-editor-text-pre,
+.w-md-editor-text-pre > code {
+  font-family: inherit !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,7 +31,6 @@
 .animate-fade-in-up {
   animation: fade-in-up 0.5s ease-out;
 }
-@import "md-editor-rt/lib/style.css";
 
 @layer base {
   body {
@@ -406,6 +420,14 @@
 .animate-shine {
   animation: shine 2s ease-in-out infinite;
   overflow: hidden;
+}
+
+/* Safe area pour navbar mobile (notch, home indicator) */
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0);
+}
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* Empêcher le débordement horizontal */

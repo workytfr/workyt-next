@@ -221,6 +221,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             <MDEditor
                 value={formData.content}
                 onChange={(value) => setFormData({ ...formData, content: value || "" })}
+                highlightEnable={false}
                 previewOptions={{
                     remarkPlugins: [remarkMath],
                     rehypePlugins: [rehypeKatex],
@@ -231,6 +232,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             <MDEditor
                 value={formData.correctionText}
                 onChange={(value) => setFormData({ ...formData, correctionText: value || "" })}
+                highlightEnable={false}
                 previewOptions={{
                     remarkPlugins: [remarkMath],
                     rehypePlugins: [rehypeKatex],

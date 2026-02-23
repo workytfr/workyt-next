@@ -23,6 +23,7 @@ interface ProfileCardProps {
     image?: string;
     className?: string;
     role?: string; // Rôle de l'utilisateur pour afficher l'icône
+    showChevron?: boolean; // false pour éviter le doublon quand le parent affiche un chevron (ex: Navbar)
 }
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
@@ -33,7 +34,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
     userId,
     image,
     className = "",
-    role
+    role,
+    showChevron = true
 }) => {
     const [gems, setGems] = useState<number>(0);
     const [currentPoints, setCurrentPoints] = useState<number>(initialPoints);
@@ -131,8 +133,8 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                 </div>
             </div>
 
-            {/* Chevron */}
-            <ChevronDownIcon className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
+            {/* Chevron (masqué si le parent en affiche un, ex: Navbar dropdown) */}
+            {showChevron && <ChevronDownIcon className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />}
         </div>
     );
 };

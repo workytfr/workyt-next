@@ -9,14 +9,15 @@ import User from "@/models/User";
 import PointTransaction from '@/models/PointTransaction';
 import { BadgeService } from "@/lib/badgeService";
 
-// --- Configuration Client S3 pour Cloudflare R2 ---
+// Configuration S3/R2 (compatible S3_* et R2_*)
 const s3Client = new S3Client({
-    region: process.env.R2_REGION,
-    endpoint: process.env.R2_ENDPOINT,
+    region: process.env.R2_REGION || process.env.S3_REGION || "auto",
+    endpoint: process.env.R2_ENDPOINT || process.env.S3_ENDPOINT,
     credentials: {
-        accessKeyId: process.env.R2_ACCESS_KEY_ID!,
-        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+        accessKeyId: process.env.R2_ACCESS_KEY_ID || process.env.S3_ACCESS_KEY!,
+        secretAccessKey: process.env.R2_SECRET_ACCESS_KEY || process.env.S3_SECRET_KEY!,
     },
+    forcePathStyle: true,
 });
 
 // Convertir un fichier (File) en Buffer
@@ -40,8 +41,9 @@ async function uploadFileToR2(file: File): Promise<string> {
         const fileBuffer = await fileToBuffer(file);
 
         // Commande d'upload
+        const bucket = process.env.R2_BUCKET_NAME || process.env.S3_BUCKET_NAME!;
         const putCommand = new PutObjectCommand({
-            Bucket: process.env.R2_BUCKET_NAME!,
+            Bucket: bucket,
             Key: fileKey,
             Body: fileBuffer,
             ContentType: file.type,
@@ -53,11 +55,10 @@ async function uploadFileToR2(file: File): Promise<string> {
         // Construire l'URL publique (ou signée) selon votre configuration
         // Exemple : https://<votreCompte>.r2.cloudflarestorage.com/bucketName/uploads/...
         // OU si vous avez un domaine perso, adaptez ici
-        const publicHost = process.env.R2_PUBLIC_URL
-            ? process.env.R2_PUBLIC_URL.replace(/^https?:\/\//, '') // strip protocol if present
-            : process.env.R2_ENDPOINT?.replace("https://", "");
+        const baseUrl = process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL || process.env.R2_ENDPOINT || process.env.S3_ENDPOINT || "";
+        const publicHost = baseUrl.replace(/^https?:\/\//, "");
 
-        return `https://${publicHost}/${process.env.R2_BUCKET_NAME}/${fileKey}`;
+        return `https://${publicHost}/${bucket}/${fileKey}`;
     } catch (error: any) {
         console.error("Erreur téléversement R2 :", error.message || error);
         throw new Error("Échec du téléversement du fichier sur R2.");
