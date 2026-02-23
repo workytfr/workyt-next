@@ -32,7 +32,7 @@ function sanitizeFileName(fileName: string): string {
     return fileName.replace(/[<>:"/\\|?*]+/g, "_");
 }
 
-// Téléversement sur R2 et renvoi de l'URL publique
+// Téléversement sur R2 et renvoi de la clé du fichier (stockage robuste, pas d'URL selon les env)
 async function uploadFileToR2(file: File): Promise<string> {
     const sanitized = sanitizeFileName(file.name);
     const key = `uploads/${uuidv4()}-${sanitized}`;
@@ -45,12 +45,8 @@ async function uploadFileToR2(file: File): Promise<string> {
     });
     await s3Client.send(cmd);
 
-    const publicHost = (process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL)
-        ? (process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL)
-        : (process.env.R2_ENDPOINT || process.env.S3_ENDPOINT)?.replace(/^https?:\/\//, "");
-    const bucket = process.env.R2_BUCKET_NAME || process.env.S3_BUCKET_NAME;
-
-    return `https://${publicHost}/${bucket}/${key}`;
+    // Stocker uniquement la clé (uploads/uuid-filename) : le file-proxy construit l'URL côté serveur
+    return key;
 }
 
 // Route POST: création d'une question
@@ -90,10 +86,10 @@ export async function POST(req: NextRequest) {
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
         const MAX_FILES = 5;
 
-        const fileURLs: string[] = [];
+        const fileKeys: string[] = [];
         for (const [_, value] of formData.entries()) {
             if (value instanceof File && value.size > 0) {
-                if (fileURLs.length >= MAX_FILES) {
+                if (fileKeys.length >= MAX_FILES) {
                     return NextResponse.json({ error: `Maximum ${MAX_FILES} fichiers autorisés.` }, { status: 400 });
                 }
                 if (!ALLOWED_MIME_TYPES.includes(value.type)) {
@@ -102,19 +98,19 @@ export async function POST(req: NextRequest) {
                 if (value.size > MAX_FILE_SIZE) {
                     return NextResponse.json({ error: `Fichier trop volumineux (max 10 MB) : ${value.name}` }, { status: 400 });
                 }
-                const url = await uploadFileToR2(value);
-                fileURLs.push(url);
+                const key = await uploadFileToR2(value);
+                fileKeys.push(key);
             }
         }
 
-        // Création de la question en BDD
+        // Création de la question en BDD (attachments = clés de fichiers: uploads/uuid-filename)
         const question = await Question.create({
             user: user._id,
             title,
             classLevel,
             subject,
             description: { whatIDid, whatINeed },
-            attachments: fileURLs,
+            attachments: fileKeys,
             points,
             status: "Non validée",
             createdAt: new Date(),

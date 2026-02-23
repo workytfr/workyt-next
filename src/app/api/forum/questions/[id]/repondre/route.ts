@@ -31,7 +31,7 @@ function sanitizeFileName(fileName: string): string {
     return fileName.replace(/[<>:"/\\|?*]+/g, "_");
 }
 
-// Téléverser un fichier sur Cloudflare R2
+// Téléverser un fichier sur Cloudflare R2 et retourner la clé (stockage robuste)
 async function uploadFileToR2(file: File): Promise<string> {
     try {
         const sanitizedFileName = sanitizeFileName(file.name);
@@ -52,13 +52,8 @@ async function uploadFileToR2(file: File): Promise<string> {
         // Envoi de la requête à R2
         await s3Client.send(putCommand);
 
-        // Construire l'URL publique (ou signée) selon votre configuration
-        // Exemple : https://<votreCompte>.r2.cloudflarestorage.com/bucketName/uploads/...
-        // OU si vous avez un domaine perso, adaptez ici
-        const baseUrl = process.env.R2_PUBLIC_URL || process.env.S3_PUBLIC_URL || process.env.R2_ENDPOINT || process.env.S3_ENDPOINT || "";
-        const publicHost = baseUrl.replace(/^https?:\/\//, "");
-
-        return `https://${publicHost}/${bucket}/${fileKey}`;
+        // Stocker uniquement la clé (uploads/uuid-filename) : le file-proxy construit l'URL côté serveur
+        return fileKey;
     } catch (error: any) {
         console.error("Erreur téléversement R2 :", error.message || error);
         throw new Error("Échec du téléversement du fichier sur R2.");
@@ -116,12 +111,12 @@ export async function POST(
             );
         }
 
-        // Téléversement des fichiers (si présents)
-        const fileURLs: string[] = [];
+        // Téléversement des fichiers (si présents) - stockage des clés
+        const fileKeys: string[] = [];
         for (const [key, value] of formData.entries()) {
             if (key === "file" && value instanceof File) {
-                const fileUrl = await uploadFileToR2(value);
-                fileURLs.push(fileUrl);
+                const fileKey = await uploadFileToR2(value);
+                fileKeys.push(fileKey);
             }
         }
 
@@ -132,7 +127,7 @@ export async function POST(
             content,
             likes: 0,
             status: "Proposée",
-            attachments: fileURLs,
+            attachments: fileKeys,
             createdAt: new Date(),
             isOwner, // Flag pour identifier si l'auteur est le même que la question
         };

@@ -103,7 +103,8 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
                 type: "article",
                 images: [
                     {
-                        url: (question.attachments && question.attachments.length > 0 && question.attachments[0]) ||
+                        // Attachments stockés comme clés (uploads/xxx) ou anciennes URLs complètes
+                        url: (question.attachments && question.attachments.length > 0 && (question.attachments[0].startsWith("http") ? question.attachments[0] : `https://workyt.fr/api/file-proxy?questionId=${id}&index=0`)) ||
                             "https://workyt.fr/default-thumbnail.png",
                         width: 1200,
                         height: 630,
