@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
 import ProfileAvatar from "@/components/ui/profile";
 import { BookOpen, GraduationCap, Layers, Clock, ArrowRight } from "lucide-react";
+import BookmarkButton from "@/components/BookmarkButton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
 
 interface Course {
@@ -144,8 +145,10 @@ export default function CourseCard({ course }: CourseCardProps) {
                             {course.title}
                         </CardTitle>
 
-                        {/* Badge avec Tooltip pour les sections */}
-                        <Tooltip>
+                        {/* Bookmark + Badge sections */}
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                            <BookmarkButton courseId={course._id} size="sm" />
+                            <Tooltip>
                             <TooltipTrigger asChild>
                                 <div className="shrink-0 cursor-pointer bg-gray-100 rounded-full p-1.5 sm:p-2 shadow-sm hover:bg-gray-200 transition">
                                     <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
@@ -171,6 +174,7 @@ export default function CourseCard({ course }: CourseCardProps) {
                                 </div>
                             </TooltipContent>
                         </Tooltip>
+                        </div>
                     </div>
 
                     <div className="flex flex-wrap gap-2 mt-2 sm:mt-3">

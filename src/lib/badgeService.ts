@@ -11,6 +11,7 @@ import '../models/QuizCompletion';
 import '../models/Lesson';
 import '../models/Question';
 import '../models/Exercise';
+import '../models/Bookmark';
 
 export class BadgeService {
   /**
@@ -68,7 +69,16 @@ export class BadgeService {
       
       case 'fiche_created':
         return await this.checkFichesCreated(user._id.toString(), value);
-      
+
+      case 'fiche_liked':
+        return await this.checkFichesLiked(user._id.toString(), value);
+
+      case 'fiche_bookmarked':
+        return await this.checkFichesBookmarked(user._id.toString(), value);
+
+      case 'fiche_diverse':
+        return await this.checkFichesDiverse(user._id.toString(), value);
+
       case 'seniority':
         return await this.checkSeniority(user.createdAt, value);
       
@@ -139,6 +149,55 @@ export class BadgeService {
       return count >= requiredCount;
     } catch (error) {
       console.error('Erreur lors de la vérification des fiches:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Vérifie le nombre total de likes reçus sur les fiches d'un utilisateur
+   */
+  private static async checkFichesLiked(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Revision = mongoose.model('Revision');
+      const result = await Revision.aggregate([
+        { $match: { author: new mongoose.Types.ObjectId(userId) } },
+        { $group: { _id: null, totalLikes: { $sum: '$likes' } } },
+      ]);
+      const totalLikes = result[0]?.totalLikes || 0;
+      return totalLikes >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la vérification des likes fiches:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Vérifie le nombre total de fois que les fiches d'un utilisateur ont été mises en favoris
+   */
+  private static async checkFichesBookmarked(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Revision = mongoose.model('Revision');
+      const Bookmark = mongoose.model('Bookmark');
+      const userFiches = await Revision.find({ author: userId }).select('_id');
+      const ficheIds = userFiches.map((f: any) => f._id);
+      const count = await Bookmark.countDocuments({ revision: { $in: ficheIds } });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la vérification des bookmarks fiches:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Vérifie le nombre de matières différentes dans lesquelles l'utilisateur a créé des fiches
+   */
+  private static async checkFichesDiverse(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Revision = mongoose.model('Revision');
+      const subjects = await Revision.distinct('subject', { author: userId });
+      return subjects.length >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la vérification de la diversité des fiches:', error);
       return false;
     }
   }

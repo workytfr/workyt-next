@@ -53,11 +53,11 @@ async function uploadFileToR2(file: File): Promise<string> {
         // Construire l'URL publique (ou signée) selon votre configuration
         // Exemple : https://<votreCompte>.r2.cloudflarestorage.com/bucketName/uploads/...
         // OU si vous avez un domaine perso, adaptez ici
-        const baseUrl = process.env.R2_PUBLIC_URL
-            ? process.env.R2_PUBLIC_URL // ex: "https://cdn.mondomaine.com"
-            : process.env.R2_ENDPOINT?.replace("https://", ""); // ex: "<compte>.r2.cloudflarestorage.com"
+        const publicHost = process.env.R2_PUBLIC_URL
+            ? process.env.R2_PUBLIC_URL.replace(/^https?:\/\//, '') // strip protocol if present
+            : process.env.R2_ENDPOINT?.replace("https://", "");
 
-        return `https://${baseUrl}/${process.env.R2_BUCKET_NAME}/${fileKey}`;
+        return `https://${publicHost}/${process.env.R2_BUCKET_NAME}/${fileKey}`;
     } catch (error: any) {
         console.error("Erreur téléversement R2 :", error.message || error);
         throw new Error("Échec du téléversement du fichier sur R2.");

@@ -961,6 +961,33 @@ const GemManager: React.FC = () => {
                   }
                 </Button>
               </div>
+
+              {/* Contour Yumego Manga */}
+              <div className="border rounded-lg p-3 text-center">
+                <div className="relative w-12 h-12 mx-auto mb-2">
+                  <Image
+                    src="/profile/contour/yumego_manga.svg"
+                    alt="Contour Yumego Manga"
+                    width={48}
+                    height={48}
+                    className="mx-auto"
+                    unoptimized
+                  />
+                </div>
+                <div className="text-sm text-gray-600 mb-1">Contour Yumego Manga</div>
+                <div className="text-xs text-pink-500 mb-2 font-semibold">🌸 Partenaire</div>
+                <Button
+                  size="sm"
+                  onClick={() => purchaseCustomization('profileBorder', 'yumego_manga')}
+                  disabled={purchasing || (gemData?.balance || 0) < 5}
+                  className="w-full bg-pink-500 hover:bg-pink-600"
+                >
+                  {customization?.profileBorder.filename === 'yumego_manga.svg' && customization.profileBorder.isActive
+                    ? 'Actif'
+                    : 'Acheter (5 gemmes)'
+                  }
+                </Button>
+              </div>
             </div>
           </div>
         </CardContent>

@@ -1,6 +1,5 @@
 "use client";
 
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
@@ -11,7 +10,8 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import AuthPage from "@/components/forms/RegisterForm";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 import {
     InstagramLogoIcon,
     TwitterLogoIcon,
@@ -22,26 +22,57 @@ import {
     Cross2Icon,
     HamburgerMenuIcon,
     PersonIcon,
-    GearIcon,
     ExitIcon,
     FileTextIcon,
     ChatBubbleIcon,
     StarIcon,
     StarFilledIcon
 } from "@radix-ui/react-icons";
+import {
+    MessageSquare,
+    FileText,
+    BookOpen,
+    Newspaper,
+    Package,
+    Heart,
+    ChevronRight,
+} from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import ProfileCard from "@/components/ui/ProfileCard";
 import GemIndicator from "@/components/ui/GemIndicator";
 import CustomUsername from "@/components/ui/CustomUsername";
 import NotificationBell from "@/components/NotificationBell";
+import BookmarkBell from "@/components/BookmarkBell";
 import QuestsPanel from "@/components/quests/QuestsPanel";
 import { Button } from "@/components/ui/button";
+
+const navLinks = [
+    { href: "/forum", label: "Forum", icon: MessageSquare },
+    { href: "/fiches", label: "Fiches", icon: FileText },
+    { href: "/cours", label: "Cours", icon: BookOpen },
+];
+
+const blogLinks = [
+    { href: "https://blog.workyt.fr/category/actualites/", label: "Actualités", icon: Newspaper },
+    { href: "https://blog.workyt.fr/category/conseils-methodes/", label: "Conseils & Méthodes", icon: BookOpen },
+    { href: "https://blog.workyt.fr/category/culture/", label: "Culture", icon: BookOpen },
+    { href: "https://blog.workyt.fr/category/orientation-scolaire/", label: "Orientation scolaire", icon: BookOpen },
+];
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isBlogOpenMobile, setIsBlogOpenMobile] = useState(false);
+    const [isBlogOpen, setIsBlogOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
+    const profileBtnRef = useRef<HTMLButtonElement>(null);
+    const [profilePos, setProfilePos] = useState({ top: 0, right: 0 });
+    const blogRef = useRef<HTMLDivElement>(null);
+    const blogBtnRef = useRef<HTMLButtonElement>(null);
+    const [blogPos, setBlogPos] = useState({ top: 0, left: 0 });
     const { data: session } = useSession();
+    const pathname = usePathname();
 
     // Close mobile menu when screen size changes
     useEffect(() => {
@@ -50,7 +81,6 @@ export default function Navbar() {
                 setIsMenuOpen(false);
             }
         };
-
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
     }, [isMenuOpen]);
@@ -62,19 +92,43 @@ export default function Navbar() {
         } else {
             document.body.style.overflow = 'unset';
         }
-
         return () => {
             document.body.style.overflow = 'unset';
         };
     }, [isMenuOpen]);
 
-    // Ouvrir automatiquement le dialog de connexion si la session a expiré
+    // Close profile dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+        if (isProfileOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isProfileOpen]);
+
+    // Close blog dropdown on click outside
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (blogRef.current && !blogRef.current.contains(e.target as Node)) {
+                setIsBlogOpen(false);
+            }
+        };
+        if (isBlogOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [isBlogOpen]);
+
+    // Auto-open auth dialog on session expiry
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('session_expired') === 'true' && !session) {
                 setIsAuthOpen(true);
-                // Nettoyer l'URL en retirant le paramètre
                 const newUrl = window.location.pathname;
                 window.history.replaceState({}, '', newUrl);
             }
@@ -83,19 +137,23 @@ export default function Navbar() {
 
     const closeMobileMenu = () => {
         setIsMenuOpen(false);
+        setIsBlogOpenMobile(false);
     };
 
     const handleSignOut = () => {
         setIsProfileOpen(false);
+        closeMobileMenu();
         signOut();
     };
 
+    const isActive = (href: string) => pathname.startsWith(href);
+
     return (
         <>
-            <nav className="bg-white/95 backdrop-blur-sm border-b border-gray-200/50 py-3 sticky top-0 z-50 shadow-sm">
-                <div className="container mx-auto px-4 flex justify-between items-center">
+            <nav className="bg-white border-b border-gray-200/50 py-2.5 sticky top-0 z-[100] shadow-sm">
+                <div className="container mx-auto px-4 flex items-center">
                     {/* Logo */}
-                    <Link href="/" className="flex items-center">
+                    <Link href="/" className="flex-shrink-0">
                         <Image
                             src="/workyt_fr.svg"
                             alt="Workyt"
@@ -105,326 +163,439 @@ export default function Navbar() {
                         />
                     </Link>
 
-                    {/* Desktop Navigation */}
-                    <div className="hidden lg:flex items-center space-x-8">
-                        <Link href="/forum" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                            Forum
-                        </Link>
-                        <Link href="/fiches" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                            Fiches
-                        </Link>
-                        <Link href="/cours" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
-                            Cours
-                        </Link>
-                        
-                        {/* Blog Dropdown */}
-                        <DropdownMenu.Root>
-                            <DropdownMenu.Trigger className="text-gray-700 hover:text-blue-600 transition-colors font-medium flex items-center">
-                                Blog <ChevronDownIcon className="ml-1 w-3 h-3" />
-                            </DropdownMenu.Trigger>
-                            <DropdownMenu.Portal>
-                                <DropdownMenu.Content
-                                    className="bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 min-w-[200px]"
-                                    align="start"
-                                    sideOffset={5}
-                                >
-                                    <DropdownMenu.Item asChild>
-                                        <Link href="https://blog.workyt.fr/category/actualites/" className="text-gray-700 px-4 py-2 hover:bg-gray-50 block transition-colors">
-                                            Actualités
-                                        </Link>
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item asChild>
-                                        <Link href="https://blog.workyt.fr/category/conseils-methodes/" className="text-gray-700 px-4 py-2 hover:bg-gray-50 block transition-colors">
-                                            Conseils & Méthodes
-                                        </Link>
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item asChild>
-                                        <Link href="https://blog.workyt.fr/category/culture/" className="text-gray-700 px-4 py-2 hover:bg-gray-50 block transition-colors">
-                                            Culture
-                                        </Link>
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item asChild>
-                                        <Link href="https://blog.workyt.fr/category/orientation-scolaire/" className="text-gray-700 px-4 py-2 hover:bg-gray-50 block transition-colors">
-                                            Orientation scolaire
-                                        </Link>
-                                    </DropdownMenu.Item>
-                                </DropdownMenu.Content>
-                            </DropdownMenu.Portal>
-                        </DropdownMenu.Root>
+                    {/* Desktop Navigation - Centered */}
+                    <div className="hidden lg:flex flex-1 items-center justify-center space-x-1">
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.href}
+                                href={link.href}
+                                className={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 ${
+                                    isActive(link.href)
+                                        ? "text-orange-600"
+                                        : "text-gray-600 hover:text-gray-900"
+                                }`}
+                            >
+                                {link.label}
+                                {isActive(link.href) && (
+                                    <span className="absolute bottom-0 left-2 right-2 h-0.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500" />
+                                )}
+                            </Link>
+                        ))}
 
-                        <Link href="https://workyt.fr/kits/" className="text-gray-700 hover:text-blue-600 transition-colors font-medium">
+                        {/* Blog Dropdown */}
+                        <div ref={blogRef}>
+                            <button
+                                ref={blogBtnRef}
+                                onClick={() => {
+                                    if (!isBlogOpen && blogBtnRef.current) {
+                                        const rect = blogBtnRef.current.getBoundingClientRect();
+                                        setBlogPos({
+                                            top: rect.bottom + 8,
+                                            left: rect.left + rect.width / 2 - 110,
+                                        });
+                                    }
+                                    setIsBlogOpen(!isBlogOpen);
+                                }}
+                                className={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 flex items-center gap-1 outline-none ${
+                                    pathname.includes("blog") ? "text-orange-600" : "text-gray-600 hover:text-gray-900"
+                                }`}
+                            >
+                                Blog
+                                <ChevronDownIcon className={`w-3.5 h-3.5 transition-transform duration-200 ${isBlogOpen ? "rotate-180" : ""}`} />
+                            </button>
+
+                            {isBlogOpen && (
+                                <div
+                                    className="fixed w-[220px] bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-[200]"
+                                    style={{ top: blogPos.top, left: blogPos.left }}
+                                >
+                                    {blogLinks.map((link) => (
+                                        <Link
+                                            key={link.href}
+                                            href={link.href}
+                                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
+                                            onClick={() => setIsBlogOpen(false)}
+                                        >
+                                            <link.icon className="w-4 h-4 text-gray-400" />
+                                            {link.label}
+                                        </Link>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        <Link
+                            href="https://workyt.fr/kits/"
+                            className="relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 text-gray-600 hover:text-gray-900"
+                        >
                             Kits
                         </Link>
                     </div>
 
                     {/* Right side - Desktop */}
-                    <div className="hidden lg:flex items-center space-x-4">
-                        {/* Social Links */}
-                        <div className="flex items-center space-x-2">
-                            <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400 transition-colors p-1">
-                                <TwitterLogoIcon className="w-4 h-4" />
-                            </a>
-                            <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-pink-500 transition-colors p-1">
-                                <InstagramLogoIcon className="w-4 h-4" />
-                            </a>
-                            <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-red-500 transition-colors p-1">
-                                <VideoIcon className="w-4 h-4" />
-                            </a>
-                            <a href="https://www.linkedin.com/company/workyt" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-600 transition-colors p-1">
-                                <LinkedInLogoIcon className="w-4 h-4" />
-                            </a>
-                        </div>
+                    <div className="hidden lg:flex flex-shrink-0 items-center space-x-3">
+                        {/* Faire un don - always visible */}
+                        <Link
+                            href="https://www.helloasso.com/associations/workyt/formulaires/1"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1.5 text-sm font-medium text-pink-600 hover:text-pink-700 transition-colors px-3 py-1.5 rounded-full border border-pink-200 hover:bg-pink-50"
+                        >
+                            <Heart className="w-3.5 h-3.5" />
+                            Faire un don
+                        </Link>
 
-                        {/* Action Buttons */}
-                        <div className="flex items-center space-x-3">
-                            {/* Discord Button */}
-                            <Link 
-                                href="https://dc.gg/workyt" 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="relative bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white px-4 py-2 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden text-sm font-medium flex items-center gap-2"
-                                style={{
-                                    backgroundImage: `
-                                        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                        linear-gradient(135deg, #6366f1, #4f46e5)
-                                    `,
-                                    backgroundSize: '50px 50px, 80px 80px, 60px 60px, 100% 100%'
-                                }}
-                            >
-                                <DiscordLogoIcon className="w-4 h-4" />
-                                <span className="relative z-10">Discord</span>
-                            </Link>
-
-                            {/* Donate Button */}
-                            <Link 
-                                href="https://www.helloasso.com/associations/workyt/formulaires/1" 
-                                className="relative bg-gradient-to-r from-gray-800 to-black hover:from-gray-900 hover:to-gray-900 text-white px-4 py-2 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden text-sm font-medium"
-                                style={{
-                                    backgroundImage: `
-                                        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.15) 1px, transparent 1px),
-                                        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.12) 1px, transparent 1px),
-                                        radial-gradient(circle at 60% 30%, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
-                                        linear-gradient(135deg, #1f2937, #000000)
-                                    `,
-                                    backgroundSize: '40px 40px, 70px 70px, 55px 55px, 85px 85px, 100% 100%'
-                                }}
-                            >
-                                <span className="relative z-10">Faire un don</span>
-                            </Link>
-                        </div>
-
-                        {/* Auth Section */}
                         {session ? (
-                            <div className="flex items-center space-x-3">
+                            <>
+                                <BookmarkBell />
                                 <NotificationBell />
-                                
-                                <DropdownMenu.Root open={isProfileOpen} onOpenChange={setIsProfileOpen}>
-                                    <DropdownMenu.Trigger className="text-gray-700 hover:opacity-80 transition-opacity">
+
+                                {/* Profile - custom dropdown (no Radix) */}
+                                <div ref={profileRef}>
+                                    <button
+                                        ref={profileBtnRef}
+                                        onClick={() => {
+                                            if (!isProfileOpen && profileBtnRef.current) {
+                                                const rect = profileBtnRef.current.getBoundingClientRect();
+                                                setProfilePos({
+                                                    top: rect.bottom + 8,
+                                                    right: window.innerWidth - rect.right,
+                                                });
+                                            }
+                                            setIsProfileOpen(!isProfileOpen);
+                                        }}
+                                        className="flex items-center gap-1.5 hover:opacity-80 transition-opacity outline-none"
+                                    >
                                         <ProfileCard
                                             username={session.user.username}
                                             points={session.user.points}
                                             userId={session.user.id}
                                             role={session.user.role}
                                         />
-                                    </DropdownMenu.Trigger>
-                                    <DropdownMenu.Portal>
-                                        <DropdownMenu.Content
-                                            className="bg-white border border-gray-200 rounded-lg shadow-lg py-2 z-50 w-56"
-                                            align="end"
-                                            sideOffset={5}
+                                        <ChevronDownIcon className={`w-3.5 h-3.5 text-gray-400 transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`} />
+                                    </button>
+
+                                    {/* Profile panel - fixed to viewport */}
+                                    {isProfileOpen && (
+                                        <div
+                                            className="fixed w-64 bg-white border border-gray-100 rounded-xl shadow-xl py-2 z-[200]"
+                                            style={{ top: profilePos.top, right: profilePos.right }}
                                         >
-                                            <div className="px-4 py-2 border-b border-gray-100">
-                                                <p className="text-sm text-gray-500">{session.user?.email}</p>
+                                            {/* Email */}
+                                            <div className="px-4 py-2.5 border-b border-gray-100">
+                                                <p className="text-xs text-gray-400 truncate">{session.user?.email}</p>
                                             </div>
-                                            
-                                            <DropdownMenu.Item asChild>
-                                                <Link href={`/compte/${session.user.id}`} className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
-                                                    <PersonIcon className="w-4 h-4 mr-2" />
+
+                                            {/* Account links */}
+                                            <div className="py-1">
+                                                <Link href={`/compte/${session.user.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                                    <PersonIcon className="w-4 h-4 text-gray-400" />
                                                     Mon Compte
                                                 </Link>
-                                            </DropdownMenu.Item>
-                                            
-                                            <DropdownMenu.Item asChild>
-                                                <Link href="/recompenses" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
-                                                    <StarIcon className="w-4 h-4 mr-2" />
+                                                <Link href="/recompenses" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                                    <StarIcon className="w-4 h-4 text-gray-400" />
                                                     Récompenses
                                                 </Link>
-                                            </DropdownMenu.Item>
-                                            
-                                            <DropdownMenu.Item asChild>
-                                                <Link href="/gems" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
-                                                    <StarFilledIcon className="w-4 h-4 mr-2" />
+                                                <Link href="/gems" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                                    <StarFilledIcon className="w-4 h-4 text-gray-400" />
                                                     Gemmes
                                                 </Link>
-                                            </DropdownMenu.Item>
-                                            
-                                            <DropdownMenu.Separator className="my-1" />
-                                            
+                                            </div>
+
+                                            <div className="h-px bg-gray-100 my-1" />
+
+                                            {/* Quests */}
                                             <QuestsPanel />
-                                            
-                                            <DropdownMenu.Separator className="my-1" />
-                                            
-                                            <DropdownMenu.Item asChild>
-                                                <Link href="/fiches/creer" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
-                                                    <FileTextIcon className="w-4 h-4 mr-2" />
+
+                                            <div className="h-px bg-gray-100 my-1" />
+
+                                            {/* Actions */}
+                                            <div className="py-1">
+                                                <Link href="/fiches/creer" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                                    <FileTextIcon className="w-4 h-4 text-gray-400" />
                                                     Partager une fiche
                                                 </Link>
-                                            </DropdownMenu.Item>
-                                            
-                                            <DropdownMenu.Item asChild>
-                                                <Link href="/forum/creer" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
-                                                    <ChatBubbleIcon className="w-4 h-4 mr-2" />
+                                                <Link href="/forum/creer" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                                    <ChatBubbleIcon className="w-4 h-4 text-gray-400" />
                                                     Déposer une question
                                                 </Link>
-                                            </DropdownMenu.Item>
-                                            
-                                            <DropdownMenu.Separator className="my-1" />
-                                            
-                                            <DropdownMenu.Item>
-                                                <button onClick={handleSignOut} className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors">
-                                                    <ExitIcon className="w-4 h-4 mr-2" />
-                                                    Déconnexion
-                                                </button>
-                                            </DropdownMenu.Item>
-                                        </DropdownMenu.Content>
-                                    </DropdownMenu.Portal>
-                                </DropdownMenu.Root>
-                            </div>
+                                            </div>
+
+                                            <div className="h-px bg-gray-100 my-1" />
+
+                                            {/* Discord */}
+                                            <div className="py-1">
+                                                <Link href="https://dc.gg/workyt" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                                    <DiscordLogoIcon className="w-4 h-4 text-indigo-500" />
+                                                    Discord
+                                                </Link>
+                                            </div>
+
+                                            <div className="h-px bg-gray-100 my-1" />
+
+                                            {/* Social links row */}
+                                            <div className="flex items-center justify-center gap-3 px-4 py-2.5">
+                                                <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 transition-colors p-1">
+                                                    <TwitterLogoIcon className="w-4 h-4" />
+                                                </a>
+                                                <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-500 transition-colors p-1">
+                                                    <InstagramLogoIcon className="w-4 h-4" />
+                                                </a>
+                                                <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors p-1">
+                                                    <VideoIcon className="w-4 h-4" />
+                                                </a>
+                                                <a href="https://www.linkedin.com/company/workyt" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors p-1">
+                                                    <LinkedInLogoIcon className="w-4 h-4" />
+                                                </a>
+                                            </div>
+
+                                            <div className="h-px bg-gray-100 my-1" />
+
+                                            {/* Logout */}
+                                            <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                                <ExitIcon className="w-4 h-4" />
+                                                Déconnexion
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            </>
                         ) : (
                             <Button
                                 onClick={() => setIsAuthOpen(true)}
-                                className="relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-4 py-2 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden"
-                                style={{
-                                    backgroundImage: `
-                                        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                        radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                        linear-gradient(135deg, #f97316, #ea580c)
-                                    `,
-                                    backgroundSize: '50px 50px, 80px 80px, 60px 60px, 100% 100%'
-                                }}
+                                className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white px-5 py-2 rounded-full text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg"
                             >
-                                <span className="relative z-10">Connexion</span>
+                                Connexion
                             </Button>
                         )}
                     </div>
 
-                    {/* Mobile Menu Button */}
+                    {/* Mobile right side */}
+                    <div className="flex lg:hidden items-center gap-2">
+                        {session && <BookmarkBell />}
+                        {session && <NotificationBell />}
+                        <button
+                            className="flex items-center text-gray-700 focus:outline-none p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                        >
+                            <HamburgerMenuIcon className="h-5 w-5" />
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            {/* Mobile Slide-over Overlay */}
+            <div
+                className={`fixed inset-0 bg-black/50 z-[101] lg:hidden transition-opacity duration-300 ${
+                    isMenuOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+                }`}
+                onClick={closeMobileMenu}
+            />
+
+            {/* Mobile Slide-over Panel */}
+            <div
+                className={`fixed right-0 top-0 h-full w-80 max-w-[85vw] bg-white z-[102] shadow-2xl lg:hidden transition-transform duration-300 ease-out flex flex-col ${
+                    isMenuOpen ? "translate-x-0" : "translate-x-full"
+                }`}
+            >
+                {/* Panel header */}
+                <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                    <Image src="/workyt_fr.svg" alt="Workyt" width={80} height={35} />
                     <button
-                        className="lg:hidden flex items-center text-gray-700 focus:outline-none p-2"
-                        onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
+                        onClick={closeMobileMenu}
+                        className="p-2 rounded-lg hover:bg-gray-100 transition-colors text-gray-500"
+                        aria-label="Fermer le menu"
                     >
-                        {isMenuOpen ? (
-                            <Cross2Icon className="h-6 w-6" />
-                        ) : (
-                            <HamburgerMenuIcon className="h-6 w-6" />
-                        )}
+                        <Cross2Icon className="h-5 w-5" />
                     </button>
                 </div>
 
-                {/* Mobile Menu */}
-                {isMenuOpen && (
-                    <div className="lg:hidden bg-white border-t border-gray-200">
-                        <div className="container mx-auto px-4 py-4 space-y-4">
-                            {/* Mobile Navigation Links */}
-                            <div className="space-y-3">
-                                <Link href="/forum" className="block text-gray-700 hover:text-blue-600 transition-colors font-medium" onClick={closeMobileMenu}>
-                                    Forum
+                {/* Scrollable content */}
+                <div className="flex-1 overflow-y-auto">
+                    {/* Navigation links */}
+                    <div className="py-2">
+                        {navLinks.map((link) => {
+                            const Icon = link.icon;
+                            return (
+                                <Link
+                                    key={link.href}
+                                    href={link.href}
+                                    className={`flex items-center justify-between px-5 py-3.5 text-sm font-medium transition-colors ${
+                                        isActive(link.href)
+                                            ? "text-orange-600 bg-orange-50"
+                                            : "text-gray-700 hover:bg-gray-50"
+                                    }`}
+                                    onClick={closeMobileMenu}
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <Icon className="w-5 h-5" />
+                                        {link.label}
+                                    </span>
+                                    <ChevronRight className="w-4 h-4 text-gray-300" />
                                 </Link>
-                                <Link href="/fiches" className="block text-gray-700 hover:text-blue-600 transition-colors font-medium" onClick={closeMobileMenu}>
-                                    Fiches
-                                </Link>
-                                <Link href="/cours" className="block text-gray-700 hover:text-blue-600 transition-colors font-medium" onClick={closeMobileMenu}>
-                                    Cours
-                                </Link>
-                                <Link href="https://workyt.fr/kits/" className="block text-gray-700 hover:text-blue-600 transition-colors font-medium" onClick={closeMobileMenu}>
-                                    Kits
-                                </Link>
-                            </div>
+                            );
+                        })}
 
-                            {/* Mobile Social Links */}
-                            <div className="flex items-center space-x-4 pt-4 border-t border-gray-200">
-                                <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400 transition-colors">
-                                    <TwitterLogoIcon className="w-5 h-5" />
-                                </a>
-                                <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-pink-500 transition-colors">
-                                    <InstagramLogoIcon className="w-5 h-5" />
-                                </a>
-                                <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-red-500 transition-colors">
-                                    <VideoIcon className="w-5 h-5" />
-                                </a>
-                                <a href="https://dc.gg/workyt" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-indigo-500 transition-colors">
-                                    <DiscordLogoIcon className="w-5 h-5" />
-                                </a>
-                            </div>
-
-                            {/* Mobile Auth Section */}
-                            <div className="pt-4 border-t border-gray-200">
-                                {session ? (
-                                    <div className="space-y-3">
-                                        <div className="flex items-center space-x-3">
-                                            <NotificationBell />
-                                        </div>
-                                        <ProfileCard
-                                            username={session.user.username}
-                                            points={session.user.points}
-                                            userId={session.user.id}
-                                            role={session.user.role}
-                                        />
-                                        <div className="space-y-2">
-                                            <Link href={`/compte/${session.user.id}`} className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
-                                                Mon Compte
-                                            </Link>
-                                            <Link href="/recompenses" className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
-                                                Récompenses
-                                            </Link>
-                                            <Link href="/gems" className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
-                                                Gemmes
-                                            </Link>
-                                            <div className="border-t border-gray-200 my-2"></div>
-                                            <QuestsPanel />
-                                            <div className="border-t border-gray-200 my-2"></div>
-                                            <Link href="/fiches/creer" className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
-                                                Partager une fiche
-                                            </Link>
-                                            <Link href="/forum/creer" className="block text-gray-700 hover:text-blue-600 transition-colors" onClick={closeMobileMenu}>
-                                                Déposer une question
-                                            </Link>
-                                            <div className="border-t border-gray-200 my-2"></div>
-                                            <button onClick={handleSignOut} className="block text-red-600 hover:text-red-700 transition-colors">
-                                                Déconnexion
-                                            </button>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <Button
-                                        onClick={() => {
-                                            setIsAuthOpen(true);
-                                            closeMobileMenu();
-                                        }}
-                                        className="w-full relative bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-2 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl overflow-hidden"
-                                        style={{
-                                            backgroundImage: `
-                                                radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                                radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                                radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.1) 1px, transparent 1px),
-                                                linear-gradient(135deg, #f97316, #ea580c)
-                                            `,
-                                            backgroundSize: '50px 50px, 80px 80px, 60px 60px, 100% 100%'
-                                        }}
+                        {/* Blog accordion */}
+                        <button
+                            onClick={() => setIsBlogOpenMobile(!isBlogOpenMobile)}
+                            className={`flex items-center justify-between w-full px-5 py-3.5 text-sm font-medium transition-colors ${
+                                isBlogOpenMobile ? "text-orange-600 bg-orange-50" : "text-gray-700 hover:bg-gray-50"
+                            }`}
+                        >
+                            <span className="flex items-center gap-3">
+                                <Newspaper className="w-5 h-5" />
+                                Blog
+                            </span>
+                            <ChevronDownIcon className={`w-4 h-4 text-gray-300 transition-transform duration-200 ${isBlogOpenMobile ? "rotate-180" : ""}`} />
+                        </button>
+                        {isBlogOpenMobile && (
+                            <div className="bg-gray-50">
+                                {blogLinks.map((link) => (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        className="block pl-14 pr-5 py-2.5 text-sm text-gray-600 hover:text-orange-600 transition-colors"
+                                        onClick={closeMobileMenu}
                                     >
-                                        <span className="relative z-10">Connexion</span>
-                                    </Button>
-                                )}
+                                        {link.label}
+                                    </Link>
+                                ))}
                             </div>
-                        </div>
+                        )}
+
+                        <Link
+                            href="https://workyt.fr/kits/"
+                            className="flex items-center justify-between px-5 py-3.5 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                            onClick={closeMobileMenu}
+                        >
+                            <span className="flex items-center gap-3">
+                                <Package className="w-5 h-5" />
+                                Kits
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-gray-300" />
+                        </Link>
                     </div>
-                )}
-            </nav>
+
+                    <div className="h-px bg-gray-100 mx-4" />
+
+                    {/* Faire un don - mobile */}
+                    <div className="py-2">
+                        <Link
+                            href="https://www.helloasso.com/associations/workyt/formulaires/1"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 px-5 py-3 text-sm font-medium text-pink-600 hover:bg-pink-50 transition-colors"
+                            onClick={closeMobileMenu}
+                        >
+                            <Heart className="w-5 h-5" />
+                            Faire un don
+                        </Link>
+                    </div>
+
+                    <div className="h-px bg-gray-100 mx-4" />
+
+                    {/* Auth section */}
+                    {session ? (
+                        <>
+                            {/* Profile section */}
+                            <div className="p-4">
+                                <ProfileCard
+                                    username={session.user.username}
+                                    points={session.user.points}
+                                    userId={session.user.id}
+                                    role={session.user.role}
+                                />
+                            </div>
+
+                            <div className="py-1">
+                                <Link href={`/compte/${session.user.id}`} className="flex items-center gap-3 px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
+                                    <PersonIcon className="w-4 h-4 text-gray-400" />
+                                    Mon Compte
+                                </Link>
+                                <Link href="/recompenses" className="flex items-center gap-3 px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
+                                    <StarIcon className="w-4 h-4 text-gray-400" />
+                                    Récompenses
+                                </Link>
+                                <Link href="/gems" className="flex items-center gap-3 px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
+                                    <StarFilledIcon className="w-4 h-4 text-gray-400" />
+                                    Gemmes
+                                </Link>
+                            </div>
+
+                            <div className="h-px bg-gray-100 mx-4" />
+
+                            <div className="py-1 px-2">
+                                <QuestsPanel />
+                            </div>
+
+                            <div className="h-px bg-gray-100 mx-4" />
+
+                            <div className="py-1">
+                                <Link href="/fiches/creer" className="flex items-center gap-3 px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
+                                    <FileTextIcon className="w-4 h-4 text-gray-400" />
+                                    Partager une fiche
+                                </Link>
+                                <Link href="/forum/creer" className="flex items-center gap-3 px-5 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
+                                    <ChatBubbleIcon className="w-4 h-4 text-gray-400" />
+                                    Déposer une question
+                                </Link>
+                            </div>
+
+                            <div className="h-px bg-gray-100 mx-4" />
+
+                            {/* Discord */}
+                            <div className="py-1">
+                                <Link href="https://dc.gg/workyt" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-5 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors" onClick={closeMobileMenu}>
+                                    <DiscordLogoIcon className="w-4 h-4 text-indigo-500" />
+                                    Discord
+                                </Link>
+                            </div>
+
+                            <div className="h-px bg-gray-100 mx-4" />
+
+                            {/* Social icons */}
+                            <div className="flex items-center justify-center gap-4 py-3">
+                                <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400 transition-colors p-1.5">
+                                    <TwitterLogoIcon className="w-4 h-4" />
+                                </a>
+                                <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-pink-500 transition-colors p-1.5">
+                                    <InstagramLogoIcon className="w-4 h-4" />
+                                </a>
+                                <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-red-500 transition-colors p-1.5">
+                                    <VideoIcon className="w-4 h-4" />
+                                </a>
+                                <a href="https://www.linkedin.com/company/workyt" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600 transition-colors p-1.5">
+                                    <LinkedInLogoIcon className="w-4 h-4" />
+                                </a>
+                            </div>
+
+                            <div className="h-px bg-gray-100 mx-4" />
+
+                            {/* Logout */}
+                            <div className="py-2">
+                                <button onClick={handleSignOut} className="flex items-center gap-3 w-full px-5 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                                    <ExitIcon className="w-4 h-4" />
+                                    Déconnexion
+                                </button>
+                            </div>
+                        </>
+                    ) : (
+                        <div className="p-4">
+                            <Button
+                                onClick={() => {
+                                    setIsAuthOpen(true);
+                                    closeMobileMenu();
+                                }}
+                                className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-2.5 rounded-full text-sm font-medium transition-all duration-300 shadow-md hover:shadow-lg"
+                            >
+                                Connexion
+                            </Button>
+                        </div>
+                    )}
+                </div>
+            </div>
 
             {/* Auth Dialog */}
             <Dialog open={isAuthOpen} onOpenChange={setIsAuthOpen}>

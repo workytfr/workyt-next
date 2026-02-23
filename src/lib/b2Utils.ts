@@ -1,14 +1,16 @@
 import { S3Client, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner"; // Import du module pour signer les URLs
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 // Configuration du client S3 pour Cloudflare R2 via AWS SDK
+// Utilise la même config que les routes d'upload pour que les URLs signées soient cohérentes
 const s3 = new S3Client({
-    region: process.env.S3_REGION,
-    endpoint: process.env.S3_ENDPOINT,
+    region: process.env.S3_REGION || "auto",
+    endpoint: process.env.S3_ENDPOINT || "",
     credentials: {
         accessKeyId: process.env.S3_ACCESS_KEY!,
         secretAccessKey: process.env.S3_SECRET_KEY!,
     },
+    forcePathStyle: true,
 });
 
 /**
@@ -52,6 +54,22 @@ export async function deleteFileFromStorage(bucketName: string, fileKey: string)
 }
 
 /**
+ * Récupère un fichier depuis Cloudflare R2 (stream côté serveur)
+ * @param bucketName - Nom du bucket
+ * @param fileKey - Clé du fichier dans le bucket
+ * @returns Réponse S3 avec le Body streamable
+ */
+export async function getFileFromStorage(bucketName: string, fileKey: string) {
+    const cleanFileKey = decodeURIComponent(fileKey);
+    const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: cleanFileKey,
+    });
+
+    return await s3.send(command);
+}
+
+/**
  * Extrait la clé du fichier à partir de l'URL complète du fichier
  * @param fileUrl - URL complète du fichier
  * @returns string - Clé du fichier pour la suppression
@@ -68,17 +86,18 @@ export function extractFileKeyFromUrl(fileUrl: string): string {
         const url = new URL(fileUrl);
         const pathParts = url.pathname.split('/');
         
-        // Trouver l'index de "fiches" et prendre tout ce qui suit
-        const fichesIndex = pathParts.findIndex(part => part === 'fiches');
-        if (fichesIndex !== -1 && fichesIndex < pathParts.length - 1) {
-            return pathParts.slice(fichesIndex).join('/');
+        // Retourner le chemin complet sans le slash initial
+        // Ex: /workyt/fiches/uuid-file.pdf → workyt/fiches/uuid-file.pdf
+        const fullKey = url.pathname.replace(/^\/+/, '');
+        if (fullKey) {
+            return fullKey;
         }
-        
+
         // Fallback: prendre les deux dernières parties du chemin
         if (pathParts.length >= 2) {
             return pathParts.slice(-2).join('/');
         }
-        
+
         // Dernier fallback: prendre la dernière partie
         return pathParts[pathParts.length - 1];
     } catch (error) {

@@ -90,7 +90,8 @@ export async function POST(req: NextRequest) {
         'eclair_green': 'eclair_green.apng',
         'fumee': 'fumee.png',
         'poison_orange': 'poison_orange.png',
-        'halloween_pumpkins_apng': 'halloween_pumpkins_apng.png'
+        'halloween_pumpkins_apng': 'halloween_pumpkins_apng.png',
+        'yumego_manga': 'yumego_manga.svg'
       };
       const filename = borderFileMap[itemValue] || itemValue;
       updateData['profileBorder.filename'] = filename;

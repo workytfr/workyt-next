@@ -24,6 +24,7 @@ import remarkGfm from "remark-gfm";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import ReportButton from "@/components/ReportButton";
+import BookmarkButton from "@/components/BookmarkButton";
 import "katex/dist/katex.min.css";
 
 const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question: any, revisions: any[], setShowAnswerPopup: (show: boolean) => void }) => {
@@ -86,12 +87,15 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                             <span className="font-medium">{statusInfo.text}</span>
                         </div>
 
-                        <ReportButton 
-                            contentId={question._id} 
-                            contentType="forum_question"
-                            variant="button"
-                            size="sm"
-                        />
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                            <BookmarkButton questionId={question._id} size="sm" />
+                            <ReportButton 
+                                contentId={question._id} 
+                                contentType="forum_question"
+                                variant="button"
+                                size="sm"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

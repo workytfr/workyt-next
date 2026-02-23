@@ -7,6 +7,7 @@ import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
 import { Card, CardHeader, CardContent } from "@/components/ui/Card";
 import { Eye, EyeOff } from "lucide-react";
+import BookmarkButton from "@/components/BookmarkButton";
 
 interface ExerciseProps {
     exercise: {
@@ -81,9 +82,14 @@ export default function ExerciseCard({ exercise, index }: ExerciseProps) {
                         <span className="px-4 sm:px-6 py-2 bg-white/80 backdrop-blur-sm text-gray-800 font-semibold rounded-full text-xs sm:text-sm shadow-lg border border-gray-100">
                             Exercice {index + 1}
                         </span>
-                        <div className="flex items-center gap-2 sm:gap-3 bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full shadow-lg border border-gray-100">
-                            <img src={getDifficultyBadge(exercise.difficulty)} alt={exercise.difficulty} className="h-5 w-5 sm:h-6 sm:w-6" />
-                            <span className={`font-semibold text-xs sm:text-sm ${difficulty.text}`}>{exercise.difficulty}</span>
+                        <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="flex items-center gap-2 sm:gap-3 bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full shadow-lg border border-gray-100">
+                                <img src={getDifficultyBadge(exercise.difficulty)} alt={exercise.difficulty} className="h-5 w-5 sm:h-6 sm:w-6" />
+                                <span className={`font-semibold text-xs sm:text-sm ${difficulty.text}`}>{exercise.difficulty}</span>
+                            </div>
+                            <div className="bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-lg border border-gray-100">
+                                <BookmarkButton exerciseId={exercise._id} size="sm" />
+                            </div>
                         </div>
                     </CardHeader>
 

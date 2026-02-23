@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/Badge";
 import { getSubjectColor, getLevelColor, educationData } from "@/data/educationData";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import BookmarkButton from "@/components/BookmarkButton";
 
 // Types pour éviter les erreurs TS2339: Property does not exist on type 'never'
 interface User {
@@ -562,8 +563,11 @@ export default function ForumPageClient() {
 
                                     {/* Footer with stats and actions */}
                                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mt-4 sm:mt-5 pt-3 sm:pt-4 border-t border-gray-100 gap-3 sm:gap-0">
-                                        <div className="flex flex-wrap gap-3 sm:gap-4 text-xs text-gray-500">
-                                            <span className="flex items-center gap-1">
+                                        <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-gray-500">
+                                            <div onClick={(e) => e.stopPropagation()}>
+                                                <BookmarkButton questionId={question._id} size="sm" />
+                                            </div>
+                                            <span className="flex items-center gap-1 ml-0 sm:ml-2">
                                                 <FaReply className="text-blue-500" /> {question.answerCount || 0} réponses
                                             </span>
                                             <span className="flex items-center gap-1">

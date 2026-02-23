@@ -5,6 +5,19 @@ import { extractRouterConfig } from "uploadthing/server";
 import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ReactNode } from "react";
 import { Metadata } from "next";
+import { Funnel_Display, Montserrat } from "next/font/google";
+
+const funnelDisplay = Funnel_Display({
+    subsets: ["latin"],
+    variable: "--font-funnel-display",
+    display: "swap",
+});
+
+const montserrat = Montserrat({
+    subsets: ["latin"],
+    variable: "--font-montserrat",
+    display: "swap",
+});
 
 export const metadata: Metadata = {
     metadataBase: new URL("https://workyt.fr"),
@@ -54,7 +67,8 @@ interface RootLayoutProps {
 export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html lang="fr" suppressHydrationWarning>
-        <body className="overflow-x-hidden">
+        <body className={`${funnelDisplay.variable} ${montserrat.variable} font-sans overflow-x-hidden`}>
+        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <ClientProviders>
             {children}
         </ClientProviders>
