@@ -11,26 +11,16 @@ import { useRouter } from 'next/navigation';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 
-interface Question {
-    question: string;
-    questionType: 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Association' | 'Texte à trous';
-    questionPic?: string;
-    answerSelectionType: 'single' | 'multiple';
-    answers: string[];
-    point: number;
-}
+import { Quiz as SharedQuiz, QuizQuestion, QuizCompletionResult } from './types';
 
-interface Quiz {
-    _id: string;
-    title: string;
-    description?: string;
-    questions: Question[];
+interface QuizViewerQuiz extends SharedQuiz {
+    questions: QuizQuestion[];
 }
 
 interface QuizViewerProps {
-    quiz: Quiz;
+    quiz: QuizViewerQuiz;
     onClose: () => void;
-    onComplete: (result: any) => void;
+    onComplete: (result: QuizCompletionResult) => void;
     isCompleted?: boolean;
 }
 
@@ -141,7 +131,7 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
         });
     };
 
-    const renderQuestion = (question: Question, index: number) => {
+    const renderQuestion = (question: QuizQuestion, index: number) => {
         const currentAnswer = answers[index];
 
         switch (question.questionType) {

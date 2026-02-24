@@ -2,56 +2,69 @@
 
 import React from "react";
 import { Accordion } from "@/components/ui/Accordion";
-import { Course, Section, Lesson } from "./types";
+import { Course, SelectedContent } from "./types";
 import { SectionAccordion } from "./SectionAccordion";
-import { Sparkles } from "lucide-react";
+import CourseSearch from "./CourseSearch";
+import { Search } from "lucide-react";
+import "./styles/notion-theme.css";
 
 interface SidebarProps {
     course: Course;
-    onSelectContent: (content: Section | Lesson | { type: string; title: string; exercises?: any[]; quizzes?: any[] }) => void;
+    onSelectContent: (content: SelectedContent) => void;
+    readLessons?: Set<string>;
 }
 
-export function Sidebar({ course, onSelectContent }: SidebarProps) {
+export function Sidebar({ course, onSelectContent, readLessons }: SidebarProps) {
+    const handleSearchResult = (sectionId: string, lessonId: string) => {
+        fetch(`/api/cours/${course._id}/sections/${sectionId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data?.section) {
+                    const lesson = data.section.lessons?.find((l: any) => l._id === lessonId);
+                    if (lesson) {
+                        onSelectContent({
+                            kind: 'lesson',
+                            lesson,
+                            sectionId,
+                            sectionTitle: data.section.title,
+                        });
+                    }
+                }
+            })
+            .catch(console.error);
+    };
+
     return (
-        <div className="w-full md:w-80 h-full flex flex-col relative" style={{ zIndex: 10, minHeight: 0 }}>
-            {/* Course information at top */}
-            <div className="flex-shrink-0 mb-4 px-4 relative z-10">
-                <div className="flex items-center space-x-2 mb-1">
-                    <div className="flex-shrink-0 bg-gradient-to-r from-orange-400 to-amber-500 p-1 rounded-full">
-                        <Sparkles className="w-3 h-3 text-white" />
-                    </div>
-                    <span className="text-xs font-medium text-gray-500">
-                        {course.sections.length} sections • {course.niveau}
-                    </span>
+        <div className="h-full flex flex-col">
+            {/* Recherche */}
+            <div className="px-4 py-3 border-b border-[#e3e2e0]">
+                <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9ca3af] w-4 h-4" />
+                    <CourseSearch courseId={course._id} onSelectResult={handleSearchResult} />
                 </div>
             </div>
 
-            {/* Sections list - main scrollable area */}
-            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden sidebar-scrollable relative z-10" style={{ minHeight: 0 }}>
-                <div className="px-2 pr-4">
-                    <Accordion
-                        type="single"
-                        collapsible
-                        className="space-y-3"
-                    >
+            {/* Sections */}
+            <div className="flex-1 overflow-y-auto overflow-x-hidden py-2">
+                <div className="px-2">
+                    <Accordion type="single" collapsible className="space-y-1">
                         {course.sections.map((section) => (
                             <SectionAccordion
                                 key={section._id}
                                 courseId={course._id}
                                 sectionInitial={section}
                                 onSelectContent={onSelectContent}
+                                readLessons={readLessons}
                             />
                         ))}
                     </Accordion>
-
-                    {/* Add padding at the bottom to ensure all content is accessible when scrolling */}
-                    <div className="h-16"></div>
                 </div>
             </div>
 
-            {/* Decorative elements */}
-            <div className="absolute bottom-10 right-4 w-24 h-24 bg-orange-200/10 rounded-full blur-xl pointer-events-none z-0"></div>
-            <div className="absolute top-20 left-0 w-16 h-16 bg-amber-300/10 rounded-full blur-xl pointer-events-none z-0"></div>
+            {/* Footer info */}
+            <div className="px-4 py-3 border-t border-[#e3e2e0] text-xs text-[#9ca3af]">
+                {course.sections.length} section{course.sections.length > 1 ? 's' : ''}
+            </div>
         </div>
     );
 }

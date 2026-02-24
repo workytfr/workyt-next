@@ -261,12 +261,469 @@
     @apply w-full max-w-none overflow-hidden;
     @apply px-2 sm:px-4 md:px-6 lg:px-8;
   }
-  
+
   /* Grille responsive pour les quiz et exercices */
   .course-grid {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3;
     @apply gap-4 sm:gap-6;
     @apply w-full;
+  }
+
+  /* ==========================================
+     COURS - Sidebar
+     ========================================== */
+  .sidebar-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+  .sidebar {
+    flex: 1 1 0;
+    min-height: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+  .sidebar-scrollable {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 184, 107, 0.5) transparent;
+    position: relative;
+    z-index: 10;
+  }
+  .sidebar-scrollable::-webkit-scrollbar {
+    width: 6px;
+  }
+  .sidebar-scrollable::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scrollable::-webkit-scrollbar-thumb {
+    background: rgba(255, 184, 107, 0.5);
+    border-radius: 3px;
+  }
+  .sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 184, 107, 0.7);
+  }
+
+  /* Course viewer root - scope le overflow au viewer seulement */
+  .course-viewer-root {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .course-viewer-root img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  /* ==========================================
+     COURS - CourseCard
+     ========================================== */
+  .card-shine {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.12) 30%,
+      rgba(255, 255, 255, 0) 60%
+    );
+    border-radius: inherit;
+    z-index: 2;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .hover-card:hover .card-shine {
+    opacity: 1;
+  }
+  .image-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 40%);
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    z-index: 2;
+    border-radius: inherit;
+  }
+
+  /* ==========================================
+     COURS - LessonView
+     ========================================== */
+  .lesson-bg-animated {
+    position: fixed;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0 !important;
+    pointer-events: none;
+    background: radial-gradient(circle at 60% 30%, #fff7ed 0%, #fffbe6 100%);
+    opacity: 1;
+  }
+  .lesson-bg-animated::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none;
+    opacity: 0.18;
+    background-image: url('data:image/svg+xml;utf8,<svg width="100%25" height="100%25" xmlns="http://www.w3.org/2000/svg"><filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2" stitchTiles="stitch"/></filter><rect width="100%25" height="100%25" filter="url(%23grain)" opacity="0.35"/></svg>');
+    background-repeat: repeat;
+    background-size: cover;
+  }
+  .lesson-container {
+    background: none !important;
+    position: relative;
+    z-index: 2 !important;
+    min-height: 100vh;
+    color: #222;
+    padding-bottom: 4rem !important;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    padding-top: 0 !important;
+  }
+  .lesson-header {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    margin: 0 0.5rem 1.5rem 0.5rem;
+    width: fit-content;
+    max-width: 100%;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, rgba(255, 184, 107, 0.15) 0%, rgba(255, 237, 153, 0.1) 50%, rgba(255, 184, 107, 0.15) 100%);
+    background-size: 200% 200%;
+    animation: lesson-gradient-shift 8s ease infinite, lesson-fadeInUp 0.6s cubic-bezier(.4,0,.2,1);
+    box-shadow:
+      0 4px 20px rgba(255, 184, 107, 0.2),
+      0 0 0 1px rgba(255, 184, 107, 0.1) inset,
+      0 2px 8px rgba(0, 0, 0, 0.05);
+    backdrop-filter: blur(10px) saturate(1.2);
+    -webkit-backdrop-filter: blur(10px) saturate(1.2);
+    border: 1px solid rgba(255, 184, 107, 0.2);
+    overflow: hidden;
+  }
+  .lesson-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: lesson-shimmer 3s infinite;
+  }
+  .lesson-header::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #ffb86b, #ffd89b, #ffb86b);
+    background-size: 200% 100%;
+    animation: lesson-gradient-shift 3s ease infinite;
+  }
+  .lesson-header h1 {
+    font-family: 'Montserrat', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 1.5rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #ff6b35 0%, #ffb86b 50%, #ff8c42 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: lesson-gradient-shift 5s ease infinite;
+    text-shadow: none;
+    position: relative;
+    z-index: 1;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .lesson-header .text-3xl {
+    font-size: 1.5rem;
+  }
+
+  /* Lesson blocks - glassmorphism */
+  .lesson-block {
+    position: relative;
+    padding: 1.75rem 1.5rem;
+    margin: 1.75rem 0;
+    border-radius: 20px;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow:
+      0 8px 32px 0 rgba(0, 0, 0, 0.06),
+      0 2px 8px 0 rgba(0, 0, 0, 0.04),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.5);
+    color: #1d1d1f;
+    opacity: 0;
+    transform: translateY(40px);
+    animation: lesson-fadeInUp 0.7s cubic-bezier(.4,0,.2,1) forwards;
+  }
+  .lesson-block::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, currentColor, transparent);
+    opacity: 0.3;
+    border-radius: 20px 20px 0 0;
+  }
+  .lesson-block:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 12px 40px 0 rgba(0, 0, 0, 0.08),
+      0 4px 12px 0 rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.6);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  .lesson-block-title {
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    font-size: 1.125rem;
+    letter-spacing: -0.01em;
+    color: #1d1d1f;
+  }
+  .lesson-block-title .block-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.04);
+    flex-shrink: 0;
+  }
+  .lesson-block-content {
+    color: #1d1d1f;
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-top: 0.5rem;
+  }
+  .lesson-block-description {
+    font-size: 0.875rem;
+    color: rgba(29, 29, 31, 0.65);
+    margin-bottom: 0.75rem;
+    font-style: normal;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+
+  /* Block type variants */
+  .definition-box {
+    background: linear-gradient(135deg, rgba(255, 184, 107, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+    border-color: rgba(255, 184, 107, 0.3);
+  }
+  .definition-box::before { background: linear-gradient(90deg, transparent, rgba(255, 184, 107, 0.6), transparent); }
+  .definition-box .block-icon { background: linear-gradient(135deg, rgba(255, 184, 107, 0.2), rgba(255, 184, 107, 0.1)); border-color: rgba(255, 184, 107, 0.3); }
+
+  .propriete-box {
+    background: linear-gradient(135deg, rgba(110, 193, 228, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+    border-color: rgba(110, 193, 228, 0.3);
+  }
+  .propriete-box::before { background: linear-gradient(90deg, transparent, rgba(110, 193, 228, 0.6), transparent); }
+  .propriete-box .block-icon { background: linear-gradient(135deg, rgba(110, 193, 228, 0.2), rgba(110, 193, 228, 0.1)); border-color: rgba(110, 193, 228, 0.3); }
+
+  .theoreme-box {
+    background: linear-gradient(135deg, rgba(126, 217, 87, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+    border-color: rgba(126, 217, 87, 0.3);
+  }
+  .theoreme-box::before { background: linear-gradient(90deg, transparent, rgba(126, 217, 87, 0.6), transparent); }
+  .theoreme-box .block-icon { background: linear-gradient(135deg, rgba(126, 217, 87, 0.2), rgba(126, 217, 87, 0.1)); border-color: rgba(126, 217, 87, 0.3); }
+
+  .remarque-box {
+    background: linear-gradient(135deg, rgba(178, 106, 0, 0.12) 0%, rgba(255, 255, 255, 0.7) 100%);
+    border-color: rgba(178, 106, 0, 0.25);
+    border-style: dashed;
+  }
+  .remarque-box::before { background: linear-gradient(90deg, transparent, rgba(178, 106, 0, 0.5), transparent); }
+  .remarque-box .block-icon { background: linear-gradient(135deg, rgba(178, 106, 0, 0.15), rgba(178, 106, 0, 0.08)); border-color: rgba(178, 106, 0, 0.25); }
+
+  .attention-box {
+    background: linear-gradient(135deg, rgba(255, 127, 80, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+    border-color: rgba(255, 127, 80, 0.3);
+  }
+  .attention-box::before { background: linear-gradient(90deg, transparent, rgba(255, 127, 80, 0.6), transparent); }
+  .attention-box .block-icon { background: linear-gradient(135deg, rgba(255, 127, 80, 0.2), rgba(255, 127, 80, 0.1)); border-color: rgba(255, 127, 80, 0.3); }
+
+  .exemple-box {
+    background: linear-gradient(135deg, rgba(110, 193, 228, 0.15) 0%, rgba(255, 255, 255, 0.7) 100%);
+    border-color: rgba(110, 193, 228, 0.3);
+  }
+  .exemple-box::before { background: linear-gradient(90deg, transparent, rgba(110, 193, 228, 0.6), transparent); }
+  .exemple-box .block-icon { background: linear-gradient(135deg, rgba(110, 193, 228, 0.2), rgba(110, 193, 228, 0.1)); border-color: rgba(110, 193, 228, 0.3); }
+
+  /* Lesson content typography */
+  .lesson-content {
+    line-height: 1.8;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
+  .lesson-content p:not([style]) { margin-bottom: 1.25rem; color: #222; word-wrap: break-word; overflow-wrap: break-word; }
+  .lesson-content p[style] { margin-bottom: 1.25rem; word-wrap: break-word; overflow-wrap: break-word; }
+  .lesson-content p:last-child { margin-bottom: 0; }
+  .lesson-content :not([class^='lesson-block']):not([style]) { color: #222; background: transparent; }
+  .lesson-content a:not([style]) { color: #b26a00; text-decoration: underline; }
+  .lesson-content img {
+    filter: none !important;
+    opacity: 1 !important;
+    background: none !important;
+    box-shadow: 0 2px 12px #ffecd1cc;
+    max-width: 100% !important;
+    width: 100% !important;
+    height: auto !important;
+    margin: 1.5rem 0;
+    display: block;
+    object-fit: contain;
+  }
+  .lesson-content div { margin-bottom: 1.25rem; }
+  .lesson-content div:last-child { margin-bottom: 0; }
+
+  /* Listes */
+  .lesson-content ul, .lesson-content ol {
+    margin-left: 1.5rem; margin-right: 0; margin-top: 1rem; margin-bottom: 1.25rem;
+    padding-left: 0.5rem; list-style-position: outside;
+  }
+  .lesson-content ul { list-style-type: disc; }
+  .lesson-content ol { list-style-type: decimal; }
+  .lesson-content li { margin-bottom: 0.5rem; padding-left: 0.5rem; line-height: 1.8; }
+  .lesson-content li:last-child { margin-bottom: 0; }
+  .lesson-content ul ul, .lesson-content ol ol, .lesson-content ul ol, .lesson-content ol ul {
+    margin-top: 0.5rem; margin-bottom: 0.5rem; margin-left: 1.25rem;
+  }
+
+  /* Tableaux */
+  .lesson-content table {
+    width: 100%; max-width: 100%; margin: 1.5rem 0;
+    border-collapse: separate; border-spacing: 0;
+    background: #fff; border-radius: 0.75rem;
+    overflow: hidden; display: block; overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 2px 8px rgba(255, 184, 107, 0.1), 0 0 0 1px rgba(255, 184, 107, 0.15);
+    font-size: 0.95rem;
+  }
+  .lesson-content table thead { background: linear-gradient(135deg, rgba(255, 184, 107, 0.2) 0%, rgba(255, 237, 153, 0.15) 100%); }
+  .lesson-content table thead, .lesson-content table tbody, .lesson-content table tr {
+    display: table; width: 100%; table-layout: fixed;
+  }
+  .lesson-content table th {
+    padding: 0.875rem 1rem; text-align: left; font-weight: 700; color: #b26a00;
+    font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em;
+    border-bottom: 2px solid rgba(255, 184, 107, 0.3);
+    background: linear-gradient(135deg, rgba(255, 184, 107, 0.15) 0%, rgba(255, 237, 153, 0.1) 100%);
+  }
+  .lesson-content table th:first-child { border-top-left-radius: 0.75rem; }
+  .lesson-content table th:last-child { border-top-right-radius: 0.75rem; }
+  .lesson-content table tbody tr { transition: background-color 0.2s ease; }
+  .lesson-content table tbody tr:nth-child(even) { background: rgba(255, 247, 237, 0.5); }
+  .lesson-content table tbody tr:nth-child(odd) { background: #fff; }
+  .lesson-content table tbody tr:hover { background: rgba(255, 184, 107, 0.1); }
+  .lesson-content table td {
+    padding: 0.875rem 1rem; border-bottom: 1px solid rgba(255, 184, 107, 0.1);
+    color: #222; line-height: 1.6;
+  }
+  .lesson-content table tbody tr:last-child td { border-bottom: none; }
+  .lesson-content table tbody tr:last-child td:first-child { border-bottom-left-radius: 0.75rem; }
+  .lesson-content table tbody tr:last-child td:last-child { border-bottom-right-radius: 0.75rem; }
+
+  /* Headings */
+  .lesson-content h2 {
+    font-size: 1.5rem; font-weight: 800; color: #ffb86b;
+    margin-top: 2rem; margin-bottom: 1rem;
+    position: relative; padding-left: 0.75rem;
+    letter-spacing: 0.01em; text-shadow: 0 2px 12px #ffecd1cc;
+  }
+  .lesson-content h2::before {
+    content: ''; position: absolute; left: 0; top: 0.3rem;
+    width: 4px; height: 70%; border-radius: 2px;
+    background: linear-gradient(180deg, #ffb86b 0%, #fffbe6 100%);
+    box-shadow: 0 2px 8px #ffecd1cc;
+  }
+  .lesson-content h3 {
+    font-size: 1.2rem; font-weight: 700; color: #6ec1e4;
+    margin-top: 1.5rem; margin-bottom: 0.75rem;
+    border-left: 3px solid #6ec1e4; padding-left: 0.5rem;
+    background: linear-gradient(90deg, #e0f7fa 0%, #fffbe6 100%);
+    border-radius: 0 0.5rem 0.5rem 0;
+  }
+  .lesson-content h4 {
+    font-size: 1rem; font-weight: 700; color: #b26a00;
+    margin-top: 1.25rem; margin-bottom: 0.5rem;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    display: inline-block; padding: 0.15em 0.5em;
+    background: #fff7ed; border-radius: 0.5em;
+    border-bottom: 2px solid #ffb86b; box-shadow: 0 1px 4px #ffecd144;
+  }
+
+  /* Responsive - sm (640px) */
+  @media (min-width: 640px) {
+    .lesson-header { gap: 1.5rem; padding: 1.5rem 2rem; margin: 0 1rem 1.75rem 1rem; border-radius: 1.25rem; }
+    .lesson-header h1 { font-size: 2rem; letter-spacing: -0.025em; }
+    .lesson-header .text-3xl { font-size: 2rem; }
+    .lesson-block { padding: 2rem 1.75rem; margin: 2rem 0; border-radius: 24px; }
+    .lesson-block-title { gap: 1rem; font-size: 1.25rem; margin-bottom: 0.875rem; }
+    .lesson-block-title .block-icon { width: 40px; height: 40px; border-radius: 12px; }
+    .lesson-block-content { font-size: 1.05rem; line-height: 1.75; }
+    .lesson-block-description { font-size: 0.9375rem; margin-bottom: 0.875rem; }
+    .lesson-content h2 { font-size: 1.8rem; padding-left: 1rem; }
+    .lesson-content h2::before { width: 5px; }
+    .lesson-content h3 { font-size: 1.3rem; padding-left: 0.6rem; border-left: 4px solid #6ec1e4; }
+    .lesson-content h4 { font-size: 1.05rem; padding: 0.18em 0.6em; }
+    .lesson-content ul, .lesson-content ol { margin-left: 2rem; padding-left: 0.75rem; }
+    .lesson-content li { padding-left: 0.75rem; }
+    .lesson-content table { font-size: 1rem; }
+    .lesson-content table th, .lesson-content table td { padding: 1rem 1.25rem; }
+  }
+
+  /* Responsive - md (768px) */
+  @media (min-width: 768px) {
+    .lesson-header { gap: 1.75rem; padding: 1.75rem 2.5rem; margin: 0 2rem 2rem 2rem; border-radius: 1.5rem; }
+    .lesson-header h1 { font-size: 2.5rem; letter-spacing: -0.03em; }
+    .lesson-header .text-3xl { font-size: 2.5rem; }
+    .lesson-block { padding: 1.5rem 1rem 1.5rem 2.5rem; margin: 1.5rem 2rem; }
+    .lesson-block-title { font-size: 1.25rem; }
+    .lesson-block-content { font-size: 1.08rem; }
+    .lesson-content h2 { font-size: 2.1rem; padding-left: 1.1rem; }
+    .lesson-content h2::before { width: 6px; }
+    .lesson-content h3 { font-size: 1.4rem; padding-left: 0.7rem; border-left: 4px solid #6ec1e4; }
+    .lesson-content h4 { font-size: 1.08rem; padding: 0.18em 0.7em; }
+    .lesson-content ul, .lesson-content ol { margin-left: 2.5rem; padding-left: 1rem; }
+    .lesson-content li { padding-left: 1rem; }
+    .lesson-content table { font-size: 1.05rem; }
+    .lesson-content table th, .lesson-content table td { padding: 1.125rem 1.5rem; }
+  }
+
+  /* Responsive - lg (1024px) */
+  @media (min-width: 1024px) {
+    .lesson-header { padding: 2rem 3rem; margin: 0 3rem 2rem 3rem; border-radius: 1.75rem; }
+    .lesson-header h1 { font-size: 2.8rem; letter-spacing: -0.035em; }
+    .lesson-header .text-3xl { font-size: 2.8rem; }
+    .lesson-block { padding: 1.5rem 1rem 1.5rem 2.5rem; margin: 1.5rem 3rem; }
+    .lesson-content h2 { font-size: 2.1rem; }
   }
 }
 
@@ -405,6 +862,22 @@
     @apply w-full max-w-none overflow-hidden;
     @apply px-2 sm:px-4 md:px-6;
   }
+}
+
+/* ==========================================
+   COURS - Lesson Keyframes
+   ========================================== */
+@keyframes lesson-fadeInUp {
+  0% { opacity: 0; transform: translateY(40px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+@keyframes lesson-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+@keyframes lesson-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 
 /* Animation de brillance pour les ranks */
@@ -640,4 +1113,144 @@ html, body {
     padding: 0.5rem 0.625rem;
     font-size: 0.75rem;
   }
+}
+
+/* ==========================================
+   NOTION LESSON CONTENT STYLES
+   ========================================== */
+
+.notion-lesson-content {
+  font-size: 1rem;
+  line-height: 1.8;
+  color: #37352f;
+}
+
+.notion-lesson-content p {
+  margin-bottom: 1.25rem;
+  line-height: 1.8;
+}
+
+.notion-lesson-content h2 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #37352f;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.notion-lesson-content h3 {
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: #37352f;
+  margin-top: 2rem;
+  margin-bottom: 0.875rem;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+
+.notion-lesson-content h4 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #37352f;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.notion-lesson-content ul,
+.notion-lesson-content ol {
+  margin: 1.25rem 0;
+  padding-left: 1.5rem;
+}
+
+.notion-lesson-content li {
+  margin-bottom: 0.5rem;
+  line-height: 1.7;
+}
+
+.notion-lesson-content blockquote {
+  margin: 1.5rem 0;
+  padding: 1rem 1.25rem;
+  border-left: 3px solid #f97316;
+  background: #f7f6f3;
+  border-radius: 0 6px 6px 0;
+  color: #6b6b6b;
+  font-style: italic;
+}
+
+.notion-lesson-content code {
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  font-size: 0.875em;
+  padding: 0.2em 0.4em;
+  background: #f7f6f3;
+  border-radius: 3px;
+  color: #f97316;
+}
+
+.notion-lesson-content pre {
+  background: #1a1a1a;
+  color: #e5e5e5;
+  padding: 1.25rem;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.notion-lesson-content pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font-size: inherit;
+}
+
+.notion-lesson-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1.5rem 0;
+}
+
+.notion-lesson-content table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem 0;
+  font-size: 0.9375rem;
+}
+
+.notion-lesson-content th,
+.notion-lesson-content td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: 1px solid #e3e2e0;
+}
+
+.notion-lesson-content th {
+  font-weight: 600;
+  color: #37352f;
+  background: #f7f6f3;
+}
+
+.notion-lesson-content a {
+  color: #f97316;
+  text-decoration: none;
+}
+
+.notion-lesson-content a:hover {
+  text-decoration: underline;
+}
+
+/* KaTeX adjustments for Notion theme */
+.notion-lesson-content .katex {
+  font-size: 1.1em;
+}
+
+.notion-lesson-content .katex-display {
+  margin: 1.5rem 0;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
