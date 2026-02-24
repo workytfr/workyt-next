@@ -1,65 +1,48 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Sidebar } from "./../_components/SidebarCours";
-import { Course, Lesson, Section, Exercise } from "./../_components/types";
-import ExerciseCard from "./../_components/ExerciseCard";
-import LessonView from "./../_components/LessonView";
-import QuizCard from "./../_components/QuizCard";
-import QuizViewer from "./../_components/QuizViewer";
-import { Skeleton } from "@/components/ui/skeleton";
-import ReactMarkdown from "react-markdown";
-import remarkMath from "remark-math";
-import rehypeKatex from "rehype-katex";
-import { ArrowLeft, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-
-// Noise component for subtle grain
-const Noise = ({ opacity = 0.05, scale = 1.5 }) => (
-    <div
-        className="absolute inset-0 w-full h-full pointer-events-none"
-        style={{
-            backgroundImage: "url(/noise.webp)",
-            backgroundSize: "30%",
-            opacity,
-            transform: `scale(${scale})`,
-            mixBlendMode: "overlay",
-        }}
-    />
-);
-
-// Orange gradient wrapper
-const OrangeGradient: React.FC<{ className?: string; children?: React.ReactNode }> = ({
-                                                                                          className = "",
-                                                                                          children,
-                                                                                      }) => (
-    <div className={`relative overflow-hidden ${className}`}>
-        <div className="absolute inset-0 bg-gradient-to-br from-orange-50 via-amber-100 to-orange-50 opacity-80 z-0" />
-        <div className="absolute inset-0 z-0">
-            <Noise opacity={0.07} />
-        </div>
-        <div className="relative z-10 h-full">{children}</div>
-    </div>
-);
+import { Sidebar } from "./SidebarCours";
+import { Course, Lesson, Section, Exercise, Quiz, SelectedContent, QuizCompletionResult, NavigableItem } from "./types";
+import ExerciseCard from "./ExerciseCard";
+import LessonView from "./LessonView";
+import QuizCard from "./QuizCard";
+import QuizViewer from "./QuizViewer";
+import CourseBreadcrumb from "./CourseBreadcrumb";
+import ContentNavigation from "./ContentNavigation";
+import CourseDescription from "./CourseDescription";
+import { useCourseNavigation, navigableToSelected } from "./hooks/useCourseNavigation";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight } from "lucide-react";
+import {
+    Drawer,
+    DrawerContent,
+    DrawerTrigger,
+} from "@/components/ui/Drawer";
+import "./styles/notion-theme.css";
 
 // Skeleton pendant le chargement
 function LoadingSkeleton() {
     return (
-        <div className="flex flex-col md:flex-row min-h-screen bg-gray-50 overflow-x-hidden">
-            <div className="w-full md:w-72 lg:w-80 p-3 sm:p-4 bg-orange-50">
-                <Skeleton className="h-5 sm:h-6 w-3/4 mb-3 sm:mb-4" />
-                {[...Array(5)].map((_, i) => (
-                    <Skeleton key={i} className="h-3 sm:h-4 w-full mb-2 sm:mb-3" />
-                ))}
-            </div>
-            <main className="flex-1 p-3 sm:p-4 md:p-6 bg-gradient-to-br from-white to-orange-50">
-                <Skeleton className="h-6 sm:h-8 w-full md:w-1/2 mb-3 sm:mb-4" />
-                <Skeleton className="h-3 sm:h-4 w-1/2 md:w-1/4 mb-4 sm:mb-6" />
-                <Skeleton className="h-8 sm:h-10 w-1/3 md:w-1/5 mb-4 sm:mb-6" />
-                <div className="space-y-3 sm:space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                        <Skeleton key={i} className="h-12 sm:h-16 w-full rounded-lg" />
+        <div className="flex h-screen bg-white overflow-hidden">
+            <div className="hidden md:block w-72 bg-[#f7f6f3] border-r border-[#e3e2e0] flex-shrink-0">
+                <div className="p-4 border-b border-[#e3e2e0]">
+                    <Skeleton className="h-5 w-3/4" />
+                </div>
+                <div className="p-4 space-y-3">
+                    {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-10 w-full" />
                     ))}
+                </div>
+            </div>
+            <main className="flex-1 p-8 md:p-12 overflow-y-auto overflow-x-hidden">
+                <Skeleton className="h-8 w-1/2 mb-4" />
+                <Skeleton className="h-4 w-1/4 mb-8" />
+                <div className="space-y-4 max-w-3xl">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
                 </div>
             </main>
         </div>
@@ -69,49 +52,31 @@ function LoadingSkeleton() {
 // Message d'erreur
 function ErrorMessage({ error }: { error: string | null }) {
     return (
-        <div className="p-6 text-red-500 bg-red-50 rounded-lg border border-red-200 m-4">
-            Erreur : {error || "Cours introuvable"}
+        <div className="min-h-screen bg-white flex items-center justify-center p-4 overflow-hidden">
+            <div className="text-center max-w-md">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <span className="text-red-600 text-xl">!</span>
+                </div>
+                <h2 className="text-lg font-semibold text-[#37352f] mb-2">Erreur</h2>
+                <p className="text-[#6b6b6b]">{error || "Cours introuvable"}</p>
+            </div>
         </div>
     );
 }
 
 // Vue d'un contenu sélectionné
-function ContentView({ content, onBack }: { content: any; onBack: () => void }) {
-    const [selectedQuiz, setSelectedQuiz] = useState<any>(null);
-    const [quizzes, setQuizzes] = useState<any[]>([]);
-    const [isLoadingQuizzes, setIsLoadingQuizzes] = useState(false);
+function ContentView({ content, onBack }: { content: SelectedContent; onBack: () => void }) {
+    const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
+    const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 
     useEffect(() => {
-        if (content.type === 'quizzes' && content.quizzes) {
+        if (content.kind === 'quizzes') {
             setQuizzes(content.quizzes);
-        } else if (content.type === 'exercises') {
-            // Réinitialiser les quiz si on affiche explicitement des exercices
-            setQuizzes([]);
-        } else if ("quizzes" in content && content.quizzes) {
-            setQuizzes(content.quizzes);
-        } else if ("_id" in content && content._id && !("exercises" in content)) {
-            // Charger les quiz de la section seulement si ce n'est pas pour les exercices
-            fetchQuizzes(content._id);
-        } else if ("exercises" in content) {
-            // Réinitialiser les quiz si on affiche explicitement des exercices
+        } else {
             setQuizzes([]);
         }
+        setSelectedQuiz(null);
     }, [content]);
-
-    const fetchQuizzes = async (sectionId: string) => {
-        setIsLoadingQuizzes(true);
-        try {
-            const response = await fetch(`/api/sections/${sectionId}/quizzes`);
-            if (response.ok) {
-                const data = await response.json();
-                setQuizzes(data);
-            }
-        } catch (error) {
-            console.error('Erreur lors du chargement des quiz:', error);
-        } finally {
-            setIsLoadingQuizzes(false);
-        }
-    };
 
     const handleStartQuiz = async (quizId: string) => {
         try {
@@ -125,23 +90,21 @@ function ContentView({ content, onBack }: { content: any; onBack: () => void }) 
         }
     };
 
-    const handleQuizComplete = (result: any) => {
-        // Mettre à jour la liste des quiz avec les nouvelles informations de completion
-        setQuizzes(prev => prev.map(quiz => 
-            quiz._id === selectedQuiz._id 
+    const handleQuizComplete = (result: QuizCompletionResult) => {
+        setQuizzes(prev => prev.map(quiz =>
+            quiz._id === selectedQuiz?._id
                 ? { ...quiz, completed: true, score: result.score, maxScore: result.maxScore, percentage: result.percentage }
                 : quiz
         ));
     };
 
     if (selectedQuiz) {
-        // Vérifier si le quiz est déjà complété
         const completedQuiz = quizzes.find(q => q._id === selectedQuiz._id);
         const isCompleted = completedQuiz?.completed || false;
-        
+
         return (
-            <QuizViewer 
-                quiz={selectedQuiz} 
+            <QuizViewer
+                quiz={selectedQuiz as Quiz & { questions: NonNullable<Quiz['questions']> }}
                 onClose={() => setSelectedQuiz(null)}
                 onComplete={handleQuizComplete}
                 isCompleted={isCompleted}
@@ -150,30 +113,24 @@ function ContentView({ content, onBack }: { content: any; onBack: () => void }) 
     }
 
     return (
-        <div className="w-full max-w-none overflow-x-hidden">
+        <div className="w-full overflow-x-hidden">
             <button
                 onClick={onBack}
-                className="mb-4 sm:mb-6 px-3 sm:px-4 py-2 bg-orange-100 text-orange-700 hover:bg-orange-200 rounded-full flex items-center text-sm font-medium shadow-sm w-fit"
+                className="notion-button notion-button-ghost mb-6 text-sm"
             >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Retour
+                <ArrowLeft className="w-4 h-4" />
+                Retour au cours
             </button>
-            
-            <div className="w-full max-w-full overflow-x-hidden -mt-2">
-                {content.type === 'exercises' ? (
-                    <ExerciseList exercises={content.exercises} title={content.title} />
-                ) : content.type === 'quizzes' ? (
-                    <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
-                ) : "content" in content ? (
-                    <div className="w-full max-w-full overflow-x-hidden">
-                        <LessonView title={content.title} content={content.content || ""} />
-                    </div>
-                ) : "exercises" in content ? (
-                    <ExerciseList exercises={content.exercises} title={content.title} />
-                ) : "quizzes" in content && quizzes.length > 0 ? (
-                    <QuizList quizzes={quizzes} title={content.title} onStartQuiz={handleStartQuiz} isLoading={isLoadingQuizzes} />
+
+            <div className="max-w-3xl">
+                {content.kind === 'lesson' ? (
+                    <LessonView title={content.lesson.title} content={content.lesson.content || ""} />
+                ) : content.kind === 'exercises' ? (
+                    <ExerciseList exercises={content.exercises} title={content.sectionTitle} />
+                ) : content.kind === 'quizzes' ? (
+                    <QuizList quizzes={quizzes} title={content.sectionTitle} onStartQuiz={handleStartQuiz} isLoading={false} />
                 ) : (
-                    <p className="text-gray-600">Aucun contenu disponible.</p>
+                    <p className="text-[#6b6b6b]">Aucun contenu disponible.</p>
                 )}
             </div>
         </div>
@@ -183,14 +140,20 @@ function ContentView({ content, onBack }: { content: any; onBack: () => void }) 
 // Liste d'exercices
 function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: string }) {
     return (
-        <div className="w-full max-w-none overflow-hidden">
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-gray-800 break-words">{title}</h1>
-            <div className="flex flex-col space-y-4 sm:space-y-6">
+        <div className="max-w-3xl">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e3e2e0]">
+                <div className="w-12 h-12 bg-[#ecfdf5] rounded-2xl flex items-center justify-center">
+                    <FileText className="w-6 h-6 text-[#10b981]" />
+                </div>
+                <div>
+                    <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium">Exercices</p>
+                    <h1 className="text-xl font-semibold text-[#37352f]">{title}</h1>
+                </div>
+            </div>
+            
+            <div className="space-y-6">
                 {exercises.map((ex, idx) => (
-                    <div key={ex._id} className="relative overflow-hidden rounded-xl">
-                        <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-300 to-amber-500" />
-                        <ExerciseCard exercise={{ ...ex, content: ex.content || "" }} index={idx} />
-                    </div>
+                    <ExerciseCard key={ex._id} exercise={{ ...ex, content: ex.content || "" }} index={idx} />
                 ))}
             </div>
         </div>
@@ -198,9 +161,9 @@ function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: stri
 }
 
 // Liste de quiz
-function QuizList({ quizzes, title, onStartQuiz, isLoading }: { 
-    quizzes: any[]; 
-    title: string; 
+function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
+    quizzes: Quiz[];
+    title: string;
     onStartQuiz: (quizId: string) => void;
     isLoading: boolean;
 }) {
@@ -208,11 +171,11 @@ function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
 
     if (isLoading) {
         return (
-            <div className="w-full max-w-none overflow-hidden">
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6 text-gray-800 break-words">{title}</h1>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            <div className="max-w-3xl">
+                <Skeleton className="h-8 w-1/2 mb-6" />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[...Array(3)].map((_, i) => (
-                        <div key={i} className="h-32 sm:h-48 bg-gray-200 rounded-lg animate-pulse" />
+                        <Skeleton key={i} className="h-32" />
                     ))}
                 </div>
             </div>
@@ -220,18 +183,28 @@ function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
     }
 
     return (
-        <div className="w-full max-w-none overflow-hidden">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 gap-3 sm:gap-0">
-                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 break-words">{title}</h1>
-                {!session?.user && (
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 sm:px-4 py-2">
-                        <p className="text-xs sm:text-sm text-blue-700">
-                            💡 Connectez-vous pour participer aux quiz et gagner des points !
-                        </p>
+        <div className="max-w-3xl">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#e3e2e0]">
+                <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 bg-[#fffbeb] rounded-2xl flex items-center justify-center">
+                        <Trophy className="w-6 h-6 text-[#f59e0b]" />
                     </div>
-                )}
+                    <div>
+                        <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium">Quiz</p>
+                        <h1 className="text-xl font-semibold text-[#37352f]">{title}</h1>
+                    </div>
+                </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+
+            {!session?.user && (
+                <div className="bg-[#eff6ff] border border-[#bfdbfe] rounded-2xl px-4 py-3 mb-6">
+                    <p className="text-sm text-[#3b82f6]">
+                        Connectez-vous pour participer aux quiz et gagner des points !
+                    </p>
+                </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {quizzes.map((quiz) => (
                     <QuizCard key={quiz._id} quiz={quiz} onStartQuiz={onStartQuiz} />
                 ))}
@@ -241,11 +214,60 @@ function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
 }
 
 // Aperçu du cours
-function CourseOverview({ cours }: { cours: Course }) {
+function CourseOverview({ cours, onOpenSidebar }: { cours: Course; onOpenSidebar?: () => void }) {
     return (
-        <div className="w-full max-w-none overflow-hidden">
+        <div className="max-w-3xl">
             <CourseHeader cours={cours} />
-            <Instruction />
+            
+            <div className="notion-divider" />
+
+            {/* Sections visibles sur mobile */}
+            <div className="md:hidden mb-6">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-medium text-[#9ca3af] uppercase tracking-wide">
+                        Sections du cours
+                    </h3>
+                    <span className="text-xs text-[#9ca3af]">{cours.sections.length} sections</span>
+                </div>
+                <div className="space-y-2">
+                    {cours.sections.slice(0, 5).map((section, index) => (
+                        <button
+                            key={section._id}
+                            onClick={onOpenSidebar}
+                            className="w-full flex items-center gap-3 p-3 bg-white border border-[#e3e2e0] rounded-xl hover:border-[#f97316] hover:bg-[#fff7ed] transition-colors text-left"
+                        >
+                            <div className="w-8 h-8 bg-[#f7f6f3] rounded-lg flex items-center justify-center text-sm font-medium text-[#6b6b6b]">
+                                {index + 1}
+                            </div>
+                            <span className="text-sm font-medium text-[#37352f] truncate flex-1">
+                                {section.title}
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-[#bfbfbf]" />
+                        </button>
+                    ))}
+                    {cours.sections.length > 5 && (
+                        <button
+                            onClick={onOpenSidebar}
+                            className="w-full py-2.5 text-sm text-[#f97316] font-medium hover:underline"
+                        >
+                            + {cours.sections.length - 5} autres sections
+                        </button>
+                    )}
+                </div>
+            </div>
+            
+            <div className="bg-[#f7f6f3] rounded-2xl p-8 text-center">
+                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
+                    <BookOpen className="w-7 h-7 text-[#9ca3af]" />
+                </div>
+                <h3 className="text-base font-medium text-[#37352f] mb-2">
+                    Commencez votre apprentissage
+                </h3>
+                <p className="text-sm text-[#6b6b6b] max-w-md mx-auto">
+                    Sélectionnez une section dans le menu de gauche pour accéder aux leçons, 
+                    exercices et quiz.
+                </p>
+            </div>
         </div>
     );
 }
@@ -253,165 +275,132 @@ function CourseOverview({ cours }: { cours: Course }) {
 // En-tête de l'aperçu
 function CourseHeader({ cours }: { cours: Course }) {
     return (
-        <div className="relative overflow-hidden bg-white border border-orange-100 rounded-xl shadow-md mb-6 sm:mb-8">
-            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-400 via-amber-500 to-orange-400" />
-            <div className="p-4 sm:p-6 md:p-8 flex flex-col md:flex-row justify-between items-start">
-                <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 mb-2 break-words">{cours.title}</h1>
-                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-orange-500 flex-shrink-0" />
-            </div>
-            <div className="border-t border-orange-100 bg-orange-50/50 p-4 sm:p-6 md:p-8 relative">
-                <Noise opacity={0.04} />
-                <div className="prose prose-sm md:prose-base text-gray-700 max-w-full overflow-hidden prose-headings:text-orange-800 prose-a:text-orange-600">
-                    <ReactMarkdown 
-                        className="break-words"
-                        remarkPlugins={[remarkMath]}
-                        rehypePlugins={[rehypeKatex]}
-                    >
-                        {cours.description || ""}
-                    </ReactMarkdown>
+        <div>
+            <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium mb-2">
+                {cours.matiere} • {cours.niveau}
+            </p>
+            <h1 className="text-3xl md:text-4xl font-bold text-[#37352f] mb-4 tracking-tight">
+                {cours.title}
+            </h1>
+            {cours.description && (
+                <div className="text-sm text-[#6b6b6b] leading-relaxed">
+                    <CourseDescription content={cours.description} />
                 </div>
+            )}
+            
+            <div className="flex flex-wrap items-center gap-4 mt-6 text-sm text-[#9ca3af]">
+                <span className="flex items-center gap-1.5">
+                    <BookOpen className="w-4 h-4" />
+                    {cours.sections.length} section{cours.sections.length > 1 ? 's' : ''}
+                </span>
             </div>
         </div>
     );
 }
 
-// Bloc d'instructions
-function Instruction() {
-    return (
-        <OrangeGradient className="rounded-xl border border-orange-100 shadow-md p-4 sm:p-6 md:p-8 text-center">
-            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 flex items-center justify-center rounded-full bg-gradient-to-br from-orange-400 to-amber-500 text-white mb-3 sm:mb-4 shadow-md">
-                <svg className="w-6 h-6 sm:w-8 sm:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M8 12h.01M12 12h.01M16 12h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                    />
-                </svg>
-            </div>
-            <p className="text-sm sm:text-base md:text-lg text-gray-800 font-medium">
-                Sélectionnez une leçon ou un exercice dans le sommaire pour voir son contenu.
-            </p>
-            <p className="text-xs sm:text-sm mt-2 text-gray-600">
-                Naviguez entre les leçons et les exercices pour avancer dans votre cours.
-            </p>
-        </OrangeGradient>
-    );
-}
-
-// SidebarWrapper : on passe la fermeture automatique dans le onSelect
+// SidebarWrapper
 export function SidebarWrapper({
-                                   course,
-                                   onSelectContent,
-                               }: {
+    course,
+    onSelectContent,
+    readLessons,
+}: {
     course: Course;
-    onSelectContent: (content: Lesson | Exercise | Section | { type: string; title: string; exercises?: any[]; quizzes?: any[] }) => void;
+    onSelectContent: (content: SelectedContent) => void;
+    readLessons?: Set<string>;
 }) {
     return (
-        <div className="h-full flex flex-col overflow-hidden sidebar-wrapper">
-            <div className="flex-shrink-0 p-4 sm:p-6 pb-3 sm:pb-4 relative z-10 bg-white/80 backdrop-blur-sm">
-                <h2 className="text-lg sm:text-xl font-bold text-gray-800 flex items-center">
-                    Sommaire du cours
-                    <span className="inline-block w-2 h-2 rounded-full bg-orange-500 ml-2" />
+        <div className="h-full flex flex-col bg-[#f7f6f3]">
+            <div className="flex-shrink-0 p-4 border-b border-[#e3e2e0]">
+                <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium mb-1">
+                    Sommaire
+                </p>
+                <h2 className="text-sm font-semibold text-[#37352f] line-clamp-2">
+                    {course.title}
                 </h2>
-                <div className="h-1 w-20 sm:w-28 bg-gradient-to-r from-orange-400 to-amber-500 rounded-full mt-2 sm:mt-3" />
             </div>
-            <div className="flex-1 min-h-0 relative sidebar" style={{ zIndex: 10 }}>
+            <div className="flex-1 overflow-y-auto overflow-x-hidden notion-scrollbar">
                 <Sidebar
                     course={course}
-                    onSelectContent={(c) => {
-                        onSelectContent(c);       // sélectionne
-                    }}
+                    onSelectContent={(c) => onSelectContent(c)}
+                    readLessons={readLessons}
                 />
             </div>
         </div>
     );
 }
 
-// Bouton flottant pour afficher la sidebar (visible uniquement sur mobile)
-function FloatingMenuButton({ onClick }: { onClick: () => void }) {
-    return (
-        <button
-            onClick={onClick}
-            className="fixed z-50 left-4 top-1/2 transform -translate-y-1/2 p-3 bg-orange-500 text-white rounded-full shadow-lg md:hidden flex items-center justify-center hover:bg-orange-600 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-orange-300"
-            aria-label="Afficher menu"
-        >
-            <ChevronRight className="w-5 h-5" />
-        </button>
-    );
-}
-
+// Composant principal
 export default function CoursePage({ params }: { params: { coursId: string } }) {
+    const searchParams = useSearchParams();
+    const { data: session } = useSession();
     const [cours, setCours] = useState<Course | null>(null);
+    const [fullCourse, setFullCourse] = useState<Course | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [selectedContent, setSelectedContent] = useState<Lesson | Exercise | Section | { type: string; title: string; exercises?: any[]; quizzes?: any[] } | null>(null);
+    const [selectedContent, setSelectedContent] = useState<SelectedContent | null>(null);
+    const [drawerOpen, setDrawerOpen] = useState(false);
+    const [readLessons, setReadLessons] = useState<Set<string>>(new Set());
+    const markReadTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-    // contrôle mobile de l'affichage de la sidebar
-    const [showSidebar, setShowSidebar] = useState(true);
+    const { prev, next } = useCourseNavigation(fullCourse, selectedContent);
 
-    // Injection CSS globale pour un seul scroll
-    useEffect(() => {
-        const styleTag = document.createElement("style");
-        styleTag.innerHTML = `
-  *, *::before, *::after { box-sizing: border-box; }
-  html, body, #__next, .root-container { width:100%; height:100%; margin:0; padding:0; overflow:hidden !important; }
-  main { height:100%; flex:1; overflow-y:auto; overflow-x:hidden; }
-  img { max-width:100%; height:auto; }
-  /* Styles pour le scroll de la sidebar */
-  .sidebar-wrapper { 
-    height: 100%; 
-    display: flex; 
-    flex-direction: column; 
-    min-height: 0;
-  }
-  .sidebar { 
-    flex: 1 1 0;
-    min-height: 0;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-  }
-  /* Conteneur scrollable de la sidebar */
-  .sidebar-scrollable {
-    flex: 1;
-    min-height: 0;
-    overflow-y: auto !important; 
-    overflow-x: hidden !important;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(255, 184, 107, 0.5) transparent;
-    position: relative;
-    z-index: 10;
-  }
-  .sidebar-scrollable::-webkit-scrollbar {
-    width: 6px;
-  }
-  .sidebar-scrollable::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .sidebar-scrollable::-webkit-scrollbar-thumb {
-    background: rgba(255, 184, 107, 0.5);
-    border-radius: 3px;
-  }
-  .sidebar-scrollable::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 184, 107, 0.7);
-  }
-`;
-        document.head.appendChild(styleTag);
-        return () => {
-            document.head.removeChild(styleTag);
-        };
+    const updateUrl = useCallback((content: SelectedContent | null) => {
+        const url = new URL(window.location.href);
+        if (!content) {
+            url.searchParams.delete('section');
+            url.searchParams.delete('lesson');
+            url.searchParams.delete('view');
+        } else {
+            url.searchParams.set('section', content.sectionId);
+            if (content.kind === 'lesson') {
+                url.searchParams.set('lesson', content.lesson._id);
+                url.searchParams.delete('view');
+            } else {
+                url.searchParams.set('view', content.kind);
+                url.searchParams.delete('lesson');
+            }
+        }
+        window.history.replaceState({}, '', url.toString());
     }, []);
 
-    // Fetch
+    const handleSelectContent = useCallback((content: SelectedContent) => {
+        setSelectedContent(content);
+        updateUrl(content);
+        setDrawerOpen(false);
+    }, [updateUrl]);
+
+    const handleNavigate = useCallback((item: NavigableItem) => {
+        if (item.kind === 'lesson' && item.lesson && !item.lesson.content) {
+            fetch(`/api/cours/${params.coursId}/sections/${item.sectionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data?.section) {
+                        const lesson = data.section.lessons?.find((l: Lesson) => l._id === item.lesson?._id);
+                        if (lesson) {
+                            handleSelectContent({
+                                kind: 'lesson',
+                                lesson,
+                                sectionId: item.sectionId,
+                                sectionTitle: item.sectionTitle,
+                            });
+                        }
+                    }
+                })
+                .catch(console.error);
+        } else {
+            handleSelectContent(navigableToSelected(item));
+        }
+    }, [params.coursId, handleSelectContent]);
+
+    const handleBackToOverview = useCallback(() => {
+        setSelectedContent(null);
+        updateUrl(null);
+    }, [updateUrl]);
+
     useEffect(() => {
         const fetchCourse = async () => {
             try {
-                const res = await fetch(`/api/cours/${params.coursId}`, {
-                    cache: "no-store",
-                });
+                const res = await fetch(`/api/cours/${params.coursId}`);
                 if (!res.ok) throw new Error("Cours introuvable");
                 const data = await res.json();
                 setCours(data.cours);
@@ -424,57 +413,170 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
         fetchCourse();
     }, [params.coursId]);
 
+    useEffect(() => {
+        fetch(`/api/cours/${params.coursId}/full`)
+            .then(res => res.ok ? res.json() : null)
+            .then(data => { if (data?.cours) setFullCourse(data.cours); })
+            .catch(() => {});
+    }, [params.coursId]);
+
+    useEffect(() => {
+        if (!cours) return;
+        const sectionId = searchParams.get('section');
+        const lessonId = searchParams.get('lesson');
+        const view = searchParams.get('view');
+
+        if (sectionId) {
+            fetch(`/api/cours/${params.coursId}/sections/${sectionId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data?.section) return;
+                    const section = data.section;
+
+                    if (lessonId && section.lessons) {
+                        const lesson = section.lessons.find((l: Lesson) => l._id === lessonId);
+                        if (lesson) {
+                            setSelectedContent({
+                                kind: 'lesson',
+                                lesson,
+                                sectionId,
+                                sectionTitle: section.title,
+                            });
+                        }
+                    } else if (view === 'exercises' && section.exercises) {
+                        setSelectedContent({
+                            kind: 'exercises',
+                            exercises: section.exercises,
+                            sectionId,
+                            sectionTitle: section.title,
+                        });
+                    } else if (view === 'quizzes' && section.quizzes) {
+                        setSelectedContent({
+                            kind: 'quizzes',
+                            quizzes: section.quizzes,
+                            sectionId,
+                            sectionTitle: section.title,
+                        });
+                    }
+                })
+                .catch(console.error);
+        }
+    }, [cours, params.coursId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    useEffect(() => {
+        if (!session?.user || !cours) return;
+        fetch(`/api/cours/${params.coursId}/progress`, {
+            headers: { Authorization: `Bearer ${(session as any).accessToken || ''}` },
+        })
+            .then(res => res.ok ? res.json() : null)
+            .then(data => {
+                if (data?.progress?.lessonsRead) {
+                    setReadLessons(new Set(data.progress.lessonsRead));
+                }
+            })
+            .catch(() => {});
+    }, [session, cours, params.coursId]);
+
+    useEffect(() => {
+        if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
+        if (!session?.user || !selectedContent || selectedContent.kind !== 'lesson') return;
+
+        const lessonId = selectedContent.lesson._id;
+        if (readLessons.has(lessonId)) return;
+
+        markReadTimerRef.current = setTimeout(() => {
+            fetch(`/api/cours/${params.coursId}/progress`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${(session as any).accessToken || ''}`,
+                },
+                body: JSON.stringify({ lessonId, sectionId: selectedContent.sectionId }),
+            })
+                .then(res => { if (res.ok) setReadLessons(prev => new Set([...prev, lessonId])); })
+                .catch(() => {});
+        }, 5000);
+
+        return () => { if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current); };
+    }, [selectedContent, session, params.coursId, readLessons]);
+
     if (isLoading) return <LoadingSkeleton />;
     if (error || !cours) return <ErrorMessage error={error} />;
 
-    return (
-        <div className="root-container flex h-screen bg-gradient-to-br from-orange-50 to-amber-50 overflow-hidden">
-            <Noise opacity={0.03} />
+    const breadcrumbSection = selectedContent ? selectedContent.sectionTitle : undefined;
+    const breadcrumbContent = selectedContent?.kind === 'lesson' ? selectedContent.lesson.title : undefined;
+    const breadcrumbKind = selectedContent?.kind;
 
-            {/* Sidebar desktop + mobile */}
-            <div
-                className={`sticky top-0 z-40 w-full md:w-72 lg:w-80 bg-white/80 border-b border-orange-100 md:border-b-0 md:border-r ${
-                    showSidebar ? "block" : "hidden md:block"
-                }`}
-            >
-                <OrangeGradient className="h-full">
-                    {/* bouton fermer mobile */}
-                    <div className="flex justify-end p-3 md:hidden relative z-20">
-                        <button
-                            onClick={() => setShowSidebar(false)}
-                            aria-label="Cacher menu"
-                            className="text-orange-500"
-                        >
-                            <ChevronLeft />
-                        </button>
-                    </div>
-                    <div className="relative z-10 h-full flex flex-col min-h-0">
-                        <SidebarWrapper
-                            course={cours}
-                            onSelectContent={(c) => {
-                                setSelectedContent(c);
-                                setShowSidebar(false); // masque sur mobile à la sélection
-                            }}
-                        />
-                    </div>
-                </OrangeGradient>
+    return (
+        <div className="flex h-screen bg-white overflow-hidden">
+            {/* Sidebar desktop */}
+            <div className="hidden md:block w-72 flex-shrink-0 bg-[#f7f6f3] border-r border-[#e3e2e0]">
+                <SidebarWrapper
+                    course={cours}
+                    onSelectContent={handleSelectContent}
+                    readLessons={readLessons}
+                />
             </div>
 
-            {/* Main — seul conteneur scrollable */}
-            <main className="flex-1 relative h-full overflow-y-auto overflow-x-hidden p-2 sm:p-4 md:p-6 lg:p-8 bg-white/70 rounded-tl-2xl">
-                <div className="w-full max-w-none">
+            {/* Main content */}
+            <main className="flex-1 overflow-y-auto overflow-x-hidden notion-scrollbar">
+                <div className="max-w-4xl mx-auto px-6 md:px-12 py-8 md:py-12">
+                    {/* Breadcrumb */}
+                    <div className="mb-6">
+                        <CourseBreadcrumb
+                            courseTitle={cours.title}
+                            courseId={cours._id}
+                            sectionTitle={breadcrumbSection}
+                            contentTitle={breadcrumbContent}
+                            contentKind={breadcrumbKind}
+                            onNavigateToOverview={handleBackToOverview}
+                        />
+                    </div>
+
+                    {/* Content */}
                     {selectedContent ? (
-                        <ContentView content={selectedContent} onBack={() => setSelectedContent(null)} />
+                        <>
+                            <ContentView content={selectedContent} onBack={handleBackToOverview} />
+                            <ContentNavigation
+                                prev={prev}
+                                next={next}
+                                onNavigate={handleNavigate}
+                            />
+                        </>
                     ) : (
-                        <CourseOverview cours={cours} />
+                        <CourseOverview 
+                            cours={cours} 
+                            onOpenSidebar={() => setDrawerOpen(true)}
+                        />
                     )}
                 </div>
             </main>
 
-            {/* Bouton flottant toujours visible lors du défilement (uniquement sur mobile) */}
-            {!showSidebar && (
-                <FloatingMenuButton onClick={() => setShowSidebar(true)} />
-            )}
+            {/* Mobile drawer - Bouton flottant amélioré */}
+            <div className="md:hidden">
+                <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
+                    <DrawerTrigger asChild>
+                        <button
+                            className="fixed z-50 left-4 bottom-6 pl-3 pr-4 py-3 bg-[#f97316] text-white rounded-full shadow-lg flex items-center gap-2 hover:bg-[#ea580c] transition-all"
+                            aria-label="Ouvrir le sommaire"
+                        >
+                            <Menu className="w-5 h-5" />
+                            <span className="text-sm font-medium">Sommaire</span>
+                            <span className="bg-white/20 text-white text-xs px-1.5 py-0.5 rounded-full">
+                                {cours.sections.length}
+                            </span>
+                        </button>
+                    </DrawerTrigger>
+                    <DrawerContent className="h-[85vh] p-0 rounded-t-3xl">
+                        <div className="h-full overflow-y-auto overflow-x-hidden">
+                            <SidebarWrapper
+                                course={cours}
+                                onSelectContent={handleSelectContent}
+                            />
+                        </div>
+                    </DrawerContent>
+                </Drawer>
+            </div>
         </div>
     );
 }

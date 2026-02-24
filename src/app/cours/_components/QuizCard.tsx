@@ -1,25 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/Badge';
-import { Progress } from '@/components/ui/Progress';
-import { CheckCircle, PlayCircle, Trophy, Lock, Clock, Target, Star } from 'lucide-react';
+import { CheckCircle, PlayCircle, Trophy, Target, Star, Lock, Zap, Timer, Award } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { Quiz } from './types';
+import "./styles/notion-theme.css";
 
 interface QuizCardProps {
-    quiz: {
-        _id: string;
-        title: string;
-        description?: string;
-        questionsCount: number;
-        totalPoints: number;
-        completed?: boolean;
-        score?: number;
-        maxScore?: number;
-        percentage?: number;
-    };
+    quiz: Quiz;
     onStartQuiz: (quizId: string) => void;
 }
 
@@ -28,123 +16,137 @@ export default function QuizCard({ quiz, onStartQuiz }: QuizCardProps) {
     const [isHovered, setIsHovered] = useState(false);
 
     const getScoreColor = (percentage: number) => {
-        if (percentage >= 80) return 'text-green-600';
-        if (percentage >= 60) return 'text-yellow-600';
-        return 'text-red-600';
+        if (percentage >= 80) return '#10b981';
+        if (percentage >= 60) return '#f59e0b';
+        return '#ef4444';
     };
 
-    const getScoreBadgeVariant = (percentage: number) => {
-        if (percentage >= 80) return 'default';
-        if (percentage >= 60) return 'secondary';
-        return 'destructive';
+    const getScoreBgColor = (percentage: number) => {
+        if (percentage >= 80) return '#ecfdf5';
+        if (percentage >= 60) return '#fffbeb';
+        return '#fef2f2';
+    };
+
+    const getScoreLabel = (percentage: number) => {
+        if (percentage >= 80) return 'Excellent';
+        if (percentage >= 60) return 'Bien';
+        return 'À revoir';
     };
 
     return (
-        <Card 
-            className={`group relative overflow-hidden transition-all duration-300 cursor-pointer ${
-                isHovered ? 'shadow-xl scale-105 -translate-y-1' : 'shadow-lg hover:shadow-xl'
+        <div 
+            className={`notion-card p-0 overflow-hidden transition-all duration-300 ${
+                quiz.completed ? 'ring-2' : ''
             } ${
-                quiz.completed 
-                    ? 'border-green-200 bg-gradient-to-br from-green-50 to-emerald-50' 
-                    : 'border-blue-200 bg-gradient-to-br from-blue-50 to-indigo-50'
+                session?.user ? 'cursor-pointer' : ''
             }`}
+            style={{
+                borderRadius: '24px',
+                ['--tw-ring-color' as string]: quiz.completed ? getScoreColor(quiz.percentage || 0) : 'transparent'
+            }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => setIsHovered(false)}
-            onClick={() => onStartQuiz(quiz._id)}
+            onClick={() => session?.user && onStartQuiz(quiz._id)}
         >
-            {/* Effet de brillance au survol */}
-            <div className={`absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 transition-transform duration-500 ${
-                isHovered ? 'translate-x-full' : '-translate-x-full'
-            }`} />
-            
-            {/* Badge de statut */}
-            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10">
-                {quiz.completed ? (
-                    <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <CheckCircle className="h-3 w-3" />
-                        <span className="hidden sm:inline">Terminé</span>
+            {/* Header avec gradient */}
+            <div 
+                className={`px-6 py-5 relative overflow-hidden ${
+                    quiz.completed 
+                        ? 'bg-gradient-to-r from-green-50 to-emerald-50' 
+                        : 'bg-gradient-to-r from-orange-50 to-amber-50'
+                }`}
+            >
+                {/* Pattern de fond subtil */}
+                <div 
+                    className="absolute inset-0 opacity-30"
+                    style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='13' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E")`
+                    }}
+                />
+                
+                <div className="relative flex items-start justify-between">
+                    <div className="flex items-center gap-3">
+                        <div 
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${
+                                quiz.completed 
+                                    ? 'bg-white text-green-500' 
+                                    : 'bg-white text-orange-500'
+                            }`}
+                        >
+                            {quiz.completed ? (
+                                <Award className="w-6 h-6" />
+                            ) : (
+                                <Zap className="w-6 h-6" />
+                            )}
+                        </div>
+                        <div>
+                            <h3 className="font-semibold text-[#37352f] line-clamp-1 text-base">
+                                {quiz.title}
+                            </h3>
+                            {quiz.completed && quiz.percentage !== undefined && (
+                                <span 
+                                    className="text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block"
+                                    style={{ 
+                                        color: getScoreColor(quiz.percentage),
+                                        backgroundColor: getScoreBgColor(quiz.percentage)
+                                    }}
+                                >
+                                    {getScoreLabel(quiz.percentage)} • {quiz.percentage}%
+                                </span>
+                            )}
+                        </div>
                     </div>
-                ) : (
-                    <div className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-                        <PlayCircle className="h-3 w-3" />
-                        <span className="hidden sm:inline">Disponible</span>
+                    
+                    {/* Badge de statut */}
+                    <div 
+                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                            quiz.completed 
+                                ? 'bg-green-100 text-green-600' 
+                                : 'bg-orange-100 text-orange-600'
+                        }`}
+                    >
+                        {quiz.completed ? <CheckCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
                     </div>
-                )}
-            </div>
-
-            <CardHeader className="pb-3 sm:pb-4 pt-4 sm:pt-6 px-3 sm:px-4 md:px-6">
-                <div className="flex items-start justify-between">
-                    <CardTitle className="text-base sm:text-lg font-bold text-gray-800 group-hover:text-gray-900 transition-colors duration-200 flex items-center gap-2">
-                        {quiz.completed ? (
-                            <div className="p-1 bg-green-100 rounded-full">
-                                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
-                            </div>
-                        ) : (
-                            <div className="p-1 bg-blue-100 rounded-full">
-                                <PlayCircle className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
-                            </div>
-                        )}
-                        <span className="line-clamp-2">{quiz.title}</span>
-                    </CardTitle>
                 </div>
-            </CardHeader>
+            </div>
             
-            <CardContent className="space-y-3 sm:space-y-4 px-3 sm:px-4 md:px-6">
+            {/* Content */}
+            <div className="px-6 py-5">
                 {quiz.description && (
-                    <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 leading-relaxed">
+                    <p className="text-sm text-[#6b6b6b] line-clamp-2 mb-4 leading-relaxed">
                         {quiz.description}
                     </p>
                 )}
                 
-                {/* Statistiques du quiz */}
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                    <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
-                        <Target className="h-3 w-3 sm:h-4 sm:w-4 text-purple-600" />
-                        <div>
-                            <p className="text-xs text-gray-500">Questions</p>
-                            <p className="text-xs sm:text-sm font-semibold text-gray-800">
-                                {quiz.questionsCount}
-                            </p>
-                        </div>
+                {/* Stats en ligne */}
+                <div className="flex items-center gap-4 mb-4">
+                    <div className="flex items-center gap-1.5 text-sm text-[#6b6b6b]">
+                        <Target className="w-4 h-4 text-[#9ca3af]" />
+                        <span>{quiz.questionsCount} questions</span>
                     </div>
-                    
-                    <div className="flex items-center gap-2 p-2 bg-white/50 rounded-lg">
-                        <Trophy className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-600" />
-                        <div>
-                            <p className="text-xs text-gray-500">Points</p>
-                            <p className="text-xs sm:text-sm font-semibold text-gray-800">
-                                {quiz.totalPoints}
-                            </p>
-                        </div>
+                    <div className="w-1 h-1 rounded-full bg-[#e3e2e0]" />
+                    <div className="flex items-center gap-1.5 text-sm text-[#6b6b6b]">
+                        <Trophy className="w-4 h-4 text-[#9ca3af]" />
+                        <span>{quiz.totalPoints} pts</span>
                     </div>
                 </div>
                 
-                {/* Résultats si complété */}
+                {/* Score si complété */}
                 {quiz.completed && quiz.percentage !== undefined && (
-                    <div className="space-y-2 sm:space-y-3">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-500" />
-                                <span className="text-xs sm:text-sm font-medium text-gray-700">Votre score</span>
-                            </div>
-                            <Badge 
-                                variant={getScoreBadgeVariant(quiz.percentage)}
-                                className="text-xs"
-                            >
-                                {quiz.percentage}%
-                            </Badge>
+                    <div className="mb-4">
+                        <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm text-[#6b6b6b]">Votre score</span>
+                            <span className="text-sm font-semibold" style={{ color: getScoreColor(quiz.percentage) }}>
+                                {quiz.score}/{quiz.maxScore}
+                            </span>
                         </div>
-                        
-                        <div className="space-y-2">
-                            <div className="flex justify-between text-xs sm:text-sm">
-                                <span className="text-gray-600">Progression</span>
-                                <span className={`font-semibold ${getScoreColor(quiz.percentage)}`}>
-                                    {quiz.score}/{quiz.maxScore} points
-                                </span>
-                            </div>
-                            <Progress 
-                                value={quiz.percentage} 
-                                className="h-2"
+                        <div className="w-full h-2 bg-[#f1f1ef] rounded-full overflow-hidden">
+                            <div 
+                                className="h-full rounded-full transition-all duration-500"
+                                style={{ 
+                                    width: `${quiz.percentage}%`,
+                                    backgroundColor: getScoreColor(quiz.percentage)
+                                }}
                             />
                         </div>
                     </div>
@@ -152,11 +154,11 @@ export default function QuizCard({ quiz, onStartQuiz }: QuizCardProps) {
                 
                 {/* Bouton d'action */}
                 {session?.user ? (
-                    <Button 
-                        className={`w-full mt-3 sm:mt-4 transition-all duration-200 text-sm sm:text-base ${
+                    <button 
+                        className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
                             quiz.completed 
-                                ? 'bg-green-600 hover:bg-green-700 text-white' 
-                                : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl'
+                                ? 'bg-[#ecfdf5] text-green-700 hover:bg-green-100 border border-green-200' 
+                                : 'bg-[#37352f] text-white hover:bg-black'
                         }`}
                         onClick={(e) => {
                             e.stopPropagation();
@@ -165,25 +167,23 @@ export default function QuizCard({ quiz, onStartQuiz }: QuizCardProps) {
                     >
                         {quiz.completed ? (
                             <>
-                                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                                <CheckCircle className="w-4 h-4" />
                                 Revoir le quiz
                             </>
                         ) : (
                             <>
-                                <PlayCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
-                                Commencer le quiz
+                                <PlayCircle className="w-4 h-4" />
+                                Commencer
                             </>
                         )}
-                    </Button>
+                    </button>
                 ) : (
-                    <div className="mt-3 sm:mt-4 p-2 sm:p-3 bg-gray-50 rounded-lg border border-gray-200">
-                        <div className="flex items-center gap-2 text-gray-600">
-                            <Lock className="h-3 w-3 sm:h-4 sm:w-4" />
-                            <span className="text-xs sm:text-sm font-medium">Connectez-vous pour participer</span>
-                        </div>
+                    <div className="flex items-center justify-center gap-2 py-3 px-4 bg-[#f1f1ef] rounded-xl text-sm text-[#9ca3af]">
+                        <Lock className="w-4 h-4" />
+                        <span>Connexion requise</span>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
-} 
+}

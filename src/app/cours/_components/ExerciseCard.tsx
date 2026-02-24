@@ -5,9 +5,9 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
-import { Card, CardHeader, CardContent } from "@/components/ui/Card";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, FileText, CheckCircle } from "lucide-react";
 import BookmarkButton from "@/components/BookmarkButton";
+import "./styles/notion-theme.css";
 
 interface ExerciseProps {
     exercise: {
@@ -21,149 +21,164 @@ interface ExerciseProps {
     index: number;
 }
 
-// Modern difficulty styles with grainy gradients
-const difficultyStyles: Record<string, { gradient: string; text: string; border: string }> = {
-    "Facile 1": {
-        gradient: "bg-gradient-to-r from-green-100 to-emerald-200",
-        text: "text-emerald-800",
-        border: "border-emerald-400"
+// Function to get difficulty badge path
+const getDifficultyBadge = (difficulty: string) => `/badge/${difficulty.toLowerCase().replace(/\s+/g, '_')}.svg`;
+
+// Difficulté avec couleurs
+const difficultyConfig: Record<string, { color: string; bgColor: string; gradient: string }> = {
+    "Facile 1": { 
+        color: "#10b981", 
+        bgColor: "#ecfdf5",
+        gradient: "from-green-100 to-emerald-200"
     },
-    "Facile 2": {
-        gradient: "bg-gradient-to-r from-emerald-100 to-teal-200",
-        text: "text-teal-800",
-        border: "border-teal-400"
+    "Facile 2": { 
+        color: "#10b981", 
+        bgColor: "#ecfdf5",
+        gradient: "from-emerald-100 to-teal-200"
     },
-    "Moyen 1": {
-        gradient: "bg-gradient-to-r from-amber-100 to-yellow-200",
-        text: "text-amber-800",
-        border: "border-amber-400"
+    "Moyen 1": { 
+        color: "#f59e0b", 
+        bgColor: "#fffbeb",
+        gradient: "from-amber-100 to-yellow-200"
     },
-    "Moyen 2": {
-        gradient: "bg-gradient-to-r from-yellow-100 to-orange-200",
-        text: "text-orange-800",
-        border: "border-orange-400"
+    "Moyen 2": { 
+        color: "#f59e0b", 
+        bgColor: "#fffbeb",
+        gradient: "from-yellow-100 to-orange-200"
     },
-    "Difficile 1": {
-        gradient: "bg-gradient-to-r from-rose-100 to-red-200",
-        text: "text-rose-800",
-        border: "border-rose-400"
+    "Difficile 1": { 
+        color: "#ef4444", 
+        bgColor: "#fef2f2",
+        gradient: "from-rose-100 to-red-200"
     },
-    "Difficile 2": {
-        gradient: "bg-gradient-to-r from-red-100 to-pink-200",
-        text: "text-pink-800",
-        border: "border-pink-400"
+    "Difficile 2": { 
+        color: "#ef4444", 
+        bgColor: "#fef2f2",
+        gradient: "from-red-100 to-pink-200"
     },
-    "Élite": {
-        gradient: "bg-gradient-to-r from-indigo-100 to-purple-200",
-        text: "text-indigo-800",
-        border: "border-indigo-400"
+    "Élite": { 
+        color: "#8b5cf6", 
+        bgColor: "#f5f3ff",
+        gradient: "from-indigo-100 to-purple-200"
     },
 };
 
-// Function to get difficulty badge path
-const getDifficultyBadge = (difficulty: string) => `/badge/${difficulty.toLowerCase().replace(" ", "_")}.svg`;
-
 export default function ExerciseCard({ exercise, index }: ExerciseProps) {
     const [showCorrection, setShowCorrection] = useState(false);
-    const difficulty = difficultyStyles[exercise.difficulty] || difficultyStyles["Facile 1"];
+    const config = difficultyConfig[exercise.difficulty] || difficultyConfig["Facile 1"];
 
     return (
-        <div className="flex justify-center w-full my-4 sm:my-6">
-            <Card className={`w-full max-w-3xl overflow-hidden shadow-xl rounded-2xl border border-opacity-40 ${difficulty.border} backdrop-blur-sm`}>
-                {/* Grainy gradient overlay */}
-                <div className={`absolute inset-0 opacity-90 ${difficulty.gradient} mix-blend-multiply`}
-                     style={{ backgroundImage: "url('/noise.png')" }}>
+        <div className="notion-card overflow-hidden rounded-3xl">
+            {/* Header avec grainy gradient */}
+            <div 
+                className={`px-6 py-4 flex items-center justify-between bg-gradient-to-r ${config.gradient} relative`}
+                style={{ backgroundImage: "url('/noise.png')", backgroundBlendMode: 'multiply' }}
+            >
+                <div className="flex items-center gap-4">
+                    {/* Numéro avec badge arrondi */}
+                    <div 
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold text-white shadow-md"
+                        style={{ backgroundColor: config.color }}
+                    >
+                        {index + 1}
+                    </div>
+                    <h3 className="font-semibold text-gray-800">{exercise.title}</h3>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                    {/* Badge SVG de difficulté */}
+                    <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+                        <img 
+                            src={getDifficultyBadge(exercise.difficulty)} 
+                            alt={exercise.difficulty} 
+                            className="h-5 w-5" 
+                        />
+                        <span className="text-sm font-medium" style={{ color: config.color }}>
+                            {exercise.difficulty}
+                        </span>
+                    </div>
+                    <div onClick={(e) => e.stopPropagation()} className="bg-white/80 backdrop-blur-sm rounded-full p-1.5 shadow-sm">
+                        <BookmarkButton exerciseId={exercise._id} size="sm" />
+                    </div>
+                </div>
+            </div>
+
+            {/* Content */}
+            <div className="p-6">
+                <div className="prose prose-lg max-w-none text-[#37352f] leading-relaxed">
+                    <ReactMarkdown
+                        rehypePlugins={[rehypeKatex]}
+                        remarkPlugins={[remarkMath, remarkGfm]}
+                    >
+                        {exercise.content}
+                    </ReactMarkdown>
                 </div>
 
-                {/* Glass-like card content container */}
-                <div className="relative z-10 p-3 sm:p-4 md:p-6">
-                    {/* Header with counter and difficulty badge */}
-                    <CardHeader className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-center justify-between p-0 mb-4 sm:mb-6">
-                        <span className="px-4 sm:px-6 py-2 bg-white/80 backdrop-blur-sm text-gray-800 font-semibold rounded-full text-xs sm:text-sm shadow-lg border border-gray-100">
-                            Exercice {index + 1}
-                        </span>
-                        <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="flex items-center gap-2 sm:gap-3 bg-white/80 backdrop-blur-sm px-3 sm:px-4 py-2 rounded-full shadow-lg border border-gray-100">
-                                <img src={getDifficultyBadge(exercise.difficulty)} alt={exercise.difficulty} className="h-5 w-5 sm:h-6 sm:w-6" />
-                                <span className={`font-semibold text-xs sm:text-sm ${difficulty.text}`}>{exercise.difficulty}</span>
-                            </div>
-                            <div className="bg-white/80 backdrop-blur-sm p-2 rounded-full shadow-lg border border-gray-100">
-                                <BookmarkButton exerciseId={exercise._id} size="sm" />
-                            </div>
-                        </div>
-                    </CardHeader>
+                {exercise.image && (
+                    <div className="mt-6">
+                        <img
+                            src={exercise.image}
+                            alt="Illustration"
+                            className="w-full rounded-2xl border border-[#e3e2e0]"
+                        />
+                    </div>
+                )}
 
-                    {/* Main content */}
-                    <CardContent className="bg-white/70 backdrop-blur-md rounded-xl p-3 sm:p-4 md:p-6 shadow-md border border-gray-100">
-                        <h3 className={`text-lg sm:text-xl md:text-2xl font-bold mb-3 sm:mb-4 ${difficulty.text}`}>{exercise.title}</h3>
-                        <div className="prose max-w-none text-gray-800 leading-relaxed text-sm sm:text-base overflow-x-auto">
+                {/* Correction toggle */}
+                {exercise.correction && exercise.correction.text && (
+                    <div className="mt-6">
+                        <button
+                            onClick={() => setShowCorrection(!showCorrection)}
+                            className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
+                                showCorrection 
+                                    ? "bg-[#37352f] text-white" 
+                                    : "bg-[#f7f6f3] text-[#37352f] hover:bg-[#ebebea] border border-[#e3e2e0]"
+                            }`}
+                        >
+                            {showCorrection ? (
+                                <>
+                                    <EyeOff className="w-4 h-4" />
+                                    Masquer la correction
+                                </>
+                            ) : (
+                                <>
+                                    <Eye className="w-4 h-4" />
+                                    Voir la correction
+                                </>
+                            )}
+                        </button>
+                    </div>
+                )}
+
+                {/* Correction content */}
+                {showCorrection && exercise.correction && (
+                    <div className="mt-4 p-6 bg-[#f7f6f3] rounded-2xl border border-[#e3e2e0]">
+                        <div className="flex items-center gap-2 mb-4">
+                            <CheckCircle className="w-5 h-5 text-[#10b981]" />
+                            <h4 className="font-semibold text-[#37352f]">Correction</h4>
+                        </div>
+                        
+                        <div className="prose prose-lg max-w-none text-[#37352f] leading-relaxed">
                             <ReactMarkdown
                                 rehypePlugins={[rehypeKatex]}
                                 remarkPlugins={[remarkMath, remarkGfm]}
                             >
-                                {exercise.content}
+                                {exercise.correction.text}
                             </ReactMarkdown>
                         </div>
 
-                        {/* Exercise image if it exists */}
-                        {exercise.image && (
-                            <div className="mt-4 sm:mt-6">
+                        {exercise.correction.image && (
+                            <div className="mt-4">
                                 <img
-                                    src={exercise.image}
-                                    alt="Illustration"
-                                    className="w-full rounded-lg shadow-md border border-gray-200 hover:shadow-lg transition-shadow"
+                                    src={exercise.correction.image}
+                                    alt="Correction"
+                                    className="w-full rounded-2xl border border-[#e3e2e0]"
                                 />
                             </div>
                         )}
-
-                        {/* Correction toggle button */}
-                        {exercise.correction && exercise.correction.text && (
-                            <div className="mt-4 sm:mt-6 bg-gray-50/90 backdrop-blur-sm p-3 sm:p-4 rounded-lg shadow-sm border border-gray-200">
-                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0">
-                                    <span className="text-gray-800 font-medium text-sm sm:text-base">Afficher la correction</span>
-                                    <button
-                                        className={`flex items-center justify-center gap-2 ${showCorrection ? 'bg-gray-700' : 'bg-orange-500'} text-white px-4 sm:px-5 py-2 rounded-full shadow-md hover:translate-y-[-2px] hover:shadow-lg active:translate-y-[0px] transition-all duration-300 text-sm sm:text-base`}
-                                        onClick={() => setShowCorrection(!showCorrection)}
-                                    >
-                                        {showCorrection ? <EyeOff size={16} className="sm:w-[18px] sm:h-[18px]" /> : <Eye size={16} className="sm:w-[18px] sm:h-[18px]" />}
-                                        {showCorrection ? "Masquer" : "Voir"}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Correction content if shown */}
-                        {showCorrection && exercise.correction && (
-                            <div className="mt-4 sm:mt-6 animate-fadeIn">
-                                <div className="bg-orange-50/90 backdrop-blur-sm border border-orange-200 rounded-lg shadow-md p-4 sm:p-6">
-                                    <h3 className="text-orange-700 font-semibold text-lg sm:text-xl mb-3 sm:mb-4 flex items-center">
-                                        <span className="inline-block w-1 h-4 sm:h-6 bg-orange-500 mr-2 sm:mr-3 rounded-full"></span>
-                                        Correction
-                                    </h3>
-                                    <div className="prose max-w-none text-gray-800 leading-relaxed text-sm sm:text-base overflow-x-auto">
-                                        <ReactMarkdown
-                                            rehypePlugins={[rehypeKatex]}
-                                            remarkPlugins={[remarkMath, remarkGfm]}
-                                        >
-                                            {exercise.correction.text}
-                                        </ReactMarkdown>
-                                    </div>
-
-                                    {exercise.correction.image && (
-                                        <div className="mt-3 sm:mt-4">
-                                            <img
-                                                src={exercise.correction.image}
-                                                alt="Correction"
-                                                className="w-full rounded-lg shadow-md border border-orange-200 hover:shadow-lg transition-shadow"
-                                            />
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-                    </CardContent>
-                </div>
-            </Card>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

@@ -2,15 +2,32 @@
 
 import React, { useState, useEffect } from "react";
 import { Badge } from "./Badge";
+import { getRoleIconPath } from "@/lib/roleIcon";
+import { AvatarInterference } from "eigen-avatar-generator/react/interference";
+import { AvatarPlasma } from "eigen-avatar-generator/react/plasma";
+import { AvatarSmile } from "eigen-avatar-generator/react/smile";
+import { AvatarPixels } from "eigen-avatar-generator/react/pixels";
 
-// Fonction pour générer une couleur unique
-function hashStringToColor(string: string): string {
+// Color sets pour Interference, Plasma, Smile (un set choisi par avatar)
+// Format: [ [couleur1, couleur2, ...], [couleur1, couleur2, ...], ... ]
+const COLOR_SETS: string[][] = [
+    ["#6366F1", "#8B5CF6", "#A855F7"],
+    ["#EC4899", "#F472B6", "#F9A8D4"],
+    ["#0EA5E9", "#38BDF8", "#7DD3FC"],
+    ["#10B981", "#34D399", "#6EE7B7"],
+    ["#F59E0B", "#FBBF24", "#FCD34D"],
+];
+
+// Gradient pour Pixels uniquement (interpolation, pas de color sets)
+const PIXELS_GRADIENT = ["#6366F1", "#EC4899", "#10B981", "#F59E0B"];
+
+// Fonction pour générer un hash numérique déterministe
+function hashString(str: string): number {
     let hash = 0;
-    for (let i = 0; i < string.length; i++) {
-        hash = string.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < str.length; i++) {
+        hash = str.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const hue = hash % 360;
-    return `hsl(${hue}, 50%, 70%)`; // Couleur pastel
+    return Math.abs(hash);
 }
 
 // Fonction pour formater le nombre de points
@@ -55,6 +72,53 @@ const sizeClasses = {
     large: "w-20 h-20 text-lg",
 };
 
+const sizePixels = {
+    small: 96,
+    medium: 80,
+    large: 160,
+};
+
+// Composant Eigen Avatar (Interference, Plasma, Smile, Pixels)
+function EigenAvatar({
+    id,
+    size,
+    avatarSizeClass,
+}: {
+    id: string;
+    size: "small" | "medium" | "large";
+    avatarSizeClass: string;
+}) {
+    const themeIndex = hashString(id) % 4;
+    const pixels = sizePixels[size];
+    const commonProps = {
+        id,
+        size: pixels,
+        className: `rounded-full object-cover w-full h-full ${avatarSizeClass}`,
+    };
+
+    // Interference & Plasma & Smile: color sets
+    const colorSetProps = {
+        foreground: COLOR_SETS,
+    };
+    // Pixels: gradient interpolation only
+    const pixelsProps = {
+        foreground: PIXELS_GRADIENT,
+        interpolate: true,
+    };
+
+    switch (themeIndex) {
+        case 0:
+            return <AvatarInterference {...commonProps} {...colorSetProps} />;
+        case 1:
+            return <AvatarPlasma {...commonProps} {...colorSetProps} />;
+        case 2:
+            return <AvatarSmile {...commonProps} {...colorSetProps} />;
+        case 3:
+        default:
+            return <AvatarPixels {...commonProps} {...pixelsProps} />;
+    }
+}
+
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     username,
     image,
@@ -67,9 +131,6 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 }) => {
     const [customization, setCustomization] = useState<ProfileCustomization | null>(null);
     const [loading, setLoading] = useState(false);
-
-    const firstLetter = username.charAt(0).toUpperCase();
-    const bgColor = hashStringToColor(username);
 
     // Charger les personnalisations si userId est fourni et pas de customization en props
     useEffect(() => {
@@ -239,10 +300,9 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     const profileImage = getProfileImage();
     const profileBorder = getProfileBorder();
 
-    return (
-        <div className="relative">
-            {/* Avatar avec personnalisations */}
-            <div className={`relative ${sizeClasses[size]} rounded-full`}>
+    // Contenu de l'avatar (cercle uniquement)
+    const avatarContent = (
+        <div className={`relative ${sizeClasses[size]} rounded-full`}>
                 {/* Badge pour les points */}
                 {showPoints && points > 0 && (
                     <Badge
@@ -255,13 +315,8 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 
                 {/* Avatar principal (en arrière-plan) */}
                 <div
-                    className="rounded-full w-full h-full flex items-center justify-center text-white font-bold overflow-hidden relative z-0"
+                    className="rounded-full w-full h-full flex items-center justify-center overflow-hidden relative z-0"
                     style={{
-                        backgroundColor: profileImage ? 'transparent' : bgColor,
-                        backgroundImage: `url('/noise.webp')`,
-                        backgroundSize: "cover",
-                        backgroundBlendMode: "overlay",
-                        // Réduire légèrement la taille pour laisser voir le contour
                         transform: 'scale(0.85)',
                     }}
                 >
@@ -272,7 +327,11 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                             className="w-full h-full object-cover rounded-full"
                         />
                     ) : (
-                        <span>{firstLetter}</span>
+                        <EigenAvatar
+                            id={userId || username}
+                            size={size}
+                            avatarSizeClass={sizeClasses[size]}
+                        />
                     )}
                 </div>
 
@@ -285,18 +344,45 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                         className="absolute inset-0 w-full h-full z-10"
                     />
                 )}
-            </div>
+        </div>
+    );
 
-                        {/* Nom d'utilisateur avec personnalisation (si taille large) */}
-            {size === "large" && (
-              <div className="mt-2 text-center">
-                <div 
-                  className="font-bold text-lg"
-                  style={getUsernameColorStyle()}
-                >
-                  {username}
+    // Nom d'utilisateur (affiché en dehors du contour quand size=large)
+    const usernameContent = size === "large" && (
+        <div className="mt-3 text-center">
+            <div
+                className="font-bold text-xl flex items-center justify-center gap-2"
+                style={getUsernameColorStyle()}
+            >
+                {username}
+                {role && getRoleIconPath(role) && (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                        src={getRoleIconPath(role)!}
+                        alt={`Rôle ${role}`}
+                        width={20}
+                        height={20}
+                        className="rounded-full flex-shrink-0"
+                    />
+                )}
+            </div>
+        </div>
+    );
+
+    return (
+        <>
+            {/* size=large : ring uniquement autour de l'avatar, pas du nom */}
+            {size === "large" ? (
+                <>
+                    <div className="rounded-full ring-4 ring-white shadow-lg w-fit">
+                        {avatarContent}
+                    </div>
+                    {usernameContent}
+                </>
+            ) : (
+                <div className="relative">
+                    {avatarContent}
                 </div>
-              </div>
             )}
 
             {/* Styles CSS pour toutes les animations */}
@@ -661,7 +747,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                     }
                 }
             `}</style>
-        </div>
+        </>
     );
 };
 

@@ -40,6 +40,7 @@ export const GEM_CONFIG = {
       'FoxyWaMe.webp': 2,
       'FoxyWaterMelon.webp': 2,
       'FoxySably.webp': 30,
+      'FoxyYumego.webp': 2,
     },
     profileBorder: {
       gold: 3,
@@ -73,6 +74,7 @@ export const GEM_CONFIG = {
       'FoxySably.webp',
       'FoxyLmdpc.webp',
       'FoxyStagey.webp',
+      'FoxyYumego.webp',
     ],
     profileBorder: ['gold', 'silver', 'eclair_green', 'fumee', 'poison_orange', 'bronze', 'rainbow', 'halloween_pumpkins_apng', 'yumego_manga']
   },

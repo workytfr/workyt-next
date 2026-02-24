@@ -2,217 +2,142 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/button";
-import ProfileAvatar from "@/components/ui/profile";
-import { BookOpen, GraduationCap, Layers, Clock, ArrowRight } from "lucide-react";
+import { BookOpen, GraduationCap, Layers, ChevronRight } from "lucide-react";
 import BookmarkButton from "@/components/BookmarkButton";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
-
-interface Course {
-    _id: string;
-    title: string;
-    description: string;
-    matiere: string;
-    niveau: string;
-    image?: string;
-    sections: { _id: string; title: string }[];
-    authors: { _id: string; username: string; image?: string }[];
-}
+import ProfileAvatar from "@/components/ui/profile";
+import CourseDescription from "./CourseDescription";
+import { CourseListing } from "./types";
+import "./styles/notion-theme.css";
 
 interface CourseCardProps {
-    course: Course;
+    course: CourseListing;
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
     const router = useRouter();
-    const sectionsToShow = course.sections.slice(0, 3);
-    const hasMoreSections = course.sections.length > 3;
+    const sectionsToShow = course.sections.slice(0, 2);
+    const hasMoreSections = course.sections.length > 2;
 
-    // Fonction pour tronquer un texte trop long
-    const truncateText = (text: string, maxLength: number) =>
-        text.length > maxLength ? text.substring(0, maxLength) + "..." : text;
-
-    // Injecter le CSS pour l'effet de grain seulement une fois
-    React.useEffect(() => {
-        if (typeof document !== "undefined" && !document.getElementById("grainy-css")) {
-            const style = document.createElement("style");
-            style.id = "grainy-css";
-            style.innerHTML = `
-                .grain::before {
-                    content: "";
-                    position: absolute;
-                    inset: 0;
-                    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
-                    opacity: 0.15;
-                    mix-blend-mode: overlay;
-                    pointer-events: none;
-                    z-index: 1;
-                    border-radius: inherit;
-                }
-                .card-shine {
-                    position: absolute;
-                    top: 0;
-                    left: 0;
-                    right: 0;
-                    bottom: 0;
-                    background: linear-gradient(
-                        135deg,
-                        rgba(255, 255, 255, 0) 0%,
-                        rgba(255, 255, 255, 0.12) 30%,
-                        rgba(255, 255, 255, 0) 60%
-                    );
-                    border-radius: inherit;
-                    z-index: 2;
-                    pointer-events: none;
-                    opacity: 0;
-                    transition: opacity 0.5s;
-                }
-                .hover-card:hover .card-shine {
-                    opacity: 1;
-                }
-                .image-overlay {
-                    background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 40%);
-                    position: absolute;
-                    bottom: 0;
-                    left: 0;
-                    right: 0;
-                    height: 100%;
-                    z-index: 2;
-                    border-radius: inherit;
-                }
-            `;
-            document.head.appendChild(style);
-        }
-    }, []);
+    const firstAuthor = course.authors[0];
 
     return (
-        <TooltipProvider>
-            <Card className="shadow-xl rounded-xl transition-all duration-300 transform hover:scale-102 hover:shadow-2xl border border-gray-200 overflow-hidden relative grain hover-card bg-gradient-to-br from-white to-gray-50">
-                <div className="card-shine"></div>
-
-                {/* Image avec overlay gradient pour meilleur contraste */}
+        <article 
+            className="notion-card notion-card-interactive group rounded-3xl flex flex-col h-full"
+            onClick={() => router.push(`/cours/${course._id}`)}
+        >
+            {/* Image */}
+            <div className="relative h-44 overflow-hidden bg-gradient-to-br from-[#f7f6f3] to-[#e3e2e0] rounded-t-3xl flex-shrink-0">
                 {course.image ? (
-                    <div
-                        className="h-32 sm:h-40 md:h-48 w-full overflow-hidden relative cursor-pointer group"
-                        onClick={() => router.push(`/cours/${course._id}`)}
-                    >
-                        <img
-                            src={course.image}
-                            alt={course.title}
-                            className="w-full h-full object-cover transform transition-transform duration-700 group-hover:scale-110"
-                        />
-                        <div className="image-overlay"></div>
-
-                        {/* Badge niveau sur l'image */}
-                        <Badge className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-blue-600 text-white shadow-md z-10 px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm font-medium">
-                            <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> {course.niveau}
-                        </Badge>
-                    </div>
+                    <img
+                        src={course.image}
+                        alt={course.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
                 ) : (
-                    <div className="h-20 sm:h-24 md:h-24 w-full bg-gradient-to-r from-blue-500 to-purple-600 relative overflow-hidden">
-                        <div className="absolute inset-0 opacity-20">
-                            <div className="absolute -inset-[10px] opacity-50 mix-blend-multiply blur-xl">
-                                {Array.from({ length: 3 }).map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="absolute rounded-full"
-                                        style={{
-                                            width: `${Math.floor(Math.random() * 100) + 50}px`,
-                                            height: `${Math.floor(Math.random() * 100) + 50}px`,
-                                            background: `radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%)`,
-                                            left: `${Math.floor(Math.random() * 100)}%`,
-                                            top: `${Math.floor(Math.random() * 100)}%`,
-                                        }}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                        <Badge className="absolute top-2 right-2 sm:top-3 sm:right-3 bg-blue-600 text-white shadow-md z-10 px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm font-medium">
-                            <GraduationCap className="w-3 h-3 sm:w-4 sm:h-4 mr-1" /> {course.niveau}
-                        </Badge>
+                    <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="w-14 h-14 text-[#bfbfbf]" />
                     </div>
                 )}
+                
+                {/* Badge niveau */}
+                <div className="absolute top-4 right-4">
+                    <span className="notion-badge bg-white/90 backdrop-blur-sm rounded-full">
+                        <GraduationCap className="w-3 h-3 mr-1" />
+                        {course.niveau}
+                    </span>
+                </div>
+            </div>
 
-                <CardHeader className="pb-2 px-3 sm:px-4 md:px-6">
-                    <div className="flex justify-between items-start gap-2">
-                        {/* Titre du cours */}
-                        <CardTitle
-                            className="text-base sm:text-lg md:text-xl font-bold cursor-pointer hover:text-blue-600 transition line-clamp-2 flex-1"
-                            onClick={() => router.push(`/cours/${course._id}`)}
-                        >
-                            {course.title}
-                        </CardTitle>
+            {/* Contenu - flex-grow pour remplir l'espace */}
+            <div className="p-5 flex flex-col flex-grow">
+                {/* Header avec titre et bookmark */}
+                <div className="flex items-start justify-between gap-3 mb-2 flex-shrink-0">
+                    <h3 className="text-base font-semibold text-[#37352f] line-clamp-2 flex-1 group-hover:text-[#f97316] transition-colors leading-snug">
+                        {course.title}
+                    </h3>
+                    <div onClick={(e) => e.stopPropagation()} className="flex-shrink-0">
+                        <BookmarkButton courseId={course._id} size="sm" />
+                    </div>
+                </div>
 
-                        {/* Bookmark + Badge sections */}
-                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-                            <BookmarkButton courseId={course._id} size="sm" />
-                            <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="shrink-0 cursor-pointer bg-gray-100 rounded-full p-1.5 sm:p-2 shadow-sm hover:bg-gray-200 transition">
-                                    <Layers className="w-4 h-4 sm:w-5 sm:h-5 text-gray-700" />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-white shadow-lg p-3 rounded-lg text-sm text-gray-800 border border-gray-100 max-w-xs">
-                                <p className="font-bold text-gray-800 mb-2 flex items-center gap-2">
-                                    <Layers className="w-4 h-4" />
-                                    {course.sections.length} Sections
-                                </p>
-                                <div className="space-y-1 mt-1">
-                                    {sectionsToShow.map((section, index) => (
-                                        <p key={index} className="flex items-center gap-2 truncate">
-                                            <Clock className="w-3 h-3 text-gray-400" />
-                                            {truncateText(section.title, 30)}
-                                        </p>
-                                    ))}
-                                    {hasMoreSections && (
-                                        <p className="text-blue-500 text-xs font-medium mt-1 italic">
-                                            + {course.sections.length - 3} autres sections
-                                        </p>
-                                    )}
-                                </div>
-                            </TooltipContent>
-                        </Tooltip>
+                {/* Description avec Markdown/LaTeX */}
+                <div className="mb-3 flex-shrink-0 min-h-[2.5rem]">
+                    <CourseDescription content={course.description} maxLength={120} />
+                </div>
+
+                {/* Badges */}
+                <div className="flex flex-wrap items-center gap-2 mb-3 flex-shrink-0">
+                    <span className="notion-badge notion-badge-accent rounded-full text-xs">
+                        <BookOpen className="w-3 h-3 mr-1" />
+                        {course.matiere}
+                    </span>
+                    
+                    {course.sections.length > 0 && (
+                        <span className="notion-badge rounded-full text-xs">
+                            <Layers className="w-3 h-3 mr-1" />
+                            {course.sections.length}
+                        </span>
+                    )}
+                </div>
+
+                {/* Aperçu des sections - prend l'espace disponible */}
+                <div className="flex-grow min-h-[60px]">
+                    {sectionsToShow.length > 0 && (
+                        <div className="border-t border-[#e3e2e0] pt-3">
+                            <p className="text-xs text-[#9ca3af] mb-1.5 uppercase tracking-wide font-medium">
+                                Contenu
+                            </p>
+                            <ul className="space-y-1">
+                                {sectionsToShow.map((section) => (
+                                    <li 
+                                        key={section._id}
+                                        className="text-xs text-[#6b6b6b] truncate flex items-center gap-2"
+                                    >
+                                        <span className="w-1 h-1 rounded-full bg-[#bfbfbf] flex-shrink-0" />
+                                        <span className="truncate">{section.title}</span>
+                                    </li>
+                                ))}
+                                {hasMoreSections && (
+                                    <li className="text-xs text-[#f97316] font-medium">
+                                        + {course.sections.length - 2} autres
+                                    </li>
+                                )}
+                            </ul>
                         </div>
+                    )}
+                </div>
+
+                {/* Footer avec auteur - toujours en bas */}
+                <div className="flex items-center justify-between mt-auto pt-4 border-t border-[#e3e2e0] flex-shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        {firstAuthor ? (
+                            <>
+                                <ProfileAvatar
+                                    username={firstAuthor.username}
+                                    image={firstAuthor.image}
+                                    size="small"
+                                    userId={firstAuthor._id}
+                                    showPoints={false}
+                                />
+                                <span className="text-xs text-[#6b6b6b] font-medium truncate max-w-[100px]">
+                                    {firstAuthor.username}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <div className="w-8 h-8 rounded-full bg-[#f1f1ef] flex items-center justify-center text-xs font-medium text-[#6b6b6b]">
+                                    W
+                                </div>
+                                <span className="text-xs text-[#6b6b6b]">Workyt</span>
+                            </>
+                        )}
                     </div>
-
-                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-3">
-                        <Badge variant="outline" className="bg-white border-gray-200 text-gray-700 shadow-sm font-normal flex items-center gap-1 px-2 py-1 sm:px-3 sm:py-1 text-xs sm:text-sm">
-                            <BookOpen className="w-3 h-3" /> {course.matiere}
-                        </Badge>
+                    
+                    <div className="w-7 h-7 rounded-full bg-[#f7f6f3] flex items-center justify-center group-hover:bg-[#fff7ed] transition-colors flex-shrink-0">
+                        <ChevronRight className="w-4 h-4 text-[#bfbfbf] group-hover:text-[#f97316] transition-colors" />
                     </div>
-                </CardHeader>
-
-                <CardContent className="pt-1 px-3 sm:px-4 md:px-6">
-                    <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 mb-3 sm:mb-4">{course.description}</p>
-
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mt-3 sm:mt-4 pt-2 border-t border-gray-100">
-                        {/* Auteur */}
-                        <div className="flex items-center gap-2">
-                            <ProfileAvatar
-                                username={course.authors[0]?.username || "Inconnu"}
-                                image={course.authors[0]?.image}
-                                size="small"
-                                userId={course.authors[0]?._id}
-                            />
-                            <div className="flex flex-col">
-                                <span className="text-xs sm:text-sm font-medium text-gray-700">{course.authors[0]?.username || "Inconnu"}</span>
-                                <span className="text-xs text-gray-500">Auteur</span>
-                            </div>
-                        </div>
-
-                        {/* Bouton pour voir le cours */}
-                        <Button
-                            variant="ghost"
-                            className="px-2 py-1 sm:px-3 sm:py-1 h-auto text-blue-600 hover:text-blue-800 hover:bg-blue-50 font-medium text-xs sm:text-sm flex items-center gap-1 self-end sm:self-auto"
-                            onClick={() => router.push(`/cours/${course._id}`)}
-                        >
-                            Voir <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </TooltipProvider>
+                </div>
+            </div>
+        </article>
     );
 }

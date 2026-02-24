@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { FC } from "react";
+import { Suspense, type FC } from "react";
 
 const CoursePageClient = dynamic(
     () => import("../_components/CoursePageClient"),
@@ -13,7 +13,11 @@ interface CourseClientWrapperProps {
 }
 
 const CourseClientWrapper: FC<CourseClientWrapperProps> = ({ params }) => {
-    return <CoursePageClient params={params} />;
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+            <CoursePageClient params={params} />
+        </Suspense>
+    );
 };
 
 export default CourseClientWrapper;

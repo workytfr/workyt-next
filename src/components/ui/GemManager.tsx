@@ -801,6 +801,43 @@ const GemManager: React.FC = () => {
                   }
                 </Button>
               </div>
+
+              {/* FoxyYumego - 2 gemmes - Partenaire YumeGo */}
+              <div className="border-2 border-blue-500 rounded-lg p-3 text-center relative">
+                <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                  Partenaire
+                </div>
+                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                  <Image
+                    src="/profile/FoxyYumego.webp" 
+                    alt="Foxy chez YumeGo - Apprends le japonais avec Netflix" 
+                    width={64}
+                    height={64}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="text-sm font-medium mb-1">Foxy YumeGo</div>
+                <a
+                  href="https://yumego.ai/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline mb-2 block"
+                >
+                  yumego.ai
+                </a>
+                <div className="text-xs text-blue-600 font-semibold mb-2">Partenaires</div>
+                <Button
+                  size="sm"
+                  onClick={() => purchaseCustomization('profileImage', 'FoxyYumego.webp')}
+                  disabled={purchasing || (gemData?.balance || 0) < 2}
+                  className="w-full"
+                >
+                  {customization?.profileImage.filename === 'FoxyYumego.webp' && customization.profileImage.isActive 
+                    ? 'Actif' 
+                    : 'Acheter (2 gemmes)'
+                  }
+                </Button>
+              </div>
             </div>
           </div>
 

@@ -27,7 +27,6 @@ import BadgeProgress from "@/components/ui/BadgeProgress";
 import BadgeDisplay from "@/components/ui/BadgeDisplay";
 import ContributionGraph from "@/components/ui/ContributionGraph";
 import FicheCard from "@/components/fiches/FicheCard";
-import CustomUsername from "@/components/ui/CustomUsername";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toast } from "@/components/ui/UseToast";
 import { useRouter } from "next/navigation";
@@ -45,7 +44,13 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const [revisions, setRevisions] = useState<any[]>([]);
     const [questions, setQuestions] = useState<any[]>([]);
     const [answers, setAnswers] = useState<any[]>([]);
-    const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
+    const [pagination, setPagination] = useState({
+        page: 1,
+        totalPages: 1,
+        totalRevisions: 0,
+        totalQuestions: 0,
+        totalAnswers: 0,
+    });
     const [isEditing, setIsEditing] = useState(false);
     const [loading, setLoading] = useState(true);
 
@@ -107,6 +112,9 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                     setPagination({
                         page: data.data.pagination.currentPage,
                         totalPages: data.data.pagination.totalPages,
+                        totalRevisions: data.data.pagination.totalRevisions ?? 0,
+                        totalQuestions: data.data.pagination.totalQuestions ?? 0,
+                        totalAnswers: data.data.pagination.totalAnswers ?? 0,
                     });
                     setFormData({
                         name: data.data.user.name,
@@ -215,17 +223,10 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
             <div className="container mx-auto px-4 pt-6 pb-8">
                 {/* Photo de profil en haut */}
                 <div className="flex flex-col items-center mb-6">
-                    <div className="rounded-full ring-4 ring-white shadow-lg">
-                        <ProfileAvatar
-                            username={formData.username}
-                            size="large"
-                            userId={id}
-                        />
-                    </div>
-                    <CustomUsername
+                    <ProfileAvatar
                         username={formData.username}
+                        size="large"
                         userId={id}
-                        className="text-2xl font-bold text-gray-900 mt-3"
                         role={user?.role}
                     />
                 </div>
@@ -292,7 +293,42 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                 Activité & Contributions
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="p-4">
+                        <CardContent className="p-4 space-y-4">
+                            {/* Stats d'activité */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                    <File className="w-5 h-5 text-amber-500" />
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">{pagination.totalRevisions}</p>
+                                        <p className="text-xs text-gray-500">Fiches créées</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                    <HelpCircle className="w-5 h-5 text-blue-500" />
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">{pagination.totalQuestions}</p>
+                                        <p className="text-xs text-gray-500">Questions posées</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                    <MessageCircle className="w-5 h-5 text-emerald-500" />
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">{pagination.totalAnswers}</p>
+                                        <p className="text-xs text-gray-500">Réponses données</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
+                                    <Crown className="w-5 h-5 text-purple-500" />
+                                    <div>
+                                        <p className="text-2xl font-bold text-gray-900">
+                                            {user?.createdAt
+                                                ? new Date(user.createdAt).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
+                                                : "—"}
+                                        </p>
+                                        <p className="text-xs text-gray-500">Membre depuis</p>
+                                    </div>
+                                </div>
+                            </div>
                             <ContributionGraph userId={id} />
                         </CardContent>
                     </Card>
