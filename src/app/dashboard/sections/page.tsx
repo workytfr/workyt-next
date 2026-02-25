@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/Select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import AdvancedPagination from "@/components/ui/AdvancedPagination";
+import CourseHierarchyNav from "../_components/CourseHierarchyNav";
 
 interface Section {
     _id: string;
@@ -40,13 +41,6 @@ interface Section {
     lessons?: Array<{ _id: string; title: string }>;
     exercises?: Array<{ _id: string; title: string }>;
     quizzes?: Array<{ _id: string; title: string }>;
-}
-
-interface SearchFilters {
-    query: string;
-    courseId: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
 }
 
 // Gestion des sections
@@ -64,12 +58,23 @@ export default function SectionsPage() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalSections, setTotalSections] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [filters, setFilters] = useState<SearchFilters>({
-        query: "",
-        courseId: "all",
-        sortBy: "order",
-        sortOrder: "asc",
-    });
+    const isAdmin = session?.user?.role === "Admin";
+
+    // Hierarchy nav state
+    const [selectedCourseId, setSelectedCourseId] = useState("");
+
+    // Secondary filters
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("order");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    const [mySections, setMySections] = useState(false);
+
+    // Activer "Mes sections" par défaut pour les non-Admins
+    useEffect(() => {
+        if (session?.user?.role && session.user.role !== "Admin") {
+            setMySections(true);
+        }
+    }, [session?.user?.role]);
 
     // Gestion du Toast
     const [toastOpen, setToastOpen] = useState(false);
@@ -87,13 +92,14 @@ export default function SectionsPage() {
         const params = new URLSearchParams({
             page: page.toString(),
             limit: itemsPerPage.toString(),
-            search: filters.query,
-            courseId: filters.courseId === "all" ? "" : filters.courseId,
-            sortBy: filters.sortBy,
-            sortOrder: filters.sortOrder,
+            search: query,
+            courseId: selectedCourseId,
+            sortBy,
+            sortOrder,
+            authorId: mySections && session?.user?.id ? session.user.id : "",
         });
         return `/api/sections?${params.toString()}`;
-    }, [page, itemsPerPage, filters]);
+    }, [page, itemsPerPage, query, selectedCourseId, sortBy, sortOrder, mySections, session?.user?.id]);
 
     // Charger les sections
     useEffect(() => {
@@ -127,11 +133,11 @@ export default function SectionsPage() {
         fetchSections();
     }, [buildApiUrl, session?.accessToken]);
 
-    // Charger les cours pour les filtres
+    // Charger les cours pour le formulaire de section
     useEffect(() => {
         async function fetchCourses() {
             try {
-                const res = await fetch('/api/courses?limit=1000');
+                const res = await fetch('/api/courses?limit=200');
                 if (res.ok) {
                     const data = await res.json();
                     setCourses(data.courses || []);
@@ -182,13 +188,9 @@ export default function SectionsPage() {
             });
 
             if (res.ok) {
-                const newQuiz = await res.json();
                 showToast({ title: "Quiz créé avec succès" });
                 setIsQuizDialogOpen(false);
                 setSelectedSectionForQuiz(null);
-                
-                // Recharger les sections pour voir le nouveau quiz
-                // Vous pourriez aussi mettre à jour l'état local si nécessaire
             } else {
                 const error = await res.json();
                 showToast({ title: error.error || "Erreur lors de la création", variant: "destructive" });
@@ -199,19 +201,8 @@ export default function SectionsPage() {
         }
     };
 
-    // Gestion des filtres
-    const handleFiltersChange = (newFilters: SearchFilters) => {
-        setFilters(newFilters);
-        setPage(1);
-    };
-
-    // Gestion de la pagination
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleItemsPerPageChange = (newItemsPerPage: number) => {
-        setItemsPerPage(newItemsPerPage);
+    const handleCourseChange = (courseId: string) => {
+        setSelectedCourseId(courseId);
         setPage(1);
     };
 
@@ -224,7 +215,7 @@ export default function SectionsPage() {
                         <h1 className="text-3xl font-bold">Gestion des Sections</h1>
                         <p className="text-gray-600">Gérez les sections et leurs contenus</p>
                     </div>
-                    
+
                     <div className="flex gap-2">
                         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
@@ -244,8 +235,8 @@ export default function SectionsPage() {
                                         _id: selectedSection._id,
                                         title: selectedSection.title,
                                         order: selectedSection.order,
-                                        courseId: typeof selectedSection.courseId === 'string' 
-                                            ? selectedSection.courseId 
+                                        courseId: typeof selectedSection.courseId === 'string'
+                                            ? selectedSection.courseId
                                             : selectedSection.courseId._id
                                     } : undefined}
                                     courses={courses}
@@ -265,7 +256,16 @@ export default function SectionsPage() {
                     </div>
                 </div>
 
-                {/* Barre de recherche et filtres */}
+                {/* Navigation hiérarchique */}
+                <CourseHierarchyNav
+                    selectedCourseId={selectedCourseId}
+                    selectedSectionId=""
+                    onCourseChange={handleCourseChange}
+                    onSectionChange={() => {}}
+                    showSectionFilter={false}
+                />
+
+                {/* Filtres secondaires */}
                 <div className="bg-white rounded-lg shadow p-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
@@ -275,41 +275,22 @@ export default function SectionsPage() {
                             <input
                                 type="text"
                                 placeholder="Rechercher une section..."
-                                value={filters.query}
-                                onChange={(e) => handleFiltersChange({ ...filters, query: e.target.value })}
+                                value={query}
+                                onChange={(e) => { setQuery(e.target.value); setPage(1); }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Cours
-                            </label>
-                            <Select
-                                value={filters.courseId}
-                                onValueChange={(value) => handleFiltersChange({ ...filters, courseId: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Tous les cours" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Tous les cours</SelectItem>
-                                    {courses.map((course) => (
-                                        <SelectItem key={course._id} value={course._id}>
-                                            {course.title}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Tri
                             </label>
                             <Select
-                                value={`${filters.sortBy}-${filters.sortOrder}`}
+                                value={`${sortBy}-${sortOrder}`}
                                 onValueChange={(value) => {
-                                    const [sortBy, sortOrder] = value.split('-');
-                                    handleFiltersChange({ ...filters, sortBy, sortOrder: sortOrder as "asc" | "desc" });
+                                    const [newSortBy, newSortOrder] = value.split('-');
+                                    setSortBy(newSortBy);
+                                    setSortOrder(newSortOrder as "asc" | "desc");
+                                    setPage(1);
                                 }}
                             >
                                 <SelectTrigger>
@@ -322,6 +303,20 @@ export default function SectionsPage() {
                                     <SelectItem value="title-desc">Titre Z-A</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="flex items-end">
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="mySections"
+                                    checked={mySections}
+                                    onChange={(e) => { setMySections(e.target.checked); setPage(1); }}
+                                    className="rounded"
+                                />
+                                <label htmlFor="mySections" className="text-sm font-medium text-gray-700">
+                                    Mes sections uniquement
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -359,13 +354,13 @@ export default function SectionsPage() {
                                         <TableCell>
                                             <div className="space-y-1">
                                                                                             <div className="font-medium text-gray-900">
-                                                {typeof section.courseId === 'string' 
+                                                {typeof section.courseId === 'string'
                                                     ? courses.find(c => c._id === section.courseId)?.title || 'Cours inconnu'
                                                     : section.courseId?.title || 'Cours inconnu'
                                                 }
                                             </div>
                                                                                             <div className="text-sm text-gray-500">
-                                                {typeof section.courseId === 'string' 
+                                                {typeof section.courseId === 'string'
                                                     ? 'Cours ID: ' + section.courseId
                                                     : `${section.courseId?.niveau || 'N/A'} • ${section.courseId?.matiere || 'N/A'}`
                                                 }
@@ -464,8 +459,8 @@ export default function SectionsPage() {
                         totalPages={totalPages}
                         totalItems={totalSections}
                         itemsPerPage={itemsPerPage}
-                        onPageChange={handlePageChange}
-                        onItemsPerPageChange={handleItemsPerPageChange}
+                        onPageChange={(newPage) => setPage(newPage)}
+                        onItemsPerPageChange={(newItemsPerPage) => { setItemsPerPage(newItemsPerPage); setPage(1); }}
                         isLoading={loading}
                     />
                 )}
@@ -503,10 +498,7 @@ export default function SectionsPage() {
                             <SectionQuizzes
                                 sectionId={selectedSectionForQuiz._id}
                                 sectionTitle={selectedSectionForQuiz.title}
-                                onQuizUpdated={() => {
-                                    // Recharger les sections pour mettre à jour le compteur de quiz
-                                    // Vous pourriez implémenter une fonction de rechargement ici
-                                }}
+                                onQuizUpdated={() => {}}
                             />
                         )}
                     </DialogContent>
@@ -524,4 +516,4 @@ export default function SectionsPage() {
             </ToastViewport>
         </ToastProvider>
     );
-} 
+}

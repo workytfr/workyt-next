@@ -128,8 +128,10 @@ export default function AdvancedSearch({ onFiltersChange, isLoading = false, tot
                             <SelectContent>
                                 <SelectItem value="all">Tous les rôles</SelectItem>
                                 <SelectItem value="Apprenti">Apprenti</SelectItem>
+                                <SelectItem value="Helpeur">Helpeur</SelectItem>
                                 <SelectItem value="Rédacteur">Rédacteur</SelectItem>
                                 <SelectItem value="Correcteur">Correcteur</SelectItem>
+                                <SelectItem value="Modérateur">Modérateur</SelectItem>
                                 <SelectItem value="Admin">Admin</SelectItem>
                             </SelectContent>
                         </Select>

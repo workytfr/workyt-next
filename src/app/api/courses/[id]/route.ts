@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Course from "@/models/Course";
+import Section from "@/models/Section";
+import Lesson from "@/models/Lesson";
+import Exercise from "@/models/Exercise";
+import Quiz from "@/models/Quiz";
 import authMiddleware from "@/middlewares/authMiddleware";
 
 /**
@@ -87,7 +91,20 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             return NextResponse.json({ error: "Cours non trouvé." }, { status: 404 });
         }
 
-        return NextResponse.json({ message: "Cours supprimé avec succès." }, { status: 200 });
+        // Suppression cascade : sections, leçons, exercices, quizzes liés
+        const sections = await Section.find({ courseId: id });
+        const sectionIds = sections.map((s: any) => s._id);
+
+        if (sectionIds.length > 0) {
+            await Promise.all([
+                Lesson.deleteMany({ sectionId: { $in: sectionIds } }),
+                Exercise.deleteMany({ sectionId: { $in: sectionIds } }),
+                Quiz.deleteMany({ sectionId: { $in: sectionIds } }),
+            ]);
+            await Section.deleteMany({ courseId: id });
+        }
+
+        return NextResponse.json({ message: "Cours et tout son contenu supprimés avec succès." }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la suppression du cours :", error.message);
         return NextResponse.json(

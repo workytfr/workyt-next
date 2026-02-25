@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
-import Course from "@/models/Course";
 import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
@@ -37,7 +36,7 @@ export async function GET(req: NextRequest) {
 
         // 🔍 Création des filtres
         const filters: any = {};
-        
+
         // Recherche textuelle
         if (search) {
             const escaped = escapeRegex(search);
@@ -46,16 +45,33 @@ export async function GET(req: NextRequest) {
                 { content: { $regex: escaped, $options: "i" } },
             ];
         }
-        
+
         if (status && status !== "all") filters.status = status;
         if (authorId && authorId !== "all") filters.author = authorId;
+
+        // 🔍 Filtre par cours et section (AVANT la requête)
+        if (sectionId && sectionId !== "all") {
+            filters.sectionId = sectionId;
+        } else if (courseId && courseId !== "all") {
+            const courseSections = await Section.find({ courseId }).select("_id");
+            const sectionIds = courseSections.map(s => s._id);
+            filters.sectionId = { $in: sectionIds };
+        }
+
+        // 🔍 Filtre par média
+        if (hasMedia === "true") {
+            filters.media = { $exists: true, $ne: [], $not: { $size: 0 } };
+        }
 
         // Configuration du tri
         const sortConfig: any = {};
         sortConfig[sortBy] = sortOrder === "asc" ? 1 : -1;
 
+        // 📊 Obtenir le nombre total de documents pour la pagination
+        const totalLessons = await Lesson.countDocuments(filters);
+
         // 📌 Récupération des leçons avec pagination
-        let lessons = await Lesson.find(filters)
+        const lessons = await Lesson.find(filters)
             .populate("author", "name")
             .populate({
                 path: "sectionId",
@@ -69,127 +85,12 @@ export async function GET(req: NextRequest) {
             .skip(skip)
             .limit(limit);
 
-        // 📊 Obtenir le nombre total de documents pour la pagination
-        const totalLessons = await Lesson.countDocuments(filters);
-
-        // 🔍 Filtre par cours et section si demandé
-        if (courseId && courseId !== "all") {
-            const courseSections = await Section.find({ courseId }).select("_id");
-            const sectionIds = courseSections.map(s => s._id);
-            filters.sectionId = { $in: sectionIds };
-        }
-
-        if (sectionId && sectionId !== "all") {
-            filters.sectionId = sectionId;
-        }
-
-        // 🔍 Filtre par média si demandé
-        if (hasMedia === "true") {
-            lessons = lessons.filter(lesson => 
-                lesson.media && lesson.media.length > 0
-            );
-        }
-
-        // 📈 Calculer les statistiques
-        const stats = await Promise.all([
-            Lesson.countDocuments(),
-            Lesson.countDocuments({ status: "Validée" }),
-            Lesson.countDocuments({ status: { $in: ["En attente de correction", "En cours de rédaction"] } }),
-            Lesson.countDocuments({ status: "Brouillon" }),
-            Lesson.countDocuments({ media: { $exists: true, $ne: [], $not: { $size: 0 } } }),
-            Lesson.aggregate([
-                {
-                    $lookup: {
-                        from: "sections",
-                        localField: "sectionId",
-                        foreignField: "_id",
-                        as: "section"
-                    }
-                },
-                {
-                    $unwind: "$section"
-                },
-                {
-                    $lookup: {
-                        from: "courses",
-                        localField: "section.courseId",
-                        foreignField: "_id",
-                        as: "course"
-                    }
-                },
-                {
-                    $unwind: "$course"
-                },
-                {
-                    $group: {
-                        _id: "$course.title",
-                        count: { $sum: 1 }
-                    }
-                }
-            ]),
-            Lesson.aggregate([
-                {
-                    $group: {
-                        _id: "$status",
-                        count: { $sum: 1 }
-                    }
-                }
-            ]),
-            Lesson.aggregate([
-                {
-                    $group: {
-                        _id: null,
-                        avgMedia: { $avg: { $size: { $ifNull: ["$media", []] } } }
-                    }
-                }
-            ]),
-            Lesson.countDocuments({
-                createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
-            })
-        ]);
-
-        const [
-            total,
-            published,
-            pending,
-            draft,
-            withMediaResult,
-            byCourse,
-            byStatus,
-            avgMediaResult,
-            recentLessons
-        ] = stats;
-
-        const withMedia = withMediaResult;
-        const avgMediaPerLesson = avgMediaResult[0]?.avgMedia || 0;
-
-        const byCourseMap = byCourse.reduce((acc, item) => {
-            acc[item._id] = item.count;
-            return acc;
-        }, {} as Record<string, number>);
-
-        const byStatusMap = byStatus.reduce((acc, item) => {
-            acc[item._id] = item.count;
-            return acc;
-        }, {} as Record<string, number>);
-
         return NextResponse.json({
             total: totalLessons,
             page,
             limit,
             totalPages: Math.ceil(totalLessons / limit),
             lessons,
-            stats: {
-                total,
-                published,
-                pending,
-                draft,
-                withMedia,
-                byCourse: byCourseMap,
-                byStatus: byStatusMap,
-                recentLessons,
-                avgMediaPerLesson
-            }
         }, { status: 200 });
 
     } catch (error: any) {

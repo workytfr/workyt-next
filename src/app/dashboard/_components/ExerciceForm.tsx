@@ -65,15 +65,12 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
         }
     }, [exercise]);
 
-    // Charger les cours et sections associées
+    // Charger les cours une seule fois
     useEffect(() => {
         async function fetchCourses() {
-            if (!session?.accessToken) return;
             setLoadingCourses(true);
             try {
-                const res = await fetch(`/api/courses?page=1&limit=10`, {
-                    headers: { Authorization: `Bearer ${session.accessToken}` },
-                });
+                const res = await fetch("/api/courses?limit=200");
                 if (res.ok) {
                     const data = await res.json();
                     setCourses(data.courses || []);
@@ -88,7 +85,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             }
         }
         fetchCourses();
-    }, [session?.accessToken]);
+    }, []);
 
     // Recherche dynamique des cours
     useEffect(() => {

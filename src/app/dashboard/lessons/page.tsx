@@ -5,15 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/Badge";
-import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, CheckCircle, Clock, FileText, Video, Users, Calendar, Edit } from "lucide-react";
-import { useSession, signIn } from "next-auth/react";
+import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, FileText, Video, Users, Calendar } from "lucide-react";
+import { useSession } from "next-auth/react";
 import { handleApiError } from "@/utils/apiErrorHandler";
 import LessonForm from "./../_components/LessonForm";
 import { ILesson } from "@/models/Lesson";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import AdvancedPagination from "@/components/ui/AdvancedPagination";
 import LessonAdvancedSearch from "@/components/ui/LessonAdvancedSearch";
-import LessonStats from "@/components/ui/LessonStats";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import {
     ToastProvider,
@@ -22,12 +21,7 @@ import {
     ToastTitle,
     ToastClose,
 } from "@/components/ui/UseToast";
-
-interface ICourse {
-    _id: string;
-    title: string;
-    sections: { _id: string; title: string; courseId: string }[];
-}
+import CourseHierarchyNav from "../_components/CourseHierarchyNav";
 
 interface SearchFilters {
     query: string;
@@ -40,31 +34,23 @@ interface SearchFilters {
     hasMedia: boolean;
 }
 
-interface Stats {
-    total: number;
-    published: number;
-    pending: number;
-    draft: number;
-    withMedia: number;
-    byCourse: Record<string, number>;
-    byStatus: Record<string, number>;
-    recentLessons: number;
-    avgMediaPerLesson: number;
-}
-
 export default function LessonsPage() {
     const { data: session, update } = useSession();
-    const [courses, setCourses] = useState<ICourse[]>([]);
     const [lessons, setLessons] = useState<ILesson[]>([]);
     const [selectedLesson, setSelectedLesson] = useState<ILesson | undefined>(undefined);
     const [isDialogOpen, setDialogOpen] = useState(false);
-    const [loadingCourses, setLoadingCourses] = useState(false);
     const [loadingLessons, setLoadingLessons] = useState(false);
     const [page, setPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalLessons, setTotalLessons] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [stats, setStats] = useState<Stats | null>(null);
+    const isAdmin = session?.user?.role === "Admin";
+    const [myLessonsOnly, setMyLessonsOnly] = useState(false);
+
+    // Hierarchy nav state
+    const [selectedCourseId, setSelectedCourseId] = useState("");
+    const [selectedSectionId, setSelectedSectionId] = useState("");
+
     const [filters, setFilters] = useState<SearchFilters>({
         query: "",
         status: "all",
@@ -75,6 +61,14 @@ export default function LessonsPage() {
         sortOrder: "asc",
         hasMedia: false
     });
+
+    // Activer "Mes leçons" par défaut pour les non-Admins
+    useEffect(() => {
+        if (session?.user?.role && session.user.role !== "Admin" && session.user.id) {
+            setMyLessonsOnly(true);
+            setFilters(prev => ({ ...prev, authorId: session.user.id }));
+        }
+    }, [session?.user?.role, session?.user?.id]);
 
     // Gestion du Toast
     const [toastOpen, setToastOpen] = useState(false);
@@ -89,51 +83,23 @@ export default function LessonsPage() {
     };
 
     const buildApiUrl = useCallback(() => {
+        // Hierarchy nav takes priority over filter dropdowns for course/section
+        const effectiveCourseId = selectedCourseId || (filters.courseId === "all" ? "" : filters.courseId);
+        const effectiveSectionId = selectedSectionId || (filters.sectionId === "all" ? "" : filters.sectionId);
         const params = new URLSearchParams({
             page: page.toString(),
             limit: itemsPerPage.toString(),
             search: filters.query,
             status: filters.status === "all" ? "" : filters.status,
-            courseId: filters.courseId === "all" ? "" : filters.courseId,
-            sectionId: filters.sectionId === "all" ? "" : filters.sectionId,
+            courseId: effectiveCourseId,
+            sectionId: effectiveSectionId,
             authorId: filters.authorId === "all" ? "" : filters.authorId,
             sortBy: filters.sortBy,
             sortOrder: filters.sortOrder,
             hasMedia: filters.hasMedia.toString(),
         });
         return `/api/lessons?${params.toString()}`;
-    }, [page, itemsPerPage, filters]);
-
-    // Chargement des cours
-    useEffect(() => {
-        async function fetchCourses() {
-            if (!session?.accessToken) return;
-            setLoadingCourses(true);
-            try {
-                const res = await fetch("/api/courses?page=1&limit=100", {
-                    headers: {
-                        Authorization: `Bearer ${session.accessToken}`,
-                    },
-                });
-                if (res.status === 401) {
-                    console.error("JWT expiré, rafraîchissement de la session...");
-                    await update();
-                    return;
-                }
-                if (res.ok) {
-                    const data = await res.json();
-                    setCourses(data.courses || []);
-                } else {
-                    console.error("Erreur lors du chargement des cours :", await res.text());
-                }
-            } catch (error) {
-                console.error("Erreur réseau lors du chargement des cours :", error);
-            } finally {
-                setLoadingCourses(false);
-            }
-        }
-        fetchCourses();
-    }, [session?.accessToken, update]);
+    }, [page, itemsPerPage, filters, selectedCourseId, selectedSectionId]);
 
     // Chargement des leçons avec pagination et filtres
     useEffect(() => {
@@ -158,7 +124,6 @@ export default function LessonsPage() {
                     setLessons(data.lessons || []);
                     setTotalLessons(data.total || 0);
                     setTotalPages(data.totalPages || 0);
-                    setStats(data.stats || null);
                 } else {
                     console.error("Erreur lors du chargement des leçons :", await res.text());
                 }
@@ -280,14 +245,6 @@ export default function LessonsPage() {
         document.body.removeChild(link);
     };
 
-    // Obtenir toutes les sections pour les filtres
-    const allSections = courses.flatMap(course => 
-        course.sections.map(section => ({
-            ...section,
-            courseId: course._id
-        }))
-    );
-
     return (
         <ToastProvider>
             <div className="space-y-6">
@@ -338,19 +295,42 @@ export default function LessonsPage() {
                 </div>
             </div>
 
-            {/* Statistiques détaillées */}
-            {stats && (
-                <LessonStats stats={stats} />
-            )}
+            {/* Navigation hiérarchique */}
+            <CourseHierarchyNav
+                selectedCourseId={selectedCourseId}
+                selectedSectionId={selectedSectionId}
+                onCourseChange={(courseId) => { setSelectedCourseId(courseId); setPage(1); }}
+                onSectionChange={(sectionId) => { setSelectedSectionId(sectionId); setPage(1); }}
+            />
+
+            {/* Toggle "Mes leçons" */}
+            <div className="bg-white rounded-lg shadow p-4">
+                <div className="flex items-center space-x-2">
+                    <input
+                        type="checkbox"
+                        id="myLessons"
+                        checked={myLessonsOnly}
+                        onChange={(e) => {
+                            const checked = e.target.checked;
+                            setMyLessonsOnly(checked);
+                            handleFiltersChange({
+                                ...filters,
+                                authorId: checked && session?.user?.id ? session.user.id : "all",
+                            });
+                        }}
+                        className="rounded"
+                    />
+                    <label htmlFor="myLessons" className="text-sm font-medium text-gray-700">
+                        Mes leçons uniquement
+                    </label>
+                </div>
+            </div>
 
             {/* Barre de recherche et filtres */}
             <LessonAdvancedSearch
                 onFiltersChange={handleFiltersChange}
                 isLoading={loadingLessons}
                 totalResults={totalLessons}
-                stats={stats}
-                courses={courses}
-                sections={allSections}
             />
 
             {/* Table des leçons */}

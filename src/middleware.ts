@@ -6,8 +6,9 @@ export default withAuth(
         const { pathname } = req.nextUrl;
         const token = req.nextauth.token;
 
-        // Protection des routes dashboard : accès admin uniquement
-        if (pathname.startsWith("/dashboard") && token?.role !== "Admin") {
+        // Protection des routes dashboard : accès réservé aux rôles autorisés
+        const dashboardRoles = ["Rédacteur", "Correcteur", "Admin", "Modérateur", "Helpeur"];
+        if (pathname.startsWith("/dashboard") && !dashboardRoles.includes(token?.role as string)) {
             return NextResponse.redirect(new URL("/", req.url));
         }
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/Badge";
-import { Pencil, Trash2, Plus, Loader2, Trophy, ChevronRight } from "lucide-react";
+import { Pencil, Trash2, Plus, Loader2 } from "lucide-react";
 import {
     ToastProvider,
     ToastViewport,
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/Select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import AdvancedPagination from "@/components/ui/AdvancedPagination";
+import CourseHierarchyNav from "../_components/CourseHierarchyNav";
 
 interface Quiz {
     _id: string;
@@ -45,17 +46,9 @@ interface Quiz {
     createdAt: string;
 }
 
-interface SearchFilters {
-    query: string;
-    sectionId: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-}
-
 export default function QuizzesPage() {
     const { data: session } = useSession();
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
-    const [sections, setSections] = useState<Array<{ _id: string; title: string; courseId?: { _id: string; title?: string } }>>([]);
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
     const [loading, setLoading] = useState(false);
@@ -63,14 +56,25 @@ export default function QuizzesPage() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalQuizzes, setTotalQuizzes] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const [filters, setFilters] = useState<SearchFilters>({
-        query: "",
-        sectionId: "all",
-        sortBy: "createdAt",
-        sortOrder: "desc",
-    });
 
-    // Gestion du Toast
+    // Hierarchy nav state
+    const [selectedCourseId, setSelectedCourseId] = useState("");
+    const [selectedSectionId, setSelectedSectionId] = useState("");
+
+    // Secondary filters
+    const [query, setQuery] = useState("");
+    const [sortBy, setSortBy] = useState("createdAt");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+    const [myQuizzes, setMyQuizzes] = useState(false);
+
+    // Activer "Mes quiz" par défaut pour les non-Admins
+    useEffect(() => {
+        if (session?.user?.role && session.user.role !== "Admin") {
+            setMyQuizzes(true);
+        }
+    }, [session?.user?.role]);
+
+    // Toast
     const [toastOpen, setToastOpen] = useState(false);
     const [toastMessage, setToastMessage] = useState("");
     const [toastVariant, setToastVariant] = useState<"default" | "destructive">("default");
@@ -86,27 +90,24 @@ export default function QuizzesPage() {
         const params = new URLSearchParams({
             page: page.toString(),
             limit: itemsPerPage.toString(),
-            search: filters.query,
-            sectionId: filters.sectionId === "all" ? "" : filters.sectionId,
-            sortBy: filters.sortBy,
-            sortOrder: filters.sortOrder,
+            search: query,
+            courseId: selectedCourseId,
+            sectionId: selectedSectionId,
+            sortBy,
+            sortOrder,
         });
         return `/api/quizzes?${params.toString()}`;
-    }, [page, itemsPerPage, filters]);
+    }, [page, itemsPerPage, query, selectedCourseId, selectedSectionId, sortBy, sortOrder]);
 
     // Charger les quiz
     useEffect(() => {
         async function fetchQuizzes() {
             if (!session?.accessToken) return;
-
             setLoading(true);
             try {
                 const res = await fetch(buildApiUrl(), {
-                    headers: {
-                        Authorization: `Bearer ${session.accessToken}`,
-                    },
+                    headers: { Authorization: `Bearer ${session.accessToken}` },
                 });
-
                 if (res.ok) {
                     const data = await res.json();
                     setQuizzes(data.quizzes || data);
@@ -121,48 +122,17 @@ export default function QuizzesPage() {
                 setLoading(false);
             }
         }
-
         fetchQuizzes();
     }, [session?.accessToken, buildApiUrl]);
-
-    // Charger les sections
-    useEffect(() => {
-        async function fetchSections() {
-            if (!session?.accessToken) return;
-
-            try {
-                const res = await fetch('/api/sections?limit=1000', {
-                    headers: {
-                        Authorization: `Bearer ${session.accessToken}`,
-                    },
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    setSections(data.sections || data);
-                } else {
-                    console.error("Erreur lors du chargement des sections");
-                }
-            } catch (error) {
-                console.error("Erreur lors du chargement des sections:", error);
-            }
-        }
-
-        fetchSections();
-    }, [session?.accessToken]);
 
     // Supprimer un quiz
     const handleDelete = async (id: string) => {
         if (!confirm("Êtes-vous sûr de vouloir supprimer ce quiz ?")) return;
-
         try {
             const res = await fetch(`/api/quizzes/${id}`, {
                 method: 'DELETE',
-                headers: {
-                    Authorization: `Bearer ${session?.accessToken}`,
-                },
+                headers: { Authorization: `Bearer ${session?.accessToken}` },
             });
-
             if (res.ok) {
                 setQuizzes(prev => prev.filter(quiz => quiz._id !== id));
                 showToast({ title: "Quiz supprimé avec succès" });
@@ -176,12 +146,11 @@ export default function QuizzesPage() {
         }
     };
 
-    // Sauvegarder un quiz (création ou modification)
+    // Sauvegarder un quiz
     const handleSaveQuiz = async (quizData: any) => {
         try {
             const method = selectedQuiz ? 'PUT' : 'POST';
             const url = selectedQuiz ? `/api/quizzes/${selectedQuiz._id}` : '/api/quizzes';
-            
             const res = await fetch(url, {
                 method,
                 headers: {
@@ -190,20 +159,15 @@ export default function QuizzesPage() {
                 },
                 body: JSON.stringify(quizData),
             });
-
             if (res.ok) {
                 const savedQuiz = await res.json();
-                
                 if (selectedQuiz) {
-                    // Modification
                     setQuizzes(prev => prev.map(q => q._id === selectedQuiz._id ? savedQuiz : q));
                     showToast({ title: "Quiz modifié avec succès" });
                 } else {
-                    // Création
                     setQuizzes(prev => [savedQuiz, ...prev]);
                     showToast({ title: "Quiz créé avec succès" });
                 }
-                
                 setDialogOpen(false);
                 setSelectedQuiz(null);
             } else {
@@ -216,22 +180,6 @@ export default function QuizzesPage() {
         }
     };
 
-    // Gestion des filtres
-    const handleFiltersChange = (newFilters: SearchFilters) => {
-        setFilters(newFilters);
-        setPage(1);
-    };
-
-    // Gestion de la pagination
-    const handlePageChange = (newPage: number) => {
-        setPage(newPage);
-    };
-
-    const handleItemsPerPageChange = (newItemsPerPage: number) => {
-        setItemsPerPage(newItemsPerPage);
-        setPage(1);
-    };
-
     return (
         <ToastProvider>
             <div className="space-y-6">
@@ -241,7 +189,7 @@ export default function QuizzesPage() {
                         <h1 className="text-3xl font-bold">Gestion des Quiz</h1>
                         <p className="text-gray-600">Gérez les quiz et leurs questions</p>
                     </div>
-                    
+
                     <div className="flex gap-2">
                         <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                             <DialogTrigger asChild>
@@ -269,7 +217,15 @@ export default function QuizzesPage() {
                     </div>
                 </div>
 
-                {/* Barre de recherche et filtres */}
+                {/* Navigation hiérarchique */}
+                <CourseHierarchyNav
+                    selectedCourseId={selectedCourseId}
+                    selectedSectionId={selectedSectionId}
+                    onCourseChange={(courseId) => { setSelectedCourseId(courseId); setPage(1); }}
+                    onSectionChange={(sectionId) => { setSelectedSectionId(sectionId); setPage(1); }}
+                />
+
+                {/* Filtres secondaires */}
                 <div className="bg-white rounded-lg shadow p-4">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
@@ -279,39 +235,18 @@ export default function QuizzesPage() {
                             <input
                                 type="text"
                                 placeholder="Rechercher un quiz..."
-                                value={filters.query}
-                                onChange={(e) => handleFiltersChange({ ...filters, query: e.target.value })}
+                                value={query}
+                                onChange={(e) => { setQuery(e.target.value); setPage(1); }}
                                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
                             />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Section
-                            </label>
-                            <Select
-                                value={filters.sectionId}
-                                onValueChange={(value) => handleFiltersChange({ ...filters, sectionId: value })}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Toutes les sections" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">Toutes les sections</SelectItem>
-                                    {sections.map((section) => (
-                                        <SelectItem key={section._id} value={section._id}>
-                                            {section.title} - {section.courseId?.title || 'Cours inconnu'}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-1">
                                 Trier par
                             </label>
                             <Select
-                                value={filters.sortBy}
-                                onValueChange={(value) => handleFiltersChange({ ...filters, sortBy: value })}
+                                value={sortBy}
+                                onValueChange={(value) => { setSortBy(value); setPage(1); }}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
@@ -322,6 +257,20 @@ export default function QuizzesPage() {
                                     <SelectItem value="questions">Nombre de questions</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                        <div className="flex items-end">
+                            <div className="flex items-center space-x-2">
+                                <input
+                                    type="checkbox"
+                                    id="myQuizzes"
+                                    checked={myQuizzes}
+                                    onChange={(e) => { setMyQuizzes(e.target.checked); setPage(1); }}
+                                    className="rounded"
+                                />
+                                <label htmlFor="myQuizzes" className="text-sm font-medium text-gray-700">
+                                    Mes quiz uniquement
+                                </label>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -436,9 +385,9 @@ export default function QuizzesPage() {
                     <AdvancedPagination
                         currentPage={page}
                         totalPages={totalPages}
-                        onPageChange={handlePageChange}
+                        onPageChange={(newPage) => setPage(newPage)}
                         itemsPerPage={itemsPerPage}
-                        onItemsPerPageChange={handleItemsPerPageChange}
+                        onItemsPerPageChange={(n) => { setItemsPerPage(n); setPage(1); }}
                         totalItems={totalQuizzes}
                     />
                 )}
@@ -453,4 +402,4 @@ export default function QuizzesPage() {
             </ToastViewport>
         </ToastProvider>
     );
-} 
+}
