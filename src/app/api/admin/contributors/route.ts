@@ -29,6 +29,8 @@ interface Contributor {
   stats: ContributorStats;
   lastActivity: Date | null | undefined;
   activityScore: number;
+  activityScoreLastMonth: number;
+  scoreEvolution: number; // +5 ou -3 (pts) ; % affiché côté client
 }
 
 export async function GET(req: NextRequest) {
@@ -44,51 +46,101 @@ export async function GET(req: NextRequest) {
 
     await dbConnect();
 
+    const now = new Date();
+    const startThisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+
     // Récupérer tous les contributeurs
     const contributors = await User.find({
       role: { $in: ["Rédacteur", "Correcteur", "Helpeur", "Modérateur"] }
     }).select("_id name email role username createdAt").lean();
 
-    // Récupérer toutes les stats en parallèle
+    // Récupérer toutes les stats en parallèle (+ stats ce mois / mois dernier)
     const [
       coursesCount,
       lessonsCount,
       exercisesCount,
       quizzesCount,
       fichesCount,
-      answersCount
+      answersCount,
+      coursesThisMonth,
+      lessonsThisMonth,
+      exercisesThisMonth,
+      fichesThisMonth,
+      answersThisMonth,
+      coursesLastMonth,
+      lessonsLastMonth,
+      exercisesLastMonth,
+      fichesLastMonth,
+      answersLastMonth
     ] = await Promise.all([
-      // Cours par auteur
+      Course.aggregate([{ $unwind: "$authors" }, { $group: { _id: "$authors", count: { $sum: 1 } } }]),
+      Lesson.aggregate([{ $group: { _id: "$author", count: { $sum: 1 } } }]),
+      Exercise.aggregate([{ $group: { _id: "$author", count: { $sum: 1 } } }]),
+      Quiz.countDocuments(),
+      Revision.aggregate([{ $group: { _id: "$author", count: { $sum: 1 } } }]),
+      Answer.aggregate([{ $group: { _id: "$user", count: { $sum: 1 } } }]),
       Course.aggregate([
+        { $match: { createdAt: { $gte: startThisMonth } } },
         { $unwind: "$authors" },
         { $group: { _id: "$authors", count: { $sum: 1 } } }
       ]),
-      // Leçons par auteur
       Lesson.aggregate([
+        { $match: { createdAt: { $gte: startThisMonth } } },
         { $group: { _id: "$author", count: { $sum: 1 } } }
       ]),
-      // Exercices par auteur
       Exercise.aggregate([
+        { $match: { createdAt: { $gte: startThisMonth } } },
         { $group: { _id: "$author", count: { $sum: 1 } } }
       ]),
-      // Quiz (on compte juste le total car pas d'auteur)
-      Quiz.countDocuments(),
-      // Fiches par auteur
       Revision.aggregate([
+        { $match: { createdAt: { $gte: startThisMonth } } },
         { $group: { _id: "$author", count: { $sum: 1 } } }
       ]),
-      // Réponses forum par utilisateur
       Answer.aggregate([
+        { $match: { createdAt: { $gte: startThisMonth } } },
+        { $group: { _id: "$user", count: { $sum: 1 } } }
+      ]),
+      Course.aggregate([
+        { $match: { createdAt: { $gte: startLastMonth, $lt: startThisMonth } } },
+        { $unwind: "$authors" },
+        { $group: { _id: "$authors", count: { $sum: 1 } } }
+      ]),
+      Lesson.aggregate([
+        { $match: { createdAt: { $gte: startLastMonth, $lt: startThisMonth } } },
+        { $group: { _id: "$author", count: { $sum: 1 } } }
+      ]),
+      Exercise.aggregate([
+        { $match: { createdAt: { $gte: startLastMonth, $lt: startThisMonth } } },
+        { $group: { _id: "$author", count: { $sum: 1 } } }
+      ]),
+      Revision.aggregate([
+        { $match: { createdAt: { $gte: startLastMonth, $lt: startThisMonth } } },
+        { $group: { _id: "$author", count: { $sum: 1 } } }
+      ]),
+      Answer.aggregate([
+        { $match: { createdAt: { $gte: startLastMonth, $lt: startThisMonth } } },
         { $group: { _id: "$user", count: { $sum: 1 } } }
       ])
     ]);
 
-    // Maps pour accès rapide
-    const coursesMap = new Map(coursesCount.map(c => [c._id.toString(), c.count]));
-    const lessonsMap = new Map(lessonsCount.map(l => [l._id.toString(), l.count]));
-    const exercisesMap = new Map(exercisesCount.map(e => [e._id.toString(), e.count]));
-    const fichesMap = new Map(fichesCount.map(f => [f._id.toString(), f.count]));
-    const answersMap = new Map(answersCount.map(a => [a._id.toString(), a.count]));
+    const toMap = (arr: { _id: any; count: number }[]) =>
+      new Map(arr.map(x => [x._id.toString(), x.count]));
+    const coursesMap = toMap(coursesCount);
+    const lessonsMap = toMap(lessonsCount);
+    const exercisesMap = toMap(exercisesCount);
+    const fichesMap = toMap(fichesCount);
+    const answersMap = toMap(answersCount);
+    const coursesThisMap = toMap(coursesThisMonth);
+    const lessonsThisMap = toMap(lessonsThisMonth);
+    const exercisesThisMap = toMap(exercisesThisMonth);
+    const fichesThisMap = toMap(fichesThisMonth);
+    const answersThisMap = toMap(answersThisMonth);
+    const coursesLastMap = toMap(coursesLastMonth);
+    const lessonsLastMap = toMap(lessonsLastMonth);
+    const exercisesLastMap = toMap(exercisesLastMonth);
+    const fichesLastMap = toMap(fichesLastMonth);
+    const answersLastMap = toMap(answersLastMonth);
 
     // Récupérer la dernière activité
     const lastActivities = await Promise.all(
@@ -119,7 +171,14 @@ export async function GET(req: NextRequest) {
 
     const lastActivityMap = new Map(lastActivities.map(la => [la.userId, la.lastActivity]));
 
-    // Calculer les scores
+    // Helper: calculer score brut par rôle (sans plafond ni pénalité)
+    const rawScore = (c: number, l: number, e: number, f: number, a: number, role: string) => {
+      if (role === "Rédacteur") return c * 20 + l * 1 + e * 2 + f * 3;
+      if (role === "Correcteur") return e * 3 + c * 5 + l * 2 + f * 2;
+      if (role === "Helpeur") return f * 5 + a * 3 + e * 2;
+      return 0;
+    };
+
     const formattedContributors: Contributor[] = contributors.map(user => {
       const userId = user._id.toString();
       
@@ -132,34 +191,14 @@ export async function GET(req: NextRequest) {
         forumResponses: answersMap.get(userId) || 0
       };
 
-      let activityScore = 0;
-      
-      if (user.role === "Rédacteur") {
-        // Cours: 20pts, Leçons: 1pt, Exercices: 2pts, Fiches: 3pts
-        activityScore = Math.min(100, 
-          (stats.courses * 20) + 
-          (stats.lessons * 1) + 
-          (stats.exercises * 2) +
-          (stats.fiches * 3)
-        );
-      } else if (user.role === "Correcteur") {
-        // Exercices: 3pts, Cours revus: 5pts, Fiches: 2pts
-        activityScore = Math.min(100, 
-          (stats.exercises * 3) + 
-          (stats.courses * 5) +
-          (stats.lessons * 2) +
-          (stats.fiches * 2)
-        );
-      } else if (user.role === "Helpeur") {
-        // Fiches: 5pts, Réponses forum: 3pts, Exercices: 2pts
-        activityScore = Math.min(100, 
-          (stats.fiches * 5) + 
-          (stats.forumResponses * 3) +
-          (stats.exercises * 2)
-        );
-      }
+      const c = stats.courses, l = stats.lessons, e = stats.exercises;
+      const f = stats.fiches, a = stats.forumResponses;
 
-      // Pénalité inactivité
+      let activityScore = 0;
+      if (user.role === "Rédacteur") activityScore = Math.min(100, rawScore(c, l, e, f, a, user.role));
+      else if (user.role === "Correcteur") activityScore = Math.min(100, rawScore(c, l, e, f, a, user.role));
+      else if (user.role === "Helpeur") activityScore = Math.min(100, rawScore(c, l, e, f, a, user.role));
+
       const lastActivity = lastActivityMap.get(userId) || null;
       if (lastActivity) {
         const daysSince = Math.floor((Date.now() - new Date(lastActivity).getTime()) / (1000 * 60 * 60 * 24));
@@ -170,6 +209,20 @@ export async function GET(req: NextRequest) {
         activityScore = 0;
       }
 
+      const cThis = coursesThisMap.get(userId) || 0, lThis = lessonsThisMap.get(userId) || 0;
+      const eThis = exercisesThisMap.get(userId) || 0, fThis = fichesThisMap.get(userId) || 0;
+      const aThis = answersThisMap.get(userId) || 0;
+      const cLast = coursesLastMap.get(userId) || 0, lLast = lessonsLastMap.get(userId) || 0;
+      const eLast = exercisesLastMap.get(userId) || 0, fLast = fichesLastMap.get(userId) || 0;
+      const aLast = answersLastMap.get(userId) || 0;
+
+      const scoreThisMonth = rawScore(cThis, lThis, eThis, fThis, aThis, user.role);
+      const scoreLastMonth = rawScore(cLast, lLast, eLast, fLast, aLast, user.role);
+      const activityScoreLastMonth = Math.min(100, scoreLastMonth);
+      const scoreEvolution = scoreLastMonth > 0
+        ? Math.round(((scoreThisMonth - scoreLastMonth) / scoreLastMonth) * 100)
+        : (scoreThisMonth > 0 ? 100 : 0);
+
       return {
         _id: userId,
         name: user.name,
@@ -178,7 +231,9 @@ export async function GET(req: NextRequest) {
         username: user.username,
         stats,
         lastActivity,
-        activityScore: Math.round(activityScore)
+        activityScore: Math.round(activityScore),
+        activityScoreLastMonth,
+        scoreEvolution
       };
     });
 

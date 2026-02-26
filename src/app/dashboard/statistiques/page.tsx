@@ -12,13 +12,15 @@ import {
   CircleDot,
   TrendingUp,
   TrendingDown,
-  Minus,
+  Info,
   Loader2,
   AlertCircle,
   Filter,
   RefreshCw,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import "../styles/dashboard-theme.css";
 
 // Types
@@ -39,6 +41,8 @@ interface Contributor {
   };
   lastActivity: string | null;
   activityScore: number;
+  activityScoreLastMonth?: number;
+  scoreEvolution?: number; // % vs mois dernier
 }
 
 interface GlobalStats {
@@ -56,6 +60,92 @@ const getActivityColor = (score: number) => {
   if (score >= 20) return { bg: "bg-orange-500", text: "text-orange-600", label: "Faible", light: "bg-orange-50" };
   return { bg: "bg-red-500", text: "text-red-600", label: "Inactif", light: "bg-red-50" };
 };
+
+// Skeleton de la page
+function StatisticsPageSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="dash-main-header">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-80" />
+          </div>
+          <Skeleton className="h-10 w-28 rounded-lg" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="dash-card p-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="w-10 h-10 rounded-lg" />
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-12" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="flex gap-4">
+        <Skeleton className="h-9 w-48" />
+        <Skeleton className="h-9 w-40" />
+      </div>
+
+      <div className="dash-card p-4">
+        <Skeleton className="h-4 w-32 mb-3" />
+        <div className="flex flex-wrap gap-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <Skeleton className="w-3 h-3 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-6">
+        {[...Array(2)].map((_, i) => (
+          <div key={i}>
+            <div className="flex items-center gap-2 mb-4">
+              <Skeleton className="w-8 h-8 rounded-lg" />
+              <Skeleton className="h-5 w-28" />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {[...Array(6)].map((_, j) => (
+                <div key={j} className="dash-card overflow-hidden">
+                  <Skeleton className="h-1 w-full" />
+                  <div className="p-4 space-y-4">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                      <div className="space-y-2 flex-1">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                      </div>
+                    </div>
+                    <div className="flex justify-between">
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                      <Skeleton className="h-4 w-8" />
+                    </div>
+                    <Skeleton className="h-2 w-full rounded-full" />
+                    <div className="grid grid-cols-2 gap-2">
+                      {[...Array(4)].map((_, k) => (
+                        <Skeleton key={k} className="h-14 rounded-lg" />
+                      ))}
+                    </div>
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // Formater la date relative
 const formatRelativeTime = (dateString: string | null) => {
@@ -146,11 +236,7 @@ export default function StatisticsPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
-      </div>
-    );
+    return <StatisticsPageSkeleton />;
   }
 
   if (error) {
@@ -175,9 +261,9 @@ export default function StatisticsPage() {
       <div className="dash-main-header">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="dash-main-title">Statistiques des contributeurs</h1>
+            <h1 className="dash-main-title">Statistiques des bénévoles</h1>
             <p className="dash-main-subtitle">
-              Organigramme et activité de l'équipe Workyt
+              Organigramme et activité des bénévoles Workyt
             </p>
           </div>
           <button 
@@ -274,7 +360,7 @@ export default function StatisticsPage() {
 
       {/* Légende des couleurs */}
       <div className="dash-card p-4">
-        <h3 className="text-sm font-semibold text-[#37352f] mb-3">Légende d'activité</h3>
+        <h3 className="text-sm font-semibold text-[#37352f] mb-3">Légende d&apos;activité</h3>
         <div className="flex flex-wrap gap-4">
           {[
             { min: 80, label: "Très actif (80-100%)", color: "bg-emerald-500" },
@@ -288,6 +374,37 @@ export default function StatisticsPage() {
               <span className="text-sm text-[#6b6b6b]">{item.label}</span>
             </div>
           ))}
+        </div>
+        <div className="flex items-center gap-2 mt-3">
+          <p className="text-xs text-[#9ca3af]">
+            Les <span className="text-emerald-600 font-medium">+X%</span> / <span className="text-red-600 font-medium">-X%</span> indiquent l&apos;évolution du score ce mois vs le mois dernier.
+          </p>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                className="p-1 rounded-full hover:bg-[#f1f1ef] transition-colors text-[#9ca3af] hover:text-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#f97316]/30"
+                aria-label="Comment est calculé le pourcentage ?"
+              >
+                <Info className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="max-w-xs p-4 text-left">
+              <p className="font-semibold text-[#37352f] mb-2">Calcul du pourcentage d&apos;évolution</p>
+              <p className="text-sm text-[#6b6b6b] mb-2">
+                Le pourcentage compare le score de ce mois au score du mois dernier.
+              </p>
+              <p className="text-xs text-[#9ca3af] mb-3">
+                Formule : ((score ce mois − score mois dernier) ÷ score mois dernier) × 100
+              </p>
+              <p className="text-xs font-medium text-[#37352f] mb-1">Points par contribution :</p>
+              <ul className="text-xs text-[#6b6b6b] space-y-1">
+                <li>• <strong>Rédacteur</strong> : cours 20 pts, leçons 1 pt, exercices 2 pts, fiches 3 pts</li>
+                <li>• <strong>Correcteur</strong> : exercices 3 pts, cours 5 pts, leçons 2 pts, fiches 2 pts</li>
+                <li>• <strong>Helpeur</strong> : fiches 5 pts, réponses forum 3 pts, exercices 2 pts</li>
+              </ul>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -377,7 +494,7 @@ export default function StatisticsPage() {
   );
 }
 
-// Carte d'un contributeur
+// Carte d'un bénévole
 function ContributorCard({ contributor }: { contributor: Contributor }) {
   const colors = getActivityColor(contributor.activityScore);
   
@@ -439,14 +556,35 @@ function ContributorCard({ contributor }: { contributor: Contributor }) {
           </div>
         </div>
 
-        {/* Badge d'activité */}
+        {/* Badge d'activité + évolution */}
         <div className="flex items-center justify-between mb-4">
           <span className={`dash-badge ${colors.light} ${colors.text} border-0`}>
             {colors.label}
           </span>
-          <span className="text-sm font-semibold text-[#37352f]">
-            {contributor.activityScore}%
-          </span>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-[#37352f]">
+              {contributor.activityScore}%
+            </span>
+            {contributor.scoreEvolution !== undefined && contributor.scoreEvolution !== 0 && (
+              <span
+                className={`flex items-center gap-0.5 text-xs font-medium ${
+                  contributor.scoreEvolution > 0
+                    ? "text-emerald-600"
+                    : contributor.scoreEvolution < 0
+                    ? "text-red-600"
+                    : "text-[#9ca3af]"
+                }`}
+              >
+                {contributor.scoreEvolution > 0 ? (
+                  <TrendingUp className="w-3.5 h-3.5" />
+                ) : (
+                  <TrendingDown className="w-3.5 h-3.5" />
+                )}
+                {contributor.scoreEvolution > 0 ? "+" : ""}
+                {contributor.scoreEvolution}%
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Barre de progression */}

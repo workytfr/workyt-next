@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import ProfileAvatar from "@/components/ui/profile";
 import {
@@ -47,7 +48,7 @@ const navItems = [
   { name: "Partenaires", href: "/dashboard/partners", icon: Store, adminOnly: true },
   { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
   { name: "Modération", href: "/dashboard/moderation", icon: Shield, moderatorOnly: true },
-  { name: "Statistiques", href: "/dashboard/statistiques", icon: BarChart3, adminOnly: true },
+  { name: "Bénévoles", href: "/dashboard/statistiques", icon: BarChart3, adminOnly: true },
   { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -63,7 +64,7 @@ const navGroups = [
   },
   {
     title: "Administration",
-    items: ["Certificats", "Partenaires", "Utilisateurs", "Modération", "Statistiques"],
+    items: ["Certificats", "Partenaires", "Utilisateurs", "Modération", "Bénévoles"],
   },
   {
     title: "Configuration",
@@ -238,7 +239,15 @@ export default function DashboardSidebar() {
       >
         {/* Header */}
         <div className="dash-sidebar-header">
-          <div className="dash-sidebar-logo">W</div>
+          <div className="dash-sidebar-logo flex items-center justify-center overflow-hidden !bg-transparent p-0 shrink-0">
+            <Image
+              src="/workyt_square.svg"
+              alt="Workyt"
+              width={32}
+              height={32}
+              className="w-8 h-8 object-contain"
+            />
+          </div>
           <span className="dash-sidebar-title">Workyt Dashboard</span>
         </div>
 
