@@ -1,4 +1,5 @@
 import "./globals.css";
+import Script from "next/script";
 import ClientProviders from "@/components/ClientProviders";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
@@ -78,6 +79,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <ClientProviders>
             {children}
         </ClientProviders>
+        {/* Umami Analytics */}
+        <Script
+            defer
+            src="https://cloud.umami.is/script.js"
+            data-website-id="35576d18-82a4-49a7-8a72-cb4be757983b"
+            strategy="afterInteractive"
+        />
         {/* Tidio Script */}
         <script
             src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
