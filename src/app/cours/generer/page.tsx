@@ -40,7 +40,7 @@ interface CourseDraft {
 type Step = "form" | "generating" | "editing";
 
 export default function GenerateCoursePage() {
-    const { data: session } = useSession();
+    const { data: session, status } = useSession();
     const router = useRouter();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -284,6 +284,14 @@ export default function GenerateCoursePage() {
     // --- Render ---
 
     const userRole = (session?.user as any)?.role;
+
+    if (status === "loading") {
+        return (
+            <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
+            </div>
+        );
+    }
 
     if (!session) {
         return (

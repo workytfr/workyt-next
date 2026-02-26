@@ -139,17 +139,17 @@ export const authOptions: NextAuthOptions = {
                 token.role = user.role;
                 token.points = user.points;
                 token.accessToken = generateJWT(user);
-                
+
                 // Si c'est une connexion Discord, récupérer les données utilisateur depuis la DB
                 if (account?.provider === "discord") {
                     await connectDB();
-                    const dbUser = await User.findOne({ 
+                    const dbUser = await User.findOne({
                         $or: [
                             { email: user.email },
                             { discordId: account.providerAccountId }
                         ]
                     });
-                    
+
                     if (dbUser) {
                         token.id = dbUser._id.toString();
                         token.username = dbUser.username;
@@ -160,6 +160,35 @@ export const authOptions: NextAuthOptions = {
                         token.isAdmin = dbUser.isAdmin;
                         token.accessToken = generateJWT(dbUser);
                     }
+                }
+            } else if (token.accessToken) {
+                // Vérifier si le JWT custom est expiré ou proche de l'expiration et le régénérer
+                try {
+                    const decoded: any = jwt.verify(token.accessToken as string, process.env.JWT_SECRET!);
+                    // Régénérer si le token expire dans moins de 2 jours
+                    const twoDaysInSeconds = 2 * 24 * 60 * 60;
+                    if (decoded.exp && decoded.exp - Math.floor(Date.now() / 1000) < twoDaysInSeconds) {
+                        token.accessToken = generateJWT({
+                            id: token.id,
+                            email: token.email,
+                            role: token.role,
+                            points: token.points,
+                            badges: token.badges,
+                            bio: token.bio,
+                            isAdmin: token.isAdmin,
+                        });
+                    }
+                } catch {
+                    // Token expiré ou invalide, le régénérer
+                    token.accessToken = generateJWT({
+                        id: token.id,
+                        email: token.email,
+                        role: token.role,
+                        points: token.points,
+                        badges: token.badges,
+                        bio: token.bio,
+                        isAdmin: token.isAdmin,
+                    });
                 }
             }
             return token;
