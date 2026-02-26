@@ -23,6 +23,8 @@ export interface IExercise extends Document {
         image?: string; // Image de la correction (optionnel)
     };
     difficulty: DifficultyLevel; // Niveau de difficulté
+    createdAt: Date;
+    updatedAt: Date;
 }
 
 /**
@@ -42,7 +44,9 @@ const ExerciseSchema: Schema = new Schema({
         type: String,
         enum: ['Facile 1', 'Facile 2', 'Moyen 1', 'Moyen 2', 'Difficile 1', 'Difficile 2', 'Élite'],
         required: true
-    }
+    },
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 });
 
 /**

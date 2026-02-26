@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
-        const { reportedContent, reason, description } = body;
+        const { reportedContent, reason, description, questionId } = body;
 
         // Validation des données
         if (!reportedContent || !reportedContent.type || !reportedContent.id) {
@@ -62,12 +62,19 @@ export async function POST(request: NextRequest) {
         }
 
         // Créer le signalement
-        const report = new Report({
+        const reportData: any = {
             reporter: user._id,
             reportedContent,
             reason,
             description
-        });
+        };
+        
+        // Ajouter questionId pour les réponses forum
+        if (reportedContent.type === 'forum_answer' && questionId) {
+            reportData.questionId = questionId;
+        }
+        
+        const report = new Report(reportData);
 
         await report.save();
 

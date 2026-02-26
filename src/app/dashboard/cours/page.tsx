@@ -1,696 +1,569 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/Badge";
-import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, CheckCircle, Clock, XCircle, FileText, Users, Calendar, Sparkles } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
-    ToastProvider,
-    ToastViewport,
-    Toast,
-    ToastTitle,
-    ToastClose,
-} from "@/components/ui/UseToast";
-import { useSession } from "next-auth/react";
-import CourseForm from "./../_components/CourseForm";
-import {
-    Select,
-    SelectTrigger,
-    SelectContent,
-    SelectItem,
-    SelectValue,
-} from "@/components/ui/Select";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/Tooltip";
-import AdvancedPagination from "@/components/ui/AdvancedPagination";
-import CourseAdvancedSearch from "@/components/ui/CourseAdvancedSearch";
-import CourseStats from "@/components/ui/CourseStats";
-
-interface Section {
-    _id: string;
-    title: string;
-}
+  Plus,
+  Search,
+  Filter,
+  Grid3X3,
+  List,
+  BookOpen,
+  Edit2,
+  Trash2,
+  ExternalLink,
+  Layers,
+  FileText,
+  Sparkles,
+  Loader2,
+} from "lucide-react";
+import Image from "next/image";
+import { educationData } from "@/data/educationData";
+import "../styles/dashboard-theme.css";
 
 interface Course {
-    _id: string;
-    title: string;
-    description: string;
-    niveau: string;
-    matiere: string;
-    status: string;
-    sections: Section[];
-    authors: Array<{ _id: string; name: string }>;
-    createdAt: string;
-    updatedAt: string;
+  _id: string;
+  title: string;
+  description: string;
+  niveau: string;
+  matiere: string;
+  status: string;
+  image?: string;
+  sections?: Array<{ _id: string; title: string }>;
+  authors?: Array<{ _id: string; name: string }>;
+  createdAt: string;
 }
 
 interface SearchFilters {
-    query: string;
-    status: string;
-    niveau: string;
-    matiere: string;
-    sortBy: string;
-    sortOrder: "asc" | "desc";
-    hasSections: boolean;
-    authorId: string;
+  query: string;
+  status: string;
+  niveau: string;
+  matiere: string;
 }
-
-interface Stats {
-    total: number;
-    published: number;
-    pending: number;
-    cancelled: number;
-    withSections: number;
-    byLevel: Record<string, number>;
-    bySubject: Record<string, number>;
-    recentCourses: number;
-    avgSectionsPerCourse: number;
-}
-
-// Retourne des classes CSS personnalisées en fonction du statut
-const getBadgeClass = (status: string) => {
-    try {
-        if (!status) return "bg-gray-500 text-white";
-        switch (status) {
-            case "publie":
-                return "bg-green-500 text-white";
-            case "annule":
-                return "bg-red-500 text-white";
-            case "en_attente_verification":
-                return "bg-yellow-500 text-white";
-            case "en_attente_publication":
-                return "bg-blue-500 text-white";
-            default:
-                return "bg-gray-500 text-white";
-        }
-    } catch (error) {
-        console.error("Erreur lors de la détermination de la classe du badge:", error);
-        return "bg-gray-500 text-white";
-    }
-};
-
-// Formate le statut : supprime les underscores et capitalise chaque mot
-const formatStatus = (status: string) => {
-    try {
-        if (!status) return "Inconnu";
-        return status
-            .split("_")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ");
-    } catch (error) {
-        console.error("Erreur lors du formatage du statut:", error);
-        return status || "Inconnu";
-    }
-};
 
 export default function CoursesPage() {
-    const { data: session } = useSession();
-    const [courses, setCourses] = useState<Course[]>([]);
-    const [isDialogOpen, setDialogOpen] = useState(false);
-    const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
-    const [loading, setLoading] = useState(false);
-    const [page, setPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(10);
-    const [totalCourses, setTotalCourses] = useState(0);
-    const [totalPages, setTotalPages] = useState(0);
-    const [stats, setStats] = useState<Stats | null>(null);
-    const [filters, setFilters] = useState<SearchFilters>({
-        query: "",
-        status: "all",
-        niveau: "all",
-        matiere: "all",
-        sortBy: "createdAt",
-        sortOrder: "desc",
-        hasSections: false,
-        authorId: "all"
-    });
+  const { data: session } = useSession();
+  const [courses, setCourses] = useState<Course[]>([]);
+  const [filteredCourses, setFilteredCourses] = useState<Course[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [filters, setFilters] = useState<SearchFilters>({
+    query: "",
+    status: "",
+    niveau: "",
+    matiere: "",
+  });
+  const [showFilters, setShowFilters] = useState(false);
 
-    // Gestion du Toast
-    const [toastOpen, setToastOpen] = useState(false);
-    const [toastMessage, setToastMessage] = useState("");
-    const [toastVariant, setToastVariant] = useState<"default" | "destructive">("default");
-
-    // Gestion d'erreur globale
-    const [error, setError] = useState<string | null>(null);
-
-    // Fonction de gestion d'erreur globale
-    const handleGlobalError = (error: any, context: string) => {
-        console.error(`Erreur dans ${context}:`, error);
-        setError(`Une erreur est survenue dans ${context}. Veuillez réessayer.`);
-        setTimeout(() => setError(null), 5000);
+  // Charger les cours
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const res = await fetch("/api/courses?limit=100", {
+          headers: {
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCourses(data.courses || []);
+          setFilteredCourses(data.courses || []);
+        }
+      } catch (error) {
+        console.error("Erreur lors du chargement des cours:", error);
+      } finally {
+        setLoading(false);
+      }
     };
 
-    // Gestionnaire d'erreur global pour les composants
-    const safeExecute = (fn: Function, context: string) => {
-        try {
-            return fn();
-        } catch (error) {
-            handleGlobalError(error, context);
-            return null;
-        }
+    if (session?.accessToken) {
+      fetchCourses();
+    }
+  }, [session?.accessToken]);
+
+  // Filtrer les cours
+  useEffect(() => {
+    let filtered = courses;
+
+    if (filters.query) {
+      const query = filters.query.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          c.title.toLowerCase().includes(query) ||
+          c.description?.toLowerCase().includes(query)
+      );
+    }
+
+    if (filters.status) {
+      filtered = filtered.filter((c) => c.status === filters.status);
+    }
+
+    if (filters.niveau) {
+      filtered = filtered.filter((c) => c.niveau === filters.niveau);
+    }
+
+    if (filters.matiere) {
+      filtered = filtered.filter((c) => c.matiere === filters.matiere);
+    }
+
+    setFilteredCourses(filtered);
+  }, [filters, courses]);
+
+  // Changer le statut d'un cours
+  const updateCourseStatus = async (courseId: string, newStatus: string) => {
+    try {
+      const res = await fetch("/api/courses", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+        body: JSON.stringify({ courseId, newStatus }),
+      });
+
+      if (res.ok) {
+        setCourses(
+          courses.map((c) =>
+            c._id === courseId ? { ...c, status: newStatus } : c
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Erreur lors du changement de statut:", error);
+    }
+  };
+
+  // Supprimer un cours
+  const deleteCourse = async (id: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce cours ?")) return;
+
+    try {
+      const res = await fetch(`/api/courses/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+
+      if (res.ok) {
+        setCourses(courses.filter((c) => c._id !== id));
+      }
+    } catch (error) {
+      console.error("Erreur lors de la suppression:", error);
+    }
+  };
+
+  // Statut en français
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      publie: "Publié",
+      en_attente_publication: "En attente",
+      en_attente_verification: "À vérifier",
+      annule: "Annulé",
     };
+    return labels[status] || status;
+  };
 
-    // Gestionnaire d'erreur pour les composants enfants
-    const handleChildError = (error: any, context: string) => {
-        handleGlobalError(error, context);
+  const getStatusBadgeClass = (status: string) => {
+    const classes: Record<string, string> = {
+      publie: "dash-badge-success",
+      en_attente_publication: "dash-badge-warning",
+      en_attente_verification: "dash-badge-info",
+      annule: "dash-badge-danger",
     };
+    return classes[status] || "dash-badge";
+  };
 
-    const showToast = ({ title, variant }: { title: string; variant?: "default" | "destructive" }) => {
-        try {
-            setToastMessage(title);
-            setToastVariant(variant || "default");
-            setToastOpen(true);
-            setTimeout(() => setToastOpen(false), 3000);
-        } catch (error) {
-            console.error("Erreur lors de l'affichage du toast:", error);
-        }
-    };
-
-    const buildApiUrl = useCallback(() => {
-        try {
-            const params = new URLSearchParams({
-                page: page.toString(),
-                limit: itemsPerPage.toString(),
-                search: filters.query,
-                status: filters.status === "all" ? "" : filters.status,
-                niveau: filters.niveau === "all" ? "" : filters.niveau,
-                matiere: filters.matiere === "all" ? "" : filters.matiere,
-                sortBy: filters.sortBy,
-                sortOrder: filters.sortOrder,
-                hasSections: filters.hasSections.toString(),
-                authorId: filters.authorId === "all" ? "" : filters.authorId,
-            });
-            return `/api/courses?${params.toString()}`;
-        } catch (error) {
-            console.error("Erreur lors de la construction de l'URL:", error);
-            return `/api/courses?page=${page}&limit=${itemsPerPage}`;
-        }
-    }, [page, itemsPerPage, filters]);
-
-    // Charger les cours avec gestion des erreurs et pagination
-    useEffect(() => {
-        async function fetchCourses() {
-            if (!session?.accessToken) return;
-
-            setLoading(true);
-            try {
-                const res = await fetch(buildApiUrl(), {
-                    headers: {
-                        Authorization: `Bearer ${session.accessToken}`,
-                    },
-                });
-
-                if (!res.ok) {
-                    throw new Error(await res.text());
-                }
-
-                const data = await res.json();
-                try {
-                    setCourses(data.courses || []);
-                    setTotalCourses(data.total || 0);
-                    setTotalPages(data.totalPages || 0);
-                    setStats(data.stats || null);
-                } catch (error) {
-                    console.error("Erreur lors de la mise à jour de l'état local:", error);
-                    showToast({ title: "Erreur lors de la mise à jour de l'état", variant: "destructive" });
-                }
-            } catch (error) {
-                console.error("Erreur lors du chargement des cours :", error);
-                showToast({ title: "Erreur de chargement", variant: "destructive" });
-            } finally {
-                setLoading(false);
-            }
-        }
-
-        fetchCourses();
-    }, [buildApiUrl, session?.accessToken]);
-
-    // Supprimer un cours
-    const handleDelete = async (id: string) => {
-        if (!confirm("Voulez-vous vraiment supprimer ce cours ?")) return;
-
-        try {
-            const res = await fetch(`/api/courses/${id}`, {
-                method: "DELETE",
-                headers: {
-                    Authorization: `Bearer ${session?.accessToken}`,
-                },
-            });
-
-            if (res.ok) {
-                try {
-                    setCourses((prev) => prev.filter((course) => course._id !== id));
-                    showToast({ title: "Cours supprimé avec succès." });
-                } catch (error) {
-                    console.error("Erreur lors de la mise à jour de l'état local:", error);
-                    showToast({ title: "Erreur lors de la mise à jour de l'état", variant: "destructive" });
-                }
-            } else {
-                console.error("Erreur lors de la suppression :", await res.text());
-                showToast({ title: "Erreur lors de la suppression", variant: "destructive" });
-            }
-        } catch (error) {
-            console.error("Erreur réseau lors de la suppression :", error);
-            showToast({ title: "Erreur réseau", variant: "destructive" });
-        }
-    };
-
-    // Mettre à jour le statut d'un cours (PATCH)
-    const handleStatusChange = async (courseId: string, newStatus: string) => {
-        if (!session?.accessToken) return;
-
-        try {
-            const res = await fetch("/api/courses", {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${session.accessToken}`,
-                },
-                body: JSON.stringify({ courseId, newStatus }),
-            });
-
-            if (!res.ok) {
-                const data = await res.json();
-                console.error("Erreur lors de la mise à jour du statut :", data.error);
-                showToast({ title: "Erreur de mise à jour", variant: "destructive" });
-                return;
-            }
-
-            const { course: updatedCourse } = await res.json();
-
-            try {
-                setCourses((prev) =>
-                    prev.map((c) => (c._id === courseId ? { ...c, status: updatedCourse.status } : c))
-                );
-                showToast({ title: "Statut mis à jour" });
-            } catch (error) {
-                console.error("Erreur lors de la mise à jour de l'état local:", error);
-                showToast({ title: "Erreur lors de la mise à jour de l'état", variant: "destructive" });
-            }
-        } catch (err) {
-            console.error("Erreur réseau :", err);
-            showToast({ title: "Erreur réseau", variant: "destructive" });
-        }
-    };
-
-    // Gestion des filtres
-    const handleFiltersChange = (newFilters: SearchFilters) => {
-        try {
-            setFilters(newFilters);
-            setPage(1); // Retour à la première page lors du changement de filtres
-        } catch (error) {
-            console.error("Erreur lors du changement de filtres:", error);
-            showToast({ title: "Erreur lors du changement de filtres", variant: "destructive" });
-        }
-    };
-
-    // Gestion de la pagination
-    const handlePageChange = (newPage: number) => {
-        try {
-            setPage(newPage);
-        } catch (error) {
-            console.error("Erreur lors du changement de page:", error);
-            showToast({ title: "Erreur lors du changement de page", variant: "destructive" });
-        }
-    };
-
-    const handleItemsPerPageChange = (newItemsPerPage: number) => {
-        try {
-            setItemsPerPage(newItemsPerPage);
-            setPage(1); // Retour à la première page
-        } catch (error) {
-            console.error("Erreur lors du changement d'éléments par page:", error);
-            showToast({ title: "Erreur lors du changement d'éléments par page", variant: "destructive" });
-        }
-    };
-
-    // Export des données
-    const handleExport = () => {
-        try {
-            const csvContent = [
-                ['Titre', 'Description', 'Niveau', 'Matière', 'Statut', 'Sections', 'Auteurs', 'Date de création'],
-                ...courses.map(course => [
-                    course.title,
-                    course.description,
-                    course.niveau,
-                    course.matiere,
-                    formatStatus(course.status),
-                    course.sections.length.toString(),
-                    course.authors.map(author => author.name).join(', '),
-                    new Date(course.createdAt).toLocaleDateString('fr-FR')
-                ])
-            ].map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.setAttribute('href', url);
-            link.setAttribute('download', `cours_${new Date().toISOString().split('T')[0]}.csv`);
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } catch (error) {
-            console.error("Erreur lors de l'export:", error);
-            showToast({ title: "Erreur lors de l'export", variant: "destructive" });
-        }
-    };
-
+  if (loading) {
     return (
-        <ToastProvider>
-            <div className="space-y-6">
-                {/* En-tête avec statistiques */}
-                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
-                    <div>
-                        <h1 className="text-3xl font-bold">Gestion des Cours</h1>
-                        <p className="text-gray-600">Gérez les cours de la plateforme</p>
-                    </div>
-                    
-                    <div className="flex gap-2">
-                        <Button variant="outline" onClick={() => {
-                            try {
-                                handleExport();
-                            } catch (error) {
-                                console.error("Erreur lors de l'export:", error);
-                                showToast({ title: "Erreur lors de l'export", variant: "destructive" });
-                            }
-                        }} disabled={loading}>
-                            <Download className="mr-2 h-4 w-4" />
-                            Exporter
-                        </Button>
-                        <Link href="/cours/generer">
-                            <Button className="bg-gradient-to-r from-purple-500 to-indigo-600 text-white">
-                                <Sparkles className="mr-2 h-4 w-4" />
-                                Générer avec l&apos;IA
-                            </Button>
-                        </Link>
-                        <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button onClick={() => {
-                                    try {
-                                        setSelectedCourse(null);
-                                    } catch (error) {
-                                        console.error("Erreur lors de la réinitialisation du cours sélectionné:", error);
-                                    }
-                                }}>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Ajouter un cours
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-4xl w-full">
-                                <DialogHeader>
-                                    <DialogTitle>
-                                        {selectedCourse ? "Modifier le cours" : "Ajouter un nouveau cours"}
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <CourseForm
-                                    course={selectedCourse}
-                                    onSuccess={(newCourse: Course) => {
-                                        try {
-                                            setCourses((prev) =>
-                                                selectedCourse
-                                                    ? prev.map((c) => (c._id === newCourse._id ? newCourse : c))
-                                                    : [...prev, newCourse]
-                                            );
-                                            setDialogOpen(false);
-                                            showToast({ title: selectedCourse ? "Cours mis à jour" : "Cours créé" });
-                                        } catch (error) {
-                                            console.error("Erreur lors de la mise à jour des cours:", error);
-                                            showToast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
-                                            handleChildError(error, "CourseForm - onSuccess");
-                                        }
-                                    }}
-                                    onError={(error: any) => {
-                                        handleChildError(error, "CourseForm");
-                                    }}
-                                />
-                            </DialogContent>
-                        </Dialog>
-                    </div>
-                </div>
-
-                {/* Statistiques détaillées */}
-                {stats && (
-                    <div className="border rounded-lg p-4">
-                        <CourseStats stats={stats} />
-                    </div>
-                )}
-
-                {/* Barre de recherche et filtres */}
-                <CourseAdvancedSearch
-                    onFiltersChange={(newFilters) => {
-                        try {
-                            handleFiltersChange(newFilters);
-                        } catch (error) {
-                            console.error("Erreur lors du changement de filtres:", error);
-                            showToast({ title: "Erreur lors du changement de filtres", variant: "destructive" });
-                        }
-                    }}
-                    isLoading={loading}
-                    totalResults={totalCourses}
-                    stats={stats}
-                />
-
-                {/* Table des cours */}
-                <div className="bg-white rounded-lg shadow overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Cours</TableHead>
-                                <TableHead>Informations</TableHead>
-                                <TableHead>Statut</TableHead>
-                                <TableHead>Sections</TableHead>
-                                <TableHead>Auteurs</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {loading ? (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8">
-                                        <Loader2 className="animate-spin w-6 h-6 mx-auto" />
-                                        <p className="mt-2 text-gray-500">Chargement des cours...</p>
-                                    </TableCell>
-                                </TableRow>
-                            ) : courses.length > 0 ? (
-                                courses.map((course) => (
-                                    <TableRow key={course._id}>
-                                        <TableCell>
-                                            <div className="space-y-1">
-                                                <div className="font-medium text-gray-900">{course.title}</div>
-                                                <div className="text-sm text-gray-500 line-clamp-2">
-                                                    {course.description}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="space-y-1">
-                                                <div className="flex items-center text-sm">
-                                                    <BookOpen className="h-4 w-4 mr-2 text-gray-400" />
-                                                    {course.niveau} • {course.matiere}
-                                                </div>
-                                                <div className="flex items-center text-sm text-gray-500">
-                                                    <Calendar className="h-4 w-4 mr-2" />
-                                                    {new Date(course.createdAt).toLocaleDateString('fr-FR')}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            {session?.user?.role === "Admin" ? (
-                                                <Select
-                                                    value={course.status}
-                                                    onValueChange={(newValue) => {
-                                                        try {
-                                                            handleStatusChange(course._id, newValue);
-                                                        } catch (error) {
-                                                            console.error("Erreur lors du changement de statut:", error);
-                                                            showToast({ title: "Erreur lors du changement de statut", variant: "destructive" });
-                                                        }
-                                                    }}
-                                                    disabled={loading}
-                                                >
-                                                    <SelectTrigger className="w-[180px]">
-                                                        <SelectValue placeholder="Choisir un statut" />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="en_attente_publication">En attente publication</SelectItem>
-                                                        <SelectItem value="en_attente_verification">En attente vérification</SelectItem>
-                                                        <SelectItem value="publie">Publié</SelectItem>
-                                                        <SelectItem value="annule">Annulé</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            ) : (
-                                                <Badge className={`${getBadgeClass(course.status)} whitespace-nowrap px-2 py-1 text-sm`}>
-                                                    {formatStatus(course.status)}
-                                                </Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <FileText className="h-4 w-4 text-gray-400" />
-                                                <span className="text-sm">
-                                                    {course.sections?.length || 0} section{course.sections?.length !== 1 ? 's' : ''}
-                                                </span>
-                                            </div>
-                                            {course.sections && course.sections.length > 0 && (
-                                                <TooltipProvider>
-                                                    <Tooltip>
-                                                        <TooltipTrigger asChild>
-                                                            <span className="cursor-pointer text-xs text-blue-600">
-                                                                Voir les sections
-                                                            </span>
-                                                        </TooltipTrigger>
-                                                        <TooltipContent className="max-w-xs p-2 text-sm">
-                                                            <ul className="list-disc pl-4">
-                                                                {course.sections.slice(0, 3).map((section) => (
-                                                                    <li key={section._id}>{section.title}</li>
-                                                                ))}
-                                                                {course.sections.length > 3 && (
-                                                                    <li>... et {course.sections.length - 3} autres</li>
-                                                                )}
-                                                            </ul>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                </TooltipProvider>
-                                            )}
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Users className="h-4 w-4 text-gray-400" />
-                                                <div className="text-sm">
-                                                    {course.authors?.map(author => author.name).join(', ') || 'Aucun auteur'}
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex gap-1">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => {
-                                                        try {
-                                                            setSelectedCourse(course);
-                                                            setDialogOpen(true);
-                                                        } catch (error) {
-                                                            console.error("Erreur lors de la sélection du cours:", error);
-                                                            showToast({ title: "Erreur lors de la sélection", variant: "destructive" });
-                                                        }
-                                                    }}
-                                                    disabled={loading}
-                                                >
-                                                    <Pencil className="w-4 h-4" />
-                                                </Button>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="text-red-500 hover:text-red-700"
-                                                    onClick={() => {
-                                                        try {
-                                                            handleDelete(course._id);
-                                                        } catch (error) {
-                                                            console.error("Erreur lors de la suppression:", error);
-                                                            showToast({ title: "Erreur lors de la suppression", variant: "destructive" });
-                                                        }
-                                                    }}
-                                                    disabled={loading}
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-8">
-                                        <div className="text-gray-500">
-                                            <BookOpen className="w-12 h-12 mx-auto mb-2 text-gray-300" />
-                                            <p>Aucun cours trouvé</p>
-                                            <p className="text-sm">Essayez de modifier vos critères de recherche</p>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </div>
-
-                {/* Pagination avancée */}
-                {totalPages > 1 && (
-                    <AdvancedPagination
-                        currentPage={page}
-                        totalPages={totalPages}
-                        totalItems={totalCourses}
-                        itemsPerPage={itemsPerPage}
-                        onPageChange={(newPage) => {
-                            try {
-                                handlePageChange(newPage);
-                            } catch (error) {
-                                console.error("Erreur lors du changement de page:", error);
-                                showToast({ title: "Erreur lors du changement de page", variant: "destructive" });
-                            }
-                        }}
-                        onItemsPerPageChange={(newItemsPerPage) => {
-                            try {
-                                handleItemsPerPageChange(newItemsPerPage);
-                            } catch (error) {
-                                console.error("Erreur lors du changement d'éléments par page:", error);
-                                showToast({ title: "Erreur lors du changement d'éléments par page", variant: "destructive" });
-                            }
-                        }}
-                        isLoading={loading}
-                    />
-                )}
-            </div>
-
-            {/* Affichage du Toast */}
-            <ToastViewport>
-                {toastOpen && (
-                    <Toast 
-                        open={toastOpen} 
-                        onOpenChange={(open) => {
-                            try {
-                                setToastOpen(open);
-                            } catch (error) {
-                                console.error("Erreur lors du changement d'état du toast:", error);
-                            }
-                        }} 
-                        variant={toastVariant}
-                    >
-                        <ToastTitle>{toastMessage}</ToastTitle>
-                        <ToastClose />
-                    </Toast>
-                )}
-            </ToastViewport>
-
-            {/* Affichage de l'erreur globale */}
-            {error && (
-                <div className="fixed top-4 right-4 z-50 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded shadow-lg">
-                    <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                            <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                            </svg>
-                        </div>
-                        <div className="ml-3">
-                            <p className="text-sm font-medium">{error}</p>
-                        </div>
-                        <div className="ml-auto pl-3">
-                            <button
-                                onClick={() => setError(null)}
-                                className="inline-flex text-red-400 hover:text-red-600"
-                            >
-                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-        </ToastProvider>
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+      </div>
     );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* En-tête */}
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+        <div>
+          <h1 className="dash-main-title">Gestion des cours</h1>
+          <p className="dash-main-subtitle">
+            {filteredCourses.length} cours sur la plateforme
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/cours/generer"
+            className="dash-button dash-button-secondary"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span className="hidden sm:inline">Générer avec MaitreRenardAI</span>
+          </Link>
+          <Link href="/dashboard/cours/nouveau" className="dash-button dash-button-primary">
+            <Plus className="w-4 h-4" />
+            <span className="hidden sm:inline">Nouveau cours</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Barre d'outils */}
+      <div className="flex flex-col sm:flex-row gap-4">
+        {/* Recherche */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+          <input
+            type="text"
+            placeholder="Rechercher un cours..."
+            className="dash-input pl-10"
+            value={filters.query}
+            onChange={(e) => setFilters({ ...filters, query: e.target.value })}
+          />
+        </div>
+
+        {/* Filtres */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`dash-button dash-button-secondary ${
+              showFilters ? "bg-[#fff7ed] text-[#f97316]" : ""
+            }`}
+          >
+            <Filter className="w-4 h-4" />
+            Filtres
+          </button>
+
+          <div className="h-6 w-px bg-[#e3e2e0] mx-2" />
+
+          <button
+            onClick={() => setViewMode("grid")}
+            className={`p-2 rounded-lg transition-colors ${
+              viewMode === "grid"
+                ? "bg-[#fff7ed] text-[#f97316]"
+                : "text-[#6b6b6b] hover:bg-[#f7f6f3]"
+            }`}
+          >
+            <Grid3X3 className="w-5 h-5" />
+          </button>
+          <button
+            onClick={() => setViewMode("list")}
+            className={`p-2 rounded-lg transition-colors ${
+              viewMode === "list"
+                ? "bg-[#fff7ed] text-[#f97316]"
+                : "text-[#6b6b6b] hover:bg-[#f7f6f3]"
+            }`}
+          >
+            <List className="w-5 h-5" />
+          </button>
+        </div>
+      </div>
+
+      {/* Filtres avancés */}
+      {showFilters && (
+        <div className="p-4 bg-[#f7f6f3] rounded-xl space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="dash-label text-sm">Statut</label>
+              <select
+                className="dash-input"
+                value={filters.status}
+                onChange={(e) =>
+                  setFilters({ ...filters, status: e.target.value })
+                }
+              >
+                <option value="">Tous les statuts</option>
+                <option value="publie">Publié</option>
+                <option value="en_attente_publication">En attente</option>
+                <option value="en_attente_verification">À vérifier</option>
+                <option value="annule">Annulé</option>
+              </select>
+            </div>
+            <div>
+              <label className="dash-label text-sm">Niveau</label>
+              <select
+                className="dash-input"
+                value={filters.niveau}
+                onChange={(e) =>
+                  setFilters({ ...filters, niveau: e.target.value })
+                }
+              >
+                <option value="">Tous les niveaux</option>
+                {educationData.levels.map((level) => (
+                  <option key={level} value={level}>
+                    {level}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="dash-label text-sm">Matière</label>
+              <select
+                className="dash-input"
+                value={filters.matiere}
+                onChange={(e) =>
+                  setFilters({ ...filters, matiere: e.target.value })
+                }
+              >
+                <option value="">Toutes les matières</option>
+                {educationData.subjects.map((subject) => (
+                  <option key={subject} value={subject}>
+                    {subject}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {(filters.status || filters.niveau || filters.matiere) && (
+            <button
+              onClick={() =>
+                setFilters({ ...filters, status: "", niveau: "", matiere: "" })
+              }
+              className="text-sm text-[#f97316] hover:text-[#ea580c]"
+            >
+              Réinitialiser les filtres
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* Liste des cours */}
+      {filteredCourses.length === 0 ? (
+        <div className="dash-empty border-2 border-dashed border-[#e3e2e0] rounded-xl">
+          <div className="dash-empty-icon">
+            <BookOpen className="w-8 h-8" />
+          </div>
+          <h4 className="dash-empty-title">Aucun cours trouvé</h4>
+          <p className="dash-empty-text">
+            {courses.length === 0
+              ? "Commencez par créer votre premier cours"
+              : "Essayez de modifier vos critères de recherche"}
+          </p>
+          {courses.length === 0 && (
+            <Link
+              href="/dashboard/cours/nouveau"
+              className="dash-button dash-button-primary mt-4"
+            >
+              <Plus className="w-4 h-4" />
+              Créer un cours
+            </Link>
+          )}
+        </div>
+      ) : viewMode === "grid" ? (
+        // Vue en grille
+        <div className="dash-course-grid">
+          {filteredCourses.map((course) => (
+            <div key={course._id} className="dash-course-card group">
+              {/* Image */}
+              <div className="dash-course-image">
+                {course.image ? (
+                  <Image
+                    src={course.image}
+                    alt={course.title}
+                    fill
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <BookOpen className="w-16 h-16 text-[#bfbfbf]" />
+                  </div>
+                )}
+                <div className="dash-course-status">
+                  <span className={`dash-badge ${getStatusBadgeClass(course.status)}`}>
+                    {getStatusLabel(course.status)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Contenu */}
+              <div className="dash-course-content">
+                <div className="dash-course-meta">
+                  <span className="dash-badge dash-badge-primary">
+                    {course.matiere}
+                  </span>
+                  <span className="dash-badge">{course.niveau}</span>
+                </div>
+
+                <h3 className="dash-course-title">{course.title}</h3>
+
+                {course.description && (
+                  <p className="dash-course-description">
+                    {course.description.replace(/[#*_]/g, "").slice(0, 120)}...
+                  </p>
+                )}
+
+                <div className="dash-course-stats">
+                  <div className="dash-course-stat">
+                    <Layers className="w-4 h-4" />
+                    {course.sections?.length || 0} sections
+                  </div>
+                  <div className="dash-course-stat">
+                    <FileText className="w-4 h-4" />
+                    {course.sections?.reduce(
+                      (acc, s) => acc + (s as any).lessons?.length || 0,
+                      0
+                    ) || 0}{" "}
+                    leçons
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="p-4 border-t border-[#e3e2e0] space-y-2">
+                {/* Changement de statut */}
+                {session?.user?.role === "Admin" && (
+                  <select
+                    className="dash-input text-sm w-full"
+                    value={course.status}
+                    onChange={(e) =>
+                      updateCourseStatus(course._id, e.target.value)
+                    }
+                  >
+                    <option value="en_attente_verification">À vérifier</option>
+                    <option value="en_attente_publication">En attente</option>
+                    <option value="publie">Publié</option>
+                    <option value="annule">Annulé</option>
+                  </select>
+                )}
+                <div className="flex items-center gap-2">
+                  <Link
+                    href={`/dashboard/cours/${course._id}/gestion`}
+                    className="flex-1 dash-button dash-button-primary dash-button-sm text-center"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Gérer
+                  </Link>
+                  <Link
+                    href={`/cours/${course._id}`}
+                    target="_blank"
+                    className="dash-button dash-button-secondary dash-button-sm"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </Link>
+                  {session?.user?.role === "Admin" && (
+                    <button
+                      onClick={() => deleteCourse(course._id)}
+                      className="dash-button dash-button-ghost dash-button-sm text-red-500 hover:bg-red-50"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        // Vue en liste
+        <div className="dash-table-container">
+          <table className="dash-table">
+            <thead>
+              <tr>
+                <th>Cours</th>
+                <th>Informations</th>
+                <th>Contenu</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredCourses.map((course) => (
+                <tr key={course._id}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-[#f7f6f3] rounded-lg flex items-center justify-center flex-shrink-0">
+                        {course.image ? (
+                          <Image
+                            src={course.image}
+                            alt=""
+                            width={48}
+                            height={48}
+                            className="rounded-lg object-cover"
+                          />
+                        ) : (
+                          <BookOpen className="w-6 h-6 text-[#bfbfbf]" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="font-medium text-[#37352f]">
+                          {course.title}
+                        </p>
+                        <p className="text-sm text-[#9ca3af]">
+                          {course.authors?.[0]?.name || "Workyt"}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="space-y-1">
+                      <span className="dash-badge dash-badge-primary">
+                        {course.matiere}
+                      </span>
+                      <span className="dash-badge ml-2">{course.niveau}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="text-sm text-[#6b6b6b]">
+                      <div className="flex items-center gap-1">
+                        <Layers className="w-4 h-4" />
+                        {course.sections?.length || 0} sections
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    {session?.user?.role === "Admin" ? (
+                      <select
+                        className="dash-input text-sm py-1"
+                        value={course.status}
+                        onChange={(e) =>
+                          updateCourseStatus(course._id, e.target.value)
+                        }
+                      >
+                        <option value="en_attente_verification">À vérifier</option>
+                        <option value="en_attente_publication">En attente</option>
+                        <option value="publie">Publié</option>
+                        <option value="annule">Annulé</option>
+                      </select>
+                    ) : (
+                      <span className={`dash-badge ${getStatusBadgeClass(course.status)}`}>
+                        {getStatusLabel(course.status)}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex items-center gap-1">
+                      <Link
+                        href={`/dashboard/cours/${course._id}/gestion`}
+                        className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors"
+                        title="Gérer"
+                      >
+                        <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
+                      </Link>
+                      <Link
+                        href={`/cours/${course._id}`}
+                        target="_blank"
+                        className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors"
+                        title="Voir"
+                      >
+                        <ExternalLink className="w-4 h-4 text-[#6b6b6b]" />
+                      </Link>
+                      {session?.user?.role === "Admin" && (
+                        <button
+                          onClick={() => deleteCourse(course._id)}
+                          className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Supprimer"
+                        >
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
 }

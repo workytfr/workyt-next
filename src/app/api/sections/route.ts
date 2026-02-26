@@ -21,18 +21,35 @@ export async function GET(request: NextRequest) {
         const limit = parseInt(searchParams.get('limit') || '10');
         const search = searchParams.get('search') || '';
         const courseId = searchParams.get('courseId') || '';
+        const authorId = searchParams.get('authorId') || '';
         const sortBy = searchParams.get('sortBy') || 'order';
         const sortOrder = searchParams.get('sortOrder') || 'asc';
 
         // Construire la requête
         let query: any = {};
-        
+
         if (search) {
             query.title = { $regex: escapeRegex(search), $options: 'i' };
         }
-        
+
         if (courseId) {
             query.courseId = courseId;
+        }
+
+        // Filtrer par auteur du cours (sections des cours dont l'utilisateur est auteur)
+        if (authorId) {
+            const userCourses = await Course.find({ authors: authorId }).select('_id');
+            const userCourseIds = userCourses.map(c => c._id);
+            if (query.courseId) {
+                // Si un courseId est déjà filtré, vérifier qu'il appartient à l'utilisateur
+                query.$and = [
+                    { courseId: query.courseId },
+                    { courseId: { $in: userCourseIds } }
+                ];
+                delete query.courseId;
+            } else {
+                query.courseId = { $in: userCourseIds };
+            }
         }
 
         // Calculer le skip pour la pagination

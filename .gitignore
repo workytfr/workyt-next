@@ -62,6 +62,10 @@ logs/
 *.tsbuildinfo
 next-env.d.ts
 
+# backups
+dashboard-backup/
+backups/
+
 # idea
 .vscode
 .idea

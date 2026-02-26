@@ -1,30 +1,75 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Exercise, { DifficultyLevel } from "@/models/Exercise";
+import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
+import { escapeRegex } from "@/utils/escapeRegex";
 
 /**
- * 🚀 GET - Récupérer tous les exercices (Accès public)
- * ➜ Possibilité de filtrer par `difficulty` et `sectionId`
+ * GET - Récupérer les exercices avec pagination et filtres
+ * Filtres : difficulty, sectionId, courseId, search, authorId
+ * Pagination : page, limit
  */
 export async function GET(req: NextRequest) {
     try {
         await dbConnect();
 
-        // Récupérer les paramètres de l'URL
         const { searchParams } = new URL(req.url);
         const difficulty = searchParams.get("difficulty") as DifficultyLevel | null;
         const sectionId = searchParams.get("sectionId");
+        const courseId = searchParams.get("courseId");
+        const search = searchParams.get("search") || "";
+        const authorId = searchParams.get("authorId") || "";
+        const page = parseInt(searchParams.get("page") || "1");
+        const limit = parseInt(searchParams.get("limit") || "10");
+        const sortBy = searchParams.get("sortBy") || "createdAt";
+        const sortOrder = searchParams.get("sortOrder") || "desc";
 
-        // Construire l'objet de filtre en fonction des paramètres
-        const filter: { [key: string]: any } = {};
+        const filter: Record<string, any> = {};
+
         if (difficulty) filter.difficulty = difficulty;
         if (sectionId) filter.sectionId = sectionId;
+        if (authorId) filter.author = authorId;
+        if (search) {
+            filter.title = { $regex: escapeRegex(search), $options: "i" };
+        }
 
-        const exercises = await Exercise.find(filter);
+        // Si courseId est fourni, récupérer toutes les sections du cours puis filtrer
+        if (courseId && !sectionId) {
+            const sections = await Section.find({ courseId }).select("_id");
+            const sectionIds = sections.map((s) => s._id);
+            filter.sectionId = { $in: sectionIds };
+        }
 
-        return NextResponse.json(exercises, { status: 200 });
+        const skip = (page - 1) * limit;
+
+        const sort: Record<string, 1 | -1> = {};
+        sort[sortBy] = sortOrder === "desc" ? -1 : 1;
+
+        const exercises = await Exercise.find(filter)
+            .populate({
+                path: "sectionId",
+                select: "title courseId",
+                populate: {
+                    path: "courseId",
+                    select: "title",
+                },
+            })
+            .populate("author", "name")
+            .sort(sort)
+            .skip(skip)
+            .limit(limit);
+
+        const total = await Exercise.countDocuments(filter);
+        const totalPages = Math.ceil(total / limit);
+
+        return NextResponse.json({
+            exercises,
+            total,
+            page,
+            totalPages,
+        }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la récupération des exercices :", error.message);
         return NextResponse.json(
@@ -35,7 +80,7 @@ export async function GET(req: NextRequest) {
 }
 
 /**
- * 🚀 POST - Créer un nouvel exercice (Réservé aux Helpeurs, Rédacteurs, Correcteurs, Admins)
+ * POST - Créer un nouvel exercice (Réservé aux Helpeurs, Rédacteurs, Correcteurs, Admins)
  */
 export async function POST(req: NextRequest) {
     try {

@@ -185,4 +185,4 @@ Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
 - **UploadThing** pour l'upload de fichiers
 
 
-**Workyt v4.0.0** - Fait avec ❤️ pour l'éducation gratuite
+**Workyt v4.1.0** - Fait avec ❤️ pour l'éducation gratuite

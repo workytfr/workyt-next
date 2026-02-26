@@ -97,25 +97,12 @@ export default function LessonForm({ lesson, onSuccess }: LessonFormProps) {
         document.body.style.color = "black";
     }, []);
 
-    // Chargement des cours en fonction de la recherche
+    // Charger tous les cours une seule fois au montage
     useEffect(() => {
         async function fetchCourses() {
-            if (!session?.accessToken) return;
             setLoadingCourses(true);
             try {
-                const res = await fetch(
-                    `/api/courses?page=1&limit=10&search=${encodeURIComponent(searchQuery)}`,
-                    {
-                        headers: {
-                            Authorization: `Bearer ${session.accessToken}`,
-                        },
-                    }
-                );
-                if (res.status === 401) {
-                    console.error("JWT expiré, rafraîchissement de la session...");
-                    await update();
-                    return;
-                }
+                const res = await fetch("/api/courses?limit=200");
                 if (!res.ok) throw new Error(await res.text());
                 const data = await res.json();
                 setCourses(data.courses || []);
@@ -126,7 +113,14 @@ export default function LessonForm({ lesson, onSuccess }: LessonFormProps) {
             }
         }
         fetchCourses();
-    }, [searchQuery, session?.accessToken, update]);
+    }, []);
+
+    // Filtrage local des cours par recherche
+    const filteredCourses = searchQuery.trim()
+        ? courses.filter((c) =>
+              c.title.toLowerCase().includes(searchQuery.toLowerCase())
+          )
+        : courses;
 
     const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -218,12 +212,16 @@ export default function LessonForm({ lesson, onSuccess }: LessonFormProps) {
                     <SelectContent>
                         {loadingCourses ? (
                             <Loader2 className="animate-spin w-5 h-5 mx-auto" />
-                        ) : (
-                            courses.map((course) => (
+                        ) : filteredCourses.length > 0 ? (
+                            filteredCourses.map((course) => (
                                 <SelectItem key={course._id} value={course._id}>
                                     {course.title}
                                 </SelectItem>
                             ))
+                        ) : (
+                            <div className="px-2 py-4 text-sm text-gray-500 text-center">
+                                Aucun cours trouvé
+                            </div>
                         )}
                     </SelectContent>
                 </Select>

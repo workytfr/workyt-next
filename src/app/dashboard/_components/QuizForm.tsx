@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,9 +8,15 @@ import { Label } from '@/components/ui/Label';
 import { Textarea } from '@/components/ui/Textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Badge } from '@/components/ui/Badge';
-import { Plus, Trash2, Save, X, Calculator } from 'lucide-react';
+import { Plus, Trash2, Save, X, Calculator, Loader2 } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
+
+interface ICourse {
+    _id: string;
+    title: string;
+    sections: { _id: string; title: string }[];
+}
 
 interface Question {
     question: string;
@@ -27,18 +33,66 @@ interface Question {
 
 interface QuizFormProps {
     sectionId?: string;
-    lessonId?: string;
     onSave: (quiz: any) => void;
     onCancel: () => void;
     initialData?: any;
 }
 
-export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initialData }: QuizFormProps) {
+export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, initialData }: QuizFormProps) {
     const [title, setTitle] = useState(initialData?.title || '');
     const [description, setDescription] = useState(initialData?.description || '');
     const [questions, setQuestions] = useState<Question[]>(initialData?.questions || []);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [showLatexPreview, setShowLatexPreview] = useState(false);
+
+    // Sélection cours/section
+    const [courses, setCourses] = useState<ICourse[]>([]);
+    const [loadingCourses, setLoadingCourses] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCourseId, setSelectedCourseId] = useState<string>('');
+    const [selectedSectionId, setSelectedSectionId] = useState<string>(
+        propSectionId || initialData?.sectionId?._id || initialData?.sectionId || ''
+    );
+
+    // Si sectionId est fourni en prop, pas besoin de charger les cours
+    const needsCourseSelection = !propSectionId;
+
+    // Charger les cours une seule fois (seulement si pas de sectionId en prop)
+    useEffect(() => {
+        if (!needsCourseSelection) return;
+        async function fetchCourses() {
+            setLoadingCourses(true);
+            try {
+                const res = await fetch('/api/courses?limit=200');
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                const loadedCourses = data.courses || [];
+                setCourses(loadedCourses);
+
+                // En édition, pré-sélectionner le cours de la section existante
+                if (initialData?.sectionId) {
+                    const sId = initialData.sectionId?._id || initialData.sectionId;
+                    for (const course of loadedCourses) {
+                        if (course.sections.some((s: any) => s._id === sId)) {
+                            setSelectedCourseId(course._id);
+                            break;
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des cours :', error);
+            } finally {
+                setLoadingCourses(false);
+            }
+        }
+        fetchCourses();
+    }, [needsCourseSelection]);
+
+    const filteredCourses = searchQuery.trim()
+        ? courses.filter(c => c.title.toLowerCase().includes(searchQuery.toLowerCase()))
+        : courses;
+
+    const selectedCourse = courses.find(c => c._id === selectedCourseId);
 
     const addQuestion = () => {
         const newQuestion: Question = {
@@ -81,12 +135,10 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
     };
 
     const renderLatexPreview = (text: string) => {
-        // Remplacer les expressions LaTeX inline ($...$) et en bloc ($$...$$)
         const parts = text.split(/(\$\$.*?\$\$|\$.*?\$)/g);
-        
+
         return parts.map((part, index) => {
             if (part.startsWith('$$') && part.endsWith('$$')) {
-                // LaTeX en bloc
                 const latex = part.slice(2, -2);
                 return (
                     <div key={index} className="my-2">
@@ -94,7 +146,6 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
                     </div>
                 );
             } else if (part.startsWith('$') && part.endsWith('$')) {
-                // LaTeX inline
                 const latex = part.slice(1, -1);
                 return (
                     <span key={index}>
@@ -102,7 +153,6 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
                     </span>
                 );
             } else {
-                // Texte normal
                 return <span key={index}>{part}</span>;
             }
         });
@@ -114,16 +164,19 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
             alert('Veuillez remplir le titre et ajouter au moins une question');
             return;
         }
+        if (!selectedSectionId) {
+            alert('Veuillez sélectionner un cours et une section');
+            return;
+        }
 
         setIsSubmitting(true);
         try {
-                    const quizData = {
-            title,
-            description,
-            ...(sectionId && { sectionId }),
-            ...(lessonId && { lessonId }),
-            questions
-        };
+            const quizData = {
+                title,
+                description,
+                sectionId: selectedSectionId,
+                questions
+            };
 
             onSave(quizData);
         } catch (error) {
@@ -348,6 +401,77 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
                             placeholder="Description du quiz..."
                         />
                     </div>
+
+                    {/* Sélection cours / section (uniquement si pas de sectionId en prop) */}
+                    {needsCourseSelection && (
+                        <>
+                            <div>
+                                <Label>Cours *</Label>
+                                <Input
+                                    placeholder="Rechercher un cours..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="mb-2"
+                                />
+                                <Select
+                                    value={selectedCourseId}
+                                    onValueChange={(value) => {
+                                        setSelectedCourseId(value);
+                                        setSelectedSectionId('');
+                                    }}
+                                    disabled={loadingCourses}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder={loadingCourses ? "Chargement..." : "Choisissez un cours"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {loadingCourses ? (
+                                            <div className="flex items-center justify-center py-4">
+                                                <Loader2 className="animate-spin w-5 h-5" />
+                                            </div>
+                                        ) : filteredCourses.length > 0 ? (
+                                            filteredCourses.map((course) => (
+                                                <SelectItem key={course._id} value={course._id}>
+                                                    {course.title}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="px-2 py-4 text-sm text-gray-500 text-center">
+                                                Aucun cours trouvé
+                                            </div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            {selectedCourseId && selectedCourse && (
+                                <div>
+                                    <Label>Section *</Label>
+                                    <Select
+                                        value={selectedSectionId}
+                                        onValueChange={setSelectedSectionId}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Sélectionner une section" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {selectedCourse.sections.length > 0 ? (
+                                                selectedCourse.sections.map((section) => (
+                                                    <SelectItem key={section._id} value={section._id}>
+                                                        {section.title}
+                                                    </SelectItem>
+                                                ))
+                                            ) : (
+                                                <div className="px-2 py-4 text-sm text-gray-500 text-center">
+                                                    Aucune section dans ce cours
+                                                </div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </CardContent>
             </Card>
 
@@ -371,9 +495,9 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
                 </CardHeader>
                 <CardContent>
                     {questions.length === 0 ? (
-                                                    <div className="text-center py-8 text-gray-500">
-                                Aucune question ajoutée. Cliquez sur &quot;Ajouter une question&quot; pour commencer.
-                            </div>
+                        <div className="text-center py-8 text-gray-500">
+                            Aucune question ajoutée. Cliquez sur &quot;Ajouter une question&quot; pour commencer.
+                        </div>
                     ) : (
                         <div className="space-y-4">
                             {questions.map((question, index) => renderQuestionForm(question, index))}
@@ -383,7 +507,7 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
             </Card>
 
             <div className="flex gap-4">
-                <Button type="submit" disabled={isSubmitting || !title || questions.length === 0}>
+                <Button type="submit" disabled={isSubmitting || !title || !selectedSectionId || questions.length === 0}>
                     <Save className="h-4 w-4 mr-2" />
                     {isSubmitting ? 'Sauvegarde...' : 'Sauvegarder le quiz'}
                 </Button>
@@ -393,4 +517,4 @@ export default function QuizForm({ sectionId, lessonId, onSave, onCancel, initia
             </div>
         </form>
     );
-} 
+}

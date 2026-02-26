@@ -15,6 +15,7 @@ import ReportModal from './ReportModal';
 interface ReportButtonProps {
     contentId: string;
     contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question';
+    questionId?: string; // ID de la question parente (pour les réponses forum)
     variant?: 'button' | 'dropdown';
     size?: 'sm' | 'default' | 'lg';
     className?: string;
@@ -23,6 +24,7 @@ interface ReportButtonProps {
 export default function ReportButton({ 
     contentId, 
     contentType, 
+    questionId,
     variant = 'button',
     size = 'sm',
     className = ''
@@ -59,6 +61,7 @@ export default function ReportButton({
                     <ReportModal
                         contentId={contentId}
                         contentType={contentType}
+                        questionId={questionId}
                         trigger={null}
                     />
                 )}
@@ -70,6 +73,7 @@ export default function ReportButton({
         <ReportModal
             contentId={contentId}
             contentType={contentType}
+            questionId={questionId}
             trigger={
                 <Button 
                     variant="outline" 

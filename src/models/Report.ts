@@ -15,6 +15,7 @@ export interface IReport extends Document {
     status: 'en_attente' | 'en_cours' | 'resolu' | 'rejete';
     moderator?: ObjectId; // Modérateur qui traite le signalement
     moderatorNotes?: string; // Notes du modérateur
+    questionId?: ObjectId; // ID de la question parente (pour les réponses forum)
     createdAt: Date;
     updatedAt: Date;
     resolvedAt?: Date;
@@ -83,6 +84,11 @@ const ReportSchema = new Schema<IReport>({
     },
     resolvedAt: {
         type: Date
+    },
+    questionId: {
+        type: Schema.Types.ObjectId,
+        ref: 'Question',
+        required: false // Uniquement pour les réponses forum
     }
 });
 

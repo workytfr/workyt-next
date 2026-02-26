@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import "../styles/dashboard-theme.css";
 import { Button } from "@/components/ui/button";
 import {
     Table,
@@ -35,8 +36,15 @@ import {
     SelectValue,
 } from "@/components/ui/Select";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
-import { Info, Calendar, Mail, User } from "lucide-react";
+import { Info, Calendar, Mail, User, Shield } from "lucide-react";
+import ProfileAvatar from "@/components/ui/profile";
 import UserForm from "../_components/UserForm";
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/Accordion";
 import AdvancedPagination from "@/components/ui/AdvancedPagination";
 import AdvancedSearch from "@/components/ui/AdvancedSearch";
 import UserStats from "@/components/ui/UserStats";
@@ -77,6 +85,52 @@ interface Stats {
         avgPoints: number;
     };
 }
+
+// Accès et permissions par rôle (basé sur l'analyse du code)
+const ROLE_ACCESS: Record<string, string[]> = {
+    Apprenti: [
+        "Création de fiches de révision (statut Non Certifiée)",
+        "Cours, quiz, fiches : lecture et utilisation",
+        "Forum : poser des questions, répondre",
+        "Profil, points, badges",
+        "Pas d'accès au dashboard",
+    ],
+    Helpeur: [
+        "Dashboard : vue d'ensemble, stats, exercices, quiz, certificats",
+        "Fiches : création (Certifiée auto), modification, changement de statut",
+        "Exercices et quiz : création et modification",
+        "Forum : valider les réponses des autres",
+        "Upload de fichiers",
+        "Pas : cours, leçons, sections — Pas : Utilisateurs, Partenaires, Statistiques, Modération, suppression de cours",
+    ],
+    Rédacteur: [
+        "Tous les accès Helpeur",
+        "Cours, leçons, sections : création et modification (ses contenus)",
+        "Réordonnancement des sections et leçons",
+        "Pas : suppression de cours/leçons/sections — Pas : MaitreRenardAI (Admin uniquement)",
+    ],
+    Correcteur: [
+        "Tous les accès Rédacteur",
+        "Modification des leçons et contenus des autres (pas seulement les siens)",
+        "Changement du statut des leçons (validation)",
+        "Pas : suppression (réservée Admin)",
+    ],
+    Modérateur: [
+        "Dashboard : accès complet au menu",
+        "Modération : voir et traiter les signalements (reports)",
+        "Section Modération du dashboard",
+        "Pas : création de cours, leçons, sections, exercices, quiz",
+        "Fiches : peut créer (Non Certifiée) mais pas modifier celles des autres",
+    ],
+    Admin: [
+        "Accès total à la plateforme",
+        "Suppression de cours, leçons, sections",
+        "Gestion utilisateurs, Partenaires, Statistiques",
+        "Certificats : création et génération PDF",
+        "Génération de cours avec MaitreRenardAI (PDF → cours structuré)",
+        "Modifier le profil de tout utilisateur",
+    ],
+};
 
 export default function UsersPage() {
     const { data: session } = useSession();
@@ -298,6 +352,40 @@ export default function UsersPage() {
                     totalResults={totalUsers}
                 />
 
+                {/* Référence des accès par rôle */}
+                <div className="bg-white rounded-lg shadow">
+                    <Accordion type="single" collapsible className="w-full">
+                        <AccordionItem value="role-access" className="border-b-0">
+                            <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                                <span className="flex items-center gap-2">
+                                    <Shield className="h-5 w-5 text-gray-600" />
+                                    Accès et permissions par rôle
+                                </span>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6 pb-4 pt-0">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {Object.entries(ROLE_ACCESS).map(([role, accesses]) => (
+                                        <div
+                                            key={role}
+                                            className="rounded-lg border border-gray-200 p-4 bg-gray-50/50"
+                                        >
+                                            <h4 className="font-semibold text-gray-900 mb-2">{role}</h4>
+                                            <ul className="space-y-1 text-sm text-gray-600">
+                                                {accesses.map((access, idx) => (
+                                                    <li key={idx} className="flex gap-2">
+                                                        <span className="text-gray-400">•</span>
+                                                        <span>{access}</span>
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </div>
+
                 {/* Table des utilisateurs */}
                 <div className="bg-white rounded-lg shadow">
                     <Table>
@@ -326,13 +414,17 @@ export default function UsersPage() {
                                         <TableCell>
                                             <div className="flex items-center space-x-3">
                                                 <div className="flex-shrink-0">
-                                                    <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
-                                                        <User className="h-5 w-5 text-gray-600" />
-                                                    </div>
+                                                    <ProfileAvatar
+                                                        username={user.username}
+                                                        userId={user._id}
+                                                        role={user.role}
+                                                        size="small"
+                                                        showPoints={false}
+                                                    />
                                                 </div>
                                                 <div>
-                                                    <div className="font-medium text-gray-900">{user.name}</div>
-                                                    <div className="text-sm text-gray-500">@{user.username}</div>
+                                                    <div className="font-medium text-gray-900">{user.username}</div>
+                                                    <div className="text-sm text-gray-500">{user.email}</div>
                                                 </div>
                                             </div>
                                         </TableCell>
@@ -359,8 +451,10 @@ export default function UsersPage() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="Apprenti">Apprenti</SelectItem>
+                                                    <SelectItem value="Helpeur">Helpeur</SelectItem>
                                                     <SelectItem value="Rédacteur">Rédacteur</SelectItem>
                                                     <SelectItem value="Correcteur">Correcteur</SelectItem>
+                                                    <SelectItem value="Modérateur">Modérateur</SelectItem>
                                                     <SelectItem value="Admin">Admin</SelectItem>
                                                 </SelectContent>
                                             </Select>

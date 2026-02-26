@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 interface ReportModalProps {
     contentId: string;
     contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question';
+    questionId?: string; // ID de la question parente (pour les réponses forum)
     trigger?: React.ReactNode;
 }
 
@@ -27,7 +28,7 @@ const REPORT_REASONS = {
     autre: 'Autre'
 };
 
-export default function ReportModal({ contentId, contentType, trigger }: ReportModalProps) {
+export default function ReportModal({ contentId, contentType, questionId, trigger }: ReportModalProps) {
     const { data: session } = useSession();
     const [open, setOpen] = useState(false);
     const [reason, setReason] = useState<string>('');
@@ -66,7 +67,8 @@ export default function ReportModal({ contentId, contentType, trigger }: ReportM
                         id: contentId
                     },
                     reason,
-                    description: description.trim()
+                    description: description.trim(),
+                    questionId: contentType === 'forum_answer' ? questionId : undefined
                 }),
             });
 

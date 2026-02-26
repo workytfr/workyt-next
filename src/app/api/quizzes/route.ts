@@ -2,9 +2,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import Quiz from '@/models/Quiz';
+import Section from '@/models/Section';
 import connectDB from '@/lib/mongodb';
+import { escapeRegex } from '@/utils/escapeRegex';
 
-// GET - Récupérer tous les quiz (pour le dashboard)
+// GET - Récupérer les quiz avec pagination et filtres
 export async function GET(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
@@ -17,17 +19,56 @@ export async function GET(request: NextRequest) {
         const { searchParams } = new URL(request.url);
         const sectionId = searchParams.get('sectionId');
         const lessonId = searchParams.get('lessonId');
+        const courseId = searchParams.get('courseId');
+        const search = searchParams.get('search') || '';
+        const page = parseInt(searchParams.get('page') || '1');
+        const limit = parseInt(searchParams.get('limit') || '10');
+        const sortBy = searchParams.get('sortBy') || 'createdAt';
+        const sortOrder = searchParams.get('sortOrder') || 'desc';
 
         let query: any = {};
         if (sectionId) query.sectionId = sectionId;
         if (lessonId) query.lessonId = lessonId;
 
-        const quizzes = await Quiz.find(query)
-            .populate('sectionId', 'title')
-            .populate('lessonId', 'title')
-            .sort({ createdAt: -1 });
+        if (search) {
+            query.title = { $regex: escapeRegex(search), $options: 'i' };
+        }
 
-        return NextResponse.json(quizzes);
+        // Filtre par cours : récupérer les sections du cours
+        if (courseId && !sectionId) {
+            const sections = await Section.find({ courseId }).select('_id');
+            const sectionIds = sections.map(s => s._id);
+            query.sectionId = { $in: sectionIds };
+        }
+
+        const skip = (page - 1) * limit;
+
+        const sort: Record<string, 1 | -1> = {};
+        sort[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+        const quizzes = await Quiz.find(query)
+            .populate({
+                path: 'sectionId',
+                select: 'title courseId',
+                populate: {
+                    path: 'courseId',
+                    select: 'title',
+                },
+            })
+            .populate('lessonId', 'title')
+            .sort(sort)
+            .skip(skip)
+            .limit(limit);
+
+        const total = await Quiz.countDocuments(query);
+        const totalPages = Math.ceil(total / limit);
+
+        return NextResponse.json({
+            quizzes,
+            total,
+            page,
+            totalPages,
+        });
     } catch (error) {
         console.error('Erreur lors de la récupération des quiz:', error);
         return NextResponse.json(

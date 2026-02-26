@@ -753,7 +753,7 @@ export default function GenerateCoursePage() {
                             className="w-full bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl py-3 gap-2 text-base"
                         >
                             <Sparkles className="w-5 h-5" />
-                            Générer avec l&apos;IA
+                            Générer avec MaitreRenardAI
                         </Button>
                     </CardContent>
                 </Card>

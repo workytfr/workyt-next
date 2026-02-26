@@ -3,12 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Badge } from "@/components/ui/Badge";
-import { Search, Filter, X, RotateCcw, BookOpen, Clock, CheckCircle, FileText, Users, Calendar } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/Command";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/Popover";
-import { Check, ChevronsUpDown } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { Search, Filter, X, RotateCcw } from "lucide-react";
 
 interface SearchFilters {
     query: string;
@@ -25,28 +20,15 @@ interface LessonAdvancedSearchProps {
     onFiltersChange: (filters: SearchFilters) => void;
     isLoading?: boolean;
     totalResults?: number;
-    stats?: {
-        total: number;
-        published: number;
-        pending: number;
-        draft: number;
-        withMedia: number;
-        byCourse: Record<string, number>;
-        byStatus: Record<string, number>;
-        recentLessons: number;
-        avgMediaPerLesson: number;
-    } | null;
-    courses?: Array<{ _id: string; title: string }>;
-    sections?: Array<{ _id: string; title: string; courseId: string }>;
+    stats?: any;
+    courses?: any[];
+    sections?: any[];
 }
 
-export default function LessonAdvancedSearch({ 
-    onFiltersChange, 
-    isLoading = false, 
+export default function LessonAdvancedSearch({
+    onFiltersChange,
+    isLoading = false,
     totalResults,
-    stats,
-    courses = [],
-    sections = []
 }: LessonAdvancedSearchProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [filters, setFilters] = useState<SearchFilters>({
@@ -61,21 +43,18 @@ export default function LessonAdvancedSearch({
     });
 
     const [debouncedQuery, setDebouncedQuery] = useState("");
-    const [courseSearchOpen, setCourseSearchOpen] = useState(false);
-    const [courseSearchValue, setCourseSearchValue] = useState("");
 
     // Debounce pour la recherche
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedQuery(filters.query);
         }, 300);
-
         return () => clearTimeout(timer);
     }, [filters.query]);
 
     useEffect(() => {
         onFiltersChange({ ...filters, query: debouncedQuery });
-    }, [debouncedQuery, filters.status, filters.courseId, filters.sectionId, filters.authorId, filters.sortBy, filters.sortOrder, filters.hasMedia]);
+    }, [debouncedQuery, filters.status, filters.sortBy, filters.sortOrder, filters.hasMedia]);
 
     const handleFilterChange = (key: keyof SearchFilters, value: any) => {
         setFilters(prev => ({ ...prev, [key]: value }));
@@ -94,24 +73,9 @@ export default function LessonAdvancedSearch({
         });
     };
 
-    const hasActiveFilters = filters.query || 
-        (filters.status && filters.status !== "all") || 
-        (filters.courseId && filters.courseId !== "all") || 
-        (filters.sectionId && filters.sectionId !== "all") || 
-        (filters.authorId && filters.authorId !== "all") || 
+    const hasActiveFilters = filters.query ||
+        (filters.status && filters.status !== "all") ||
         filters.hasMedia;
-
-    // Filtrer les sections par cours sélectionné
-    const filteredSections = filters.courseId === "all" 
-        ? sections 
-        : sections.filter(section => section.courseId === filters.courseId);
-
-    // Filtrer les cours par recherche
-    const filteredCourses = courses.filter(course =>
-        course.title.toLowerCase().includes(courseSearchValue.toLowerCase())
-    );
-
-    const selectedCourse = courses.find(course => course._id === filters.courseId);
 
     return (
         <div className="space-y-4">
@@ -181,100 +145,6 @@ export default function LessonAdvancedSearch({
                         </Select>
                     </div>
 
-                    {/* Filtre par cours avec recherche */}
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1 block">
-                            Cours
-                        </label>
-                        <Popover open={courseSearchOpen} onOpenChange={setCourseSearchOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    role="combobox"
-                                    aria-expanded={courseSearchOpen}
-                                    className="w-full justify-between"
-                                    disabled={isLoading}
-                                >
-                                    {selectedCourse ? selectedCourse.title : "Tous les cours"}
-                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-full p-0">
-                                <Command>
-                                    <CommandInput 
-                                        placeholder="Rechercher un cours..." 
-                                        value={courseSearchValue}
-                                        onChange={e => setCourseSearchValue(e.target.value)}
-                                    />
-                                    <CommandList>
-                                        <CommandEmpty>Aucun cours trouvé.</CommandEmpty>
-                                        <CommandGroup>
-                                            <CommandItem
-                                                onClick={() => {
-                                                    handleFilterChange("courseId", "all");
-                                                    handleFilterChange("sectionId", "all");
-                                                    setCourseSearchOpen(false);
-                                                    setCourseSearchValue("");
-                                                }}
-                                            >
-                                                <Check
-                                                    className={cn(
-                                                        "mr-2 h-4 w-4",
-                                                        filters.courseId === "all" ? "opacity-100" : "opacity-0"
-                                                    )}
-                                                />
-                                                Tous les cours
-                                            </CommandItem>
-                                            {filteredCourses.map((course) => (
-                                                <CommandItem
-                                                    key={course._id}
-                                                    onClick={() => {
-                                                        handleFilterChange("courseId", course._id);
-                                                        handleFilterChange("sectionId", "all");
-                                                        setCourseSearchOpen(false);
-                                                        setCourseSearchValue("");
-                                                    }}
-                                                >
-                                                    <Check
-                                                        className={cn(
-                                                            "mr-2 h-4 w-4",
-                                                            filters.courseId === course._id ? "opacity-100" : "opacity-0"
-                                                        )}
-                                                    />
-                                                    {course.title}
-                                                </CommandItem>
-                                            ))}
-                                        </CommandGroup>
-                                    </CommandList>
-                                </Command>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-
-                    {/* Filtre par section */}
-                    <div>
-                        <label className="text-sm font-medium text-gray-700 mb-1 block">
-                            Section
-                        </label>
-                        <Select
-                            value={filters.sectionId}
-                            onValueChange={(value) => handleFilterChange("sectionId", value)}
-                            disabled={isLoading || filters.courseId === "all"}
-                        >
-                            <SelectTrigger>
-                                <SelectValue placeholder="Toutes les sections" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Toutes les sections</SelectItem>
-                                {filteredSections.map((section) => (
-                                    <SelectItem key={section._id} value={section._id}>
-                                        {section.title}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
                     {/* Tri */}
                     <div>
                         <label className="text-sm font-medium text-gray-700 mb-1 block">
@@ -319,7 +189,7 @@ export default function LessonAdvancedSearch({
                     </div>
 
                     {/* Filtre média */}
-                    <div className="flex items-end">
+                    <div className="flex items-end gap-4">
                         <div className="flex items-center space-x-2">
                             <input
                                 type="checkbox"
@@ -333,10 +203,6 @@ export default function LessonAdvancedSearch({
                                 Avec média
                             </label>
                         </div>
-                    </div>
-
-                    {/* Bouton réinitialiser */}
-                    <div className="flex items-end">
                         <Button
                             variant="outline"
                             onClick={clearFilters}
@@ -350,36 +216,14 @@ export default function LessonAdvancedSearch({
                 </div>
             )}
 
-            {/* Statistiques rapides */}
-            {stats && (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-blue-50 p-3 rounded-lg text-center">
-                        <div className="text-lg font-bold text-blue-600">{stats.total}</div>
-                        <div className="text-xs text-blue-600">Total</div>
-                    </div>
-                    <div className="bg-green-50 p-3 rounded-lg text-center">
-                        <div className="text-lg font-bold text-green-600">{stats.published}</div>
-                        <div className="text-xs text-green-600">Publiées</div>
-                    </div>
-                    <div className="bg-yellow-50 p-3 rounded-lg text-center">
-                        <div className="text-lg font-bold text-yellow-600">{stats.pending}</div>
-                        <div className="text-xs text-yellow-600">En attente</div>
-                    </div>
-                    <div className="bg-purple-50 p-3 rounded-lg text-center">
-                        <div className="text-lg font-bold text-purple-600">{stats.withMedia}</div>
-                        <div className="text-xs text-purple-600">Avec média</div>
-                    </div>
-                </div>
-            )}
-
             {/* Indicateurs de filtres actifs */}
             {hasActiveFilters && (
                 <div className="flex flex-wrap gap-2">
                     {filters.query && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                             Recherche: {filters.query}
-                            <X 
-                                className="h-3 w-3 cursor-pointer" 
+                            <X
+                                className="h-3 w-3 cursor-pointer"
                                 onClick={() => handleFilterChange("query", "")}
                             />
                         </Badge>
@@ -387,35 +231,17 @@ export default function LessonAdvancedSearch({
                     {filters.status && filters.status !== "all" && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                             Statut: {filters.status}
-                            <X 
-                                className="h-3 w-3 cursor-pointer" 
+                            <X
+                                className="h-3 w-3 cursor-pointer"
                                 onClick={() => handleFilterChange("status", "all")}
-                            />
-                        </Badge>
-                    )}
-                    {filters.courseId && filters.courseId !== "all" && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                            Cours: {courses.find(c => c._id === filters.courseId)?.title}
-                            <X 
-                                className="h-3 w-3 cursor-pointer" 
-                                onClick={() => handleFilterChange("courseId", "all")}
-                            />
-                        </Badge>
-                    )}
-                    {filters.sectionId && filters.sectionId !== "all" && (
-                        <Badge variant="secondary" className="flex items-center gap-1">
-                            Section: {sections.find(s => s._id === filters.sectionId)?.title}
-                            <X 
-                                className="h-3 w-3 cursor-pointer" 
-                                onClick={() => handleFilterChange("sectionId", "all")}
                             />
                         </Badge>
                     )}
                     {filters.hasMedia && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                             Avec média
-                            <X 
-                                className="h-3 w-3 cursor-pointer" 
+                            <X
+                                className="h-3 w-3 cursor-pointer"
                                 onClick={() => handleFilterChange("hasMedia", false)}
                             />
                         </Badge>
@@ -424,4 +250,4 @@ export default function LessonAdvancedSearch({
             )}
         </div>
     );
-} 
+}

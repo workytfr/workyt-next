@@ -82,28 +82,55 @@ export async function POST(req: NextRequest) {
             };
 
             try {
-                // Étape 1 : Authentification (Bearer token ou session cookies)
+                // Étape 1 : Authentification (Bearer token ou session cookies) avec timeout
                 sendEvent("progress", { step: 1, message: "Vérification des permissions..." });
 
-                let user: { _id: any; role: string } | null = null;
-                const authHeader = req.headers.get("authorization");
-                if (authHeader?.startsWith("Bearer ")) {
-                    try {
-                        user = await authMiddleware(req);
-                    } catch {
-                        user = null;
+                const AUTH_TIMEOUT_MS = 15000; // 15 s max pour l'auth
+
+                const authWithTimeout = async (): Promise<{ _id: any; role: string } | null> => {
+                    let user: { _id: any; role: string } | null = null;
+                    const authHeader = req.headers.get("authorization");
+                    if (authHeader?.startsWith("Bearer ")) {
+                        try {
+                            user = await authMiddleware(req);
+                        } catch (err: any) {
+                            if (err?.code === "JWT_EXPIRED") {
+                                throw err;
+                            }
+                            user = null;
+                        }
                     }
-                }
-                if (!user) {
-                    const session = await getServerSession(authOptions);
-                    if (session?.user?.id) {
-                        await connectDB();
-                        const dbUser = await User.findById(session.user.id).select("-password");
-                        if (dbUser) user = dbUser;
+                    if (!user) {
+                        const session = await getServerSession(authOptions);
+                        if (session?.user?.id) {
+                            await connectDB();
+                            const dbUser = await User.findById(session.user.id).select("-password");
+                            if (dbUser) user = dbUser;
+                        }
                     }
+                    return user;
+                };
+
+                let user: { _id: any; role: string } | null;
+                try {
+                    user = await Promise.race([
+                        authWithTimeout(),
+                        new Promise<null>((_, reject) =>
+                            setTimeout(() => reject(new Error("Timeout: la connexion à la base de données a pris trop de temps. Vérifiez MONGODB_URI et la connectivité réseau.")), AUTH_TIMEOUT_MS)
+                        ),
+                    ]);
+                } catch (authErr: any) {
+                    if (authErr?.code === "JWT_EXPIRED") {
+                        sendEvent("error", { message: "Session expirée. Veuillez vous reconnecter." });
+                    } else {
+                        sendEvent("error", { message: authErr?.message || "Erreur lors de la vérification des permissions." });
+                    }
+                    controller.close();
+                    return;
                 }
+
                 if (!user || !user._id) {
-                    sendEvent("error", { message: "Non autorisé. Veuillez vous connecter." });
+                    sendEvent("error", { message: "Non autorisé. Veuillez vous reconnecter." });
                     controller.close();
                     return;
                 }
