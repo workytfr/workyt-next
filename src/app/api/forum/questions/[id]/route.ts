@@ -3,7 +3,12 @@ import dbConnect from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Answer from "@/models/Answer";
 import Revision from "@/models/Revision";
-import { generateSignedUrl, extractFileKeyFromUrl } from "@/lib/b2Utils";
+import User from "@/models/User";
+import PointTransaction from "@/models/PointTransaction";
+import Report from "@/models/Report";
+import { generateSignedUrl, extractFileKeyFromUrl, deleteFileFromStorage } from "@/lib/b2Utils";
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -107,6 +112,150 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         console.error("❌ Erreur lors de la récupération de la question :", error.message);
         return NextResponse.json(
             { success: false, message: "Impossible de récupérer la question." },
+            { status: 500 }
+        );
+    }
+}
+
+/**
+ * DELETE /api/forum/questions/[id] - Supprimer une question (modérateur/admin uniquement)
+ */
+export async function DELETE(
+    req: NextRequest,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        await dbConnect();
+        
+        const session = await getServerSession(authOptions);
+        
+        if (!session?.user?.email) {
+            return NextResponse.json(
+                { success: false, message: "Non authentifié." },
+                { status: 401 }
+            );
+        }
+        
+        const user = await User.findOne({ email: session.user.email });
+        if (!user) {
+            return NextResponse.json(
+                { success: false, message: "Utilisateur non trouvé." },
+                { status: 404 }
+            );
+        }
+        
+        // Vérifier que l'utilisateur est modérateur ou admin
+        if (user.role !== 'Admin' && user.role !== 'Modérateur') {
+            return NextResponse.json(
+                { success: false, message: "Accès non autorisé. Rôle modérateur requis." },
+                { status: 403 }
+            );
+        }
+        
+        const { id } = await params;
+        
+        if (!id) {
+            return NextResponse.json(
+                { success: false, message: "ID de la question requis." },
+                { status: 400 }
+            );
+        }
+        
+        // Récupérer la question
+        const question = await Question.findById(id);
+        if (!question) {
+            return NextResponse.json(
+                { success: false, message: "Question non trouvée." },
+                { status: 404 }
+            );
+        }
+        
+        // Vérifier qu'il existe un signalement actif pour ce contenu (uniquement pour les modérateurs)
+        const isAdmin = user.role === 'Admin';
+        if (!isAdmin) {
+            const existingReport = await Report.findOne({
+                'reportedContent.type': 'forum_question',
+                'reportedContent.id': id,
+                status: { $in: ['en_attente', 'en_cours'] }
+            });
+            
+            if (!existingReport) {
+                return NextResponse.json(
+                    { success: false, message: "Vous ne pouvez supprimer ce contenu que s'il fait l'objet d'un signalement actif." },
+                    { status: 403 }
+                );
+            }
+        }
+        
+        // Supprimer les pièces jointes de B2 si présentes
+        if (question.attachments && question.attachments.length > 0) {
+            console.log(`Suppression de ${question.attachments.length} pièce(s) jointe(s)...`);
+            
+            const deletionPromises = question.attachments.map(async (fileUrl: string) => {
+                try {
+                    if (!fileUrl || fileUrl.includes('undefined')) {
+                        console.warn(`URL de fichier invalide ignorée: ${fileUrl}`);
+                        return;
+                    }
+                    
+                    const fileKey = extractFileKeyFromUrl(fileUrl);
+                    if (!fileKey) {
+                        console.warn(`Impossible d'extraire la clé du fichier: ${fileUrl}`);
+                        return;
+                    }
+                    
+                    const deletionSuccess = await deleteFileFromStorage(process.env.S3_BUCKET_NAME!, fileKey);
+                    
+                    if (deletionSuccess) {
+                        console.log(`Fichier supprimé avec succès: ${fileKey}`);
+                    } else {
+                        console.warn(`Échec de la suppression du fichier: ${fileKey}`);
+                    }
+                } catch (error) {
+                    console.error(`Erreur lors de la suppression du fichier ${fileUrl}:`, error);
+                }
+            });
+            
+            await Promise.all(deletionPromises);
+        }
+        
+        // Récupérer toutes les réponses pour traitement
+        const answers = await Answer.find({ question: id });
+        
+        // Pour chaque réponse validée ou meilleure réponse, retirer les points
+        for (const answer of answers) {
+            if (answer.status === 'Validée' || answer.status === 'Meilleure Réponse') {
+                // Retirer les points à l'auteur de la réponse
+                await User.findByIdAndUpdate(answer.user, { $inc: { points: -question.points } });
+                
+                // Enregistrer la transaction de points (retrait)
+                await PointTransaction.create({
+                    user: answer.user,
+                    question: question._id,
+                    answer: answer._id,
+                    action: "deleteQuestion",
+                    type: "perte",
+                    points: -question.points,
+                    createdAt: new Date(),
+                });
+            }
+        }
+        
+        // Supprimer toutes les réponses associées
+        await Answer.deleteMany({ question: id });
+        
+        // Supprimer la question
+        await Question.findByIdAndDelete(id);
+        
+        return NextResponse.json(
+            { success: true, message: "Question et réponses associées supprimées avec succès." },
+            { status: 200 }
+        );
+        
+    } catch (error: any) {
+        console.error("❌ Erreur lors de la suppression de la question:", error.message);
+        return NextResponse.json(
+            { success: false, message: "Erreur lors de la suppression de la question." },
             { status: 500 }
         );
     }

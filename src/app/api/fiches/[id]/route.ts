@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import User from "@/models/User";
 import Comment from "@/models/Comment";
+import Report from "@/models/Report";
 import { generateSignedUrl, deleteFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils";
 
 // Connexion à MongoDB
@@ -132,13 +133,30 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
         }
 
         const isAdmin = session.user.role === "Admin";
+        const isModerator = session.user.role === "Modérateur";
         const isCreator = fiche.author.toString() === session.user.id;
 
-        if (!isAdmin && !isCreator) {
+        if (!isAdmin && !isModerator && !isCreator) {
             return NextResponse.json(
-                { success: false, message: "Accès refusé. Seuls les créateurs de fiches et les administrateurs peuvent supprimer cette fiche." },
+                { success: false, message: "Accès refusé. Seuls les créateurs de fiches, les modérateurs et les administrateurs peuvent supprimer cette fiche." },
                 { status: 403 }
             );
+        }
+
+        // Vérifier qu'il existe un signalement actif pour ce contenu (uniquement pour les modérateurs)
+        if (isModerator && !isAdmin && !isCreator) {
+            const existingReport = await Report.findOne({
+                'reportedContent.type': 'revision',
+                'reportedContent.id': id,
+                status: { $in: ['en_attente', 'en_cours'] }
+            });
+            
+            if (!existingReport) {
+                return NextResponse.json(
+                    { success: false, message: "Vous ne pouvez supprimer ce contenu que s'il fait l'objet d'un signalement actif." },
+                    { status: 403 }
+                );
+            }
         }
 
         if (fiche.files && fiche.files.length > 0) {

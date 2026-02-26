@@ -218,6 +218,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                         <ReportButton 
                                             contentId={answer._id} 
                                             contentType="forum_answer"
+                                            questionId={question?._id}
                                             variant="dropdown"
                                         />
                                     </div>
