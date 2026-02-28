@@ -5,6 +5,7 @@ import { Accordion } from "@/components/ui/Accordion";
 import { Course, SelectedContent } from "./types";
 import { SectionAccordion } from "./SectionAccordion";
 import CourseSearch from "./CourseSearch";
+import RelatedContentPanel from "./RelatedContentPanel";
 import { Search } from "lucide-react";
 import "./styles/notion-theme.css";
 
@@ -45,7 +46,7 @@ export function Sidebar({ course, onSelectContent, readLessons }: SidebarProps) 
             </div>
 
             {/* Sections */}
-            <div className="flex-1 overflow-y-auto overflow-x-hidden py-2">
+            <div className="flex-1 overflow-y-auto overflow-x-hidden py-2 min-h-0">
                 <div className="px-2">
                     <Accordion type="single" collapsible className="space-y-1">
                         {course.sections.map((section) => (
@@ -61,8 +62,11 @@ export function Sidebar({ course, onSelectContent, readLessons }: SidebarProps) 
                 </div>
             </div>
 
+            {/* Ressources liées - Ultra compact */}
+            <RelatedContentPanel courseId={course._id} />
+
             {/* Footer info */}
-            <div className="px-4 py-3 border-t border-[#e3e2e0] text-xs text-[#9ca3af]">
+            <div className="px-4 py-3 border-t border-[#e3e2e0] text-xs text-[#9ca3af] flex-shrink-0">
                 {course.sections.length} section{course.sections.length > 1 ? 's' : ''}
             </div>
         </div>

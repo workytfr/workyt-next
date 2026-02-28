@@ -72,7 +72,94 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte, sans texte avant
 }`;
 
 export async function POST(req: NextRequest) {
-    // Utiliser un ReadableStream pour envoyer la progression en SSE
+    // --- Étape 1 : Authentification AVANT le stream SSE ---
+    // Cela évite que le stream soit "aborted" si l'auth ou la DB est lente
+    let user: { _id: any; role: string } | null = null;
+
+    const authHeader = req.headers.get("authorization");
+    if (authHeader?.startsWith("Bearer ")) {
+        try {
+            user = await authMiddleware(req);
+        } catch (err: any) {
+            if (err?.code === "JWT_EXPIRED") {
+                return NextResponse.json(
+                    { message: "Session expirée. Veuillez vous reconnecter." },
+                    { status: 401 }
+                );
+            }
+            user = null;
+        }
+    }
+
+    if (!user) {
+        try {
+            const session = await getServerSession(authOptions);
+            if (session?.user?.id) {
+                await connectDB();
+                const dbUser = await User.findById(session.user.id).select("-password");
+                if (dbUser) user = dbUser;
+            }
+        } catch (err: any) {
+            console.error("Erreur auth session fallback:", err.message);
+        }
+    }
+
+    if (!user || !user._id) {
+        return NextResponse.json(
+            { message: "Non autorisé. Veuillez vous reconnecter." },
+            { status: 401 }
+        );
+    }
+
+    if (!ALLOWED_ROLES.includes(user.role)) {
+        return NextResponse.json(
+            { message: "Rôle insuffisant pour générer un cours." },
+            { status: 403 }
+        );
+    }
+
+    // --- Étape 2 : Lecture du FormData AVANT le stream SSE ---
+    let formData: FormData;
+    try {
+        formData = await req.formData();
+    } catch (err: any) {
+        return NextResponse.json(
+            { message: "Erreur lors de la lecture des données du formulaire." },
+            { status: 400 }
+        );
+    }
+
+    const pdf = formData.get("pdf") as File | null;
+    const title = formData.get("title") as string | null;
+    const matiere = formData.get("matiere") as string | null;
+    const niveau = formData.get("niveau") as string | null;
+
+    if (!pdf || !title || !matiere || !niveau) {
+        return NextResponse.json(
+            { message: "PDF, titre, matière et niveau requis." },
+            { status: 400 }
+        );
+    }
+
+    if (pdf.size > MAX_PDF_SIZE) {
+        return NextResponse.json(
+            { message: "Le PDF ne doit pas dépasser 20 Mo." },
+            { status: 400 }
+        );
+    }
+
+    if (!pdf.name.toLowerCase().endsWith(".pdf")) {
+        return NextResponse.json(
+            { message: "Le fichier doit être un PDF." },
+            { status: 400 }
+        );
+    }
+
+    // Lire le contenu du PDF en mémoire avant le stream
+    const pdfArrayBuffer = await pdf.arrayBuffer();
+    const pdfFileName = pdf.name;
+
+    // --- Stream SSE pour les étapes longues (extraction PDF + IA) ---
     const encoder = new TextEncoder();
 
     const stream = new ReadableStream({
@@ -82,94 +169,13 @@ export async function POST(req: NextRequest) {
             };
 
             try {
-                // Étape 1 : Authentification (Bearer token ou session cookies) avec timeout
-                sendEvent("progress", { step: 1, message: "Vérification des permissions..." });
-
-                const AUTH_TIMEOUT_MS = 15000; // 15 s max pour l'auth
-
-                const authWithTimeout = async (): Promise<{ _id: any; role: string } | null> => {
-                    let user: { _id: any; role: string } | null = null;
-                    const authHeader = req.headers.get("authorization");
-                    if (authHeader?.startsWith("Bearer ")) {
-                        try {
-                            user = await authMiddleware(req);
-                        } catch (err: any) {
-                            if (err?.code === "JWT_EXPIRED") {
-                                throw err;
-                            }
-                            user = null;
-                        }
-                    }
-                    if (!user) {
-                        const session = await getServerSession(authOptions);
-                        if (session?.user?.id) {
-                            await connectDB();
-                            const dbUser = await User.findById(session.user.id).select("-password");
-                            if (dbUser) user = dbUser;
-                        }
-                    }
-                    return user;
-                };
-
-                let user: { _id: any; role: string } | null;
-                try {
-                    user = await Promise.race([
-                        authWithTimeout(),
-                        new Promise<null>((_, reject) =>
-                            setTimeout(() => reject(new Error("Timeout: la connexion à la base de données a pris trop de temps. Vérifiez MONGODB_URI et la connectivité réseau.")), AUTH_TIMEOUT_MS)
-                        ),
-                    ]);
-                } catch (authErr: any) {
-                    if (authErr?.code === "JWT_EXPIRED") {
-                        sendEvent("error", { message: "Session expirée. Veuillez vous reconnecter." });
-                    } else {
-                        sendEvent("error", { message: authErr?.message || "Erreur lors de la vérification des permissions." });
-                    }
-                    controller.close();
-                    return;
-                }
-
-                if (!user || !user._id) {
-                    sendEvent("error", { message: "Non autorisé. Veuillez vous reconnecter." });
-                    controller.close();
-                    return;
-                }
-
-                if (!ALLOWED_ROLES.includes(user.role)) {
-                    sendEvent("error", { message: "Rôle insuffisant pour générer un cours." });
-                    controller.close();
-                    return;
-                }
-
-                const formData = await req.formData();
-                const pdf = formData.get("pdf") as File | null;
-                const title = formData.get("title") as string | null;
-                const matiere = formData.get("matiere") as string | null;
-                const niveau = formData.get("niveau") as string | null;
-
-                if (!pdf || !title || !matiere || !niveau) {
-                    sendEvent("error", { message: "PDF, titre, matière et niveau requis." });
-                    controller.close();
-                    return;
-                }
-
-                if (pdf.size > MAX_PDF_SIZE) {
-                    sendEvent("error", { message: "Le PDF ne doit pas dépasser 20 Mo." });
-                    controller.close();
-                    return;
-                }
-
-                if (!pdf.name.toLowerCase().endsWith(".pdf")) {
-                    sendEvent("error", { message: "Le fichier doit être un PDF." });
-                    controller.close();
-                    return;
-                }
+                // Étape 1 déjà faite (auth OK)
+                sendEvent("progress", { step: 1, message: "Permissions vérifiées ✓" });
 
                 // Étape 2 : Extraction du texte
-                sendEvent("progress", { step: 2, message: `Extraction du texte de "${pdf.name}"...` });
+                sendEvent("progress", { step: 2, message: `Extraction du texte de "${pdfFileName}"...` });
 
-                const arrayBuffer = await pdf.arrayBuffer();
-                const uint8Array = new Uint8Array(arrayBuffer);
+                const uint8Array = new Uint8Array(pdfArrayBuffer);
 
                 const { PDFParse } = await import("pdf-parse");
                 const parser = new (PDFParse as any)(uint8Array);

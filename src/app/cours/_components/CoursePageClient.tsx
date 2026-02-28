@@ -370,12 +370,20 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
     }, [updateUrl]);
 
     const handleNavigate = useCallback((item: NavigableItem) => {
-        if (item.kind === 'lesson' && item.lesson && !item.lesson.content) {
+        const needsFetch =
+            (item.kind === 'lesson' && item.lesson && !item.lesson.content) ||
+            (item.kind === 'exercises') ||
+            (item.kind === 'quizzes');
+
+        if (needsFetch) {
             fetch(`/api/cours/${params.coursId}/sections/${item.sectionId}`)
                 .then(res => res.json())
                 .then(data => {
-                    if (data?.section) {
-                        const lesson = data.section.lessons?.find((l: Lesson) => l._id === item.lesson?._id);
+                    if (!data?.section) return;
+                    const section = data.section;
+
+                    if (item.kind === 'lesson') {
+                        const lesson = section.lessons?.find((l: Lesson) => l._id === item.lesson?._id);
                         if (lesson) {
                             handleSelectContent({
                                 kind: 'lesson',
@@ -384,6 +392,20 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
                                 sectionTitle: item.sectionTitle,
                             });
                         }
+                    } else if (item.kind === 'exercises' && section.exercises) {
+                        handleSelectContent({
+                            kind: 'exercises',
+                            exercises: section.exercises,
+                            sectionId: item.sectionId,
+                            sectionTitle: item.sectionTitle,
+                        });
+                    } else if (item.kind === 'quizzes' && section.quizzes) {
+                        handleSelectContent({
+                            kind: 'quizzes',
+                            quizzes: section.quizzes,
+                            sectionId: item.sectionId,
+                            sectionTitle: item.sectionTitle,
+                        });
                     }
                 })
                 .catch(console.error);
