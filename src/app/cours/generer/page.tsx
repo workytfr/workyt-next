@@ -125,6 +125,7 @@ export default function GenerateCoursePage() {
             const reader = res.body.getReader();
             const decoder = new TextDecoder();
             let buffer = "";
+            let eventType = "";
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -132,25 +133,34 @@ export default function GenerateCoursePage() {
 
                 buffer += decoder.decode(value, { stream: true });
 
-                // Parser les événements SSE
-                const lines = buffer.split("\n");
-                buffer = lines.pop() || "";
+                // Parser les événements SSE complets (séparés par \n\n)
+                let boundary = buffer.indexOf("\n\n");
+                while (boundary !== -1) {
+                    const rawEvent = buffer.slice(0, boundary);
+                    buffer = buffer.slice(boundary + 2);
 
-                let eventType = "";
-                for (const line of lines) {
-                    if (line.startsWith("event: ")) {
-                        eventType = line.slice(7).trim();
-                    } else if (line.startsWith("data: ")) {
+                    let currentEventType = "";
+                    let currentData = "";
+
+                    for (const line of rawEvent.split("\n")) {
+                        if (line.startsWith("event: ")) {
+                            currentEventType = line.slice(7).trim();
+                        } else if (line.startsWith("data: ")) {
+                            currentData = line.slice(6);
+                        }
+                    }
+
+                    if (currentData) {
                         try {
-                            const data = JSON.parse(line.slice(6));
-                            if (eventType === "progress") {
+                            const data = JSON.parse(currentData);
+                            if (currentEventType === "progress") {
                                 setProgressStep(data.step);
                                 setProgressMessage(data.message);
-                            } else if (eventType === "done") {
+                            } else if (currentEventType === "done") {
                                 setDraft(data.draft);
                                 setPdfInfo(data.pdfInfo);
                                 setStep("editing");
-                            } else if (eventType === "error") {
+                            } else if (currentEventType === "error") {
                                 setError(data.message || "Erreur lors de la génération.");
                                 setStep("form");
                             }
@@ -158,6 +168,8 @@ export default function GenerateCoursePage() {
                             // Ignorer les données malformées
                         }
                     }
+
+                    boundary = buffer.indexOf("\n\n");
                 }
             }
         } catch (err) {
