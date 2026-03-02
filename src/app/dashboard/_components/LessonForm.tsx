@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -24,9 +24,10 @@ interface ICourse {
 interface LessonFormProps {
     lesson?: ILesson; // En édition, cette prop est définie
     onSuccess: (lesson: ILesson) => void;
+    onDirtyChange?: (isDirty: boolean) => void;
 }
 
-export default function LessonForm({ lesson, onSuccess }: LessonFormProps) {
+export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonFormProps) {
     // TOUS les autres hooks doivent être appelés ici AVANT la condition
     const { data: session, update } = useSession();
     const [courses, setCourses] = useState<ICourse[]>([]);
@@ -40,6 +41,13 @@ export default function LessonForm({ lesson, onSuccess }: LessonFormProps) {
     const [files, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
+
+    // Tracker si le formulaire a été modifié
+    const initialValues = useRef({ title: lesson?.title || "", content: lesson?.content || "" });
+    useEffect(() => {
+        const isDirty = title !== initialValues.current.title || content !== initialValues.current.content;
+        onDirtyChange?.(isDirty);
+    }, [title, content, onDirtyChange]);
 
     // Fonction pour transformer le HTML brut en HTML parsable par TipTap
     const transformHtmlForTipTap = (html: string): string => {

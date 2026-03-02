@@ -140,14 +140,24 @@ function enhancedStylePlugin() {
 
                     if (remainingChildren.length > 0) {
                         const firstChild = remainingChildren[0];
-                        if (firstChild.type === 'element' && firstChild.tagName === 'strong') {
-                            const extractText = (child: any): string => {
-                                if (child.type === 'text') return child.value || '';
-                                if (child.type === 'element' && child.children) {
-                                    return child.children.map(extractText).join('');
-                                }
-                                return '';
-                            };
+                        const extractText = (child: any): string => {
+                            if (child.type === 'text') return child.value || '';
+                            if (child.type === 'element' && child.children) {
+                                return child.children.map(extractText).join('');
+                            }
+                            return '';
+                        };
+
+                        // Format 1 : <p><strong>Titre</strong></p> (TipTap-compatible)
+                        if (firstChild.type === 'element' && firstChild.tagName === 'p' &&
+                            firstChild.children?.length === 1 &&
+                            firstChild.children[0]?.type === 'element' &&
+                            firstChild.children[0]?.tagName === 'strong') {
+                            title = extractText(firstChild.children[0]) || config.title;
+                            remainingChildren = remainingChildren.slice(1);
+                        }
+                        // Format 2 : <strong>Titre</strong> (ancien format)
+                        else if (firstChild.type === 'element' && firstChild.tagName === 'strong') {
                             title = extractText(firstChild) || config.title;
                             remainingChildren = remainingChildren.slice(1);
                         }
@@ -238,8 +248,14 @@ export default function LessonView({ title, content }: LessonViewProps) {
                     const config = blockTypeConfig[blockType as keyof typeof blockTypeConfig];
                     let blockTitle = config.title;
                     let blockContent = content.trim();
+                    // Format 1 : <p><strong>Titre</strong></p> (nouveau format TipTap-compatible)
+                    const pStrongMatch = blockContent.match(/^<p>\s*<strong>([^<]*)<\/strong>\s*<\/p>/);
+                    // Format 2 : <strong>Titre</strong> (ancien format)
                     const strongMatch = blockContent.match(/^<strong>([^<]*)<\/strong>/);
-                    if (strongMatch && strongMatch[1]) {
+                    if (pStrongMatch && pStrongMatch[1]) {
+                        blockTitle = pStrongMatch[1];
+                        blockContent = blockContent.replace(/^<p>\s*<strong>([^<]*)<\/strong>\s*<\/p>\s*/, '');
+                    } else if (strongMatch && strongMatch[1]) {
                         blockTitle = strongMatch[1];
                         blockContent = blockContent.replace(/^<strong>([^<]*)<\/strong>\s*/, '');
                     }

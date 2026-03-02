@@ -39,6 +39,7 @@ export default function LessonsPage() {
     const [lessons, setLessons] = useState<ILesson[]>([]);
     const [selectedLesson, setSelectedLesson] = useState<ILesson | undefined>(undefined);
     const [isDialogOpen, setDialogOpen] = useState(false);
+    const [isFormDirty, setIsFormDirty] = useState(false);
     const [loadingLessons, setLoadingLessons] = useState(false);
     const [page, setPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -263,8 +264,17 @@ export default function LessonsPage() {
                     <Dialog
                         open={isDialogOpen}
                         onOpenChange={(open) => {
+                            if (!open && isFormDirty) {
+                                const confirmed = window.confirm(
+                                    "Vous avez des modifications non sauvegardées. Voulez-vous vraiment fermer ?"
+                                );
+                                if (!confirmed) return;
+                            }
                             setDialogOpen(open);
-                            if (!open) setSelectedLesson(undefined);
+                            if (!open) {
+                                setSelectedLesson(undefined);
+                                setIsFormDirty(false);
+                            }
                         }}
                     >
                         <DialogTrigger asChild>
@@ -280,12 +290,14 @@ export default function LessonsPage() {
                             </DialogHeader>
                             <LessonForm
                                 lesson={selectedLesson}
+                                onDirtyChange={setIsFormDirty}
                                 onSuccess={(newLesson: ILesson) => {
                                     setLessons((prev) =>
                                         selectedLesson
                                             ? prev.map((l) => (l._id === newLesson._id ? newLesson : l))
                                             : [...prev, newLesson]
                                     );
+                                    setIsFormDirty(false);
                                     setDialogOpen(false);
                                     setSelectedLesson(undefined);
                                 }}

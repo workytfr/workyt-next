@@ -117,18 +117,29 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
                 .ProseMirror .custom-block {
                     position: relative;
                     margin: 1rem 0;
-                    padding: 0.8rem 1rem;
+                    padding: 0.8rem 1rem 0.8rem 1rem;
+                    padding-top: 2rem;
                     border-radius: 8px;
-                    border: 1px solid #ddd;
-                    background-color: #fafafa;
-                    transition: transform 0.2s ease;
+                    border-left: 4px solid #ddd;
+                    transition: box-shadow 0.2s ease;
                 }
                 .ProseMirror .custom-block:hover {
-                    transform: scale(1.01);
+                    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+                }
+                /* Label du type de bloc */
+                .ProseMirror .custom-block::before {
+                    position: absolute;
+                    top: 6px;
+                    left: 12px;
+                    font-size: 10px;
+                    font-weight: 700;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    opacity: 0.8;
                 }
                 /* Styles pour le contenu à l'intérieur des blocs custom */
                 .ProseMirror .custom-block p {
-                    margin: 0.5rem 0;
+                    margin: 0.4rem 0;
                     line-height: 1.6;
                 }
                 .ProseMirror .custom-block p:first-child {
@@ -143,28 +154,111 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
                 }
                 .ProseMirror .custom-block br {
                     display: block;
-                    margin: 0.5rem 0;
+                    margin: 0.3rem 0;
                     content: "";
                 }
+                /* Placeholder pour blocs vides */
+                .ProseMirror .custom-block p.is-empty::before {
+                    content: "Écrivez le contenu du bloc ici...";
+                    color: #9ca3af;
+                    font-style: italic;
+                    pointer-events: none;
+                    float: left;
+                    height: 0;
+                }
 
-                /* Couleurs par type de bloc */
+                /* Couleurs par type — identiques au rendu LessonView */
                 .ProseMirror .custom-block.definition {
-                    border-left: 6px solid #0d6efd; /* bleu */
+                    border-left-color: #f97316;
+                    background-color: #fff7ed;
+                }
+                .ProseMirror .custom-block.definition::before {
+                    content: "Définition";
+                    color: #f97316;
                 }
                 .ProseMirror .custom-block.propriete {
-                    border-left: 6px solid #20c997; /* vert */
+                    border-left-color: #3b82f6;
+                    background-color: #eff6ff;
+                }
+                .ProseMirror .custom-block.propriete::before {
+                    content: "Propriété";
+                    color: #3b82f6;
                 }
                 .ProseMirror .custom-block.exemple {
-                    border-left: 6px solid #ffc107; /* jaune */
+                    border-left-color: #8b5cf6;
+                    background-color: #f5f3ff;
+                }
+                .ProseMirror .custom-block.exemple::before {
+                    content: "Exemple";
+                    color: #8b5cf6;
                 }
                 .ProseMirror .custom-block.theoreme {
-                    border-left: 6px solid #6f42c1; /* violet */
+                    border-left-color: #10b981;
+                    background-color: #ecfdf5;
+                }
+                .ProseMirror .custom-block.theoreme::before {
+                    content: "Théorème";
+                    color: #10b981;
                 }
                 .ProseMirror .custom-block.remarque {
-                    border-left: 6px solid #5bc0de; /* cyan */
+                    border-left-color: #6b7280;
+                    background-color: #f9fafb;
+                }
+                .ProseMirror .custom-block.remarque::before {
+                    content: "Remarque";
+                    color: #6b7280;
                 }
                 .ProseMirror .custom-block.attention {
-                    border-left: 6px solid #dc3545; /* rouge */
+                    border-left-color: #ef4444;
+                    background-color: #fef2f2;
+                }
+                .ProseMirror .custom-block.attention::before {
+                    content: "Attention";
+                    color: #ef4444;
+                }
+
+                /* Tableaux visibles dans l'éditeur */
+                .ProseMirror table {
+                    border-collapse: collapse;
+                    width: 100%;
+                    margin: 1rem 0;
+                    overflow: hidden;
+                    border-radius: 4px;
+                }
+                .ProseMirror th,
+                .ProseMirror td {
+                    border: 1px solid #d1d5db;
+                    padding: 0.5rem 0.75rem;
+                    text-align: left;
+                    vertical-align: top;
+                    min-width: 80px;
+                }
+                .ProseMirror th {
+                    background-color: #f3f4f6;
+                    font-weight: 600;
+                    font-size: 0.875rem;
+                    color: #374151;
+                }
+                .ProseMirror td {
+                    font-size: 0.875rem;
+                }
+                .ProseMirror tr:hover td {
+                    background-color: #f9fafb;
+                }
+                /* Cellule sélectionnée dans l'éditeur */
+                .ProseMirror .selectedCell {
+                    background-color: #dbeafe;
+                }
+                /* Poignée de redimensionnement des colonnes */
+                .ProseMirror .column-resize-handle {
+                    position: absolute;
+                    right: -2px;
+                    top: 0;
+                    bottom: 0;
+                    width: 4px;
+                    background-color: #3b82f6;
+                    cursor: col-resize;
+                    z-index: 20;
                 }
             `}</style>
 

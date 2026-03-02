@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { educationData } from "@/data/educationData";
 import Link from "next/link";
+import LessonView from "@/app/cours/_components/LessonView";
 import "katex/dist/katex.min.css";
 
 interface LessonDraft {
