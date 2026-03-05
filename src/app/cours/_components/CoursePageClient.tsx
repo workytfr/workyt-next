@@ -103,12 +103,16 @@ function ContentView({ content, onBack }: { content: SelectedContent; onBack: ()
         const isCompleted = completedQuiz?.completed || false;
 
         return (
-            <QuizViewer
-                quiz={selectedQuiz as Quiz & { questions: NonNullable<Quiz['questions']> }}
-                onClose={() => setSelectedQuiz(null)}
-                onComplete={handleQuizComplete}
-                isCompleted={isCompleted}
-            />
+            <div className="w-full overflow-x-hidden">
+                <div className="max-w-3xl">
+                    <QuizViewer
+                        quiz={selectedQuiz as Quiz & { questions: NonNullable<Quiz['questions']> }}
+                        onClose={() => setSelectedQuiz(null)}
+                        onComplete={handleQuizComplete}
+                        isCompleted={isCompleted}
+                    />
+                </div>
+            </div>
         );
     }
 

@@ -30,11 +30,29 @@ export interface Exercise {
 
 export interface QuizQuestion {
     question: string;
-    questionType: 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Association' | 'Texte à trous';
+    questionType: 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code';
     questionPic?: string;
     answerSelectionType: 'single' | 'multiple';
     answers: string[];
     point: number;
+    explanation?: string;
+    // Slider metadata: answers[0]=min, answers[1]=max, answers[2]=step, answers[3]=unit, answers[4]=tolerance
+    // Classement: answers = items in correct order, correctAnswer = [0,1,2,...] (identity)
+    // Glisser-déposer: answers = left items, correctAnswer = right items (matching strings)
+    // Code: answers[0] = language, answers[1] = code template with {{blank}} markers, correctAnswer = expected values
+}
+
+export interface TimeBonus {
+    enabled: boolean;
+    targetTime: number;       // secondes
+    bonusPercent: number;     // ex: 15 = +15%
+}
+
+export interface TimePenalty {
+    enabled: boolean;
+    maxTime: number;          // secondes
+    penaltyPercentPerMin: number;
+    maxPenaltyPercent: number;
 }
 
 export interface Quiz {
@@ -44,6 +62,8 @@ export interface Quiz {
     questions?: QuizQuestion[];
     questionsCount?: number;
     totalPoints?: number;
+    timeBonus?: TimeBonus;
+    timePenalty?: TimePenalty;
     // Proprietes runtime ajoutees cote client
     completed?: boolean;
     score?: number;
@@ -112,8 +132,20 @@ export interface NavigableItem {
 
 // === Resultats quiz ===
 
+export interface QuizDetailedAnswer {
+    questionIndex: number;
+    userAnswer: any;
+    isCorrect: boolean;
+    pointsEarned: number;
+    correctAnswer?: any;
+    explanation?: string;
+}
+
 export interface QuizCompletionResult {
     score: number;
     maxScore: number;
     percentage: number;
+    answers?: QuizDetailedAnswer[];
+    timeModifier?: number;
+    timeModifierLabel?: string;
 }

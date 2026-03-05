@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
 /**
  * Types possibles pour une question
  */
-export type QuestionType = 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Association' | 'Texte à trous';
+export type QuestionType = 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code';
 
 /**
  * Interface pour une question du quiz
@@ -24,12 +24,30 @@ export interface IQuestion {
 /**
  * Interface représentant un quizz
  */
+/**
+ * Configuration du bonus/malus temps (optionnel)
+ */
+export interface ITimeBonus {
+    enabled: boolean;
+    targetTime: number;       // Temps cible en secondes (bonus si terminé avant)
+    bonusPercent: number;     // % de bonus (ex: 15 = +15%)
+}
+
+export interface ITimePenalty {
+    enabled: boolean;
+    maxTime: number;          // Temps max en secondes (malus si dépassé)
+    penaltyPercentPerMin: number; // % de malus par minute de dépassement
+    maxPenaltyPercent: number;    // Plafond du malus (ex: 50 = -50% max)
+}
+
 export interface IQuiz extends Document {
     sectionId?: ObjectId; // Peut être rattaché à une section
     lessonId?: ObjectId; // Peut être rattaché à une leçon
     title: string; // Titre du quiz
     description?: string; // Brève description du quiz
     questions: IQuestion[]; // Liste des questions
+    timeBonus?: ITimeBonus;
+    timePenalty?: ITimePenalty;
     createdAt: Date;
     updatedAt: Date;
 }
@@ -47,7 +65,7 @@ const QuizSchema: Schema = new Schema({
             question: { type: String, required: true },
             questionType: {
                 type: String,
-                enum: ['QCM', 'Réponse courte', 'Vrai/Faux', 'Association', 'Texte à trous'],
+                enum: ['QCM', 'Réponse courte', 'Vrai/Faux', 'Texte à trous', 'Classement', 'Glisser-déposer', 'Slider', 'Code'],
                 required: true
             },
             questionPic: { type: String },
@@ -60,6 +78,17 @@ const QuizSchema: Schema = new Schema({
             point: { type: Number, required: true }
         }
     ],
+    timeBonus: {
+        enabled: { type: Boolean, default: false },
+        targetTime: { type: Number, default: 0 },
+        bonusPercent: { type: Number, default: 0 }
+    },
+    timePenalty: {
+        enabled: { type: Boolean, default: false },
+        maxTime: { type: Number, default: 0 },
+        penaltyPercentPerMin: { type: Number, default: 0 },
+        maxPenaltyPercent: { type: Number, default: 50 }
+    },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });

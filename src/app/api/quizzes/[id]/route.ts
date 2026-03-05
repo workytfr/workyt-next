@@ -8,6 +8,19 @@ import PointTransaction from '@/models/PointTransaction';
 import connectDB from '@/lib/mongodb';
 import { BadgeService } from '@/lib/badgeService';
 
+// Normalise une chaîne pour comparaison tolérante :
+// supprime accents, ponctuation, espaces multiples, puis lowercase + trim
+function normalizeForComparison(str: string): string {
+    return str
+        .normalize('NFD')                          // décompose les accents (é → e + ́)
+        .replace(/[\u0300-\u036f]/g, '')           // supprime les diacritiques
+        .replace(/[''`]/g, '')                     // supprime apostrophes typographiques
+        .replace(/[^\w\s]/g, '')                   // supprime toute ponctuation restante
+        .replace(/\s+/g, ' ')                      // normalise les espaces multiples
+        .toLowerCase()
+        .trim();
+}
+
 // GET - Récupérer un quiz spécifique (sans les bonnes réponses pour les utilisateurs)
 export async function GET(
     request: NextRequest,
@@ -28,11 +41,16 @@ export async function GET(
             title: quiz.title,
             description: quiz.description,
             sectionId: quiz.sectionId,
+            timeBonus: quiz.timeBonus?.enabled ? quiz.timeBonus : undefined,
+            timePenalty: quiz.timePenalty?.enabled ? quiz.timePenalty : undefined,
             questions: quiz.questions.map((q: any) => ({
                 question: q.question,
                 questionType: q.questionType,
+                questionPic: q.questionPic || null,
+                answerSelectionType: q.answerSelectionType || 'single',
                 answers: q.answers,
-                point: q.point
+                point: q.point,
+                explanation: q.explanation || null
                 // On ne retourne pas correctAnswer pour les utilisateurs
             }))
         };
@@ -113,7 +131,9 @@ export async function PUT(
                 description: body.description || '',
                 questions: body.questions,
                 sectionId: body.sectionId,
-                lessonId: body.lessonId
+                lessonId: body.lessonId,
+                timeBonus: body.timeBonus || { enabled: false },
+                timePenalty: body.timePenalty || { enabled: false }
             },
             { new: true }
         ).populate('sectionId', 'title courseId');
@@ -200,27 +220,65 @@ export async function POST(
                     break;
                     
                 case 'Réponse courte':
-                    const userAnswerStr = String(userAnswer || '').toLowerCase().trim();
-                    const correctAnswerStr = String(question.correctAnswer || '').toLowerCase().trim();
-                    isCorrect = userAnswerStr === correctAnswerStr;
-                    break;
-                    
-                case 'Association':
-                    const correctAnswers = Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer];
-                    const userAnswers = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
-                    isCorrect = correctAnswers.length === userAnswers.length &&
-                               correctAnswers.every((ans: any) => userAnswers.includes(ans)) &&
-                               userAnswers.every((ans: any) => correctAnswers.includes(ans));
+                    const userAnswerNorm = normalizeForComparison(String(userAnswer || ''));
+                    // Support array of accepted answers (alternatives)
+                    const acceptedAnswers = Array.isArray(question.correctAnswer)
+                        ? question.correctAnswer.map((a: any) => normalizeForComparison(String(a || '')))
+                        : [normalizeForComparison(String(question.correctAnswer || ''))];
+                    isCorrect = acceptedAnswers.some((accepted: string) => accepted === userAnswerNorm);
                     break;
                     
                 case 'Texte à trous':
-                    const correctBlanks = Array.isArray(question.correctAnswer) ? question.correctAnswer : [question.correctAnswer];
-                    const userBlanks = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+                    const correctBlanks = Array.isArray(question.correctAnswer)
+                        ? question.correctAnswer.map((c: any) => String(c).trim().toLowerCase())
+                        : [String(question.correctAnswer || '').trim().toLowerCase()];
+                    const userBlanks = Array.isArray(userAnswer)
+                        ? userAnswer.map((c: any) => String(c).trim().toLowerCase())
+                        : [String(userAnswer || '').trim().toLowerCase()];
                     isCorrect = correctBlanks.length === userBlanks.length &&
-                               correctBlanks.every((blank: any) => userBlanks.includes(blank)) &&
-                               userBlanks.every((blank: any) => correctBlanks.includes(blank));
+                               correctBlanks.every((val: string, idx: number) => val === userBlanks[idx]);
                     break;
-                    
+
+                case 'Classement':
+                    // correctAnswer = correct order as array of indices [0,1,2,...]
+                    // userAnswer = user's ordering as array of indices
+                    const correctOrder = Array.isArray(question.correctAnswer) ? question.correctAnswer : [];
+                    const userOrder = Array.isArray(userAnswer) ? userAnswer : [];
+                    isCorrect = correctOrder.length === userOrder.length &&
+                               correctOrder.every((val: any, idx: number) => String(val) === String(userOrder[idx]));
+                    break;
+
+                case 'Glisser-déposer':
+                    // correctAnswer = array of right-side strings matching each left item
+                    // userAnswer = array of user-selected right-side strings
+                    const correctPairs = Array.isArray(question.correctAnswer) ? question.correctAnswer : [];
+                    const userPairs = Array.isArray(userAnswer) ? userAnswer : [];
+                    isCorrect = correctPairs.length === userPairs.length &&
+                               correctPairs.every((val: any, idx: number) =>
+                                   String(val).toLowerCase().trim() === String(userPairs[idx] || '').toLowerCase().trim()
+                               );
+                    break;
+
+                case 'Slider':
+                    // correctAnswer = target number, answers[4] = tolerance (optional)
+                    const targetValue = parseFloat(String(question.correctAnswer));
+                    const userValue = parseFloat(String(userAnswer));
+                    const tolerance = question.answers[4] ? parseFloat(question.answers[4]) : 0;
+                    isCorrect = !isNaN(targetValue) && !isNaN(userValue) && Math.abs(userValue - targetValue) <= tolerance;
+                    break;
+
+                case 'Code':
+                    // correctAnswer = expected code string(s)
+                    const correctCode = Array.isArray(question.correctAnswer)
+                        ? question.correctAnswer.map((c: any) => String(c).trim())
+                        : [String(question.correctAnswer || '').trim()];
+                    const userCode = Array.isArray(userAnswer)
+                        ? userAnswer.map((c: any) => String(c).trim())
+                        : [String(userAnswer || '').trim()];
+                    isCorrect = correctCode.length === userCode.length &&
+                               correctCode.every((val: string, idx: number) => val === userCode[idx]);
+                    break;
+
                 default:
                     isCorrect = false;
             }
@@ -232,9 +290,49 @@ export async function POST(
                 questionIndex: i,
                 userAnswer: userAnswer,
                 isCorrect: isCorrect,
-                pointsEarned: pointsEarned
+                pointsEarned: pointsEarned,
+                correctAnswer: question.correctAnswer,
+                explanation: question.explanation || null
             });
         }
+
+        // Appliquer le bonus/malus temps
+        let timeModifier = 0; // en pourcentage (+15 ou -10)
+        let timeModifierLabel = '';
+
+        const tb = quiz.timeBonus;
+        const tp = quiz.timePenalty;
+
+        if (tb?.enabled && tb.targetTime > 0 && tb.bonusPercent > 0) {
+            if (timeSpent <= tb.targetTime) {
+                timeModifier = tb.bonusPercent;
+                timeModifierLabel = `Bonus temps +${tb.bonusPercent}%`;
+            }
+        }
+
+        if (tp?.enabled && tp.maxTime > 0 && tp.penaltyPercentPerMin > 0) {
+            if (timeSpent > tp.maxTime) {
+                const overtimeMinutes = (timeSpent - tp.maxTime) / 60;
+                const penalty = Math.min(
+                    overtimeMinutes * tp.penaltyPercentPerMin,
+                    tp.maxPenaltyPercent || 50
+                );
+                timeModifier -= penalty;
+                timeModifierLabel = timeModifierLabel
+                    ? `${timeModifierLabel}, Malus temps -${Math.round(penalty)}%`
+                    : `Malus temps -${Math.round(penalty)}%`;
+            }
+        }
+
+        if (timeModifier !== 0) {
+            totalScore = totalScore * (1 + timeModifier / 100);
+            // Le score ne peut pas être négatif ni dépasser maxScore
+            totalScore = Math.max(0, Math.min(totalScore, maxScore));
+        }
+
+        // Arrondir le score total à un entier (les points par question peuvent être décimaux)
+        totalScore = Math.round(totalScore);
+        maxScore = Math.round(maxScore);
 
         // Créer l'enregistrement de completion
         const sectionData = quiz.sectionId as any;
@@ -288,7 +386,9 @@ export async function POST(
             score: totalScore,
             maxScore: maxScore,
             percentage: percentage,
-            answers: evaluatedAnswers
+            answers: evaluatedAnswers,
+            timeModifier: timeModifier !== 0 ? timeModifier : undefined,
+            timeModifierLabel: timeModifierLabel || undefined
         });
     } catch (error) {
         console.error('Erreur lors de la soumission du quiz:', error);
