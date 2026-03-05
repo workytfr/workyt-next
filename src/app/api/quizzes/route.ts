@@ -159,6 +159,78 @@ export async function POST(request: NextRequest) {
                     }
                     break;
 
+                case 'Classement':
+                    if (!question.answers || question.answers.length < 2) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: Classement nécessite au moins 2 éléments` },
+                            { status: 400 }
+                        );
+                    }
+                    if (!question.correctAnswer) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: ordre correct requis` },
+                            { status: 400 }
+                        );
+                    }
+                    if (!question.answerSelectionType) {
+                        question.answerSelectionType = 'single';
+                    }
+                    break;
+
+                case 'Glisser-déposer':
+                    if (!question.answers || question.answers.length < 2) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: Glisser-déposer nécessite au moins 2 éléments` },
+                            { status: 400 }
+                        );
+                    }
+                    if (!question.correctAnswer) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: réponse correcte requise` },
+                            { status: 400 }
+                        );
+                    }
+                    if (!question.answerSelectionType) {
+                        question.answerSelectionType = 'single';
+                    }
+                    break;
+
+                case 'Texte à trous':
+                    if (!question.correctAnswer) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: réponse correcte requise` },
+                            { status: 400 }
+                        );
+                    }
+                    if (!question.answerSelectionType) {
+                        question.answerSelectionType = 'single';
+                    }
+                    break;
+
+                case 'Slider':
+                    if (question.correctAnswer === undefined || question.correctAnswer === null) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: valeur correcte requise` },
+                            { status: 400 }
+                        );
+                    }
+                    if (!question.answerSelectionType) {
+                        question.answerSelectionType = 'single';
+                    }
+                    break;
+
+                case 'Code':
+                    if (!question.correctAnswer) {
+                        return NextResponse.json(
+                            { error: `Question ${i + 1}: réponse correcte requise` },
+                            { status: 400 }
+                        );
+                    }
+                    if (!question.answerSelectionType) {
+                        question.answerSelectionType = 'single';
+                    }
+                    break;
+
                 default:
                     return NextResponse.json(
                         { error: `Question ${i + 1}: type de question non supporté` },
