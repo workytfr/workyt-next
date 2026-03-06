@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import Report from '@/models/Report';
 import User from '@/models/User';
 import { connectDB } from '@/lib/mongodb';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 /**
  * POST /api/reports - Créer un nouveau signalement
@@ -11,13 +12,17 @@ import { connectDB } from '@/lib/mongodb';
 export async function POST(request: NextRequest) {
     try {
         const session = await getServerSession(authOptions);
-        
+
         if (!session?.user?.email) {
             return NextResponse.json(
                 { error: 'Non authentifié' },
                 { status: 401 }
             );
         }
+
+        // Rate limit: 5 signalements par minute par compte
+        const rl = rateLimit(`reports:${session.user.email}`, 5, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         await connectDB();
         

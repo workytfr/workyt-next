@@ -6,6 +6,7 @@ import User from "@/models/User";
 import PointTransaction from '@/models/PointTransaction';
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 // Configuration de Cloudflare R2 via AWS SDK
 const s3 = new S3Client({
@@ -65,6 +66,10 @@ export async function POST(req: NextRequest) {
         if (!user || !user._id) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
+
+        // Rate limit: 5 fiches par minute par compte
+        const rl = rateLimit(`fiche-create:${user._id}`, 5, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         const formData = await req.formData();
         const title = formData.get("title") as string;

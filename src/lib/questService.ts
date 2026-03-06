@@ -14,6 +14,7 @@ import '../models/Revision';
 import '../models/Course';
 import '../models/Section';
 import '../models/Quiz';
+import OwnedCosmetic from '../models/OwnedCosmetic';
 
 export class QuestService {
   /**
@@ -268,6 +269,11 @@ export class QuestService {
 
       for (const progress of progresses) {
         const quest = progress.quest as IQuest;
+        if (!quest) {
+          // Quête supprimée, nettoyer la progression orpheline
+          await QuestProgress.findByIdAndDelete(progress._id);
+          continue;
+        }
         results.push({
           id: quest._id,
           slug: quest.slug,
@@ -440,6 +446,13 @@ export class QuestService {
       gem.balance += selectedReward.amount || 0;
       gem.totalEarned += selectedReward.amount || 0;
       await gem.save();
+    } else if (selectedReward.type === 'cosmetic' && selectedReward.cosmeticType && selectedReward.cosmeticId) {
+      // Ajouter le cosmétique à l'inventaire
+      await OwnedCosmetic.findOneAndUpdate(
+        { user: userId, cosmeticType: selectedReward.cosmeticType, cosmeticId: selectedReward.cosmeticId },
+        { user: userId, cosmeticType: selectedReward.cosmeticType, cosmeticId: selectedReward.cosmeticId, source: 'chest', acquiredAt: new Date() },
+        { upsert: true }
+      );
     }
 
     chestReward.claimed = true;

@@ -6,18 +6,24 @@ import User from '@/models/User';
 import Gem from '@/models/Gem';
 import GemTransaction from '@/models/GemTransaction';
 import ProfileCustomization from '@/models/ProfileCustomization';
+import OwnedCosmetic from '@/models/OwnedCosmetic';
 import mongoose from 'mongoose';
 import { GEM_CONFIG } from '@/lib/gemConfig';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
-    
+
     // Vérifier l'authentification
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
+
+    // Rate limit: 10 achats par minute par compte
+    const rl = rateLimit(`purchase:${session.user.email}`, 10, 60_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     const { itemType, itemValue, itemId } = await req.json();
     
@@ -44,9 +50,32 @@ export async function POST(req: NextRequest) {
     }
 
     if (price === 0) {
-      return NextResponse.json({ 
-        error: 'Type d\'article invalide' 
+      return NextResponse.json({
+        error: 'Type d\'article invalide'
       }, { status: 400 });
+    }
+
+    // Déterminer le cosmeticType pour l'inventaire
+    const cosmeticTypeMap: Record<string, string> = {
+      usernameColor: 'username_color',
+      profileImage: 'profile_image',
+      profileBorder: 'profile_border',
+    };
+    const cosmeticType = cosmeticTypeMap[itemType];
+
+    // Vérifier si l'utilisateur possède déjà ce cosmétique
+    if (cosmeticType) {
+      const alreadyOwned = await OwnedCosmetic.findOne({
+        user: user._id,
+        cosmeticType,
+        cosmeticId: itemValue,
+      });
+      if (alreadyOwned) {
+        return NextResponse.json({
+          error: 'Vous possédez déjà cet article. Équipez-le depuis votre inventaire.',
+          alreadyOwned: true,
+        }, { status: 400 });
+      }
     }
 
     // Déduire les gemmes de manière atomique (vérification + déduction en une seule opération)
@@ -109,6 +138,15 @@ export async function POST(req: NextRequest) {
 
     if (!updatedCustomization) {
       return NextResponse.json({ error: 'Erreur lors de la mise à jour de la personnalisation' }, { status: 500 });
+    }
+
+    // Ajouter à l'inventaire
+    if (cosmeticType) {
+      await OwnedCosmetic.findOneAndUpdate(
+        { user: user._id, cosmeticType, cosmeticId: itemValue },
+        { user: user._id, cosmeticType, cosmeticId: itemValue, source: 'purchase', acquiredAt: new Date() },
+        { upsert: true }
+      );
     }
 
     // Enregistrer la transaction

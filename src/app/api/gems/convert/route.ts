@@ -7,16 +7,21 @@ import Gem from '@/models/Gem';
 import GemTransaction from '@/models/GemTransaction';
 import mongoose from 'mongoose';
 import { GEM_CONFIG, gemUtils } from '@/lib/gemConfig';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
-    
+
     // Vérifier l'authentification
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
+
+    // Rate limit: 1 conversion par 45 secondes par compte
+    const rl = rateLimit(`convert:${session.user.email}`, 1, 45_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     const { points } = await req.json();
     

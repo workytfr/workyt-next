@@ -5,6 +5,7 @@ import User from '@/models/User';
 import connectDB from '@/lib/mongodb';
 import { QuestService } from '@/lib/questService';
 import { isValidObjectId } from 'mongoose';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 /**
  * POST /api/quests/[id]/claim - Réclamer les récompenses d'une quête complétée
@@ -15,13 +16,17 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
       );
     }
+
+    // Rate limit: 5 claims par minute par compte
+    const rl = rateLimit(`quest-claim:${session.user.email}`, 5, 60_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     await connectDB();
     

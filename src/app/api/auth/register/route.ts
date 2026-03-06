@@ -1,10 +1,15 @@
 import bcrypt from "bcryptjs";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import nodemailer from "nodemailer";
+import { rateLimit, getIP, rateLimitResponse } from '@/lib/rateLimit';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+    // Rate limit: 3 inscriptions par 30 min par IP
+    const rl = rateLimit(`register:${getIP(req)}`, 3, 1_800_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
+
     const { name, email, password, username } = await req.json();
 
     if (!name || !email || !password || !username) {

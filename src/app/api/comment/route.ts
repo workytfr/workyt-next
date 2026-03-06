@@ -5,6 +5,7 @@ import Revision from "@/models/Revision";
 import User from "@/models/User";
 import authMiddleware from "@/middlewares/authMiddleware";
 import mongoose from "mongoose";
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 connectDB();
 
@@ -19,6 +20,10 @@ export async function POST(req: NextRequest) {
                 { status: 401 }
             );
         }
+
+        // Rate limit: 2 commentaires par minute par compte
+        const rl = rateLimit(`comment:${user._id}`, 2, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         // Lecture des données de la requête
         const body = await req.json();

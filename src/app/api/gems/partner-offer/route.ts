@@ -6,16 +6,21 @@ import User from '@/models/User';
 import Gem from '@/models/Gem';
 import GemTransaction from '@/models/GemTransaction';
 import Partner from '@/models/Partner';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
-    
+
     // Vérifier l'authentification
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
+
+    // Rate limit: 3 offres par minute par compte
+    const rl = rateLimit(`partner-offer:${session.user.email}`, 3, 60_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     const { partnerId, offerType } = await req.json();
 

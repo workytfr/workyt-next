@@ -6,6 +6,7 @@ import User from "@/models/User";
 import PointTransaction from "@/models/PointTransaction";
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 // Exécuter ce route handler en runtime Node.js
 export const runtime = "nodejs";
@@ -57,6 +58,10 @@ export async function POST(req: NextRequest) {
         if (!user?._id) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
+
+        // Rate limit: 5 questions par minute par compte
+        const rl = rateLimit(`forum-creer:${user._id}`, 5, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         const formData = await req.formData();
         const title = formData.get("title") as string;

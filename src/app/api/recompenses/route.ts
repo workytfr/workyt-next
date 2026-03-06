@@ -3,6 +3,7 @@ import dbConnect from '@/lib/mongodb';
 import authMiddleware from '@/middlewares/authMiddleware';
 import Reward from '@/models/Reward';
 import { handleApiError } from '@/utils/apiErrorResponse';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function GET(req: NextRequest) {
     await dbConnect();
@@ -105,6 +106,10 @@ export async function POST(req: NextRequest) {
         if (!user?.isAdmin) {
             return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
         }
+
+        // Rate limit: 5 créations par minute par compte
+        const rl = rateLimit(`recompenses:${user._id}`, 5, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         const payload = await req.json();
         // Valider que payload.startDate < payload.endDate

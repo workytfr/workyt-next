@@ -8,6 +8,7 @@ import Exercise from "@/models/Exercise";
 import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import mongoose from "mongoose";
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 connectDB();
 
@@ -36,6 +37,10 @@ export async function POST(req: NextRequest) {
         if (!user || !user._id) {
             return handleError("Non autorisé. Veuillez vous connecter.", 401);
         }
+
+        // Rate limit: 20 bookmarks par minute par compte
+        const rl = rateLimit(`bookmark:${user._id}`, 20, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         const body = await req.json();
         const { revisionId, questionId, courseId, exerciseId, collection } = body;

@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import connectDB from '@/lib/mongodb';
 import Chest from '@/models/Chest';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 /**
  * GET /api/chests - Récupérer tous les coffres avec leurs récompenses possibles
@@ -10,13 +11,17 @@ import Chest from '@/models/Chest';
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    
+
     if (!session?.user?.email) {
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
       );
     }
+
+    // Rate limit: 5 requêtes par minute par compte
+    const rl = rateLimit(`chests:${session.user.email}`, 5, 60_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     await connectDB();
     

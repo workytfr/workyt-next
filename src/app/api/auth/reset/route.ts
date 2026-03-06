@@ -1,11 +1,16 @@
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { rateLimit, getIP, rateLimitResponse } from '@/lib/rateLimit';
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
     try {
+        // Rate limit: 3 resets par 30 min par IP
+        const rl = rateLimit(`reset:${getIP(req)}`, 3, 1_800_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
+
         const { email } = await req.json();
 
         if (!email) {

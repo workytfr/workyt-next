@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import { claimDailyReward } from '@/lib/calendarService';
 import User from '@/models/User';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
@@ -10,6 +11,10 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
+
+    // Rate limit: 3 claims par minute par compte
+    const rl = rateLimit(`calendar-claim:${session.user.email}`, 3, 60_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     const { date } = await req.json();
     

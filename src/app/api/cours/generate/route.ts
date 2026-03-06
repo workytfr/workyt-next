@@ -5,6 +5,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import User from "@/models/User";
 import connectDB from "@/lib/mongodb";
 import { callOpenRouter, extractJSON } from "@/lib/openrouter";
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 const ALLOWED_ROLES = ["Admin"];
 const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
@@ -117,6 +118,10 @@ export async function POST(req: NextRequest) {
             { status: 403 }
         );
     }
+
+    // Rate limit: 2 générations par minute par compte
+    const rl = rateLimit(`cours-generate:${user._id}`, 2, 60_000);
+    if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     // --- Étape 2 : Lecture du FormData AVANT le stream SSE ---
     let formData: FormData;

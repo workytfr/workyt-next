@@ -8,6 +8,7 @@ import Answer from "@/models/Answer";
 import User from "@/models/User";
 import PointTransaction from '@/models/PointTransaction';
 import { BadgeService } from "@/lib/badgeService";
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 // Configuration S3/R2 (compatible S3_* et R2_*)
 const s3Client = new S3Client({
@@ -76,6 +77,10 @@ export async function POST(
                 { status: 401 }
             );
         }
+
+        // Rate limit: 5 réponses par minute par compte
+        const rl = rateLimit(`forum-repondre:${user._id}`, 5, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         // Await params to get the id
         const { id } = await params;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import authMiddleware from '@/middlewares/authMiddleware';
+import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
 
@@ -26,6 +27,10 @@ export async function POST(req: NextRequest) {
         if (!user || !['Helpeur', 'Rédacteur', 'Correcteur', 'Admin'].includes(user.role)) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
+
+        // Rate limit: 5 uploads par minute par compte
+        const rl = rateLimit(`upload:${user._id}`, 5, 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         // Récupérer le header Content-Type et extraire la boundary
         const contentType = req.headers.get('content-type');

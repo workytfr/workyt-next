@@ -3,21 +3,21 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import GemManager from '@/components/ui/GemManager';
-import { Gem } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/Badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import NoSSR from "@/components/NoSSR";
-import { 
-    Store, 
-    MapPin, 
-    Globe, 
-    Phone, 
-    Mail, 
+import {
+    Store,
+    MapPin,
+    Globe,
+    Phone,
+    Mail,
     Search
 } from "lucide-react";
+import "@/app/cours/_components/styles/notion-theme.css";
 
 interface Partner {
     _id: string;
@@ -72,33 +72,37 @@ const categories = [
 
 // Composant pour l'en-tête des gemmes
 const GemsHeader = () => (
-    <div className="text-center mb-12">
-        <div className="flex items-center justify-center gap-3 mb-4">
-            <Gem className="h-12 w-12 text-blue-600" />
-            <h1 className="text-4xl font-bold text-gray-900">
-                Gestionnaire de Gemmes
-            </h1>
+    <header className="bg-white">
+        <div className="notion-container-wide py-16 md:py-20">
+            <div className="max-w-2xl">
+                <div className="flex items-center gap-3 mb-5">
+                    <img src="/badge/diamond.png" alt="" width={40} height={40} className="object-contain" />
+                    <h1 className="notion-title-large">
+                        Gemmes & Personnalisation
+                    </h1>
+                </div>
+                <p className="notion-subtitle text-lg">
+                    Convertissez vos points en gemmes et personnalisez votre profil avec des éléments uniques.
+                    Créez un style qui vous ressemble !
+                </p>
+            </div>
         </div>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Convertissez vos points en gemmes et personnalisez votre profil avec des éléments uniques. 
-            Créez un style qui vous ressemble !
-        </p>
-    </div>
+    </header>
 );
 
 // Composant pour l'en-tête des partenaires
 const PartnersHeader = () => (
-    <div className="bg-white shadow-sm border-b mb-8">
-        <div className="container mx-auto px-4 py-6">
-            <div className="text-center">
-                <div className="flex items-center justify-center gap-3 mb-4">
-                    <Store className="w-10 h-10 text-blue-600" />
-                    <h2 className="text-3xl font-bold text-gray-900">Workyt Award</h2>
+    <div className="notion-divider" style={{ margin: '3rem 0 2rem' }} >
+        <div className="py-8">
+            <div className="max-w-2xl">
+                <div className="flex items-center gap-3 mb-4">
+                    <Store className="w-8 h-8" style={{ color: 'var(--notion-accent)' }} />
+                    <h2 className="notion-title">Workyt Award</h2>
                 </div>
-                <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+                <p className="notion-subtitle">
                     Découvrez nos partenaires et profitez d&apos;offres exclusives partout en France !
                 </p>
-                <p className="text-sm text-gray-500 mt-2">
+                <p className="notion-text-small mt-2">
                     Réductions, avantages et offres spéciales pour les étudiants
                 </p>
             </div>
@@ -126,7 +130,7 @@ const PartnersFilters = ({
     cities: string[];
     filteredPartners: Partner[];
 }) => (
-    <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
+    <div className="bg-[#f7f6f3] rounded-2xl p-4 md:p-5 mb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -177,7 +181,7 @@ const PartnerCard = ({ partner, onUseOffer, isOfferActivated }: {
     onUseOffer: (partner: Partner, offerType: 'free' | 'premium') => void; 
     isOfferActivated: (partnerId: string, offerType: 'free' | 'premium') => boolean;
 }) => (
-    <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300">
+    <Card className="notion-card overflow-hidden">
         <div className="h-40 bg-gray-200 relative">
             <img
                 src={partner.image}
@@ -267,7 +271,7 @@ const PartnerCard = ({ partner, onUseOffer, isOfferActivated }: {
                 <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium text-purple-800">Offre premium</span>
                     <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                        <Gem className="w-3 h-3 mr-1" />
+                        <img src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mr-1" />
                         {partner.offers.premium.gemsCost} gemmes
                     </Badge>
                 </div>
@@ -556,11 +560,11 @@ export default function GemsPageClient() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50">
-                <div className="container mx-auto px-4 py-8">
+            <div className="notion-layout notion-animate-fade-in min-h-screen">
+                <div className="notion-container-wide py-8">
                     <div className="text-center py-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-                        <p className="mt-4 text-gray-600">Chargement des partenaires...</p>
+                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: 'var(--notion-accent)' }}></div>
+                        <p className="mt-4 notion-text-secondary">Chargement...</p>
                     </div>
                 </div>
             </div>
@@ -569,18 +573,18 @@ export default function GemsPageClient() {
 
     return (
         <NoSSR>
-            <div className="min-h-screen bg-gray-50">
-                <div className="container mx-auto py-6">
+            <div className="notion-layout notion-animate-fade-in min-h-screen">
                     {/* Section Gemmes */}
                     <GemsHeader />
+                <div className="notion-container-wide py-8 md:py-12">
                     <GemManager />
 
                     {/* Section Partenaires */}
-                    <div className="mt-16">
+                    <div className="mt-8">
                         <PartnersHeader />
                         
                         {/* Indicateur de persistance */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <div className="rounded-2xl p-4 mb-6" style={{ background: 'var(--notion-info-light)', border: '1px solid rgba(59, 130, 246, 0.15)' }}>
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-3">
                                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
@@ -623,7 +627,7 @@ export default function GemsPageClient() {
                         />
 
                         {/* Grille des partenaires */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        <div className="notion-grid notion-grid-3">
                             {filteredPartners.map((partner) => (
                                 <PartnerCard 
                                     key={partner._id} 
@@ -635,10 +639,10 @@ export default function GemsPageClient() {
                         </div>
 
                         {filteredPartners.length === 0 && (
-                            <div className="text-center py-16">
-                                <Store className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                                <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun partenaire trouvé</h3>
-                                <p className="text-gray-500">
+                            <div className="notion-empty">
+                                <Store className="notion-empty-icon mx-auto" />
+                                <h3 className="notion-empty-title">Aucun partenaire trouvé</h3>
+                                <p className="notion-empty-text">
                                     Essayez de modifier vos critères de recherche
                                 </p>
                             </div>
@@ -694,7 +698,7 @@ export default function GemsPageClient() {
                                     
                                     {selectedOfferType === 'premium' && (
                                         <div className="flex items-center gap-2 text-sm text-purple-600 mb-3">
-                                            <Gem className="w-4 h-4" />
+                                            <img src="/badge/diamond.png" alt="" width={16} height={16} className="object-contain" />
                                             Coût : {selectedPartner.offers.premium.gemsCost} gemmes
                                         </div>
                                     )}

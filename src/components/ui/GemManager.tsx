@@ -2,15 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/Label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
-import { Badge } from '@/components/ui/Badge';
 import { Slider } from '@/components/ui/slider';
-import { Gem, Sparkles, Palette, Image as ImageIcon, Crown, Coins } from 'lucide-react';
+import { Sparkles, Palette, Crown, Coins } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import ProfileAvatar from '@/components/ui/profile';
 
@@ -45,6 +42,13 @@ interface UserData {
   points: number;
 }
 
+interface OwnedItem {
+  cosmeticType: string;
+  cosmeticId: string;
+  source: string;
+  acquiredAt: string;
+}
+
 const GemManager: React.FC = () => {
   const { data: session } = useSession();
   const [gemData, setGemData] = useState<GemData | null>(null);
@@ -60,11 +64,69 @@ const GemManager: React.FC = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [ownedItems, setOwnedItems] = useState<OwnedItem[]>([]);
+  const [equipped, setEquipped] = useState<{
+    profileImage: string | null;
+    profileBorder: string | null;
+    usernameColor: { type: string; value: string } | null;
+  }>({ profileImage: null, profileBorder: null, usernameColor: null });
+
+  const isOwned = (cosmeticType: string, cosmeticId: string) =>
+    ownedItems.some((item) => item.cosmeticType === cosmeticType && item.cosmeticId === cosmeticId);
+
+  const isEquipped = (cosmeticType: string, cosmeticId: string) => {
+    if (cosmeticType === 'profile_image') return equipped.profileImage === cosmeticId;
+    if (cosmeticType === 'profile_border') return equipped.profileBorder === cosmeticId;
+    if (cosmeticType === 'username_color') return equipped.usernameColor?.type === cosmeticId;
+    return false;
+  };
+
+  const loadInventory = async () => {
+    try {
+      const res = await fetch('/api/inventory');
+      const data = await res.json();
+      if (data.success) {
+        setOwnedItems(data.inventory);
+        setEquipped(data.equipped);
+      }
+    } catch (e) {
+      console.error('Erreur inventaire:', e);
+    }
+  };
+
+  const equipItem = async (cosmeticType: string, cosmeticId: string) => {
+    try {
+      setPurchasing(true);
+      const isCurrentlyEquipped = isEquipped(cosmeticType, cosmeticId);
+      const res = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cosmeticType,
+          cosmeticId,
+          action: isCurrentlyEquipped ? 'unequip' : 'equip',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSuccess(isCurrentlyEquipped ? 'Cosmétique déséquipé' : 'Cosmétique équipé !');
+        await loadInventory();
+        await loadGemData();
+      } else {
+        setError(data.error);
+      }
+    } catch (e) {
+      setError('Erreur lors de l\'équipement');
+    } finally {
+      setPurchasing(false);
+    }
+  };
 
   // Charger les données au montage
   useEffect(() => {
     if (session?.user) {
       loadGemData();
+      loadInventory();
     }
   }, [session]);
 
@@ -121,16 +183,29 @@ const GemManager: React.FC = () => {
   };
 
   const purchaseCustomization = async (itemType: string, itemValue: string) => {
+    // Mapper les types pour vérifier l'inventaire
+    const typeMap: Record<string, string> = {
+      usernameColor: 'username_color',
+      profileImage: 'profile_image',
+      profileBorder: 'profile_border',
+    };
+    const cosmeticType = typeMap[itemType];
+
+    // Si déjà possédé, équiper directement au lieu d'acheter
+    if (cosmeticType && isOwned(cosmeticType, itemValue)) {
+      await equipItem(cosmeticType, itemValue);
+      return;
+    }
+
     try {
       setPurchasing(true);
       setError(null);
-      
-      // Gestion spéciale pour les couleurs personnalisées
+
       let purchaseData = { itemType, itemValue };
       if (itemType === 'usernameColor' && itemValue === 'custom') {
         purchaseData = { itemType, itemValue: customColor };
       }
-      
+
       const response = await fetch('/api/gems/purchase', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -138,12 +213,15 @@ const GemManager: React.FC = () => {
       });
 
       const data = await response.json();
-      
+
       if (data.success) {
         setSuccess(`Achat réussi ! ${itemValue} est maintenant actif`);
-        loadGemData(); // Recharger les données
+        loadGemData();
+        loadInventory();
+      } else if (data.alreadyOwned) {
+        setError('Vous possédez déjà cet article.');
       } else {
-        setError(data.message || 'Erreur lors de l\'achat');
+        setError(data.message || data.error || 'Erreur lors de l\'achat');
       }
     } catch (error) {
       console.error('Erreur lors de l\'achat:', error);
@@ -174,6 +252,32 @@ const GemManager: React.FC = () => {
       loadTransactionHistory();
     }
     setShowHistory(!showHistory);
+  };
+
+  // Helper pour le texte et style des boutons d'achat/équipement
+  const getItemButtonProps = (itemType: string, itemValue: string, price: number) => {
+    const typeMap: Record<string, string> = {
+      usernameColor: 'username_color',
+      profileImage: 'profile_image',
+      profileBorder: 'profile_border',
+    };
+    const cosmeticType = typeMap[itemType];
+    const owned = cosmeticType ? isOwned(cosmeticType, itemValue) : false;
+    const equippedNow = cosmeticType ? isEquipped(cosmeticType, itemValue) : false;
+
+    if (equippedNow) {
+      return { label: 'Équipé ✓', className: 'bg-green-600 hover:bg-green-700', disabled: false, showGemIcon: false, price: 0 };
+    }
+    if (owned) {
+      return { label: 'Équiper', className: 'bg-blue-600 hover:bg-blue-700', disabled: false, showGemIcon: false, price: 0 };
+    }
+    return {
+      label: `Acheter (${price}`,
+      className: '',
+      disabled: purchasing || (gemData?.balance || 0) < price,
+      showGemIcon: true,
+      price,
+    };
   };
 
   const formatTransactionType = (type: string) => {
@@ -220,48 +324,38 @@ const GemManager: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="space-y-8">
       {/* En-tête avec solde */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gem className="h-6 w-6 text-blue-600" />
-            Gestionnaire de Gemmes
-          </CardTitle>
-          <CardDescription>
-            Gérez vos gemmes et personnalisez votre profil
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{gemData?.balance || 0}</div>
-              <div className="text-sm text-gray-600">Gemmes disponibles</div>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">{gemData?.totalEarned || 0}</div>
-              <div className="text-sm text-gray-600">Total gagnées</div>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <div className="text-2xl font-bold text-purple-600">{gemData?.totalSpent || 0}</div>
-              <div className="text-sm text-gray-600">Total dépensées</div>
-            </div>
+      <div className="notion-card p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-1">
+          <Image src="/badge/diamond.png" alt="" width={20} height={20} className="object-contain" />
+          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Solde de gemmes</h2>
+        </div>
+        <p className="notion-text-secondary mb-6">Votre portefeuille de gemmes</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="text-center p-5 rounded-2xl" style={{ background: 'var(--notion-info-light)' }}>
+            <div className="text-3xl font-bold" style={{ color: 'var(--notion-info)' }}>{gemData?.balance || 0}</div>
+            <div className="notion-text-small mt-1">Gemmes disponibles</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="text-center p-5 rounded-2xl" style={{ background: 'var(--notion-success-light)' }}>
+            <div className="text-3xl font-bold" style={{ color: 'var(--notion-success)' }}>{gemData?.totalEarned || 0}</div>
+            <div className="notion-text-small mt-1">Total gagnées</div>
+          </div>
+          <div className="text-center p-5 rounded-2xl" style={{ background: 'var(--notion-accent-light)' }}>
+            <div className="text-3xl font-bold" style={{ color: 'var(--notion-accent)' }}>{gemData?.totalSpent || 0}</div>
+            <div className="notion-text-small mt-1">Total dépensées</div>
+          </div>
+        </div>
+      </div>
 
       {/* Conversion de points */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5" />
-            Convertir des points en gemmes
-          </CardTitle>
-          <CardDescription>
-            Ratio: 100 points = 1 gemme
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div className="notion-card p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-1">
+          <Coins className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
+          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Convertir des points</h2>
+        </div>
+        <p className="notion-text-secondary mb-6">Ratio : 100 points = 1 gemme</p>
+        <div>
           <div className="space-y-6">
             {/* Slider pour la conversion */}
             <div className="space-y-4">
@@ -289,7 +383,7 @@ const GemManager: React.FC = () => {
             </div>
 
             {/* Résumé de la conversion */}
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="rounded-2xl p-5" style={{ background: 'var(--notion-bg-secondary)' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <div className="text-center">
                   <div className="text-sm text-gray-600 mb-1">Points à convertir</div>
@@ -325,21 +419,17 @@ const GemManager: React.FC = () => {
               )}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Personnalisations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
-            Personnalisations disponibles
-          </CardTitle>
-          <CardDescription>
-            Achetez des personnalisations avec vos gemmes
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      <div className="notion-card p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-1">
+          <Palette className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
+          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Personnalisations</h2>
+        </div>
+        <p className="notion-text-secondary mb-6">Achetez des personnalisations avec vos gemmes</p>
+        <div className="space-y-6">
           {/* Couleurs de nom d'utilisateur */}
           <div className="space-y-3">
             <h3 className="font-semibold">Couleur du nom d&apos;utilisateur</h3>
@@ -431,7 +521,7 @@ const GemManager: React.FC = () => {
                   />
                   
                   <div className="text-sm font-medium mb-1">{option.label}</div>
-                  <div className="text-xs text-gray-600 mb-2">{option.price} gemmes</div>
+                  <div className="text-xs text-gray-600 mb-2 flex items-center justify-center gap-1">{option.price} <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></div>
                   
                   {/* Aperçu animé du nom */}
                   {option.animated && (
@@ -495,23 +585,25 @@ const GemManager: React.FC = () => {
                     <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
                   )}
                   
-                  <Button
-                    size="sm"
-                    onClick={() => purchaseCustomization('usernameColor', option.type)}
-                    disabled={purchasing || (gemData?.balance || 0) < option.price}
-                    className={`w-full ${
-                      option.rarity === 'common' ? 'bg-gray-600 hover:bg-gray-700' :
-                      option.rarity === 'rare' ? 'bg-blue-600 hover:bg-blue-700' :
-                      option.rarity === 'epic' ? 'bg-purple-600 hover:bg-purple-700' :
-                      option.rarity === 'legendary' ? 'bg-orange-600 hover:bg-orange-700' :
-                      'bg-gray-600 hover:bg-gray-700'
-                    }`}
-                  >
-                    {customization?.usernameColor.type === option.type && customization.usernameColor.isActive 
-                      ? 'Actif' 
-                      : 'Acheter'
-                    }
-                  </Button>
+                  {(() => {
+                    const bp = getItemButtonProps('usernameColor', option.type, option.price);
+                    return (
+                      <Button
+                        size="sm"
+                        onClick={() => purchaseCustomization('usernameColor', option.type)}
+                        disabled={bp.disabled}
+                        className={`w-full ${bp.className || (
+                          option.rarity === 'common' ? 'bg-gray-600 hover:bg-gray-700' :
+                          option.rarity === 'rare' ? 'bg-blue-600 hover:bg-blue-700' :
+                          option.rarity === 'epic' ? 'bg-purple-600 hover:bg-purple-700' :
+                          option.rarity === 'legendary' ? 'bg-orange-600 hover:bg-orange-700' :
+                          'bg-gray-600 hover:bg-gray-700'
+                        )}`}
+                      >
+                        {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                      </Button>
+                    );
+                  })()}
                 </div>
               ))}
             </div>
@@ -526,7 +618,7 @@ const GemManager: React.FC = () => {
                 onChange={(e) => setCustomColor(e.target.value)}
                 className="w-20 h-10"
               />
-              <span className="text-sm text-gray-600">15 gemmes</span>
+              <span className="text-sm text-gray-600 flex items-center gap-1">15 <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></span>
             </div>
           </div>
 
@@ -534,310 +626,56 @@ const GemManager: React.FC = () => {
           <div className="space-y-3">
             <h3 className="font-semibold">Images de profil</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {/* FoxyMecha - 2 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyMecha.webp" 
-                    alt="FoxyMecha" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxyMecha</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage robotique</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyMecha.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 2}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyMecha.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (2 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyTerreur - 10 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyTerreur.webp" 
-                    alt="FoxyTerreur" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxyTerreur</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage terrifiant</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyTerreur.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 10}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyTerreur.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (10 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyHallo - 10 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyHallo.webp" 
-                    alt="FoxyHallo" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxyHallo</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage Halloween</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyHallo.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 10}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyHallo.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (10 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyFrenchies - 50 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyFrenchies.webp" 
-                    alt="FoxyFrenchies" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxyFrenchies</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage français</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyFrenchies.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 50}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyFrenchies.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (50 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyPink - 10 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyPink.webp" 
-                    alt="FoxyPink" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxyPink</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage rose</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyPink.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 10}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyPink.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (10 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyWaMe - 2 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyWaMe.webp" 
-                    alt="FoxyWaMe" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxyWaMe</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage WaMe</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyWaMe.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 2}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyWaMe.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (2 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyWaterMelon - 2 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyWaterMelon.webp" 
-                    alt="FoxyWaterMelon" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxyWaterMelon</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage pastèque</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyWaterMelon.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 2}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyWaterMelon.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (2 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxySably - 30 gemmes */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxySably.webp" 
-                    alt="FoxySably" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">FoxySably</div>
-                <div className="text-xs text-gray-600 mb-2">Personnage Sably</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxySably.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 30}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxySably.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (30 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyLmdpc - 2 gemmes - Partenaire */}
-              <div className="border-2 border-blue-500 rounded-lg p-3 text-center relative">
-                <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  Partenaire
-                </div>
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyLmdpc.webp" 
-                    alt="Foxy chez Lemondedupc.fr" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">Foxy Lmdpc</div>
-                <div className="text-xs text-gray-600 mb-1">Lemondedupc.fr</div>
-                <div className="text-xs text-blue-600 font-semibold mb-2">Partenaires</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyLmdpc.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 2}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyLmdpc.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (2 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyStagey - 2 gemmes - Partenaire */}
-              <div className="border-2 border-blue-500 rounded-lg p-3 text-center relative">
-                <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  Partenaire
-                </div>
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyStagey.webp" 
-                    alt="Foxy chez Stagey.fr" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">Foxy Stagey</div>
-                <div className="text-xs text-gray-600 mb-1">Stagey.fr</div>
-                <div className="text-xs text-blue-600 font-semibold mb-2">Partenaires</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyStagey.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 2}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyStagey.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (2 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* FoxyYumego - 2 gemmes - Partenaire YumeGo */}
-              <div className="border-2 border-blue-500 rounded-lg p-3 text-center relative">
-                <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                  Partenaire
-                </div>
-                <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
-                  <Image
-                    src="/profile/FoxyYumego.webp" 
-                    alt="Foxy chez YumeGo - Apprends le japonais avec Netflix" 
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="text-sm font-medium mb-1">Foxy YumeGo</div>
-                <a
-                  href="https://yumego.ai/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-blue-600 hover:underline mb-2 block"
-                >
-                  yumego.ai
-                </a>
-                <div className="text-xs text-blue-600 font-semibold mb-2">Partenaires</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileImage', 'FoxyYumego.webp')}
-                  disabled={purchasing || (gemData?.balance || 0) < 2}
-                  className="w-full"
-                >
-                  {customization?.profileImage.filename === 'FoxyYumego.webp' && customization.profileImage.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (2 gemmes)'
-                  }
-                </Button>
-              </div>
+              {[
+                { filename: 'FoxyMecha.webp', label: 'FoxyMecha', desc: 'Personnage robotique', price: 2 },
+                { filename: 'FoxyTerreur.webp', label: 'FoxyTerreur', desc: 'Personnage terrifiant', price: 10 },
+                { filename: 'FoxyHallo.webp', label: 'FoxyHallo', desc: 'Personnage Halloween', price: 10 },
+                { filename: 'FoxyFrenchies.webp', label: 'FoxyFrenchies', desc: 'Personnage français', price: 50 },
+                { filename: 'FoxyPink.webp', label: 'FoxyPink', desc: 'Personnage rose', price: 10 },
+                { filename: 'FoxyWaMe.webp', label: 'FoxyWaMe', desc: 'Personnage WaMe', price: 2 },
+                { filename: 'FoxyWaterMelon.webp', label: 'FoxyWaterMelon', desc: 'Personnage pastèque', price: 2 },
+                { filename: 'FoxySably.webp', label: 'FoxySably', desc: 'Personnage Sably', price: 30 },
+                { filename: 'FoxyLmdpc.webp', label: 'Foxy Lmdpc', desc: 'Lemondedupc.fr', price: 2, partner: true },
+                { filename: 'FoxyStagey.webp', label: 'Foxy Stagey', desc: 'Stagey.fr', price: 2, partner: true },
+                { filename: 'FoxyYumego.webp', label: 'Foxy YumeGo', desc: 'yumego.ai', price: 2, partner: true, link: 'https://yumego.ai/' },
+              ].map((img) => {
+                const bp = getItemButtonProps('profileImage', img.filename, img.price);
+                return (
+                  <div key={img.filename} className={`${img.partner ? 'border-2 border-blue-500' : 'border'} rounded-lg p-3 text-center relative`}>
+                    {img.partner && (
+                      <div className="absolute -top-2 -right-2 bg-blue-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                        Partenaire
+                      </div>
+                    )}
+                    <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                      <Image
+                        src={`/profile/${img.filename}`}
+                        alt={img.label}
+                        width={64}
+                        height={64}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="text-sm font-medium mb-1">{img.label}</div>
+                    {img.link ? (
+                      <a href={img.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mb-2 block">
+                        {img.desc}
+                      </a>
+                    ) : (
+                      <div className="text-xs text-gray-600 mb-2">{img.desc}</div>
+                    )}
+                    {img.partner && <div className="text-xs text-blue-600 font-semibold mb-2">Partenaires</div>}
+                    <Button
+                      size="sm"
+                      onClick={() => purchaseCustomization('profileImage', img.filename)}
+                      disabled={bp.disabled}
+                      className={`w-full ${bp.className}`}
+                    >
+                      {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -845,211 +683,77 @@ const GemManager: React.FC = () => {
           <div className="space-y-3">
             <h3 className="font-semibold">Contour de profil</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-              {/* Contour doré */}
-              <div className="border rounded-lg p-3 text-center">
-                <Crown className="h-8 w-8 mx-auto text-yellow-500 mb-2" />
-                <div className="text-sm text-gray-600 mb-2">Contour doré</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileBorder', 'gold')}
-                  disabled={purchasing || (gemData?.balance || 0) < 3}
-                  className="w-full"
-                >
-                  {customization?.profileBorder.filename === 'gold.svg' && customization.profileBorder.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (3 gemmes)'
-                  }
-                </Button>
-              </div>
-              
-              {/* Contour argenté */}
-              <div className="border rounded-lg p-3 text-center">
-                <Crown className="h-8 w-8 mx-auto text-gray-400 mb-2" />
-                <div className="text-sm text-gray-600 mb-2">Contour argenté</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileBorder', 'silver')}
-                  disabled={purchasing || (gemData?.balance || 0) < 2}
-                  className="w-full"
-                >
-                  {customization?.profileBorder.filename === 'silver.svg' && customization.profileBorder.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (2 gemmes)'
-                  }
-                </Button>
-              </div>
-              
-              {/* Contour éclair vert (animé) */}
-              <div className="border border-green-400 rounded-lg p-3 text-center relative">
-                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-purple-100 text-purple-600">
-                  ★★★
-                </div>
-                <div className="relative">
-                  <Image
-                    src="/profile/contour/eclair_green.apng"
-                    alt="Contour éclair vert"
-                    width={32}
-                    height={32}
-                    className="mx-auto mb-2"
-                    unoptimized
-                  />
-                </div>
-                <div className="text-sm text-gray-600 mb-1">Contour éclair vert</div>
-                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileBorder', 'eclair_green')}
-                  disabled={purchasing || (gemData?.balance || 0) < 15}
-                  className="w-full bg-green-600 hover:bg-green-700"
-                >
-                  {customization?.profileBorder.filename === 'eclair_green.apng' && customization.profileBorder.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (15 gemmes)'
-                  }
-                </Button>
-              </div>
-              
-              {/* Contour fumée (animé) */}
-              <div className="border border-gray-400 rounded-lg p-3 text-center relative">
-                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-blue-100 text-blue-600">
-                  ★★
-                </div>
-                <div className="relative">
-                  <Image
-                    src="/profile/contour/fumee.png"
-                    alt="Contour fumée"
-                    width={32}
-                    height={32}
-                    className="mx-auto mb-2"
-                    unoptimized
-                  />
-                </div>
-                <div className="text-sm text-gray-600 mb-1">Contour fumée</div>
-                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileBorder', 'fumee')}
-                  disabled={purchasing || (gemData?.balance || 0) < 10}
-                  className="w-full bg-gray-700 hover:bg-gray-800"
-                >
-                  {customization?.profileBorder.filename === 'fumee.png' && customization.profileBorder.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (10 gemmes)'
-                  }
-                </Button>
-              </div>
-              
-              {/* Contour poison orange (animé) */}
-              <div className="border border-orange-400 rounded-lg p-3 text-center relative">
-                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-600">
-                  ★★★★
-                </div>
-                <div className="relative">
-                  <Image
-                    src="/profile/contour/poison_orange.png"
-                    alt="Contour poison orange"
-                    width={32}
-                    height={32}
-                    className="mx-auto mb-2"
-                    unoptimized
-                  />
-                </div>
-                <div className="text-sm text-gray-600 mb-1">Contour poison orange</div>
-                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileBorder', 'poison_orange')}
-                  disabled={purchasing || (gemData?.balance || 0) < 20}
-                  className="w-full bg-orange-600 hover:bg-orange-700"
-                >
-                  {customization?.profileBorder.filename === 'poison_orange.png' && customization.profileBorder.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (20 gemmes)'
-                  }
-                </Button>
-              </div>
-              
-              {/* Contour Halloween citrouilles (animé) */}
-              <div className="border border-orange-300 rounded-lg p-3 text-center relative">
-                <div className="absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full bg-orange-100 text-orange-600">
-                  ★
-                </div>
-                <div className="relative">
-                  <Image
-                    src="/profile/contour/halloween_pumpkins_apng.png"
-                    alt="Contour Halloween citrouilles"
-                    width={32}
-                    height={32}
-                    className="mx-auto mb-2"
-                    unoptimized
-                  />
-                </div>
-                <div className="text-sm text-gray-600 mb-1">Contour Halloween citrouilles</div>
-                <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileBorder', 'halloween_pumpkins_apng')}
-                  disabled={purchasing || (gemData?.balance || 0) < 3}
-                  className="w-full bg-orange-500 hover:bg-orange-600"
-                >
-                  {customization?.profileBorder.filename === 'halloween_pumpkins_apng.png' && customization.profileBorder.isActive 
-                    ? 'Actif' 
-                    : 'Acheter (3 gemmes)'
-                  }
-                </Button>
-              </div>
-
-              {/* Contour Yumego Manga */}
-              <div className="border rounded-lg p-3 text-center">
-                <div className="relative w-12 h-12 mx-auto mb-2">
-                  <Image
-                    src="/profile/contour/yumego_manga.svg"
-                    alt="Contour Yumego Manga"
-                    width={48}
-                    height={48}
-                    className="mx-auto"
-                    unoptimized
-                  />
-                </div>
-                <div className="text-sm text-gray-600 mb-1">Contour Yumego Manga</div>
-                <div className="text-xs text-pink-500 mb-2 font-semibold">🌸 Partenaire</div>
-                <Button
-                  size="sm"
-                  onClick={() => purchaseCustomization('profileBorder', 'yumego_manga')}
-                  disabled={purchasing || (gemData?.balance || 0) < 5}
-                  className="w-full bg-pink-500 hover:bg-pink-600"
-                >
-                  {customization?.profileBorder.filename === 'yumego_manga.svg' && customization.profileBorder.isActive
-                    ? 'Actif'
-                    : 'Acheter (5 gemmes)'
-                  }
-                </Button>
-              </div>
+              {[
+                { id: 'gold', label: 'Contour doré', price: 3, icon: 'crown', iconColor: 'text-yellow-500' },
+                { id: 'silver', label: 'Contour argenté', price: 2, icon: 'crown', iconColor: 'text-gray-400' },
+                { id: 'eclair_green', label: 'Contour éclair vert', price: 15, file: 'eclair_green.apng', animated: true, rarity: 'epic', borderColor: 'border-green-400', btnColor: 'bg-green-600 hover:bg-green-700' },
+                { id: 'fumee', label: 'Contour fumée', price: 10, file: 'fumee.png', animated: true, rarity: 'rare', borderColor: 'border-gray-400', btnColor: 'bg-gray-700 hover:bg-gray-800' },
+                { id: 'poison_orange', label: 'Contour poison orange', price: 20, file: 'poison_orange.png', animated: true, rarity: 'legendary', borderColor: 'border-orange-400', btnColor: 'bg-orange-600 hover:bg-orange-700' },
+                { id: 'halloween_pumpkins_apng', label: 'Contour Halloween citrouilles', price: 3, file: 'halloween_pumpkins_apng.png', animated: true, rarity: 'common', borderColor: 'border-orange-300', btnColor: 'bg-orange-500 hover:bg-orange-600' },
+                { id: 'yumego_manga', label: 'Contour Yumego Manga', price: 5, file: 'yumego_manga.svg', partner: true, btnColor: 'bg-pink-500 hover:bg-pink-600' },
+              ].map((border) => {
+                const bp = getItemButtonProps('profileBorder', border.id, border.price);
+                const rarityBadge = border.rarity === 'common' ? { stars: '★', bg: 'bg-orange-100 text-orange-600' }
+                  : border.rarity === 'rare' ? { stars: '★★', bg: 'bg-blue-100 text-blue-600' }
+                  : border.rarity === 'epic' ? { stars: '★★★', bg: 'bg-purple-100 text-purple-600' }
+                  : border.rarity === 'legendary' ? { stars: '★★★★', bg: 'bg-orange-100 text-orange-600' }
+                  : null;
+                return (
+                  <div key={border.id} className={`border ${border.borderColor || ''} rounded-lg p-3 text-center relative`}>
+                    {rarityBadge && (
+                      <div className={`absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full ${rarityBadge.bg}`}>
+                        {rarityBadge.stars}
+                      </div>
+                    )}
+                    {border.icon === 'crown' ? (
+                      <Crown className={`h-8 w-8 mx-auto ${border.iconColor} mb-2`} />
+                    ) : border.file ? (
+                      <div className="relative">
+                        <Image
+                          src={`/profile/contour/${border.file}`}
+                          alt={border.label}
+                          width={border.id === 'yumego_manga' ? 48 : 32}
+                          height={border.id === 'yumego_manga' ? 48 : 32}
+                          className="mx-auto mb-2"
+                          unoptimized
+                        />
+                      </div>
+                    ) : null}
+                    <div className="text-sm text-gray-600 mb-1">{border.label}</div>
+                    {border.animated && <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>}
+                    {border.partner && <div className="text-xs text-pink-500 mb-2 font-semibold">🌸 Partenaire</div>}
+                    <Button
+                      size="sm"
+                      onClick={() => purchaseCustomization('profileBorder', border.id)}
+                      disabled={bp.disabled}
+                      className={`w-full ${bp.className || border.btnColor || ''}`}
+                    >
+                      {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Aperçu du profil */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5" />
-            Aperçu de votre profil
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center p-4 bg-gray-50 rounded-lg">
-            <ProfileAvatar
-              username={userData?.username || ''}
-              points={userData?.points || 0}
-              size="large"
-              userId={userData?.id}
-              customization={customization || undefined}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="notion-card p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
+          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Aperçu de votre profil</h2>
+        </div>
+        <div className="flex items-center justify-center p-6 rounded-2xl" style={{ background: 'var(--notion-bg-secondary)' }}>
+          <ProfileAvatar
+            username={userData?.username || ''}
+            points={userData?.points || 0}
+            size="large"
+            userId={userData?.id}
+            customization={customization || undefined}
+          />
+        </div>
+      </div>
 
       {/* Messages d'erreur et de succès */}
       {error && (
@@ -1065,84 +769,78 @@ const GemManager: React.FC = () => {
       )}
 
       {/* Historique des transactions */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Coins className="h-5 w-5" />
-            Historique des transactions
-          </CardTitle>
-          <CardDescription>
-            Suivez toutes vos transactions de gemmes
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Button
-            onClick={toggleHistory}
-            variant="outline"
-            className="w-full mb-4"
-          >
-            {showHistory ? 'Masquer l&apos;historique' : 'Afficher l&apos;historique'}
-          </Button>
+      <div className="notion-card p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-1">
+          <Coins className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
+          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Historique des transactions</h2>
+        </div>
+        <p className="notion-text-secondary mb-6">Suivez toutes vos transactions de gemmes</p>
+        <Button
+          onClick={toggleHistory}
+          variant="outline"
+          className="w-full mb-4 rounded-xl"
+        >
+          {showHistory ? 'Masquer l&apos;historique' : 'Afficher l&apos;historique'}
+        </Button>
 
-          {showHistory && (
-            <div className="space-y-3">
-              {historyLoading ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-                  <p className="text-gray-600">Chargement de l&apos;historique...</p>
-                </div>
-              ) : transactions.length > 0 ? (
-                transactions.map((transaction) => {
-                  const status = formatTransactionStatus(transaction.status);
-                  return (
-                    <div key={transaction.id} className="border rounded-lg p-4 bg-gray-50">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${status.color}`}>
-                            {status.label}
-                          </span>
-                          <span className="text-sm text-gray-600">
-                            {formatTransactionType(transaction.type)}
-                          </span>
-                        </div>
-                        <div className={`text-sm font-medium ${
-                          transaction.gems > 0 ? 'text-green-600' : 'text-red-600'
-                        }`}>
-                          {transaction.gems > 0 ? '+' : ''}{transaction.gems} gemmes
-                        </div>
+        {showHistory && (
+          <div className="space-y-3">
+            {historyLoading ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--notion-accent)' }}></div>
+                <p className="notion-text-secondary">Chargement de l&apos;historique...</p>
+              </div>
+            ) : transactions.length > 0 ? (
+              transactions.map((transaction) => {
+                const status = formatTransactionStatus(transaction.status);
+                return (
+                  <div key={transaction.id} className="rounded-xl p-4" style={{ background: 'var(--notion-bg-secondary)', border: '1px solid var(--notion-border)' }}>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded-full ${status.color}`}>
+                          {status.label}
+                        </span>
+                        <span className="notion-text-secondary text-sm">
+                          {formatTransactionType(transaction.type)}
+                        </span>
                       </div>
-                      
-                      <p className="text-sm text-gray-800 mb-2">{transaction.description}</p>
-                      
-                      <div className="flex items-center justify-between text-xs text-gray-500">
-                        <span>{new Date(transaction.createdAt).toLocaleDateString('fr-FR')}</span>
-                        
-                        {transaction.partnerName && (
-                          <span className="text-blue-600">Partenaire: {transaction.partnerName}</span>
-                        )}
-                        
-                        {transaction.promoCode && (
-                          <span className="text-purple-600">Code: {transaction.promoCode}</span>
-                        )}
+                      <div className={`text-sm font-medium ${
+                        transaction.gems > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {transaction.gems > 0 ? '+' : ''}{transaction.gems} gemmes
                       </div>
+                    </div>
 
-                      {transaction.justification && (
-                        <div className="mt-2 p-2 bg-blue-50 rounded text-xs text-blue-800">
-                          <strong>Justification:</strong> {transaction.justification}
-                        </div>
+                    <p className="text-sm mb-2" style={{ color: 'var(--notion-text)' }}>{transaction.description}</p>
+
+                    <div className="flex items-center justify-between notion-text-small">
+                      <span>{new Date(transaction.createdAt).toLocaleDateString('fr-FR')}</span>
+
+                      {transaction.partnerName && (
+                        <span style={{ color: 'var(--notion-info)' }}>Partenaire: {transaction.partnerName}</span>
+                      )}
+
+                      {transaction.promoCode && (
+                        <span className="text-purple-600">Code: {transaction.promoCode}</span>
                       )}
                     </div>
-                  );
-                })
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  Aucune transaction trouvée
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+
+                    {transaction.justification && (
+                      <div className="mt-2 p-2 rounded-lg text-xs" style={{ background: 'var(--notion-info-light)', color: 'var(--notion-info)' }}>
+                        <strong>Justification:</strong> {transaction.justification}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 notion-text-secondary">
+                Aucune transaction trouvée
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Styles CSS pour toutes les animations améliorées */}
       <style jsx>{`

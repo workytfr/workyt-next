@@ -36,6 +36,7 @@ import {
     Package,
     Heart,
     ChevronRight,
+    Gift,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import ProfileCard from "@/components/ui/ProfileCard";
@@ -63,6 +64,7 @@ export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isQuestsOpen, setIsQuestsOpen] = useState(false);
     const [isBlogOpenMobile, setIsBlogOpenMobile] = useState(false);
     const [isBlogOpen, setIsBlogOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
@@ -306,7 +308,16 @@ export default function Navbar() {
                                             <div className="h-px bg-gray-100 my-1" />
 
                                             {/* Quests */}
-                                            <QuestsPanel />
+                                            <button
+                                                onClick={() => {
+                                                    setIsProfileOpen(false);
+                                                    setIsQuestsOpen(true);
+                                                }}
+                                                className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
+                                            >
+                                                <Gift className="w-4 h-4 mr-2" />
+                                                Quêtes
+                                            </button>
 
                                             <div className="h-px bg-gray-100 my-1" />
 
@@ -530,7 +541,16 @@ export default function Navbar() {
                             <div className="h-px bg-gray-100 mx-4 my-2" />
 
                             <div className="py-1 px-2">
-                                <QuestsPanel />
+                                <button
+                                    onClick={() => {
+                                        closeMobileMenu();
+                                        setIsQuestsOpen(true);
+                                    }}
+                                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors w-full text-left"
+                                >
+                                    <Gift className="w-4 h-4 mr-2" />
+                                    Quêtes
+                                </button>
                             </div>
 
                             <div className="h-px bg-gray-100 mx-4 my-2" />
@@ -605,6 +625,11 @@ export default function Navbar() {
                     <AuthPage />
                 </DialogContent>
             </Dialog>
+
+            {/* Quests Dialog - hors du dropdown pour éviter le démontage */}
+            {session && (
+                <QuestsPanel externalOpen={isQuestsOpen} onOpenChange={setIsQuestsOpen} />
+            )}
         </>
     );
 }

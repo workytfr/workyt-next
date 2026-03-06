@@ -23,11 +23,11 @@ async function seedQuests() {
         name: 'Coffre Commun',
         description: 'Un coffre basique avec des récompenses modestes',
         possibleRewards: [
-          { type: 'points' as const, amount: 20, weight: 50 }, // Très commun : 20 points
-          { type: 'points' as const, amount: 30, weight: 30 }, // Commun : 30 points
-          { type: 'points' as const, amount: 50, weight: 15 }, // Peu commun : 50 points
-          { type: 'points' as const, amount: 100, weight: 4 }, // Rare : 100 points (équivaut à 1 gemme)
-          { type: 'gems' as const, amount: 1, weight: 1 }, // Très rare : 1 gemme (équivaut à 100 points)
+          { type: 'points' as const, amount: 30, weight: 45 },  // Floor relevé : 30 pts
+          { type: 'points' as const, amount: 50, weight: 30 },  // Commun : 50 pts
+          { type: 'points' as const, amount: 75, weight: 15 },  // Peu commun : 75 pts
+          { type: 'points' as const, amount: 100, weight: 6 },  // Rare : 100 pts
+          { type: 'gems' as const, amount: 1, weight: 4 },      // Rare : 1 gemme (2x plus de chance qu'avant)
         ],
         isActive: true
       },
@@ -36,12 +36,12 @@ async function seedQuests() {
         name: 'Coffre Rare',
         description: 'Un coffre rare avec de meilleures récompenses',
         possibleRewards: [
-          { type: 'points' as const, amount: 50, weight: 40 }, // Très commun : 50 points
-          { type: 'points' as const, amount: 100, weight: 30 }, // Commun : 100 points (1 gemme)
-          { type: 'points' as const, amount: 150, weight: 15 }, // Peu commun : 150 points
-          { type: 'gems' as const, amount: 1, weight: 10 }, // Commun : 1 gemme (équivaut à 100 points)
-          { type: 'gems' as const, amount: 2, weight: 4 }, // Rare : 2 gemmes (équivaut à 200 points)
-          { type: 'gems' as const, amount: 3, weight: 1 }, // Très rare : 3 gemmes (équivaut à 300 points)
+          { type: 'points' as const, amount: 75, weight: 35 },  // Floor relevé : 75 pts
+          { type: 'points' as const, amount: 120, weight: 25 }, // Commun : 120 pts
+          { type: 'points' as const, amount: 200, weight: 15 }, // Peu commun : 200 pts
+          { type: 'gems' as const, amount: 1, weight: 12 },     // Commun : 1 gemme
+          { type: 'gems' as const, amount: 2, weight: 8 },      // Peu commun : 2 gemmes
+          { type: 'gems' as const, amount: 3, weight: 5 },      // Rare : 3 gemmes
         ],
         isActive: true
       },
@@ -50,14 +50,15 @@ async function seedQuests() {
         name: 'Coffre Épique',
         description: 'Un coffre épique avec des récompenses exceptionnelles',
         possibleRewards: [
-          { type: 'points' as const, amount: 200, weight: 30 }, // Commun : 200 points (2 gemmes)
-          { type: 'points' as const, amount: 300, weight: 20 }, // Peu commun : 300 points (3 gemmes)
-          { type: 'points' as const, amount: 500, weight: 10 }, // Rare : 500 points (5 gemmes)
-          { type: 'gems' as const, amount: 2, weight: 20 }, // Commun : 2 gemmes
-          { type: 'gems' as const, amount: 3, weight: 12 }, // Peu commun : 3 gemmes
-          { type: 'gems' as const, amount: 5, weight: 5 }, // Rare : 5 gemmes
-          { type: 'gems' as const, amount: 10, weight: 2 }, // Très rare : 10 gemmes
-          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyPink.webp', weight: 1 }, // Légendaire : cosmétique
+          { type: 'points' as const, amount: 250, weight: 28 }, // Floor : 250 pts
+          { type: 'points' as const, amount: 400, weight: 18 }, // Peu commun : 400 pts
+          { type: 'points' as const, amount: 600, weight: 8 },  // Rare : 600 pts
+          { type: 'gems' as const, amount: 2, weight: 18 },     // Commun : 2 gemmes
+          { type: 'gems' as const, amount: 4, weight: 12 },     // Peu commun : 4 gemmes
+          { type: 'gems' as const, amount: 7, weight: 7 },      // Rare : 7 gemmes
+          { type: 'gems' as const, amount: 12, weight: 3 },     // Très rare : 12 gemmes
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyPink.webp', weight: 3 },  // Cosmétique : 3%
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyWaMe.webp', weight: 3 },  // Cosmétique : 3%
         ],
         isActive: true
       },
@@ -66,15 +67,16 @@ async function seedQuests() {
         name: 'Coffre Légendaire',
         description: 'Le coffre ultime avec les meilleures récompenses',
         possibleRewards: [
-          { type: 'points' as const, amount: 300, weight: 25 }, // Commun : 300 points (3 gemmes)
-          { type: 'points' as const, amount: 500, weight: 20 }, // Peu commun : 500 points (5 gemmes)
-          { type: 'points' as const, amount: 1000, weight: 8 }, // Rare : 1000 points (10 gemmes)
-          { type: 'gems' as const, amount: 5, weight: 25 }, // Commun : 5 gemmes
-          { type: 'gems' as const, amount: 10, weight: 15 }, // Peu commun : 10 gemmes
-          { type: 'gems' as const, amount: 15, weight: 5 }, // Rare : 15 gemmes
-          { type: 'gems' as const, amount: 25, weight: 1 }, // Très rare : 25 gemmes
-          { type: 'gems' as const, amount: 50, weight: 1 }, // Légendaire : 50 gemmes
-          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyFrenchies.webp', weight: 1 }, // Légendaire : cosmétique exclusif
+          { type: 'points' as const, amount: 500, weight: 22 },  // Floor relevé : 500 pts
+          { type: 'points' as const, amount: 750, weight: 15 },  // Peu commun : 750 pts
+          { type: 'points' as const, amount: 1000, weight: 8 },  // Rare : 1000 pts
+          { type: 'gems' as const, amount: 5, weight: 20 },      // Commun : 5 gemmes
+          { type: 'gems' as const, amount: 10, weight: 13 },     // Peu commun : 10 gemmes
+          { type: 'gems' as const, amount: 18, weight: 6 },      // Rare : 18 gemmes
+          { type: 'gems' as const, amount: 25, weight: 3 },      // Très rare : 25 gemmes (cap, plus de 50)
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyFrenchies.webp', weight: 5 }, // Cosmétique exclusif : 5%
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyMecha.webp', weight: 4 },     // Cosmétique exclusif : 4%
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyTerreur.webp', weight: 4 },   // Cosmétique exclusif : 4%
         ],
         isActive: true
       }
@@ -93,7 +95,7 @@ async function seedQuests() {
     }
 
     // Créer les quêtes journalières
-    // Rappel: 1 gemme = 100 points, les récompenses doivent être modestes pour les quêtes journalières
+    // Récompenses modestes : 3-8 points, parfois un coffre commun pour les plus durs
     const dailyQuests = [
       {
         slug: 'daily_forum_answer',
@@ -105,8 +107,8 @@ async function seedQuests() {
           target: 3
         },
         rewards: [
-          { type: 'points' as const, amount: 10 }, // Modeste : 10 points
-          { type: 'chest' as const, chestType: 'common' as const } // Coffre commun (récompenses modestes)
+          { type: 'points' as const, amount: 5 },
+          { type: 'chest' as const, chestType: 'common' as const }
         ],
         isActive: true
       },
@@ -120,7 +122,7 @@ async function seedQuests() {
           target: 2
         },
         rewards: [
-          { type: 'points' as const, amount: 15 } // Modeste : 15 points (pas de gemme pour une quête journalière)
+          { type: 'points' as const, amount: 8 }
         ],
         isActive: true
       },
@@ -134,7 +136,7 @@ async function seedQuests() {
           target: 1
         },
         rewards: [
-          { type: 'points' as const, amount: 8 } // Modeste : 8 points seulement (pas de coffre)
+          { type: 'points' as const, amount: 5 }
         ],
         isActive: true
       },
@@ -148,8 +150,8 @@ async function seedQuests() {
           target: 5
         },
         rewards: [
-          { type: 'points' as const, amount: 15 }, // 15 points
-          { type: 'chest' as const, chestType: 'common' as const } // Coffre commun
+          { type: 'points' as const, amount: 8 },
+          { type: 'chest' as const, chestType: 'common' as const }
         ],
         isActive: true
       },
@@ -166,7 +168,7 @@ async function seedQuests() {
           }
         },
         rewards: [
-          { type: 'points' as const, amount: 10 } // 10 points
+          { type: 'points' as const, amount: 5 }
         ],
         isActive: true
       },
@@ -180,7 +182,7 @@ async function seedQuests() {
           target: 3
         },
         rewards: [
-          { type: 'points' as const, amount: 8 } // 8 points
+          { type: 'points' as const, amount: 5 }
         ],
         isActive: true
       },
@@ -194,8 +196,8 @@ async function seedQuests() {
           target: 1
         },
         rewards: [
-          { type: 'points' as const, amount: 15 }, // 15 points
-          { type: 'chest' as const, chestType: 'common' as const } // Coffre commun
+          { type: 'points' as const, amount: 8 },
+          { type: 'chest' as const, chestType: 'common' as const }
         ],
         isActive: true
       },
@@ -209,15 +211,29 @@ async function seedQuests() {
           target: 3
         },
         rewards: [
-          { type: 'points' as const, amount: 20 }, // 20 points
-          { type: 'chest' as const, chestType: 'common' as const } // Coffre commun
+          { type: 'points' as const, amount: 10 },
+          { type: 'chest' as const, chestType: 'common' as const }
+        ],
+        isActive: true
+      },
+      {
+        slug: 'daily_fiche_bookmark',
+        name: 'Collectionneur',
+        description: 'Mettre 2 fiches en favoris aujourd\'hui',
+        type: 'daily' as const,
+        condition: {
+          action: 'fiche_bookmark' as const,
+          target: 2
+        },
+        rewards: [
+          { type: 'points' as const, amount: 3 }
         ],
         isActive: true
       }
     ];
 
     // Créer les quêtes hebdomadaires
-    // Récompenses équilibrées pour les quêtes hebdomadaires (1 gemme = 100 points)
+    // Récompenses modérées : 15-30 points, coffre commun/rare, pas de gemmes
     const weeklyQuests = [
       {
         slug: 'weekly_forum_validated',
@@ -229,9 +245,8 @@ async function seedQuests() {
           target: 5
         },
         rewards: [
-          { type: 'points' as const, amount: 50 }, // 50 points
-          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
-          { type: 'chest' as const, chestType: 'rare' as const } // Coffre rare
+          { type: 'points' as const, amount: 30 },
+          { type: 'chest' as const, chestType: 'rare' as const }
         ],
         isActive: true
       },
@@ -248,9 +263,8 @@ async function seedQuests() {
           }
         },
         rewards: [
-          { type: 'points' as const, amount: 40 }, // 40 points
-          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
-          { type: 'chest' as const, chestType: 'epic' as const } // Coffre épique
+          { type: 'points' as const, amount: 25 },
+          { type: 'chest' as const, chestType: 'rare' as const }
         ],
         isActive: true
       },
@@ -264,62 +278,92 @@ async function seedQuests() {
           target: 10
         },
         rewards: [
-          { type: 'points' as const, amount: 40 }, // 40 points
-          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
-          { type: 'chest' as const, chestType: 'rare' as const } // Coffre rare
+          { type: 'points' as const, amount: 20 },
+          { type: 'chest' as const, chestType: 'common' as const }
+        ],
+        isActive: true
+      },
+      {
+        slug: 'weekly_fiche_creator',
+        name: 'Auteur de la Semaine',
+        description: 'Créer 5 fiches cette semaine',
+        type: 'weekly' as const,
+        condition: {
+          action: 'fiche_create' as const,
+          target: 5
+        },
+        rewards: [
+          { type: 'points' as const, amount: 20 },
+          { type: 'chest' as const, chestType: 'common' as const }
         ],
         isActive: true
       }
     ];
 
     // Créer les quêtes mensuelles
-    // Récompenses importantes mais équilibrées pour les quêtes mensuelles (1 gemme = 100 points)
+    // Récompenses raisonnables : 50-80 pts, 1 gemme, coffre rare/epic/legendary selon difficulté
     const monthlyQuests = [
       {
         slug: 'monthly_forum_master',
         name: 'Maître du Forum',
-        description: 'Répondre à 50 questions ce mois-ci',
+        description: 'Répondre à 30 questions ce mois-ci',
         type: 'monthly' as const,
         condition: {
           action: 'forum_answer' as const,
-          target: 50
+          target: 30
         },
         rewards: [
-          { type: 'points' as const, amount: 100 }, // 100 points
-          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
-          { type: 'chest' as const, chestType: 'epic' as const } // Coffre épique
+          { type: 'points' as const, amount: 60 },
+          { type: 'gems' as const, amount: 1 },
+          { type: 'chest' as const, chestType: 'epic' as const }
         ],
         isActive: true
       },
       {
         slug: 'monthly_quiz_master',
         name: 'Champion des Quiz',
-        description: 'Compléter 30 quiz ce mois-ci',
+        description: 'Compléter 20 quiz ce mois-ci',
         type: 'monthly' as const,
         condition: {
           action: 'quiz_complete' as const,
-          target: 30
+          target: 20
         },
         rewards: [
-          { type: 'points' as const, amount: 80 }, // 80 points
-          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
-          { type: 'chest' as const, chestType: 'legendary' as const } // Coffre légendaire
+          { type: 'points' as const, amount: 50 },
+          { type: 'gems' as const, amount: 1 },
+          { type: 'chest' as const, chestType: 'rare' as const }
         ],
         isActive: true
       },
       {
         slug: 'monthly_fiche_creator',
         name: 'Auteur Prolifique',
-        description: 'Créer 20 fiches ce mois-ci',
+        description: 'Créer 15 fiches ce mois-ci',
         type: 'monthly' as const,
         condition: {
           action: 'fiche_create' as const,
-          target: 20
+          target: 15
         },
         rewards: [
-          { type: 'points' as const, amount: 100 }, // 100 points
-          { type: 'gems' as const, amount: 1 }, // 1 gemme (équivaut à 100 points)
-          { type: 'chest' as const, chestType: 'legendary' as const } // Coffre légendaire
+          { type: 'points' as const, amount: 60 },
+          { type: 'gems' as const, amount: 1 },
+          { type: 'chest' as const, chestType: 'legendary' as const }
+        ],
+        isActive: true
+      },
+      {
+        slug: 'monthly_course_complete',
+        name: 'Finisseur',
+        description: 'Terminer 2 cours ce mois-ci',
+        type: 'monthly' as const,
+        condition: {
+          action: 'course_complete' as const,
+          target: 2
+        },
+        rewards: [
+          { type: 'points' as const, amount: 80 },
+          { type: 'gems' as const, amount: 1 },
+          { type: 'chest' as const, chestType: 'legendary' as const }
         ],
         isActive: true
       }
@@ -339,13 +383,12 @@ async function seedQuests() {
       }
     }
 
-    console.log('✅ Seed terminé avec succès !');
+    console.log('Seed terminé avec succès !');
     process.exit(0);
   } catch (error) {
-    console.error('❌ Erreur lors du seed:', error);
+    console.error('Erreur lors du seed:', error);
     process.exit(1);
   }
 }
 
 seedQuests();
-
