@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/Label';
 import { Alert, AlertDescription } from '@/components/ui/Alert';
 import { Slider } from '@/components/ui/slider';
-import { Sparkles, Palette, Crown, Coins } from 'lucide-react';
+import { Sparkles, Palette, Crown, Coins, Award, Star, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import ProfileAvatar from '@/components/ui/profile';
 
@@ -71,6 +71,12 @@ const GemManager: React.FC = () => {
     usernameColor: { type: string; value: string } | null;
   }>({ profileImage: null, profileBorder: null, usernameColor: null });
 
+  // Badge selection state
+  const [earnedBadges, setEarnedBadges] = useState<{ slug: string; name: string; icon: string; rarity: string }[]>([]);
+  const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
+  const [selectingBadge, setSelectingBadge] = useState(false);
+  const [badgeFeatureUnlocked, setBadgeFeatureUnlocked] = useState(false);
+
   const isOwned = (cosmeticType: string, cosmeticId: string) =>
     ownedItems.some((item) => item.cosmeticType === cosmeticType && item.cosmeticId === cosmeticId);
 
@@ -122,11 +128,65 @@ const GemManager: React.FC = () => {
     }
   };
 
+  // Charger les badges de l'utilisateur
+  const loadBadges = async () => {
+    if (!session?.user?.id) return;
+    try {
+      const [badgeRes, statusRes] = await Promise.all([
+        fetch(`/api/badges?userId=${session.user.id}`),
+        fetch('/api/badges/select'),
+      ]);
+      const badgeData = await badgeRes.json();
+      const statusData = await statusRes.json();
+
+      setEarnedBadges((badgeData.userBadges || []).map((b: any) => ({
+        slug: b.slug,
+        name: b.name,
+        icon: b.icon,
+        rarity: b.rarity,
+      })));
+      setSelectedBadge(badgeData.selectedBadge || null);
+      setBadgeFeatureUnlocked(statusData.unlocked || false);
+    } catch (e) {
+      console.error('Erreur chargement badges:', e);
+    }
+  };
+
+  const handleSelectBadge = async (badgeSlug: string | null) => {
+    if (selectingBadge) return;
+    setSelectingBadge(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const res = await fetch('/api/badges/select', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ badgeSlug }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSelectedBadge(badgeSlug);
+        setBadgeFeatureUnlocked(true);
+        setSuccess(badgeSlug ? `Badge "${earnedBadges.find(b => b.slug === badgeSlug)?.name}" affiche sur votre profil` : 'Badge retire du profil');
+        if (data.newBalance !== undefined && gemData) {
+          setGemData({ ...gemData, balance: data.newBalance });
+        }
+      } else {
+        setError(data.error);
+      }
+    } catch (e) {
+      setError('Erreur lors du changement de badge');
+    } finally {
+      setSelectingBadge(false);
+    }
+  };
+
   // Charger les données au montage
   useEffect(() => {
     if (session?.user) {
       loadGemData();
       loadInventory();
+      loadBadges();
     }
   }, [session]);
 
@@ -736,6 +796,90 @@ const GemManager: React.FC = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Badge de profil */}
+      <div className="notion-card p-6 md:p-8">
+        <div className="flex items-center gap-2 mb-1">
+          <Award className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
+          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Badge de profil</h2>
+        </div>
+        <p className="notion-text-secondary mb-4">
+          Affichez un badge a cote de votre pseudo.
+          {!badgeFeatureUnlocked && (
+            <> Deblocage : 5 <Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain" /> (une seule fois). </>
+          )}
+          Limite : 1 changement par jour.
+        </p>
+
+        {/* Badge actuel */}
+        {selectedBadge && (() => {
+          const badge = earnedBadges.find(b => b.slug === selectedBadge);
+          return badge ? (
+            <div className="flex items-center gap-3 p-3 rounded-xl mb-4" style={{ background: 'var(--notion-bg-secondary)', border: '1px solid var(--notion-border)' }}>
+              <Image src={badge.icon} alt={badge.name} width={32} height={32} className="w-8 h-8 object-contain" />
+              <div className="flex-1">
+                <p className="text-sm font-medium" style={{ color: 'var(--notion-text)' }}>{badge.name}</p>
+                <p className="text-xs" style={{ color: 'var(--notion-text-secondary)' }}>Badge actuel</p>
+              </div>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleSelectBadge(null)}
+                disabled={selectingBadge}
+                className="text-xs gap-1"
+              >
+                <X className="w-3 h-3" />
+                Retirer
+              </Button>
+            </div>
+          ) : null;
+        })()}
+
+        {earnedBadges.length > 0 ? (
+          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+            {earnedBadges.map((badge) => {
+              const isActive = selectedBadge === badge.slug;
+              return (
+                <button
+                  key={badge.slug}
+                  onClick={() => {
+                    if (!isActive) handleSelectBadge(badge.slug);
+                  }}
+                  disabled={isActive || selectingBadge}
+                  className={`relative aspect-square rounded-xl border-2 p-2 flex flex-col items-center justify-center gap-1.5 transition-all duration-200 ${
+                    isActive
+                      ? 'border-orange-400 ring-2 ring-orange-200 bg-orange-50'
+                      : 'border-gray-200 bg-white hover:shadow-md hover:scale-[1.03] hover:border-orange-300'
+                  } disabled:opacity-60`}
+                >
+                  {isActive && (
+                    <div className="absolute top-1 left-1">
+                      <Star className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
+                    </div>
+                  )}
+                  <Image
+                    src={badge.icon}
+                    alt={badge.name}
+                    width={40}
+                    height={40}
+                    className="w-10 h-10 object-contain"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                  <p className="text-[10px] sm:text-xs font-medium text-center leading-tight line-clamp-2 text-gray-800">
+                    {badge.name}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-6 rounded-xl" style={{ background: 'var(--notion-bg-secondary)' }}>
+            <Award className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+            <p className="text-sm" style={{ color: 'var(--notion-text-secondary)' }}>Aucun badge obtenu pour le moment.</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--notion-text-secondary)' }}>Completez des objectifs pour debloquer des badges !</p>
+          </div>
+        )}
       </div>
 
       {/* Aperçu du profil */}

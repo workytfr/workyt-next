@@ -102,18 +102,16 @@ export async function POST(req: NextRequest) {
             status,
         });
 
-        await User.findByIdAndUpdate(user._id, { $inc: { points: 10 } });
-        await PointTransaction.create({
-            user:     user._id,
-            revision: newRevision._id,
-            action:   'createRevision',
-            type:     'gain',
-            points:   10
-        });
+        const { addPointsWithBoost } = await import('@/lib/pointsService');
+        await addPointsWithBoost(user._id.toString(), 10, 'createRevision', { revision: (newRevision as any)._id.toString() });
 
         // Mettre à jour la progression des quêtes
         const { QuestService } = await import('@/lib/questService');
         await QuestService.updateQuestProgress(user._id.toString(), 'fiche_create', { subject });
+
+        // Verifier les badges
+        const { BadgeService } = await import('@/lib/badgeService');
+        await BadgeService.triggerBadgeCheck(user._id.toString());
 
         return NextResponse.json(newRevision, { status: 201 });
     } catch (error) {

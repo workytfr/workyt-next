@@ -109,6 +109,19 @@ export async function POST(req: NextRequest) {
             // Silencieux
         }
 
+        // Verifier les badges de l'auteur du contenu bookmark (fiche_bookmarked)
+        if (contentType === 'fiche') {
+            try {
+                const rev = await Revision.findById(refId).select('author');
+                if (rev?.author) {
+                    const { BadgeService } = await import("@/lib/badgeService");
+                    await BadgeService.triggerBadgeCheck(rev.author.toString());
+                }
+            } catch {
+                // Silencieux
+            }
+        }
+
         return NextResponse.json({
             success: true,
             message: contentType === 'fiche' ? "Fiche ajoutée aux favoris !" :

@@ -77,14 +77,8 @@ export async function POST(req: NextRequest) {
             await answer.save();
 
             // 🔺 Ajouter +1 point à l'auteur de la réponse
-            await User.findByIdAndUpdate(answer.user, { $inc: { points: 1 } });
-            await PointTransaction.create({
-                user: answer.user,
-                answer: answer._id,
-                action: 'likeAnswer',
-                type: "gain",
-                points: 1,
-            });
+            const { addPointsWithBoost } = await import('@/lib/pointsService');
+            await addPointsWithBoost(answer.user.toString(), 1, 'likeAnswer', { answer: answer._id.toString() });
 
             return NextResponse.json(
                 { success: true, message: "Like ajouté avec succès.", data: answer },

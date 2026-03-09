@@ -18,7 +18,8 @@ interface UsernameDisplayProps {
     userId?: string;
     className?: string;
     customization?: ProfileCustomization;
-    role?: string; // Rôle de l'utilisateur pour afficher l'icône
+    role?: string;
+    selectedBadgeIcon?: string | null;
 }
 
 const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
@@ -26,9 +27,11 @@ const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
     userId,
     className = "",
     customization: propCustomization,
-    role
+    role,
+    selectedBadgeIcon: propBadgeIcon
 }) => {
     const [customization, setCustomization] = useState<ProfileCustomization | null>(null);
+    const [badgeIcon, setBadgeIcon] = useState<string | null>(propBadgeIcon || null);
 
     // Charger les personnalisations si userId est fourni et pas de customization en props
     useEffect(() => {
@@ -49,6 +52,9 @@ const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
                 const data = await response.json();
                 if (data.success) {
                     setCustomization(data.data.customization);
+                    if (data.data.selectedBadgeIcon) {
+                        setBadgeIcon(data.data.selectedBadgeIcon);
+                    }
                 }
             }
         } catch (error) {
@@ -181,7 +187,7 @@ const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
                 >
                     {username}
                 </span>
-                {roleIconPath && (
+                {roleIconPath ? (
                     <Image
                         src={roleIconPath}
                         alt={`Rôle ${role}`}
@@ -189,7 +195,15 @@ const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
                         height={16}
                         className="rounded-full flex-shrink-0"
                     />
-                )}
+                ) : badgeIcon ? (
+                    <Image
+                        src={badgeIcon}
+                        alt="Badge"
+                        width={16}
+                        height={16}
+                        className="flex-shrink-0"
+                    />
+                ) : null}
             </span>
 
             {/* Styles CSS pour toutes les animations */}

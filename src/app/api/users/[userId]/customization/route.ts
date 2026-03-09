@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import ProfileCustomization from '@/models/ProfileCustomization';
 import User from '@/models/User';
+import Badge from '@/models/Badge';
 
 export async function GET(
   req: NextRequest,
@@ -9,23 +10,29 @@ export async function GET(
 ) {
   try {
     await dbConnect();
-    
+
     const { userId } = await params;
-    
+
     if (!userId) {
       return NextResponse.json({ error: 'ID utilisateur requis' }, { status: 400 });
     }
 
-    // Vérifier que l'utilisateur existe
     const user = await User.findById(userId);
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Récupérer les personnalisations de l'utilisateur
     const customization = await ProfileCustomization.findOne({ user: userId });
 
-    // Retourner les données (même si null, pour permettre au frontend de gérer)
+    // Recuperer l'icone du badge selectionne
+    let selectedBadgeIcon: string | null = null;
+    if (user.selectedBadge) {
+      const badge = await Badge.findOne({ slug: user.selectedBadge }).select('icon');
+      if (badge) {
+        selectedBadgeIcon = badge.icon;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       data: {
@@ -33,7 +40,8 @@ export async function GET(
           usernameColor: { type: 'solid', value: '#3B82F6', isActive: false },
           profileImage: { filename: '', isActive: false },
           profileBorder: { filename: '', isActive: false }
-        }
+        },
+        selectedBadgeIcon,
       }
     });
 

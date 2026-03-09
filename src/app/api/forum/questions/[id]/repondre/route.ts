@@ -141,14 +141,8 @@ export async function POST(
 
         // Ajouter +2 points à l'utilisateur SI ce n'est PAS lui qui a posé la question
         if (!isOwner) {
-            await User.findByIdAndUpdate(user._id, { $inc: { points: 2 } });
-            await PointTransaction.create({
-                user:   user._id,
-                question: question._id,
-                action: 'createAnswer',
-                type:   'gain',
-                points: 2
-            });
+            const { addPointsWithBoost } = await import('@/lib/pointsService');
+            await addPointsWithBoost(user._id.toString(), 2, 'createAnswer', { question: question._id.toString() });
         }
 
         // Vérification et attribution des badges

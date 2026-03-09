@@ -33,6 +33,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import { calculateUserRank } from "@/lib/rankSystem";
+import { FlameIcon, getFlameLevel, FLAME_CONFIGS } from "@/components/ui/StreakIndicator";
 import useSWR from "swr";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
@@ -77,6 +78,14 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const gems = gemData?.success && gemData?.data?.user?.id === id
         ? gemData.data.gems.balance || 0
         : 0;
+
+    // Récupérer le streak
+    const { data: streakData } = useSWR(
+        id ? `/api/streak` : null,
+        fetcher,
+        { revalidateOnFocus: false }
+    );
+    const currentStreak = streakData?.success ? streakData.data.currentStreak || 0 : 0;
 
     // Fonction pour formater les points
     const formatPoints = (points: number): string => {
@@ -244,6 +253,10 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                             <Image src="/badge/diamond.png" alt="Diamants" width={14} height={14} className="object-contain" />
                             {gems}
                         </span>
+                        <span className={`inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm font-medium ${FLAME_CONFIGS[getFlameLevel(currentStreak) as keyof typeof FLAME_CONFIGS].textClass}`}>
+                            <FlameIcon level={getFlameLevel(currentStreak)} size={16} />
+                            <span className="text-gray-700">{currentStreak}j</span>
+                        </span>
                         <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                             🏆 {formData.badges?.length || 0} badges
                         </span>
@@ -278,10 +291,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-6">
-                            <BadgeProgress badgesCount={formData.badges?.length || 0} totalBadges={18} />
-                            <div className="mt-6">
-                                <BadgeDisplay userId={id} showProgress={true} />
-                            </div>
+                            <BadgeDisplay userId={id} />
                         </CardContent>
                     </Card>
 

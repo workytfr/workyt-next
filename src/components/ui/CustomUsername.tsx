@@ -22,6 +22,7 @@ interface ProfileCustomization {
 
 const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, className = '', role }) => {
     const [customization, setCustomization] = useState<ProfileCustomization | null>(null);
+    const [badgeIcon, setBadgeIcon] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -38,6 +39,14 @@ const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, class
                 const data = await response.json();
                 if (data.success && data.data.user.id === userId) {
                     setCustomization(data.data.customization);
+                }
+            }
+            // Charger le badge selectionne
+            const custRes = await fetch(`/api/users/${userId}/customization`);
+            if (custRes.ok) {
+                const custData = await custRes.json();
+                if (custData.success && custData.data.selectedBadgeIcon) {
+                    setBadgeIcon(custData.data.selectedBadgeIcon);
                 }
             }
         } catch (error) {
@@ -191,7 +200,7 @@ const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, class
                 >
                     {username}
                 </span>
-                {roleIconPath && (
+                {roleIconPath ? (
                     <Image
                         src={roleIconPath}
                         alt={`Rôle ${role}`}
@@ -199,7 +208,15 @@ const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, class
                         height={16}
                         className="rounded-full flex-shrink-0"
                     />
-                )}
+                ) : badgeIcon ? (
+                    <Image
+                        src={badgeIcon}
+                        alt="Badge"
+                        width={16}
+                        height={16}
+                        className="flex-shrink-0"
+                    />
+                ) : null}
             </Link>
             
             {/* Styles CSS pour toutes les animations */}
