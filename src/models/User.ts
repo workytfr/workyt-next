@@ -12,6 +12,7 @@ export interface IUser extends Document {
     role: 'Apprenti' | 'Helpeur' | 'Rédacteur' | 'Correcteur' | 'Modérateur' | 'Admin';
     points: number;
     badges: string[];
+    selectedBadge: string | null;
     isAdmin: boolean;
     bio: string;
     discordId?: string;
@@ -117,6 +118,10 @@ const UserSchema = new Schema<IUser>({
         type: String,
         trim: true
     }],
+    selectedBadge: {
+        type: String,
+        default: null,
+    },
     isAdmin: {
         type: Boolean,
         required: true,

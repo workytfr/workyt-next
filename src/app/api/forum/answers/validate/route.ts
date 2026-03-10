@@ -86,19 +86,9 @@ export async function POST(req: NextRequest) {
             question.status = "Résolue";
             await question.save();
 
-            // 🔹 Ajouter les points au répondant
-            await User.findByIdAndUpdate(answer.user, { $inc: { points: question.points } });
-
-            // 🔹 Enregistrer la transaction de points
-            await PointTransaction.create({
-                user: answer.user,
-                question: question._id,
-                answer: answer._id,
-                action: "validateAnswer",
-                type: "gain",
-                points: question.points,
-                createdAt: new Date(),
-            });
+            // 🔹 Ajouter les points au répondant (avec boost)
+            const { addPointsWithBoost } = await import('@/lib/pointsService');
+            await addPointsWithBoost(answer.user.toString(), question.points, 'validateAnswer', { question: question._id.toString(), answer: answer._id.toString() });
 
             // 🔹 Vérifier les badges pour l'auteur de la réponse
             await BadgeService.triggerBadgeCheck(answer.user.toString());
@@ -133,19 +123,9 @@ export async function POST(req: NextRequest) {
                 await question.save();
             }
 
-            // 🔹 Ajouter les points au répondant (même logique que pour "Résolue")
-            await User.findByIdAndUpdate(answer.user, { $inc: { points: question.points } });
-
-            // 🔹 Enregistrer la transaction de points
-            await PointTransaction.create({
-                user: answer.user,
-                question: question._id,
-                answer: answer._id,
-                action: "validateAnswer",
-                type: "gain",
-                points: question.points,
-                createdAt: new Date(),
-            });
+            // 🔹 Ajouter les points au répondant (avec boost)
+            const { addPointsWithBoost: addPtsStaff } = await import('@/lib/pointsService');
+            await addPtsStaff(answer.user.toString(), question.points, 'validateAnswer', { question: question._id.toString(), answer: answer._id.toString() });
 
             // 🔹 Vérifier les badges pour l'auteur de la réponse
             await BadgeService.triggerBadgeCheck(answer.user.toString());

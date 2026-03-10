@@ -8,7 +8,7 @@ export type ChestType = 'common' | 'rare' | 'epic' | 'legendary';
 /**
  * Types de récompenses dans les coffres
  */
-export type ChestRewardType = 'points' | 'gems' | 'cosmetic';
+export type ChestRewardType = 'points' | 'gems' | 'cosmetic' | 'mushrooms';
 
 /**
  * Interface représentant un coffre
@@ -49,7 +49,7 @@ const ChestSchema = new Schema<IChest>({
   possibleRewards: [{
     type: {
       type: String,
-      enum: ['points', 'gems', 'cosmetic'],
+      enum: ['points', 'gems', 'cosmetic', 'mushrooms'],
       required: true
     },
     amount: {

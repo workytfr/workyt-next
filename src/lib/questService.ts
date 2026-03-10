@@ -15,6 +15,9 @@ import '../models/Course';
 import '../models/Section';
 import '../models/Quiz';
 import OwnedCosmetic from '../models/OwnedCosmetic';
+import { MushroomService } from './mushroomService';
+import { StreakService } from './streakService';
+import { addPointsWithBoost } from './pointsService';
 
 export class QuestService {
   /**
@@ -106,15 +109,17 @@ export class QuestService {
       ]
     });
 
-    // Pour les quêtes journalières, sélectionner seulement 3 quêtes aléatoirement
+    // Pour les quêtes journalières, sélectionner 3 quêtes (ou 4 si boost quest_extra actif)
     // La sélection est déterministe basée sur la date pour que tous les utilisateurs
-    // voient les mêmes 3 quêtes le même jour
+    // voient les mêmes quêtes le même jour
     if (type === 'daily' && quests.length > 3) {
-      // Utiliser la date du jour comme seed pour la sélection
+      const hasExtraQuest = await MushroomService.hasActiveBoost(userId, 'quest_extra');
+      const questCount = hasExtraQuest ? 4 : 3;
+
       const dateString = start.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       const seed = this.hashString(dateString);
       const shuffled = this.shuffleWithSeed(quests, seed);
-      quests = shuffled.slice(0, 3);
+      quests = shuffled.slice(0, Math.min(questCount, shuffled.length));
     }
 
     const progresses: IQuestProgress[] = [];
@@ -157,6 +162,13 @@ export class QuestService {
   ): Promise<IQuestProgress[]> {
     const now = new Date();
     const updatedProgresses: IQuestProgress[] = [];
+
+    // Enregistrer l'activite pour le streak
+    try {
+      await StreakService.recordActivity(userId);
+    } catch (err) {
+      console.error('Erreur streak recordActivity:', err);
+    }
 
     // Récupérer toutes les quêtes actives qui correspondent à cette action
     const quests = await Quest.find({
@@ -324,21 +336,8 @@ export class QuestService {
 
     for (const reward of quest.rewards) {
       if (reward.type === 'points') {
-        // Ajouter des points
-        await User.findByIdAndUpdate(userId, {
-          $inc: { points: reward.amount || 0 }
-        });
-
-        // Créer une transaction (ajouter quest_reward aux actions autorisées si nécessaire)
-        const transaction = new PointTransaction({
-          user: userId,
-          action: 'completeQuiz', // Utiliser une action existante temporairement
-          type: 'gain',
-          points: reward.amount || 0
-        });
-        await transaction.save();
-
-        rewards.push({ type: 'points', amount: reward.amount });
+        const finalAmount = await addPointsWithBoost(userId, reward.amount || 0, 'completeQuiz');
+        rewards.push({ type: 'points', amount: finalAmount });
       } else if (reward.type === 'gems') {
         // Ajouter des gemmes
         let gem = await Gem.findOne({ user: userId });
@@ -356,6 +355,10 @@ export class QuestService {
         await gem.save();
 
         rewards.push({ type: 'gems', amount: reward.amount });
+      } else if (reward.type === 'mushrooms') {
+        // Ajouter des champignons
+        await MushroomService.addMushrooms(userId, reward.amount || 0, 'quest');
+        rewards.push({ type: 'mushrooms', amount: reward.amount });
       } else if (reward.type === 'chest') {
         // Ouvrir un coffre et générer une récompense aléatoire
         const chest = await Chest.findOne({
@@ -387,15 +390,27 @@ export class QuestService {
       throw new Error('Coffre non trouvé');
     }
 
+    // Verifier si le boost lucky_chest est actif et le consommer
+    const luckyMultiplier = await MushroomService.consumeSingleUseBoost(userId, 'lucky_chest');
+
+    // Copier les recompenses et ajuster les poids si boost actif
+    // Le boost augmente le poids des recompenses rares (gems, cosmetic, mushrooms)
+    const adjustedRewards = chest.possibleRewards.map((reward: any) => {
+      if (luckyMultiplier > 1 && (reward.type === 'gems' || reward.type === 'cosmetic' || reward.type === 'mushrooms')) {
+        return { ...reward.toObject(), weight: Math.round(reward.weight * luckyMultiplier) };
+      }
+      return reward;
+    });
+
     // Calculer le total des poids
-    const totalWeight = chest.possibleRewards.reduce((sum: number, reward: any) => sum + reward.weight, 0);
+    const totalWeight = adjustedRewards.reduce((sum: number, reward: any) => sum + reward.weight, 0);
 
     // Générer un nombre aléatoire
     let random = Math.random() * totalWeight;
 
     // Sélectionner la récompense basée sur les poids
     let selectedReward = null;
-    for (const reward of chest.possibleRewards) {
+    for (const reward of adjustedRewards) {
       random -= reward.weight;
       if (random <= 0) {
         selectedReward = reward;
@@ -404,8 +419,7 @@ export class QuestService {
     }
 
     if (!selectedReward) {
-      // Fallback sur la première récompense
-      selectedReward = chest.possibleRewards[0];
+      selectedReward = adjustedRewards[0];
     }
 
     // Créer l'enregistrement de récompense
@@ -422,17 +436,7 @@ export class QuestService {
 
     // Appliquer la récompense immédiatement
     if (selectedReward.type === 'points') {
-      await User.findByIdAndUpdate(userId, {
-        $inc: { points: selectedReward.amount || 0 }
-      });
-
-      const transaction = new PointTransaction({
-        user: userId,
-        action: 'completeQuiz', // Utiliser une action existante temporairement
-        type: 'gain',
-        points: selectedReward.amount || 0
-      });
-      await transaction.save();
+      await addPointsWithBoost(userId, selectedReward.amount || 0, 'completeQuiz');
     } else if (selectedReward.type === 'gems') {
       let gem = await Gem.findOne({ user: userId });
       if (!gem) {
@@ -446,6 +450,8 @@ export class QuestService {
       gem.balance += selectedReward.amount || 0;
       gem.totalEarned += selectedReward.amount || 0;
       await gem.save();
+    } else if (selectedReward.type === 'mushrooms') {
+      await MushroomService.addMushrooms(userId, selectedReward.amount || 0, 'chest');
     } else if (selectedReward.type === 'cosmetic' && selectedReward.cosmeticType && selectedReward.cosmeticId) {
       // Ajouter le cosmétique à l'inventaire
       await OwnedCosmetic.findOneAndUpdate(

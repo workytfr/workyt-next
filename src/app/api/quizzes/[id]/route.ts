@@ -349,20 +349,10 @@ export async function POST(
 
         await completion.save();
 
-        // Mettre à jour les points de l'utilisateur
-        await User.findByIdAndUpdate(user._id, {
-            $inc: { points: totalScore }
-        });
-
-        // Créer une transaction de points
+        // Mettre à jour les points de l'utilisateur (avec boost)
         if (totalScore > 0) {
-            const pointTransaction = new PointTransaction({
-                user: user._id,
-                action: 'completeQuiz',
-                type: 'gain',
-                points: totalScore
-            });
-            await pointTransaction.save();
+            const { addPointsWithBoost } = await import('@/lib/pointsService');
+            await addPointsWithBoost(user._id.toString(), totalScore, 'completeQuiz');
         }
 
         // Vérifier les badges après avoir complété le quiz

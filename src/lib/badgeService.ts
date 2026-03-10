@@ -12,6 +12,9 @@ import '../models/Lesson';
 import '../models/Question';
 import '../models/Exercise';
 import '../models/Bookmark';
+import '../models/Streak';
+import '../models/MushroomTransaction';
+import '../models/CalendarClaim';
 
 export class BadgeService {
   /**
@@ -57,16 +60,19 @@ export class BadgeService {
     switch (type) {
       case 'forum_answer':
         return await this.checkForumAnswers(user._id.toString(), value);
-      
+
       case 'forum_validated':
         return await this.checkForumValidatedAnswers(user._id.toString(), value);
-      
+
       case 'course_completed':
         return await this.checkCoursesCompleted(user._id.toString(), value);
-      
+
       case 'quiz_success':
         return await this.checkQuizSuccess(user._id.toString(), value);
-      
+
+      case 'quiz_perfect':
+        return await this.checkQuizPerfect(user._id.toString(), value);
+
       case 'fiche_created':
         return await this.checkFichesCreated(user._id.toString(), value);
 
@@ -81,11 +87,22 @@ export class BadgeService {
 
       case 'seniority':
         return await this.checkSeniority(user.createdAt, value);
-      
+
+      case 'streak':
+        return await this.checkStreak(user._id.toString(), value);
+
+      case 'points':
+        return (user.points || 0) >= value;
+
+      case 'mushroom_used':
+        return await this.checkMushroomUsed(user._id.toString(), value);
+
+      case 'calendar_claims':
+        return await this.checkCalendarClaims(user._id.toString(), value);
+
       case 'event':
-        // Les badges d'événements sont attribués manuellement
         return false;
-      
+
       default:
         console.warn(`Type de condition non reconnu: ${type}`);
         return false;
@@ -203,12 +220,76 @@ export class BadgeService {
   }
 
   /**
+   * Verifie le streak d'un utilisateur
+   */
+  private static async checkStreak(userId: string, requiredDays: number): Promise<boolean> {
+    try {
+      const Streak = mongoose.model('Streak');
+      const streak = await Streak.findOne({ user: userId });
+      return streak ? streak.longestStreak >= requiredDays : false;
+    } catch (error) {
+      console.error('Erreur lors de la verification du streak:', error);
+      return false;
+    }
+  }
+
+  /**
    * Vérifie l'ancienneté de l'utilisateur (en années)
    */
   private static async checkSeniority(createdAt: Date, requiredYears: number): Promise<boolean> {
     const now = new Date();
     const yearsDiff = (now.getTime() - createdAt.getTime()) / (1000 * 60 * 60 * 24 * 365);
     return yearsDiff >= requiredYears;
+  }
+
+  /**
+   * Verifie le nombre de quiz avec score parfait (100%)
+   */
+  private static async checkQuizPerfect(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const QuizCompletion = mongoose.model('QuizCompletion');
+      const count = await QuizCompletion.countDocuments({
+        userId: userId,
+        $expr: { $eq: ['$score', '$maxScore'] },
+      });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des quiz parfaits:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Verifie le nombre de champignons utilises
+   */
+  private static async checkMushroomUsed(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const MushroomTransaction = mongoose.model('MushroomTransaction');
+      const count = await MushroomTransaction.countDocuments({
+        user: userId,
+        type: 'use',
+      });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des champignons:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Verifie le nombre de reclamations du calendrier
+   */
+  private static async checkCalendarClaims(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const CalendarClaim = mongoose.model('CalendarClaim');
+      const count = await CalendarClaim.countDocuments({
+        user: userId,
+      });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des reclamations calendrier:', error);
+      return false;
+    }
   }
 
   /**

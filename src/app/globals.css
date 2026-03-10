@@ -1254,3 +1254,63 @@ html, body {
   overflow-x: auto;
   overflow-y: hidden;
 }
+
+/* Flame streak animations */
+@keyframes flame-spark {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-0.5px) rotate(2deg); }
+}
+@keyframes flame-flicker {
+  0%, 100% { transform: scaleY(1) rotate(0deg); opacity: 1; }
+  25% { transform: scaleY(1.05) rotate(-2deg); opacity: 0.9; }
+  50% { transform: scaleY(0.95) rotate(1deg); opacity: 1; }
+  75% { transform: scaleY(1.03) rotate(-1deg); opacity: 0.95; }
+}
+@keyframes flame-pulse {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  30% { transform: scale(1.08) rotate(-2deg); }
+  60% { transform: scale(0.97) rotate(2deg); }
+}
+@keyframes flame-burn {
+  0%, 100% { transform: scale(1) rotate(0deg) translateY(0); }
+  20% { transform: scale(1.1) rotate(-3deg) translateY(-1px); }
+  40% { transform: scale(0.95) rotate(2deg) translateY(0); }
+  60% { transform: scale(1.08) rotate(-1deg) translateY(-0.5px); }
+  80% { transform: scale(0.98) rotate(1deg) translateY(0); }
+}
+@keyframes flame-inferno {
+  0%, 100% { transform: scale(1) rotate(0deg) translateY(0); }
+  15% { transform: scale(1.12) rotate(-4deg) translateY(-1.5px); }
+  30% { transform: scale(0.93) rotate(3deg) translateY(0); }
+  45% { transform: scale(1.1) rotate(-2deg) translateY(-1px); }
+  60% { transform: scale(0.96) rotate(2deg) translateY(0.5px); }
+  75% { transform: scale(1.08) rotate(-3deg) translateY(-1px); }
+}
+@keyframes flame-legendary {
+  0%, 100% { transform: scale(1) rotate(0deg) translateY(0); filter: hue-rotate(0deg); }
+  15% { transform: scale(1.15) rotate(-4deg) translateY(-2px); filter: hue-rotate(10deg); }
+  30% { transform: scale(0.92) rotate(3deg) translateY(0); filter: hue-rotate(-5deg); }
+  45% { transform: scale(1.12) rotate(-2deg) translateY(-1.5px); filter: hue-rotate(15deg); }
+  60% { transform: scale(0.95) rotate(3deg) translateY(0); filter: hue-rotate(-10deg); }
+  75% { transform: scale(1.1) rotate(-3deg) translateY(-1px); filter: hue-rotate(5deg); }
+}
+@keyframes flame-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(1.2); }
+}
+@keyframes flame-secondary {
+  0% { transform: scaleY(0.9) translateY(1px); opacity: 0.3; }
+  100% { transform: scaleY(1.1) translateY(-1px); opacity: 0.5; }
+}
+@keyframes flame-particle-1 {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.8; }
+  100% { transform: translateY(-8px) translateX(-3px) scale(0); opacity: 0; }
+}
+@keyframes flame-particle-2 {
+  0% { transform: translateY(0) translateX(0) scale(1); opacity: 0.6; }
+  100% { transform: translateY(-10px) translateX(4px) scale(0); opacity: 0; }
+}
+@keyframes flame-particle-3 {
+  0% { transform: translateY(0) scale(1); opacity: 0.7; }
+  100% { transform: translateY(-7px) translateX(-2px) scale(0); opacity: 0; }
+}

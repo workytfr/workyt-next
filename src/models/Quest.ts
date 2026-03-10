@@ -21,7 +21,7 @@ export type QuestActionType =
 /**
  * Types de récompenses
  */
-export type RewardType = 'chest' | 'points' | 'gems';
+export type RewardType = 'chest' | 'points' | 'gems' | 'mushrooms';
 
 /**
  * Interface représentant une quête
@@ -102,7 +102,7 @@ const QuestSchema = new Schema<IQuest>({
   rewards: [{
     type: {
       type: String,
-      enum: ['chest', 'points', 'gems'],
+      enum: ['chest', 'points', 'gems', 'mushrooms'],
       required: true
     },
     amount: {

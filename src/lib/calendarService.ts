@@ -10,6 +10,7 @@ import PointTransaction from '@/models/PointTransaction';
 import Chest from '@/models/Chest';
 import ChestReward from '@/models/ChestReward';
 import dbConnect from '@/lib/mongodb';
+import { StreakService } from '@/lib/streakService';
 
 /**
  * Configuration des fêtes et dates spéciales
@@ -336,17 +337,8 @@ async function openChest(userId: string, chestType: 'common' | 'rare'): Promise<
 
   // Appliquer la récompense immédiatement
   if (selectedReward.type === 'points') {
-    await User.findByIdAndUpdate(userId, {
-      $inc: { points: selectedReward.amount || 0 }
-    });
-
-    const transaction = new PointTransaction({
-      user: userId,
-      action: 'completeQuiz',
-      type: 'gain',
-      points: selectedReward.amount || 0
-    });
-    await transaction.save();
+    const { addPointsWithBoost } = await import('@/lib/pointsService');
+    await addPointsWithBoost(userId, selectedReward.amount || 0, 'completeQuiz');
   } else if (selectedReward.type === 'gems') {
     let gem = await Gem.findOne({ user: userId });
     if (!gem) {
@@ -360,6 +352,9 @@ async function openChest(userId: string, chestType: 'common' | 'rare'): Promise<
     gem.balance += selectedReward.amount || 0;
     gem.totalEarned += selectedReward.amount || 0;
     await gem.save();
+  } else if (selectedReward.type === 'mushrooms') {
+    const { MushroomService } = await import('@/lib/mushroomService');
+    await MushroomService.addMushrooms(userId, selectedReward.amount || 0, 'chest');
   }
 
   chestReward.claimed = true;
@@ -441,17 +436,8 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     let defaultChestReward = null;
 
     if (defaultDay.reward.type === 'points') {
-      await User.findByIdAndUpdate(userId, {
-        $inc: { points: defaultRewardAmount }
-      });
-
-      const transaction = new PointTransaction({
-        user: userId,
-        action: 'completeQuiz', // Action temporaire pour le calendrier
-        type: 'gain',
-        points: defaultRewardAmount
-      });
-      await transaction.save();
+      const { addPointsWithBoost } = await import('@/lib/pointsService');
+      defaultRewardAmount = await addPointsWithBoost(userId, defaultRewardAmount, 'completeQuiz');
     } else if (defaultDay.reward.type === 'gems') {
       let gem = await Gem.findOne({ user: userId });
       if (!gem) {
@@ -495,17 +481,8 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
   let chestReward = null;
 
   if (calendarDay.reward.type === 'points') {
-    await User.findByIdAndUpdate(userId, {
-      $inc: { points: rewardAmount }
-    });
-
-    const transaction = new PointTransaction({
-      user: userId,
-      action: 'completeQuiz',
-      type: 'gain',
-      points: rewardAmount
-    });
-    await transaction.save();
+    const { addPointsWithBoost } = await import('@/lib/pointsService');
+    rewardAmount = await addPointsWithBoost(userId, rewardAmount, 'completeQuiz');
   } else if (calendarDay.reward.type === 'gems') {
     let gem = await Gem.findOne({ user: userId });
     if (!gem) {
@@ -534,6 +511,13 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     rewardAmount: rewardAmount
   });
   await claim.save();
+
+  // Enregistrer l'activite pour le streak
+  try {
+    await StreakService.recordActivity(userId);
+  } catch (err) {
+    console.error('Erreur streak recordActivity:', err);
+  }
 
   return {
     success: true,

@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
-import { Badge } from '@/components/ui/Badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
-import { Progress } from '@/components/ui/Progress';
+import { Lock, Eye, EyeOff, Star } from 'lucide-react';
 
 interface BadgeData {
   _id: string;
@@ -22,262 +20,362 @@ interface BadgeData {
 
 interface BadgeDisplayProps {
   userId?: string;
-  badges?: string[]; // slugs des badges
-  showAll?: boolean; // si true, affiche tous les badges disponibles
-  maxDisplay?: number; // nombre max de badges à afficher
+  badges?: string[];
+  showAll?: boolean;
+  maxDisplay?: number;
   className?: string;
-  showProgress?: boolean; // afficher la progression
+  showProgress?: boolean;
 }
 
-const rarityColors = {
-  commun: 'bg-gray-100 text-gray-800 border-gray-300',
-  rare: 'bg-blue-100 text-blue-800 border-blue-300',
-  épique: 'bg-purple-100 text-purple-800 border-purple-300',
-  légendaire: 'bg-yellow-100 text-yellow-800 border-yellow-300'
-};
+const RARITY_CONFIG = {
+  commun: {
+    border: 'border-gray-200',
+    bgEarned: 'bg-white',
+    text: 'text-gray-600',
+    dot: 'bg-gray-400',
+    label: 'Commun',
+  },
+  rare: {
+    border: 'border-blue-200',
+    bgEarned: 'bg-blue-50',
+    text: 'text-blue-600',
+    dot: 'bg-blue-500',
+    label: 'Rare',
+  },
+  'épique': {
+    border: 'border-purple-200',
+    bgEarned: 'bg-purple-50',
+    text: 'text-purple-600',
+    dot: 'bg-purple-500',
+    label: 'Epique',
+  },
+  'légendaire': {
+    border: 'border-yellow-300',
+    bgEarned: 'bg-gradient-to-br from-yellow-50 to-amber-50',
+    text: 'text-yellow-700',
+    dot: 'bg-yellow-500',
+    label: 'Legendaire',
+  },
+} as const;
 
-const rarityGradients = {
-  commun: 'from-gray-100 to-gray-200',
-  rare: 'from-blue-100 to-blue-200',
-  épique: 'from-purple-100 to-purple-200',
-  légendaire: 'from-yellow-100 to-yellow-200'
-};
+const CATEGORY_CONFIG = {
+  progression: { label: 'Progression', emoji: '📈' },
+  engagement: { label: 'Engagement', emoji: '💬' },
+  performance: { label: 'Performance', emoji: '🏆' },
+  special: { label: 'Special', emoji: '✨' },
+} as const;
 
-const categoryLabels = {
-  progression: 'Progression',
-  engagement: 'Engagement',
-  performance: 'Performance',
-  special: 'Spécial'
-};
+type CategoryFilter = 'all' | 'progression' | 'engagement' | 'performance' | 'special';
 
-export default function BadgeDisplay({ 
-  userId, 
-  badges = [], 
-  showAll = false, 
-  maxDisplay = 5,
+export default function BadgeDisplay({
+  userId,
   className = '',
-  showProgress = true
 }: BadgeDisplayProps) {
-  const [badgeData, setBadgeData] = useState<BadgeData[]>([]);
   const [allBadges, setAllBadges] = useState<BadgeData[]>([]);
+  const [earnedSlugs, setEarnedSlugs] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [userStats, setUserStats] = useState<any>(null);
+  const [showLocked, setShowLocked] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
+  const [hoveredBadge, setHoveredBadge] = useState<string | null>(null);
+  const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchBadges = async () => {
       try {
         setLoading(true);
-        
-        // Récupérer tous les badges disponibles
-        const allBadgesResponse = await fetch('/api/badges');
-        const allBadgesData = await allBadgesResponse.json();
-        setAllBadges(allBadgesData.badges || []);
 
-        if (showAll) {
-          setBadgeData(allBadgesData.badges || []);
-        } else if (userId) {
-          // Récupérer les badges de l'utilisateur
-          const userBadgesResponse = await fetch(`/api/badges?userId=${userId}`);
-          const userBadgesData = await userBadgesResponse.json();
-          setBadgeData(userBadgesData.userBadges || []);
+        const allRes = await fetch('/api/badges');
+        const allData = await allRes.json();
+        setAllBadges(allData.badges || []);
+
+        if (userId) {
+          const userRes = await fetch(`/api/badges?userId=${userId}`);
+          const userData = await userRes.json();
+          const slugs = (userData.userBadges || []).map((b: BadgeData) => b.slug);
+          setEarnedSlugs(new Set(slugs));
+
+          if (userData.selectedBadge) {
+            setSelectedBadge(userData.selectedBadge);
+          }
         }
       } catch (err) {
-        console.error('BadgeDisplay: Erreur lors du chargement:', err);
-        setError(err instanceof Error ? err.message : 'Erreur inconnue');
+        console.error('BadgeDisplay: Erreur:', err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchBadges();
-  }, [userId, showAll]);
+  }, [userId]);
 
-  // Récupérer les stats utilisateur pour la progression
-  useEffect(() => {
-    if (userId && showProgress) {
-      const fetchUserStats = async () => {
-        try {
-          const response = await fetch(`/api/user/${userId}`);
-          if (response.ok) {
-            const data = await response.json();
-            setUserStats({
-              ...data.data.user,
-              answerCount: data.data.pagination.totalAnswers,
-              ficheCount: data.data.pagination.totalRevisions,
-              questionCount: data.data.pagination.totalQuestions
-            });
-          }
-        } catch (err) {
-          console.error('Erreur lors du chargement des stats:', err);
-        }
-      };
-      fetchUserStats();
+  const earnedBadges = useMemo(() => allBadges.filter(b => earnedSlugs.has(b.slug)), [allBadges, earnedSlugs]);
+  const lockedBadges = useMemo(() => allBadges.filter(b => !earnedSlugs.has(b.slug)), [allBadges, earnedSlugs]);
+
+  const displayedBadges = useMemo(() => {
+    const source = showLocked ? allBadges : earnedBadges;
+    if (categoryFilter === 'all') return source;
+    return source.filter(b => b.category === categoryFilter);
+  }, [showLocked, allBadges, earnedBadges, categoryFilter]);
+
+  // Group by category
+  const groupedBadges = useMemo(() => {
+    const groups: Record<string, BadgeData[]> = {};
+    for (const badge of displayedBadges) {
+      if (!groups[badge.category]) groups[badge.category] = [];
+      groups[badge.category].push(badge);
     }
-  }, [userId, showProgress]);
+    return groups;
+  }, [displayedBadges]);
+
+  const stats = useMemo(() => {
+    const total = allBadges.length;
+    const earned = earnedSlugs.size;
+    const byRarity: Record<string, { total: number; earned: number }> = {
+      commun: { total: 0, earned: 0 },
+      rare: { total: 0, earned: 0 },
+      'épique': { total: 0, earned: 0 },
+      'légendaire': { total: 0, earned: 0 },
+    };
+    for (const b of allBadges) {
+      byRarity[b.rarity].total++;
+      if (earnedSlugs.has(b.slug)) byRarity[b.rarity].earned++;
+    }
+    return { total, earned, byRarity };
+  }, [allBadges, earnedSlugs]);
 
   if (loading) {
     return (
       <div className={`space-y-4 ${className}`}>
-        <div className="flex gap-6">
-          {[...Array(maxDisplay)].map((_, i) => (
-            <div key={i} className="w-24 h-32 bg-gray-200 rounded-xl animate-pulse" />
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="aspect-square bg-gray-100 rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
     );
   }
 
-  if (error) {
-    return (
-      <div className={`text-red-500 text-sm ${className}`}>
-        Erreur: {error}
+  return (
+    <div className={`space-y-4 ${className}`}>
+      {/* Header: stats + toggles */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center gap-3">
+          <div className="text-2xl font-bold text-gray-900">
+            {stats.earned}<span className="text-base font-normal text-gray-400">/{stats.total}</span>
+          </div>
+          <div className="h-6 w-px bg-gray-200 hidden sm:block" />
+          <div className="hidden sm:flex items-center gap-2">
+            {Object.entries(stats.byRarity).map(([rarity, s]) => (
+              <div
+                key={rarity}
+                className="flex items-center gap-1"
+                title={`${RARITY_CONFIG[rarity as keyof typeof RARITY_CONFIG].label}: ${s.earned}/${s.total}`}
+              >
+                <span className={`w-2 h-2 rounded-full ${RARITY_CONFIG[rarity as keyof typeof RARITY_CONFIG].dot}`} />
+                <span className="text-xs text-gray-500">{s.earned}/{s.total}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1.5">
+          {/* Toggle locked badges */}
+          <button
+            onClick={() => setShowLocked(!showLocked)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+              showLocked
+                ? 'bg-gray-900 text-white border-gray-900'
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+            }`}
+            title={showLocked ? 'Masquer les badges verrouilles' : 'Voir les badges a recuperer'}
+          >
+            {showLocked ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{showLocked ? 'Masquer' : 'Tout voir'}</span>
+          </button>
+        </div>
       </div>
-    );
-  }
 
-  if (badgeData.length === 0) {
-    return (
-      <div className={`text-gray-500 text-sm ${className}`}>
-        {showAll ? 'Aucun badge disponible' : 'Aucun badge obtenu'}
-      </div>
-    );
-  }
+      {/* Category filter (visible when showing all) */}
+      {showLocked && (
+        <div className="flex flex-wrap gap-1">
+          {(['all', 'progression', 'engagement', 'performance', 'special'] as CategoryFilter[]).map(cat => (
+            <button
+              key={cat}
+              onClick={() => setCategoryFilter(cat)}
+              className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
+                categoryFilter === cat
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
+              }`}
+            >
+              {cat === 'all' ? 'Tous' : CATEGORY_CONFIG[cat].emoji + ' ' + CATEGORY_CONFIG[cat].label}
+            </button>
+          ))}
+        </div>
+      )}
 
-  const displayBadges = badgeData.slice(0, maxDisplay);
-  const remainingCount = badgeData.length - maxDisplay;
+      {/* Earned badges (default view) or all badges */}
+      {!showLocked && earnedBadges.length === 0 && (
+        <div className="text-center py-8">
+          <p className="text-sm text-gray-400">Aucun badge obtenu pour le moment.</p>
+          <button
+            onClick={() => setShowLocked(true)}
+            className="mt-2 text-xs text-orange-500 hover:text-orange-600 font-medium"
+          >
+            Voir les badges a debloquer
+          </button>
+        </div>
+      )}
 
-  // Calculer la progression pour les prochains badges
-  const getNextBadgeProgress = (badgeType: string) => {
-    if (!userStats || !allBadges) return null;
+      {categoryFilter === 'all' && Object.keys(groupedBadges).length > 0 ? (
+        Object.entries(groupedBadges).map(([category, badges]) => (
+          <div key={category}>
+            <div className="flex items-center gap-2 mb-2.5">
+              <span className="text-sm">{CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.emoji}</span>
+              <h4 className="text-sm font-semibold text-gray-700">
+                {CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.label}
+              </h4>
+              {showLocked && (
+                <span className="text-xs text-gray-400">
+                  {badges.filter(b => earnedSlugs.has(b.slug)).length}/{badges.length}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+              {badges.map(badge => (
+                <BadgeCard
+                  key={badge.slug}
+                  badge={badge}
+                  earned={earnedSlugs.has(badge.slug)}
+                  hovered={hoveredBadge === badge.slug}
+                  onHover={setHoveredBadge}
+                  isSelected={selectedBadge === badge.slug}
+                />
+              ))}
+            </div>
+          </div>
+        ))
+      ) : categoryFilter !== 'all' && displayedBadges.length > 0 ? (
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+          {displayedBadges.map(badge => (
+            <BadgeCard
+              key={badge.slug}
+              badge={badge}
+              earned={earnedSlugs.has(badge.slug)}
+              hovered={hoveredBadge === badge.slug}
+              onHover={setHoveredBadge}
+              isSelected={selectedBadge === badge.slug}
+            />
+          ))}
+        </div>
+      ) : showLocked && displayedBadges.length === 0 ? (
+        <div className="text-center py-8 text-sm text-gray-400">
+          Aucun badge dans cette categorie.
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
-    const nextBadge = allBadges.find(badge => 
-      badge.condition.type === badgeType && 
-      !badgeData.some(userBadge => userBadge.slug === badge.slug)
-    );
-
-    if (!nextBadge) return null;
-
-    let currentValue = 0;
-    switch (badgeType) {
-      case 'forum_answer':
-        currentValue = userStats.answerCount || 0;
-        break;
-      case 'fiche_created':
-        currentValue = userStats.ficheCount || 0;
-        break;
-      case 'seniority':
-        const now = new Date();
-        const yearsDiff = (now.getTime() - new Date(userStats.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 365);
-        currentValue = yearsDiff;
-        break;
-      default:
-        return null;
-    }
-
-    const progress = Math.min((currentValue / nextBadge.condition.value) * 100, 100);
-    return {
-      nextBadge,
-      currentValue: Math.floor(currentValue),
-      targetValue: nextBadge.condition.value,
-      progress
-    };
-  };
+function BadgeCard({
+  badge,
+  earned,
+  hovered,
+  onHover,
+  isSelected = false,
+}: {
+  badge: BadgeData;
+  earned: boolean;
+  hovered: boolean;
+  onHover: (slug: string | null) => void;
+  isSelected?: boolean;
+}) {
+  const rarity = RARITY_CONFIG[badge.rarity];
 
   return (
-    <div className={`space-y-4 overflow-hidden ${className}`}>
-      {/* Badges obtenus */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 overflow-hidden">
-        {displayBadges.map((badge) => (
-          <Tooltip key={badge._id}>
-            <TooltipTrigger asChild>
-              <div className={`
-                relative group cursor-pointer p-6 rounded-xl border-2
-                bg-gradient-to-br ${rarityGradients[badge.rarity]}
-                hover:scale-105 transition-transform duration-200
-                ${rarityColors[badge.rarity]}
-                min-h-[120px]
-              `}>
-                <div className="flex flex-col items-center text-center space-y-2">
-                  <div className="w-16 h-16 flex items-center justify-center">
-                    {badge.icon ? (
-                      <Image
-                        src={badge.icon.replace('.svg', '_large.svg')}
-                        alt={badge.name}
-                        width={64}
-                        height={64}
-                        className="w-16 h-16"
-                        onError={(e) => {
-                          // Si l'icône large n'existe pas, essayer l'icône normale
-                          const normalIcon = badge.icon;
-                          if (e.currentTarget.src.includes('_large.svg')) {
-                            e.currentTarget.src = normalIcon;
-                          } else {
-                            console.error('Erreur de chargement de l\'icône:', badge.icon);
-                            e.currentTarget.style.display = 'none';
-                          }
-                        }}
-                      />
-                    ) : (
-                      <span className="text-4xl font-bold">?</span>
-                    )}
-                  </div>
-                  <div className="text-sm font-semibold leading-tight">{badge.name}</div>
-                </div>
-                {badge.rarity !== 'commun' && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full border-2 border-white flex items-center justify-center">
-                    <span className="text-xs">★</span>
-                  </div>
-                )}
-              </div>
-            </TooltipTrigger>
-            <TooltipContent className="max-w-xs">
-              <div>
-                <div className="font-semibold text-sm">{badge.name}</div>
-                <div className="text-xs text-gray-600 mt-1">{badge.description}</div>
-                <div className="flex items-center gap-2 mt-2">
-                  <span className={`px-2 py-1 rounded text-xs ${rarityColors[badge.rarity]}`}>
-                    {badge.rarity}
-                  </span>
-                  <span className="text-xs text-gray-500">
-                    {categoryLabels[badge.category]}
-                  </span>
-                </div>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        ))}
-        
-        {remainingCount > 0 && (
-          <div className="w-full h-24 bg-gray-100 rounded-xl flex items-center justify-center text-sm font-medium text-gray-600">
-            +{remainingCount} autres
+    <div
+      className="relative group"
+      onMouseEnter={() => onHover(badge.slug)}
+      onMouseLeave={() => onHover(null)}
+    >
+      <div
+        className={`
+          relative aspect-square rounded-xl border-2 p-2 sm:p-3 flex flex-col items-center justify-center gap-1.5
+          transition-all duration-200 cursor-default
+          ${earned
+            ? `${isSelected ? 'border-orange-400 ring-2 ring-orange-200' : rarity.border} ${rarity.bgEarned} hover:shadow-md hover:scale-[1.03]`
+            : 'border-gray-100 bg-gray-50 opacity-40 grayscale'
+          }
+          ${badge.rarity === 'légendaire' && earned && !isSelected ? 'shadow-sm shadow-yellow-200' : ''}
+        `}
+      >
+        {/* Selected star indicator */}
+        {isSelected && (
+          <div className="absolute top-1 left-1 z-10">
+            <Star className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
           </div>
         )}
+
+        {/* Rarity dot */}
+        <div className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${earned ? rarity.dot : 'bg-gray-300'}`} />
+
+        {/* Icon */}
+        <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center ${!earned ? 'relative' : ''}`}>
+          {badge.icon ? (
+            <Image
+              src={badge.icon}
+              alt={badge.name}
+              width={48}
+              height={48}
+              className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <span className="text-2xl">🏅</span>
+          )}
+          {!earned && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Lock className="w-4 h-4 text-gray-400" />
+            </div>
+          )}
+        </div>
+
+        {/* Name */}
+        <p className={`text-[10px] sm:text-xs font-medium text-center leading-tight line-clamp-2 ${
+          earned ? 'text-gray-800' : 'text-gray-400'
+        }`}>
+          {badge.name}
+        </p>
       </div>
 
-      {/* Progression vers les prochains badges */}
-      {showProgress && userId && (
-        <div className="space-y-3">
-          <h4 className="text-sm font-semibold text-gray-700">Progression vers les prochains badges</h4>
-          {['forum_answer', 'fiche_created', 'seniority'].map((badgeType) => {
-            const progress = getNextBadgeProgress(badgeType);
-            if (!progress) return null;
-
-            return (
-              <div key={badgeType} className="bg-gray-50 p-3 rounded-lg">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium">{progress.nextBadge.name}</span>
-                  <span className="text-xs text-gray-500">
-                    {progress.currentValue}/{progress.targetValue}
-                  </span>
-                </div>
-                <Progress value={progress.progress} className="h-2" />
-                <p className="text-xs text-gray-600 mt-1">{progress.nextBadge.description}</p>
-              </div>
-            );
-          })}
+      {/* Tooltip on hover */}
+      {hovered && (
+        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-white rounded-xl shadow-xl border border-gray-100 pointer-events-none">
+          <p className="text-sm font-semibold text-gray-900">{badge.name}</p>
+          <p className="text-xs text-gray-500 mt-1">{badge.description}</p>
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${rarity.text}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${rarity.dot}`} />
+              {rarity.label}
+            </span>
+            <span className="text-[10px] text-gray-400">
+              {CATEGORY_CONFIG[badge.category]?.label}
+            </span>
+          </div>
+          {earned ? (
+            isSelected ? (
+              <p className="text-[10px] text-orange-500 font-medium mt-1.5">Affiche sur le profil</p>
+            ) : (
+              <p className="text-[10px] text-green-600 font-medium mt-1.5">Obtenu</p>
+            )
+          ) : (
+            <p className="text-[10px] text-gray-400 mt-1.5">Non obtenu</p>
+          )}
+          <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-r border-b border-gray-100 rotate-45 -mt-1" />
         </div>
       )}
     </div>
   );
-} 
+}

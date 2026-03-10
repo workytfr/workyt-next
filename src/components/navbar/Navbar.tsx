@@ -41,6 +41,8 @@ import {
 import ProfileAvatar from "@/components/ui/profile";
 import ProfileCard from "@/components/ui/ProfileCard";
 import GemIndicator from "@/components/ui/GemIndicator";
+import StreakIndicator from "@/components/ui/StreakIndicator";
+import MushroomIndicator from "@/components/ui/MushroomIndicator";
 import CustomUsername from "@/components/ui/CustomUsername";
 import NotificationBell from "@/components/NotificationBell";
 import BookmarkBell from "@/components/BookmarkBell";
@@ -249,6 +251,11 @@ export default function Navbar() {
 
                         {session ? (
                             <>
+                                <div className="flex items-center gap-1 bg-gray-50 rounded-full px-2 py-1">
+                                    <StreakIndicator userId={session.user.id} />
+                                    <div className="w-px h-4 bg-gray-200" />
+                                    <MushroomIndicator userId={session.user.id} />
+                                </div>
                                 <BookmarkBell />
                                 <NotificationBell />
 

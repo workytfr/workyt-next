@@ -38,7 +38,7 @@ interface Quest {
   target: number;
   status: "in_progress" | "completed" | "claimed";
   rewards: {
-    type: "chest" | "points" | "gems";
+    type: "chest" | "points" | "gems" | "mushrooms";
     amount?: number;
     chestType?: "common" | "rare" | "epic" | "legendary";
   }[];
@@ -538,6 +538,18 @@ function QuestCard({
                     <span>{reward.amount}</span>
                   </>
                 )}
+                {reward.type === "mushrooms" && (
+                  <>
+                    <Image
+                      src="/badge/champiworkyt.webp"
+                      alt=""
+                      width={14}
+                      height={14}
+                      className="object-contain"
+                    />
+                    <span>{reward.amount}</span>
+                  </>
+                )}
                 {reward.type === "chest" && (
                   <>
                     <Image
@@ -704,6 +716,20 @@ function ChestsInfo({ chests }: { chests: any[] }) {
                         />
                         <span className="text-gray-700 text-xs font-medium">
                           {reward.amount} diamants
+                        </span>
+                      </>
+                    )}
+                    {reward.type === "mushrooms" && (
+                      <>
+                        <Image
+                          src="/badge/champiworkyt.webp"
+                          alt=""
+                          width={18}
+                          height={18}
+                          className="object-contain"
+                        />
+                        <span className="text-gray-700 text-xs font-medium">
+                          {reward.amount} champignon{reward.amount > 1 ? 's' : ''}
                         </span>
                       </>
                     )}

@@ -91,24 +91,17 @@ async function likeRevision(revision: any, userId: mongoose.Types.ObjectId) {
             throw new Error("Erreur lors de la mise à jour de la révision");
         }
 
-        // Mettre à jour les points de l'auteur
-        await User.findByIdAndUpdate(
-            revision.author,
-            { $inc: { points: 5 } }
-        );
-
-        // Créer la transaction de points
-        await PointTransaction.create({
-            user: revision.author,
-            revision: revision._id,
-            action: 'likeRevision',
-            type: 'gain',
-            points: 5
-        });
+        // Mettre à jour les points de l'auteur (avec boost)
+        const { addPointsWithBoost } = await import('@/lib/pointsService');
+        await addPointsWithBoost(revision.author.toString(), 5, 'likeRevision', { revision: revision._id.toString() });
 
         // Mettre à jour la progression des quêtes pour l'auteur de la fiche
         const { QuestService } = await import('@/lib/questService');
         await QuestService.updateQuestProgress(revision.author.toString(), 'fiche_like_received');
+
+        // Verifier les badges de l'auteur (likes recus)
+        const { BadgeService } = await import('@/lib/badgeService');
+        await BadgeService.triggerBadgeCheck(revision.author.toString());
 
         // Mettre à jour l'objet local pour la réponse
         revision.likes += 1;

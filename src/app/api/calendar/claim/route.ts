@@ -34,6 +34,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: result.message }, { status: 400 });
     }
 
+    // Verifier les badges (calendar_claims, streak, points)
+    const { BadgeService } = await import('@/lib/badgeService');
+    await BadgeService.triggerBadgeCheck(user._id.toString());
+
     return NextResponse.json({
       success: true,
       rewardType: result.rewardType,
