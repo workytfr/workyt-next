@@ -6,7 +6,6 @@ Allow: /cours
 Allow: /forum
 Allow: /fiches
 Allow: /recompenses
-Allow: /kits
 Allow: /gems
 
 # Pages privées à ne pas indexer

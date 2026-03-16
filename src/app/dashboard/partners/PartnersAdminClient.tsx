@@ -2,20 +2,25 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { 
-    Plus, 
-    Edit, 
-    Trash2, 
-    Eye, 
-    Store, 
-    MapPin, 
-    Globe, 
-    Phone, 
+import {
+    Plus,
+    Edit,
+    Trash2,
+    Eye,
+    Store,
+    MapPin,
+    Globe,
+    Phone,
     Mail,
     Save,
     X,
     Upload,
-    Gem
+    Gem,
+    Ticket,
+    Package,
+    CheckCircle,
+    Clock,
+    AlertCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -62,6 +67,14 @@ interface Partner {
             justificationType: 'image';
         };
     };
+    offersEnabled: {
+        free: boolean;
+        premium: boolean;
+    };
+    promoCodePrefix?: string;
+    totalCodesFree: number;
+    totalCodesPremium: number;
+    availableCodes?: { free: number; premium: number };
     isActive: boolean;
     startDate: string;
     endDate?: string;
@@ -71,6 +84,13 @@ interface Partner {
     totalSavings: number;
     createdAt: string;
     updatedAt: string;
+}
+
+interface PromoCodeStats {
+    total: number;
+    available: number;
+    assigned: number;
+    used: number;
 }
 
 const categories = [
@@ -90,7 +110,16 @@ export default function PartnersAdminClient() {
     const [showAddModal, setShowAddModal] = useState(false);
     const [editingPartner, setEditingPartner] = useState<Partner | null>(null);
     const [viewingPartner, setViewingPartner] = useState<Partner | null>(null);
-    
+    const [promoCodeStats, setPromoCodeStats] = useState<Record<string, PromoCodeStats>>({});
+
+    // Modal de génération de codes
+    const [showGenerateModal, setShowGenerateModal] = useState(false);
+    const [generatePartnerId, setGeneratePartnerId] = useState('');
+    const [generateOfferType, setGenerateOfferType] = useState<'free' | 'premium'>('free');
+    const [generateCount, setGenerateCount] = useState(50);
+    const [generatePrefix, setGeneratePrefix] = useState('');
+    const [generating, setGenerating] = useState(false);
+
     // État du formulaire
     const [formData, setFormData] = useState({
         name: '',
@@ -108,13 +137,18 @@ export default function PartnersAdminClient() {
         endDate: '',
         maxUsesPerDay: '',
         maxUsesPerUser: '',
+        promoCodePrefix: '',
+        offersEnabled: {
+            free: true,
+            premium: true
+        },
         offers: {
             free: {
                 type: 'percentage' as const,
                 value: 0,
                 description: '',
                 conditions: '',
-                promoCode: '',
+                promoCode: 'POOL',
                 promoDescription: '',
                 justificationRequired: true,
                 justificationType: 'image' as const,
@@ -126,7 +160,7 @@ export default function PartnersAdminClient() {
                 gemsCost: 0,
                 description: '',
                 conditions: '',
-                promoCode: '',
+                promoCode: 'POOL',
                 promoDescription: '',
                 additionalBenefits: [''],
                 justificationType: 'image' as const
@@ -145,6 +179,10 @@ export default function PartnersAdminClient() {
             if (response.ok) {
                 const data = await response.json();
                 setPartners(data);
+                // Charger les stats de codes promo pour chaque partenaire
+                for (const partner of data) {
+                    fetchPromoStats(partner._id);
+                }
             }
         } catch (error) {
             console.error('Erreur lors de la récupération des partenaires:', error);
@@ -153,10 +191,16 @@ export default function PartnersAdminClient() {
         }
     };
 
-    const generatePromoCode = (name: string, type: 'free' | 'premium') => {
-        const timestamp = Date.now().toString(36).toUpperCase();
-        const cleanName = name.toUpperCase().replace(/\s+/g, '').slice(0, 8);
-        return `${type === 'free' ? 'FREE' : 'PREMIUM'}${cleanName}${timestamp}`;
+    const fetchPromoStats = async (partnerId: string) => {
+        try {
+            const response = await fetch(`/api/promo-codes?partnerId=${partnerId}`);
+            if (response.ok) {
+                const data = await response.json();
+                setPromoCodeStats(prev => ({ ...prev, [partnerId]: data.stats }));
+            }
+        } catch (error) {
+            console.error('Erreur stats promo:', error);
+        }
     };
 
     const handleInputChange = (field: string, value: any, offerType?: 'free' | 'premium', subField?: string) => {
@@ -192,15 +236,24 @@ export default function PartnersAdminClient() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         try {
             const url = editingPartner ? `/api/partners/${editingPartner._id}` : '/api/partners';
             const method = editingPartner ? 'PUT' : 'POST';
-            
+
+            // S'assurer que les promoCode ont une valeur par défaut (pool)
+            const submitData = {
+                ...formData,
+                offers: {
+                    free: { ...formData.offers.free, promoCode: formData.offers.free.promoCode || 'POOL' },
+                    premium: { ...formData.offers.premium, promoCode: formData.offers.premium.promoCode || 'POOL' }
+                }
+            };
+
             const response = await fetch(url, {
                 method,
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(formData)
+                body: JSON.stringify(submitData)
             });
 
             if (response.ok) {
@@ -211,7 +264,7 @@ export default function PartnersAdminClient() {
                 alert(editingPartner ? 'Partenaire mis à jour avec succès !' : 'Partenaire ajouté avec succès !');
             } else {
                 const error = await response.json();
-                alert(`Erreur : ${error.message}`);
+                alert(`Erreur : ${error.error || error.message}`);
             }
         } catch (error) {
             console.error('Erreur lors de la sauvegarde:', error);
@@ -237,14 +290,39 @@ export default function PartnersAdminClient() {
             endDate: partner.endDate ? new Date(partner.endDate).toISOString().split('T')[0] : '',
             maxUsesPerDay: partner.maxUsesPerDay?.toString() || '',
             maxUsesPerUser: partner.maxUsesPerUser?.toString() || '',
-            offers: partner.offers
+            promoCodePrefix: partner.promoCodePrefix || '',
+            offersEnabled: partner.offersEnabled || { free: true, premium: true },
+            offers: {
+                free: partner.offers?.free || {
+                    type: 'percentage' as const,
+                    value: 0,
+                    description: '',
+                    conditions: '',
+                    promoCode: 'POOL',
+                    promoDescription: '',
+                    justificationRequired: true,
+                    justificationType: 'image' as const,
+                    justificationTemplate: ''
+                },
+                premium: partner.offers?.premium || {
+                    type: 'percentage' as const,
+                    value: 0,
+                    gemsCost: 0,
+                    description: '',
+                    conditions: '',
+                    promoCode: 'POOL',
+                    promoDescription: '',
+                    additionalBenefits: [''],
+                    justificationType: 'image' as const
+                }
+            }
         });
         setShowAddModal(true);
     };
 
     const handleDelete = async (partnerId: string) => {
         if (!confirm('Êtes-vous sûr de vouloir supprimer ce partenaire ?')) return;
-        
+
         try {
             const response = await fetch(`/api/partners/${partnerId}`, { method: 'DELETE' });
             if (response.ok) {
@@ -255,6 +333,68 @@ export default function PartnersAdminClient() {
             console.error('Erreur lors de la suppression:', error);
             alert('Erreur lors de la suppression');
         }
+    };
+
+    const handleGenerateCodes = async () => {
+        if (!generatePartnerId || !generatePrefix || generateCount < 1) {
+            alert('Veuillez remplir tous les champs');
+            return;
+        }
+
+        setGenerating(true);
+        try {
+            const response = await fetch('/api/promo-codes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    partnerId: generatePartnerId,
+                    offerType: generateOfferType,
+                    count: generateCount,
+                    prefix: generatePrefix
+                })
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                alert(`${data.count} codes générés !\nExemples : ${data.sample.join(', ')}`);
+                setShowGenerateModal(false);
+                fetchPromoStats(generatePartnerId);
+                fetchPartners();
+            } else {
+                alert(`Erreur : ${data.error}`);
+            }
+        } catch (error) {
+            console.error('Erreur génération:', error);
+            alert('Erreur lors de la génération');
+        } finally {
+            setGenerating(false);
+        }
+    };
+
+    const handleDeleteUnusedCodes = async (partnerId: string, offerType?: string) => {
+        if (!confirm('Supprimer tous les codes non attribués ?')) return;
+
+        try {
+            const params = new URLSearchParams({ partnerId });
+            if (offerType) params.set('offerType', offerType);
+
+            const response = await fetch(`/api/promo-codes?${params}`, { method: 'DELETE' });
+            const data = await response.json();
+            if (data.success) {
+                alert(data.message);
+                fetchPromoStats(partnerId);
+            }
+        } catch (error) {
+            alert('Erreur lors de la suppression');
+        }
+    };
+
+    const openGenerateModal = (partnerId: string, partnerName: string) => {
+        setGeneratePartnerId(partnerId);
+        setGeneratePrefix(partnerName.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6));
+        setGenerateCount(50);
+        setGenerateOfferType('free');
+        setShowGenerateModal(true);
     };
 
     const resetForm = () => {
@@ -274,13 +414,18 @@ export default function PartnersAdminClient() {
             endDate: '',
             maxUsesPerDay: '',
             maxUsesPerUser: '',
+            promoCodePrefix: '',
+            offersEnabled: {
+                free: true,
+                premium: true
+            },
             offers: {
                 free: {
                     type: 'percentage',
                     value: 0,
                     description: '',
                     conditions: '',
-                    promoCode: '',
+                    promoCode: 'POOL',
                     promoDescription: '',
                     justificationRequired: true,
                     justificationType: 'image',
@@ -292,7 +437,7 @@ export default function PartnersAdminClient() {
                     gemsCost: 0,
                     description: '',
                     conditions: '',
-                    promoCode: '',
+                    promoCode: 'POOL',
                     promoDescription: '',
                     additionalBenefits: [''],
                     justificationType: 'image'
@@ -334,7 +479,7 @@ export default function PartnersAdminClient() {
                 ...prev.offers,
                 premium: {
                     ...prev.offers.premium,
-                    additionalBenefits: prev.offers.premium.additionalBenefits?.map((benefit, i) => 
+                    additionalBenefits: prev.offers.premium.additionalBenefits?.map((benefit, i) =>
                         i === index ? value : benefit
                     ) || []
                 }
@@ -357,7 +502,7 @@ export default function PartnersAdminClient() {
                 <div>
                     <h1 className="text-3xl font-bold text-gray-900">Gestion des Partenaires</h1>
                     <p className="text-gray-600 mt-2">
-                        Administrez les partenaires et leurs offres exclusives pour les étudiants
+                        Administrez les partenaires, leurs offres et les codes promo
                     </p>
                 </div>
                 <Button onClick={() => setShowAddModal(true)} className="flex items-center gap-2">
@@ -367,7 +512,7 @@ export default function PartnersAdminClient() {
             </div>
 
             {/* Statistiques */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <Card>
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-gray-600">Total Partenaires</CardTitle>
@@ -398,11 +543,21 @@ export default function PartnersAdminClient() {
                 </Card>
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-gray-600">Économies Totales</CardTitle>
+                        <CardTitle className="text-sm font-medium text-gray-600">Codes Disponibles</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-orange-600">
+                            {Object.values(promoCodeStats).reduce((sum, s) => sum + (s?.available || 0), 0)}
+                        </div>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium text-gray-600">Codes Attribués</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold text-purple-600">
-                            {partners.reduce((sum, p) => sum + p.totalSavings, 0)}€
+                            {Object.values(promoCodeStats).reduce((sum, s) => sum + (s?.assigned || 0), 0)}
                         </div>
                     </CardContent>
                 </Card>
@@ -415,79 +570,250 @@ export default function PartnersAdminClient() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {partners.map((partner) => (
-                            <div key={partner._id} className="border rounded-lg p-4 hover:bg-gray-50">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-4">
-                                        <img
-                                            src={partner.logo}
-                                            alt={partner.name}
-                                            className="w-12 h-12 rounded-full object-cover"
-                                        />
-                                        <div>
-                                            <h3 className="font-semibold text-lg">{partner.name}</h3>
-                                            <div className="flex items-center gap-4 text-sm text-gray-600">
-                                                <span className="flex items-center gap-1">
-                                                    <MapPin className="w-4 h-4" />
-                                                    {partner.city}
-                                                </span>
-                                                <Badge className={categories.find(c => c.value === partner.category)?.value === partner.category ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}>
-                                                    {categories.find(c => c.value === partner.category)?.icon} {categories.find(c => c.value === partner.category)?.label}
-                                                </Badge>
-                                                <span className={`px-2 py-1 rounded-full text-xs ${partner.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                                                    {partner.isActive ? 'Actif' : 'Inactif'}
-                                                </span>
+                        {partners.map((partner) => {
+                            const stats = promoCodeStats[partner._id];
+                            return (
+                                <div key={partner._id} className="border rounded-lg p-4 hover:bg-gray-50">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-4">
+                                            <img
+                                                src={partner.logo}
+                                                alt={partner.name}
+                                                className="w-12 h-12 rounded-full object-cover"
+                                            />
+                                            <div>
+                                                <h3 className="font-semibold text-lg">{partner.name}</h3>
+                                                <div className="flex items-center gap-4 text-sm text-gray-600">
+                                                    <span className="flex items-center gap-1">
+                                                        <MapPin className="w-4 h-4" />
+                                                        {partner.city}
+                                                    </span>
+                                                    <Badge className={categories.find(c => c.value === partner.category)?.value === partner.category ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800'}>
+                                                        {categories.find(c => c.value === partner.category)?.icon} {categories.find(c => c.value === partner.category)?.label}
+                                                    </Badge>
+                                                    <span className={`px-2 py-1 rounded-full text-xs ${partner.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                                                        {partner.isActive ? 'Actif' : 'Inactif'}
+                                                    </span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => setViewingPartner(partner)}
-                                        >
-                                            <Eye className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleEdit(partner)}
-                                        >
-                                            <Edit className="w-4 h-4" />
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleDelete(partner._id)}
-                                            className="text-red-600 hover:text-red-700"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                
-                                {/* Statistiques rapides */}
-                                <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
-                                    <div className="text-center">
-                                        <div className="font-semibold text-blue-600">{partner.totalUses}</div>
-                                        <div className="text-gray-600">Utilisations</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="font-semibold text-green-600">{partner.totalSavings}€</div>
-                                        <div className="text-gray-600">Économies</div>
-                                    </div>
-                                    <div className="text-center">
-                                        <div className="font-semibold text-purple-600">
-                                            {partner.offers.premium.gemsCost}
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => openGenerateModal(partner._id, partner.name)}
+                                                className="text-orange-600 hover:text-orange-700"
+                                                title="Générer des codes promo"
+                                            >
+                                                <Ticket className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setViewingPartner(partner)}
+                                            >
+                                                <Eye className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEdit(partner)}
+                                            >
+                                                <Edit className="w-4 h-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDelete(partner._id)}
+                                                className="text-red-600 hover:text-red-700"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
                                         </div>
-                                        <div className="text-gray-600">Coût en gemmes</div>
                                     </div>
+
+                                    {/* Stats codes promo */}
+                                    <div className="mt-4 grid grid-cols-5 gap-4 text-sm">
+                                        <div className="text-center">
+                                            <div className="font-semibold text-blue-600">{partner.totalUses}</div>
+                                            <div className="text-gray-600">Utilisations</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-semibold text-gray-700">{stats?.total || 0}</div>
+                                            <div className="text-gray-600">Codes totaux</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-semibold text-green-600">{stats?.available || 0}</div>
+                                            <div className="text-gray-600">Disponibles</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-semibold text-orange-600">{stats?.assigned || 0}</div>
+                                            <div className="text-gray-600">Attribués</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-semibold text-purple-600">
+                                                {partner.offers.premium.gemsCost}
+                                            </div>
+                                            <div className="text-gray-600">Coût gemmes</div>
+                                        </div>
+                                    </div>
+
+                                    {/* Barre de progression des codes */}
+                                    {stats && stats.total > 0 && (
+                                        <div className="mt-3">
+                                            <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
+                                                <span>Stock de codes promo</span>
+                                                <span>{stats.available} / {stats.total} disponibles</span>
+                                            </div>
+                                            <div className="w-full bg-gray-200 rounded-full h-2">
+                                                <div
+                                                    className={`h-2 rounded-full transition-all ${
+                                                        stats.available === 0 ? 'bg-red-500' :
+                                                        stats.available < stats.total * 0.2 ? 'bg-orange-500' :
+                                                        'bg-green-500'
+                                                    }`}
+                                                    style={{ width: `${(stats.available / stats.total) * 100}%` }}
+                                                />
+                                            </div>
+                                            {stats.available === 0 && (
+                                                <div className="flex items-center gap-1 text-xs text-red-600 mt-1">
+                                                    <AlertCircle className="w-3 h-3" />
+                                                    Plus de codes disponibles ! Générez-en de nouveaux.
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {(!stats || stats.total === 0) && (
+                                        <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 bg-amber-50 p-2 rounded">
+                                            <AlertCircle className="w-4 h-4" />
+                                            Aucun code promo généré. Cliquez sur <Ticket className="w-3 h-3 inline" /> pour en créer.
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </CardContent>
             </Card>
+
+            {/* Modal de génération de codes promo */}
+            {showGenerateModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-lg max-w-lg w-full p-6">
+                        <div className="flex items-center justify-between mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                                    <Ticket className="w-5 h-5 text-orange-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold">Générer des codes promo</h2>
+                                    <p className="text-sm text-gray-500">
+                                        {partners.find(p => p._id === generatePartnerId)?.name}
+                                    </p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => setShowGenerateModal(false)}>
+                                <X className="w-4 h-4" />
+                            </Button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <Label>Type d&apos;offre</Label>
+                                <Select value={generateOfferType} onValueChange={(v: 'free' | 'premium') => setGenerateOfferType(v)}>
+                                    <SelectTrigger>
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="free">Offre gratuite</SelectItem>
+                                        <SelectItem value="premium">Offre premium</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div>
+                                <Label>Préfixe du code</Label>
+                                <Input
+                                    value={generatePrefix}
+                                    onChange={(e) => setGeneratePrefix(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10))}
+                                    placeholder="Ex: WORKYT"
+                                    maxLength={10}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Les codes auront le format : {generatePrefix || 'PREFIX'}XXXXXX
+                                </p>
+                            </div>
+
+                            <div>
+                                <Label>Nombre de codes à générer</Label>
+                                <Input
+                                    type="number"
+                                    value={generateCount}
+                                    onChange={(e) => setGenerateCount(Math.min(1000, Math.max(1, parseInt(e.target.value) || 1)))}
+                                    min={1}
+                                    max={1000}
+                                />
+                                <p className="text-xs text-gray-500 mt-1">Maximum 1000 codes par batch</p>
+                            </div>
+
+                            {/* Stats actuelles */}
+                            {promoCodeStats[generatePartnerId] && (
+                                <div className="bg-gray-50 p-3 rounded-lg">
+                                    <p className="text-sm font-medium text-gray-700 mb-2">Stock actuel :</p>
+                                    <div className="grid grid-cols-3 gap-2 text-sm">
+                                        <div className="text-center">
+                                            <div className="font-bold text-green-600">{promoCodeStats[generatePartnerId].available}</div>
+                                            <div className="text-gray-500 text-xs">Disponibles</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-orange-600">{promoCodeStats[generatePartnerId].assigned}</div>
+                                            <div className="text-gray-500 text-xs">Attribués</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-gray-600">{promoCodeStats[generatePartnerId].total}</div>
+                                            <div className="text-gray-500 text-xs">Total</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="flex gap-3 mt-6">
+                            <Button
+                                variant="outline"
+                                className="flex-1"
+                                onClick={() => setShowGenerateModal(false)}
+                                disabled={generating}
+                            >
+                                Annuler
+                            </Button>
+                            <Button
+                                className="flex-1 bg-orange-600 hover:bg-orange-700"
+                                onClick={handleGenerateCodes}
+                                disabled={generating || !generatePrefix}
+                            >
+                                {generating ? 'Génération...' : `Générer ${generateCount} codes`}
+                            </Button>
+                        </div>
+
+                        {/* Bouton supprimer les codes non utilisés */}
+                        {promoCodeStats[generatePartnerId]?.available > 0 && (
+                            <div className="mt-4 pt-4 border-t">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50"
+                                    onClick={() => handleDeleteUnusedCodes(generatePartnerId)}
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Supprimer les {promoCodeStats[generatePartnerId].available} codes non attribués
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Modal d'ajout/édition */}
             {showAddModal && (
@@ -652,36 +978,71 @@ export default function PartnersAdminClient() {
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="maxUsesPerDay">Utilisations max par jour</Label>
-                                        <Input
-                                            id="maxUsesPerDay"
-                                            type="number"
-                                            value={formData.maxUsesPerDay}
-                                            onChange={(e) => handleInputChange('maxUsesPerDay', e.target.value)}
-                                        />
+                                {/* Info sur les codes promo */}
+                                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Ticket className="w-5 h-5 text-orange-600" />
+                                        <h3 className="font-semibold text-orange-800">Codes promo</h3>
                                     </div>
-                                    <div>
-                                        <Label htmlFor="maxUsesPerUser">Utilisations max par utilisateur</Label>
-                                        <Input
-                                            id="maxUsesPerUser"
-                                            type="number"
-                                            value={formData.maxUsesPerUser}
-                                            onChange={(e) => handleInputChange('maxUsesPerUser', e.target.value)}
-                                        />
+                                    <p className="text-sm text-orange-700">
+                                        Les codes promo sont gérés via un pool de codes uniques.
+                                        Après avoir créé le partenaire, utilisez le bouton <Ticket className="w-3 h-3 inline" /> pour générer un batch de codes.
+                                        Chaque utilisateur recevra un code unique et ne pourra avoir qu&apos;un seul code promo actif.
+                                    </p>
+                                </div>
+
+                                {/* Types d'offres activés */}
+                                <div className="border-t pt-6">
+                                    <h3 className="text-lg font-semibold mb-4">Types d&apos;offres disponibles</h3>
+                                    <p className="text-sm text-gray-500 mb-3">
+                                        Choisissez quels types d&apos;offres seront visibles pour ce partenaire.
+                                        Vous pouvez activer uniquement les offres premium (payantes en gemmes) si souhaité.
+                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className={`flex items-center justify-between p-3 rounded-lg border ${formData.offersEnabled.free ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                                            <div>
+                                                <Label htmlFor="enableFree" className="font-medium">Offre gratuite</Label>
+                                                <p className="text-xs text-gray-500">Sans coût en gemmes</p>
+                                            </div>
+                                            <Switch
+                                                id="enableFree"
+                                                checked={formData.offersEnabled.free}
+                                                onCheckedChange={(checked) => setFormData(prev => ({
+                                                    ...prev,
+                                                    offersEnabled: { ...prev.offersEnabled, free: checked }
+                                                }))}
+                                            />
+                                        </div>
+                                        <div className={`flex items-center justify-between p-3 rounded-lg border ${formData.offersEnabled.premium ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200'}`}>
+                                            <div>
+                                                <Label htmlFor="enablePremium" className="font-medium">Offre premium</Label>
+                                                <p className="text-xs text-gray-500">Coût en gemmes</p>
+                                            </div>
+                                            <Switch
+                                                id="enablePremium"
+                                                checked={formData.offersEnabled.premium}
+                                                onCheckedChange={(checked) => setFormData(prev => ({
+                                                    ...prev,
+                                                    offersEnabled: { ...prev.offersEnabled, premium: checked }
+                                                }))}
+                                            />
+                                        </div>
                                     </div>
+                                    {!formData.offersEnabled.free && !formData.offersEnabled.premium && (
+                                        <p className="text-sm text-red-600 mt-2">Au moins un type d&apos;offre doit être activé.</p>
+                                    )}
                                 </div>
 
                                 {/* Offre gratuite */}
+                                {formData.offersEnabled.free && (
                                 <div className="border-t pt-6">
                                     <h3 className="text-lg font-semibold mb-4 text-green-700">Offre Gratuite</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <Label htmlFor="freeType">Type d&apos;offre</Label>
-                                            <Select 
-                                                value={formData.offers.free.type} 
-                                                onValueChange={(value: 'percentage' | 'fixed' | 'welcome') => 
+                                            <Select
+                                                value={formData.offers.free.type}
+                                                onValueChange={(value: 'percentage' | 'fixed' | 'welcome') =>
                                                     handleInputChange('offers.free.type', value)
                                                 }
                                             >
@@ -697,7 +1058,7 @@ export default function PartnersAdminClient() {
                                         </div>
                                         <div>
                                             <Label htmlFor="freeValue">
-                                                {formData.offers.free.type === 'percentage' ? 'Pourcentage (%)' : 
+                                                {formData.offers.free.type === 'percentage' ? 'Pourcentage (%)' :
                                                  formData.offers.free.type === 'fixed' ? 'Montant (€)' : 'Valeur'}
                                             </Label>
                                             <Input
@@ -709,7 +1070,7 @@ export default function PartnersAdminClient() {
                                             />
                                         </div>
                                     </div>
-                                    
+
                                     <div className="mt-4">
                                         <Label htmlFor="freeDescription">Description de l&apos;offre *</Label>
                                         <Textarea
@@ -721,26 +1082,15 @@ export default function PartnersAdminClient() {
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                        <div>
-                                            <Label htmlFor="freePromoCode">Code promo *</Label>
-                                            <Input
-                                                id="freePromoCode"
-                                                value={formData.offers.free.promoCode}
-                                                onChange={(e) => handleInputChange('offers.free.promoCode', e.target.value)}
-                                                placeholder="Généré automatiquement"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="freePromoDescription">Description de la promo *</Label>
-                                            <Input
-                                                id="freePromoDescription"
-                                                value={formData.offers.free.promoDescription}
-                                                onChange={(e) => handleInputChange('offers.free.promoDescription', e.target.value)}
-                                                required
-                                            />
-                                        </div>
+                                    <div className="mt-4">
+                                        <Label htmlFor="freePromoDescription">Description de la promo *</Label>
+                                        <Input
+                                            id="freePromoDescription"
+                                            value={formData.offers.free.promoDescription}
+                                            onChange={(e) => handleInputChange('offers.free.promoDescription', e.target.value)}
+                                            placeholder="Ex: Utilisez ce code sur le site pour 10% de réduction"
+                                            required
+                                        />
                                     </div>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
@@ -754,9 +1104,9 @@ export default function PartnersAdminClient() {
                                         </div>
                                         <div>
                                             <Label htmlFor="freeJustificationType">Type de justificatif</Label>
-                                            <Select 
-                                                value={formData.offers.free.justificationType} 
-                                                onValueChange={(value: 'image' | 'qr' | 'pdf') => 
+                                            <Select
+                                                value={formData.offers.free.justificationType}
+                                                onValueChange={(value: 'image' | 'qr' | 'pdf') =>
                                                     handleInputChange('offers.free.justificationType', value)
                                                 }
                                             >
@@ -785,16 +1135,18 @@ export default function PartnersAdminClient() {
                                         </div>
                                     )}
                                 </div>
+                                )}
 
                                 {/* Offre premium */}
+                                {formData.offersEnabled.premium && (
                                 <div className="border-t pt-6">
                                     <h3 className="text-lg font-semibold mb-4 text-purple-700">Offre Premium</h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div>
                                             <Label htmlFor="premiumType">Type d&apos;offre</Label>
-                                            <Select 
-                                                value={formData.offers.premium.type} 
-                                                onValueChange={(value: 'percentage' | 'fixed' | 'welcome') => 
+                                            <Select
+                                                value={formData.offers.premium.type}
+                                                onValueChange={(value: 'percentage' | 'fixed' | 'welcome') =>
                                                     handleInputChange('offers.premium.type', value)
                                                 }
                                             >
@@ -810,7 +1162,7 @@ export default function PartnersAdminClient() {
                                         </div>
                                         <div>
                                             <Label htmlFor="premiumValue">
-                                                {formData.offers.premium.type === 'percentage' ? 'Pourcentage (%)' : 
+                                                {formData.offers.premium.type === 'percentage' ? 'Pourcentage (%)' :
                                                  formData.offers.premium.type === 'fixed' ? 'Montant (€)' : 'Valeur'}
                                             </Label>
                                             <Input
@@ -844,25 +1196,13 @@ export default function PartnersAdminClient() {
                                         />
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                                        <div>
-                                            <Label htmlFor="premiumPromoCode">Code promo *</Label>
-                                            <Input
-                                                id="premiumPromoCode"
-                                                value={formData.offers.premium.promoCode}
-                                                onChange={(e) => handleInputChange('offers.premium.promoCode', e.target.value)}
-                                                placeholder="Généré automatiquement"
-                                                required
-                                            />
-                                        </div>
-                                        <div>
-                                            <Label htmlFor="premiumPromoDescription">Description de la promo *</Label>
-                                            <Input
-                                                id="premiumPromoDescription"
-                                                value={formData.offers.premium.promoDescription}
-                                                onChange={(e) => handleInputChange('offers.premium.promoDescription', e.target.value)}
-                                            />
-                                        </div>
+                                    <div className="mt-4">
+                                        <Label htmlFor="premiumPromoDescription">Description de la promo *</Label>
+                                        <Input
+                                            id="premiumPromoDescription"
+                                            value={formData.offers.premium.promoDescription}
+                                            onChange={(e) => handleInputChange('offers.premium.promoDescription', e.target.value)}
+                                        />
                                     </div>
 
                                     <div className="mt-4">
@@ -901,9 +1241,9 @@ export default function PartnersAdminClient() {
 
                                     <div className="mt-4">
                                         <Label htmlFor="premiumJustificationType">Type de justificatif</Label>
-                                        <Select 
-                                            value={formData.offers.premium.justificationType} 
-                                            onValueChange={(value: 'image' | 'qr' | 'pdf') => 
+                                        <Select
+                                            value={formData.offers.premium.justificationType}
+                                            onValueChange={(value: 'image' | 'qr' | 'pdf') =>
                                                 handleInputChange('offers.premium.justificationType', value)
                                             }
                                         >
@@ -918,6 +1258,7 @@ export default function PartnersAdminClient() {
                                         </Select>
                                     </div>
                                 </div>
+                                )}
 
                                 {/* Boutons d'action */}
                                 <div className="flex justify-end gap-3 pt-6 border-t">
@@ -967,9 +1308,9 @@ export default function PartnersAdminClient() {
                                             <span className="font-medium">Nom :</span> {viewingPartner.name}
                                         </div>
                                         <div>
-                                            <span className="font-medium">Catégorie :</span> 
+                                            <span className="font-medium">Catégorie :</span>
                                             <Badge className="ml-2">
-                                                {categories.find(c => c.value === viewingPartner.category)?.icon} 
+                                                {categories.find(c => c.value === viewingPartner.category)?.icon}
                                                 {categories.find(c => c.value === viewingPartner.category)?.label}
                                             </Badge>
                                         </div>
@@ -980,7 +1321,7 @@ export default function PartnersAdminClient() {
                                             <span className="font-medium">Adresse :</span> {viewingPartner.address}
                                         </div>
                                         <div>
-                                            <span className="font-medium">Statut :</span> 
+                                            <span className="font-medium">Statut :</span>
                                             <span className={`ml-2 px-2 py-1 rounded-full text-xs ${viewingPartner.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                                                 {viewingPartner.isActive ? 'Actif' : 'Inactif'}
                                             </span>
@@ -1004,6 +1345,29 @@ export default function PartnersAdminClient() {
                                             <span className="font-medium">Dernière mise à jour :</span> {new Date(viewingPartner.updatedAt).toLocaleDateString('fr-FR')}
                                         </div>
                                     </div>
+
+                                    {/* Stats codes promo */}
+                                    {promoCodeStats[viewingPartner._id] && (
+                                        <div className="mt-4 p-3 bg-orange-50 rounded-lg border border-orange-200">
+                                            <h4 className="font-semibold text-orange-800 mb-2 flex items-center gap-2">
+                                                <Ticket className="w-4 h-4" /> Pool de codes promo
+                                            </h4>
+                                            <div className="grid grid-cols-3 gap-2 text-sm">
+                                                <div>
+                                                    <span className="text-gray-600">Disponibles:</span>
+                                                    <span className="ml-1 font-bold text-green-600">{promoCodeStats[viewingPartner._id].available}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-600">Attribués:</span>
+                                                    <span className="ml-1 font-bold text-orange-600">{promoCodeStats[viewingPartner._id].assigned}</span>
+                                                </div>
+                                                <div>
+                                                    <span className="text-gray-600">Total:</span>
+                                                    <span className="ml-1 font-bold">{promoCodeStats[viewingPartner._id].total}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 
@@ -1019,7 +1383,6 @@ export default function PartnersAdminClient() {
                                                 <div><span className="font-medium">Type :</span> {viewingPartner.offers.free.type}</div>
                                                 <div><span className="font-medium">Valeur :</span> {viewingPartner.offers.free.value}</div>
                                                 <div><span className="font-medium">Description :</span> {viewingPartner.offers.free.description}</div>
-                                                <div><span className="font-medium">Code promo :</span> <code className="bg-gray-100 px-2 py-1 rounded">{viewingPartner.offers.free.promoCode}</code></div>
                                                 <div><span className="font-medium">Justificatif requis :</span> {viewingPartner.offers.free.justificationRequired ? 'Oui' : 'Non'}</div>
                                             </div>
                                         </CardContent>
@@ -1035,7 +1398,6 @@ export default function PartnersAdminClient() {
                                                 <div><span className="font-medium">Valeur :</span> {viewingPartner.offers.premium.value}</div>
                                                 <div><span className="font-medium">Coût en gemmes :</span> <span className="text-purple-600 font-medium">{viewingPartner.offers.premium.gemsCost}</span></div>
                                                 <div><span className="font-medium">Description :</span> {viewingPartner.offers.premium.description}</div>
-                                                <div><span className="font-medium">Code promo :</span> <code className="bg-gray-100 px-2 py-1 rounded">{viewingPartner.offers.premium.promoCode}</code></div>
                                             </div>
                                         </CardContent>
                                     </Card>

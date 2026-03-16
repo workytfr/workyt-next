@@ -5,7 +5,7 @@ const LegalMentionsModal: React.FC = () => {
     return (
         <Dialog.Root>
             <Dialog.Trigger asChild>
-                <button className="hover:text-blue-600">Les Mentions légales</button>
+                <button className="text-[#78716c] hover:text-[#f97316] transition-colors duration-200 text-sm">Mentions légales</button>
             </Dialog.Trigger>
             <Dialog.Portal>
                 <Dialog.Overlay className="bg-black bg-opacity-50 fixed inset-0 z-40" />

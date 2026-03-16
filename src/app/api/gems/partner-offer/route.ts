@@ -6,6 +6,7 @@ import User from '@/models/User';
 import Gem from '@/models/Gem';
 import GemTransaction from '@/models/GemTransaction';
 import Partner from '@/models/Partner';
+import PromoCode from '@/models/PromoCode';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
@@ -34,46 +35,109 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
+    // Vérifier si l'utilisateur a déjà un code promo attribué (globalement, tous partenaires confondus)
+    const existingCode = await PromoCode.findOne({ assignedTo: user._id });
+    if (existingCode) {
+      // L'user a déjà un code, lui retourner son code existant
+      const existingPartner = await Partner.findById(existingCode.partnerId);
+      return NextResponse.json({
+        success: true,
+        alreadyHasCode: true,
+        data: {
+          message: 'Vous avez déjà un code promo actif. Un seul code promo par utilisateur.',
+          promoCode: existingCode.code,
+          partnerName: existingPartner?.name || 'Partenaire',
+          offerType: existingCode.offerType,
+          partnerId: existingCode.partnerId,
+          assignedAt: existingCode.assignedAt
+        }
+      });
+    }
+
     // Récupérer le partenaire
     const partner = await Partner.findById(partnerId);
     if (!partner || !partner.isActive) {
       return NextResponse.json({ error: 'Partenaire non trouvé ou inactif' }, { status: 400 });
     }
 
+    // Vérifier que le partenaire n'est pas expiré
+    if (partner.endDate && new Date(partner.endDate) < new Date()) {
+      return NextResponse.json({ error: 'Cette offre a expiré' }, { status: 400 });
+    }
+
+    // Vérifier que ce type d'offre est activé
+    const isOfferEnabled = partner.offersEnabled?.[offerType as 'free' | 'premium'] ?? true;
+    if (!isOfferEnabled) {
+      return NextResponse.json({ error: 'Ce type d\'offre n\'est pas disponible pour ce partenaire' }, { status: 400 });
+    }
+
     // Vérifier la validité de l'offre
-    const offer = partner.offers[offerType];
+    const offer = partner.offers[offerType as 'free' | 'premium'];
     if (!offer) {
       return NextResponse.json({ error: 'Offre non disponible' }, { status: 400 });
+    }
+
+    // Vérifier qu'il reste des codes disponibles dans le pool
+    const availableCode = await PromoCode.findOne({
+      partnerId,
+      offerType,
+      assignedTo: null
+    });
+
+    if (!availableCode) {
+      return NextResponse.json({
+        error: 'Plus de codes promo disponibles pour cette offre. Revenez plus tard !'
+      }, { status: 400 });
     }
 
     let gemsCost = 0;
     let transactionDescription = '';
 
     if (offerType === 'free') {
-      // Pour les offres gratuites, pas de coût
       gemsCost = 0;
       transactionDescription = `Offre gratuite ${partner.name} - ${offer.description}`;
     } else if (offerType === 'premium') {
-      // Pour les offres premium, vérifier le solde de gemmes
       gemsCost = offer.gemsCost || 0;
-      
+
       if (gemsCost > 0) {
         const userGem = await Gem.findOne({ user: user._id });
         if (!userGem || userGem.balance < gemsCost) {
-          return NextResponse.json({ 
-            error: `Solde insuffisant. Coût: ${gemsCost} gemmes, Solde: ${userGem?.balance || 0} gemmes` 
+          return NextResponse.json({
+            error: `Solde insuffisant. Coût: ${gemsCost} gemmes, Solde: ${userGem?.balance || 0} gemmes`
           }, { status: 400 });
         }
       }
-      
+
       transactionDescription = `Offre premium ${partner.name} - ${offer.description}`;
+    }
+
+    // Attribuer le code à l'utilisateur (atomic pour éviter les races)
+    const assignedCode = await PromoCode.findOneAndUpdate(
+      {
+        _id: availableCode._id,
+        assignedTo: null // Double check atomique
+      },
+      {
+        $set: {
+          assignedTo: user._id,
+          assignedAt: new Date()
+        }
+      },
+      { new: true }
+    );
+
+    if (!assignedCode) {
+      // Race condition : le code a été pris entre-temps
+      return NextResponse.json({
+        error: 'Le code a été attribué à un autre utilisateur. Réessayez.'
+      }, { status: 409 });
     }
 
     // Créer la transaction
     const transaction = new GemTransaction({
       user: user._id,
       type: 'partner_offer',
-      gems: -gemsCost, // Négatif car c'est une dépense
+      gems: -gemsCost,
       description: transactionDescription,
       status: 'completed',
       partnerId: partner._id,
@@ -82,7 +146,7 @@ export async function POST(req: NextRequest) {
         itemType: 'partner_offer',
         partnerName: partner.name,
         offerDescription: offer.description,
-        promoCode: offer.promoCode // Code promo du partenaire
+        promoCode: assignedCode.code
       }
     });
 
@@ -92,7 +156,7 @@ export async function POST(req: NextRequest) {
     if (gemsCost > 0) {
       await Gem.findOneAndUpdate(
         { user: user._id },
-        { 
+        {
           $inc: { balance: -gemsCost, totalSpent: gemsCost },
           $setOnInsert: { totalEarned: 0 }
         },
@@ -108,23 +172,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: {
-        message: `Offre ${offerType === 'free' ? 'gratuite' : 'premium'} activée avec succès !`,
-        promoCode: offer.promoCode, // Code promo pour achats en ligne
-        promoDescription: offer.promoDescription, // Description de la promo
+        message: `Code promo attribué avec succès !`,
+        promoCode: assignedCode.code,
+        promoDescription: offer.promoDescription,
         partnerName: partner.name,
         offerDescription: offer.description,
         gemsCost,
         transactionId: transaction._id,
         additionalBenefits: offer.additionalBenefits || [],
-        justificationRequired: offer.justificationRequired, // Si un justificatif est requis
-        justificationType: offer.justificationType // Type de justificatif (image, QR, PDF)
+        justificationRequired: offer.justificationRequired,
+        justificationType: offer.justificationType
       }
     });
 
   } catch (error) {
     console.error('Erreur lors de l\'activation de l\'offre partenaire:', error);
-    return NextResponse.json({ 
-      error: 'Erreur lors de l\'activation de l\'offre partenaire' 
+    return NextResponse.json({
+      error: 'Erreur lors de l\'activation de l\'offre partenaire'
     }, { status: 500 });
   }
 }

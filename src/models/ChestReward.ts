@@ -7,7 +7,7 @@ export interface IChestReward extends Document {
   _id: ObjectId;
   user: ObjectId; // Utilisateur qui a obtenu la récompense
   chest: ObjectId; // Référence au coffre ouvert
-  rewardType: 'points' | 'gems' | 'cosmetic';
+  rewardType: 'points' | 'gems' | 'cosmetic' | 'mushrooms';
   amount?: number; // Pour points et gems
   cosmeticType?: 'profile_image' | 'profile_border' | 'username_color';
   cosmeticId?: string; // ID du cosmétique obtenu
@@ -29,7 +29,7 @@ const ChestRewardSchema = new Schema<IChestReward>({
   },
   rewardType: {
     type: String,
-    enum: ['points', 'gems', 'cosmetic'],
+    enum: ['points', 'gems', 'cosmetic', 'mushrooms'],
     required: true
   },
   amount: {

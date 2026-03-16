@@ -33,13 +33,14 @@ import {
     FileText,
     BookOpen,
     Newspaper,
-    Package,
     Heart,
     ChevronRight,
     Gift,
+    Search,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import ProfileCard from "@/components/ui/ProfileCard";
+import SearchCommandPalette from "@/components/SearchCommandPalette";
 import GemIndicator from "@/components/ui/GemIndicator";
 import StreakIndicator from "@/components/ui/StreakIndicator";
 import MushroomIndicator from "@/components/ui/MushroomIndicator";
@@ -69,6 +70,7 @@ export default function Navbar() {
     const [isQuestsOpen, setIsQuestsOpen] = useState(false);
     const [isBlogOpenMobile, setIsBlogOpenMobile] = useState(false);
     const [isBlogOpen, setIsBlogOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
     const profileRef = useRef<HTMLDivElement>(null);
     const profileBtnRef = useRef<HTMLButtonElement>(null);
     const [profilePos, setProfilePos] = useState({ top: 0, right: 0 });
@@ -77,6 +79,18 @@ export default function Navbar() {
     const [blogPos, setBlogPos] = useState({ top: 0, left: 0 });
     const { data: session } = useSession();
     const pathname = usePathname();
+
+    // Keyboard shortcut: Ctrl+K / Cmd+K to open search
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                e.preventDefault();
+                setIsSearchOpen((prev) => !prev);
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, []);
 
     // Close mobile menu when screen size changes
     useEffect(() => {
@@ -168,12 +182,12 @@ export default function Navbar() {
                     </Link>
 
                     {/* Desktop Navigation - Centered */}
-                    <div className="hidden lg:flex flex-1 items-center justify-center space-x-1">
+                    <div className="hidden lg:flex flex-1 items-center justify-center space-x-0.5 xl:space-x-1">
                         {navLinks.map((link) => (
                             <Link
                                 key={link.href}
                                 href={link.href}
-                                className={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 ${
+                                className={`relative px-2.5 xl:px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 ${
                                     isActive(link.href)
                                         ? "text-orange-600"
                                         : "text-gray-600 hover:text-gray-900"
@@ -200,7 +214,7 @@ export default function Navbar() {
                                     }
                                     setIsBlogOpen(!isBlogOpen);
                                 }}
-                                className={`relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 flex items-center gap-1 outline-none ${
+                                className={`relative px-2.5 xl:px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 flex items-center gap-1 outline-none ${
                                     pathname.includes("blog") ? "text-orange-600" : "text-gray-600 hover:text-gray-900"
                                 }`}
                             >
@@ -228,25 +242,31 @@ export default function Navbar() {
                             )}
                         </div>
 
-                        <Link
-                            href="https://workyt.fr/kits/"
-                            className="relative px-4 py-2 text-sm font-medium transition-colors rounded-lg hover:bg-gray-50 text-gray-600 hover:text-gray-900"
+                        {/* Search button */}
+                        <button
+                            onClick={() => setIsSearchOpen(true)}
+                            className="flex items-center gap-1.5 xl:gap-2 px-2 xl:px-3 py-1.5 text-sm text-gray-400 hover:text-gray-600 bg-gray-100/80 hover:bg-gray-100 rounded-lg border border-gray-200/50 transition-all ml-1 xl:ml-2"
                         >
-                            Kits
-                        </Link>
+                            <Search className="w-3.5 h-3.5 shrink-0" />
+                            <span className="hidden xl:inline text-xs">Rechercher...</span>
+                            <kbd className="hidden xl:inline text-[10px] font-mono bg-white/80 border border-gray-200 px-1.5 py-0.5 rounded">
+                                Ctrl K
+                            </kbd>
+                        </button>
                     </div>
 
                     {/* Right side - Desktop - légèrement descendu pour alignement visuel */}
-                    <div className="hidden lg:flex flex-shrink-0 items-center space-x-3 mt-1">
+                    <div className="hidden lg:flex flex-shrink-0 items-center space-x-2 xl:space-x-3 mt-1">
                         {/* Faire un don - always visible */}
                         <Link
                             href="https://www.helloasso.com/associations/workyt/formulaires/1"
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="flex items-center gap-1.5 text-sm font-medium text-pink-600 hover:text-pink-700 transition-colors px-3 py-1.5 rounded-full border border-pink-200 hover:bg-pink-50"
+                            className="flex items-center gap-1.5 text-sm font-medium text-pink-600 hover:text-pink-700 transition-colors px-2 xl:px-3 py-1.5 rounded-full border border-pink-200 hover:bg-pink-50"
                         >
-                            <Heart className="w-3.5 h-3.5" />
-                            Faire un don
+                            <Heart className="w-3.5 h-3.5 shrink-0" />
+                            <span className="hidden xl:inline">Faire un don</span>
+                            <span className="xl:hidden">Don</span>
                         </Link>
 
                         {session ? (
@@ -391,6 +411,13 @@ export default function Navbar() {
 
                     {/* Mobile right side - touch targets min 44px */}
                     <div className="flex lg:hidden flex-1 justify-end items-center gap-1 sm:gap-2 ml-2">
+                        <button
+                            onClick={() => setIsSearchOpen(true)}
+                            className="flex items-center justify-center min-w-[44px] min-h-[44px] p-2 rounded-xl text-gray-500 active:bg-gray-100 transition-colors touch-manipulation"
+                            aria-label="Rechercher"
+                        >
+                            <Search className="h-5 w-5" />
+                        </button>
                         {session && <BookmarkBell />}
                         {session && <NotificationBell />}
                         <button
@@ -488,17 +515,6 @@ export default function Navbar() {
                             </div>
                         )}
 
-                        <Link
-                            href="https://workyt.fr/kits/"
-                            className="flex items-center justify-between min-h-[48px] px-5 py-3 text-base font-medium text-gray-700 active:bg-gray-100 transition-colors"
-                            onClick={closeMobileMenu}
-                        >
-                            <span className="flex items-center gap-3">
-                                <Package className="w-5 h-5 shrink-0" />
-                                Kits
-                            </span>
-                            <ChevronRight className="w-4 h-4 text-gray-300 shrink-0" />
-                        </Link>
                     </div>
 
                     <div className="h-px bg-gray-100 mx-4 my-2" />
@@ -637,6 +653,9 @@ export default function Navbar() {
             {session && (
                 <QuestsPanel externalOpen={isQuestsOpen} onOpenChange={setIsQuestsOpen} />
             )}
+
+            {/* Search Command Palette */}
+            <SearchCommandPalette open={isSearchOpen} onOpenChange={setIsSearchOpen} />
         </>
     );
 }

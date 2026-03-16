@@ -54,15 +54,9 @@ export default function ChestAnimation({
       setShowReward(true);
     }, 800);
 
-    // Terminer l'animation
-    const timer3 = setTimeout(() => {
-      setIsAnimating(false);
-    }, 2000);
-
     return () => {
       clearTimeout(timer1);
       clearTimeout(timer2);
-      clearTimeout(timer3);
     };
   }, []);
 
@@ -71,6 +65,8 @@ export default function ChestAnimation({
       return `${reward.amount} points`;
     } else if (reward.rewardType === "gems") {
       return `${reward.amount} diamants`;
+    } else if (reward.rewardType === "mushrooms") {
+      return `${reward.amount} champignon${(reward.amount || 0) > 1 ? "s" : ""}`;
     } else if (reward.rewardType === "cosmetic") {
       const cosmeticLabels: Record<string, Record<string, string>> = {
         profile_border: {
@@ -109,7 +105,7 @@ export default function ChestAnimation({
   };
 
   return (
-    <Dialog.Root open={isAnimating} onOpenChange={() => {}}>
+    <Dialog.Root open={isAnimating} onOpenChange={(open) => { if (!open) { setIsAnimating(false); onClose(); } }}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center">
           <Dialog.Content className="bg-transparent border-none outline-none">
@@ -204,6 +200,18 @@ export default function ChestAnimation({
                             className="object-contain"
                           />
                           <span>{reward.amount} diamants</span>
+                        </>
+                      )}
+                      {reward.rewardType === "mushrooms" && (
+                        <>
+                          <Image
+                            src="/badge/champiworkyt.webp"
+                            alt="Champignons"
+                            width={32}
+                            height={32}
+                            className="object-contain"
+                          />
+                          <span>{getRewardLabel()}</span>
                         </>
                       )}
                       {reward.rewardType === "cosmetic" && (

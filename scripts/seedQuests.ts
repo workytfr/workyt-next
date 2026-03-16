@@ -27,7 +27,8 @@ async function seedQuests() {
           { type: 'points' as const, amount: 50, weight: 30 },  // Commun : 50 pts
           { type: 'points' as const, amount: 75, weight: 15 },  // Peu commun : 75 pts
           { type: 'points' as const, amount: 100, weight: 6 },  // Rare : 100 pts
-          { type: 'gems' as const, amount: 1, weight: 4 },      // Rare : 1 gemme (2x plus de chance qu'avant)
+          { type: 'gems' as const, amount: 1, weight: 4 },      // Rare : 1 gemme
+          { type: 'mushrooms' as const, amount: 1, weight: 5 }, // ~5% : 1 champignon
         ],
         isActive: true
       },
@@ -42,6 +43,7 @@ async function seedQuests() {
           { type: 'gems' as const, amount: 1, weight: 12 },     // Commun : 1 gemme
           { type: 'gems' as const, amount: 2, weight: 8 },      // Peu commun : 2 gemmes
           { type: 'gems' as const, amount: 3, weight: 5 },      // Rare : 3 gemmes
+          { type: 'mushrooms' as const, amount: 2, weight: 5 }, // ~5% : 2 champignons
         ],
         isActive: true
       },
@@ -50,15 +52,17 @@ async function seedQuests() {
         name: 'Coffre Épique',
         description: 'Un coffre épique avec des récompenses exceptionnelles',
         possibleRewards: [
-          { type: 'points' as const, amount: 250, weight: 28 }, // Floor : 250 pts
-          { type: 'points' as const, amount: 400, weight: 18 }, // Peu commun : 400 pts
-          { type: 'points' as const, amount: 600, weight: 8 },  // Rare : 600 pts
+          { type: 'points' as const, amount: 250, weight: 30 }, // Floor : 250 pts
+          { type: 'points' as const, amount: 400, weight: 20 }, // Peu commun : 400 pts
+          { type: 'points' as const, amount: 600, weight: 10 }, // Rare : 600 pts
           { type: 'gems' as const, amount: 2, weight: 18 },     // Commun : 2 gemmes
           { type: 'gems' as const, amount: 4, weight: 12 },     // Peu commun : 4 gemmes
-          { type: 'gems' as const, amount: 7, weight: 7 },      // Rare : 7 gemmes
+          { type: 'gems' as const, amount: 7, weight: 8 },      // Rare : 7 gemmes
           { type: 'gems' as const, amount: 12, weight: 3 },     // Très rare : 12 gemmes
-          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyPink.webp', weight: 3 },  // Cosmétique : 3%
-          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyWaMe.webp', weight: 3 },  // Cosmétique : 3%
+          { type: 'mushrooms' as const, amount: 3, weight: 3 }, // ~3% : 3 champignons
+          { type: 'mushrooms' as const, amount: 5, weight: 1 }, // ~1% : 5 champignons
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyPink.webp', weight: 1 },  // ~1% : Cosmétique
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyWaMe.webp', weight: 1 },  // ~1% : Cosmétique
         ],
         isActive: true
       },
@@ -67,16 +71,18 @@ async function seedQuests() {
         name: 'Coffre Légendaire',
         description: 'Le coffre ultime avec les meilleures récompenses',
         possibleRewards: [
-          { type: 'points' as const, amount: 500, weight: 22 },  // Floor relevé : 500 pts
-          { type: 'points' as const, amount: 750, weight: 15 },  // Peu commun : 750 pts
-          { type: 'points' as const, amount: 1000, weight: 8 },  // Rare : 1000 pts
+          { type: 'points' as const, amount: 500, weight: 25 },  // Floor relevé : 500 pts
+          { type: 'points' as const, amount: 750, weight: 17 },  // Peu commun : 750 pts
+          { type: 'points' as const, amount: 1000, weight: 9 },  // Rare : 1000 pts
           { type: 'gems' as const, amount: 5, weight: 20 },      // Commun : 5 gemmes
           { type: 'gems' as const, amount: 10, weight: 13 },     // Peu commun : 10 gemmes
           { type: 'gems' as const, amount: 18, weight: 6 },      // Rare : 18 gemmes
-          { type: 'gems' as const, amount: 25, weight: 3 },      // Très rare : 25 gemmes (cap, plus de 50)
-          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyFrenchies.webp', weight: 5 }, // Cosmétique exclusif : 5%
-          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyMecha.webp', weight: 4 },     // Cosmétique exclusif : 4%
-          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyTerreur.webp', weight: 4 },   // Cosmétique exclusif : 4%
+          { type: 'gems' as const, amount: 25, weight: 3 },      // Très rare : 25 gemmes
+          { type: 'mushrooms' as const, amount: 5, weight: 3 },  // ~3% : 5 champignons
+          { type: 'mushrooms' as const, amount: 10, weight: 1 }, // ~1% : 10 champignons
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyFrenchies.webp', weight: 1 }, // ~1% : Cosmétique exclusif
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyMecha.webp', weight: 1 },     // ~1% : Cosmétique exclusif
+          { type: 'cosmetic' as const, cosmeticType: 'profile_image' as const, cosmeticId: 'FoxyTerreur.webp', weight: 1 },   // ~1% : Cosmétique exclusif
         ],
         isActive: true
       }

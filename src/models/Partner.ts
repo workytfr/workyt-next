@@ -13,32 +13,43 @@ export interface IPartner extends Document {
     phone?: string;
     email?: string;
     
+    // Quels types d'offres sont activés
+    offersEnabled: {
+        free: boolean;
+        premium: boolean;
+    };
+
     // Offres
     offers: {
-        free: {
+        free?: {
             type: 'percentage' | 'fixed' | 'welcome';
-            value: number; // pourcentage ou montant en euros
+            value: number;
             description: string;
             conditions?: string;
-            promoCode: string; // Code promo pour achats en ligne
-            promoDescription: string; // Description de la promo
-            justificationRequired: boolean; // Si une preuve/justificatif est requis
-            justificationType: 'image' | 'qr' | 'pdf'; // Type de justificatif généré
-            justificationTemplate?: string; // Template pour le justificatif
+            promoCode?: string;
+            promoDescription?: string;
+            justificationRequired: boolean;
+            justificationType: 'image' | 'qr' | 'pdf';
+            justificationTemplate?: string;
         };
-        premium: {
+        premium?: {
             type: 'percentage' | 'fixed' | 'welcome';
             value: number;
             gemsCost: number;
             description: string;
             conditions?: string;
-            promoCode: string; // Code promo pour achats en ligne
-            promoDescription: string; // Description de la promo
-            additionalBenefits?: string[]; // Avantages supplémentaires
-            justificationType: 'image' | 'qr' | 'pdf'; // Type de justificatif généré
+            promoCode?: string;
+            promoDescription?: string;
+            additionalBenefits?: string[];
+            justificationType: 'image' | 'qr' | 'pdf';
         };
     };
     
+    // Gestion des codes promo
+    promoCodePrefix?: string; // Préfixe pour la génération des codes
+    totalCodesFree: number; // Nombre de codes gratuits générés
+    totalCodesPremium: number; // Nombre de codes premium générés
+
     // Gestion des offres
     isActive: boolean;
     startDate: Date;
@@ -106,22 +117,31 @@ const PartnerSchema = new Schema<IPartner>({
         lowercase: true
     },
     
+    // Quels types d'offres sont activés
+    offersEnabled: {
+        free: {
+            type: Boolean,
+            default: true
+        },
+        premium: {
+            type: Boolean,
+            default: true
+        }
+    },
+
     // Offres
     offers: {
         free: {
             type: {
                 type: String,
                 enum: ['percentage', 'fixed', 'welcome'],
-                required: true
             },
             value: {
                 type: Number,
-                required: true,
                 min: [0, 'La valeur doit être positive']
             },
             description: {
                 type: String,
-                required: true,
                 trim: true,
                 maxlength: [200, 'La description ne peut pas dépasser 200 caractères']
             },
@@ -132,15 +152,14 @@ const PartnerSchema = new Schema<IPartner>({
             },
             promoCode: {
                 type: String,
-                required: true,
                 trim: true,
-                unique: true,
+                default: 'POOL',
                 maxlength: [50, 'Le code promo ne peut pas dépasser 50 caractères']
             },
             promoDescription: {
                 type: String,
-                required: true,
                 trim: true,
+                default: '',
                 maxlength: [300, 'La description de la promo ne peut pas dépasser 300 caractères']
             },
             justificationRequired: {
@@ -162,21 +181,17 @@ const PartnerSchema = new Schema<IPartner>({
             type: {
                 type: String,
                 enum: ['percentage', 'fixed', 'welcome'],
-                required: true
             },
             value: {
                 type: Number,
-                required: true,
                 min: [0, 'La valeur doit être positive']
             },
             gemsCost: {
                 type: Number,
-                required: true,
-                min: [1, 'Le coût en gemmes doit être d\'au moins 1']
+                min: [0, 'Le coût en gemmes ne peut pas être négatif']
             },
             description: {
                 type: String,
-                required: true,
                 trim: true,
                 maxlength: [200, 'La description ne peut pas dépasser 200 caractères']
             },
@@ -187,15 +202,14 @@ const PartnerSchema = new Schema<IPartner>({
             },
             promoCode: {
                 type: String,
-                required: true,
                 trim: true,
-                unique: true,
+                default: 'POOL',
                 maxlength: [50, 'Le code promo ne peut pas dépasser 50 caractères']
             },
             promoDescription: {
                 type: String,
-                required: true,
                 trim: true,
+                default: '',
                 maxlength: [300, 'La description de la promo ne peut pas dépasser 300 caractères']
             },
             additionalBenefits: [{
@@ -211,6 +225,24 @@ const PartnerSchema = new Schema<IPartner>({
         }
     },
     
+    // Gestion des codes promo
+    promoCodePrefix: {
+        type: String,
+        trim: true,
+        uppercase: true,
+        maxlength: [10, 'Le préfixe ne peut pas dépasser 10 caractères']
+    },
+    totalCodesFree: {
+        type: Number,
+        default: 0,
+        min: [0, 'Le nombre de codes ne peut pas être négatif']
+    },
+    totalCodesPremium: {
+        type: Number,
+        default: 0,
+        min: [0, 'Le nombre de codes ne peut pas être négatif']
+    },
+
     // Gestion des offres
     isActive: {
         type: Boolean,
@@ -269,7 +301,7 @@ PartnerSchema.pre('save', function(next) {
 // Index pour améliorer les performances
 PartnerSchema.index({ city: 1, category: 1, isActive: 1 });
 PartnerSchema.index({ startDate: 1, endDate: 1 });
-// Les index sur promoCode sont déjà créés par unique: true dans le schéma
+// Les codes promo individuels sont maintenant dans la collection PromoCode
 
 const Partner = mongoose.models.Partner || mongoose.model<IPartner>('Partner', PartnerSchema);
 
