@@ -7,12 +7,16 @@ Allow: /forum
 Allow: /fiches
 Allow: /recompenses
 Allow: /kits
+Allow: /gems
 
 # Pages privées à ne pas indexer
 Disallow: /dashboard
 Disallow: /compte
 Disallow: /api
 Disallow: /admin
+Disallow: /fiches/creer
+Disallow: /forum/creer
+Disallow: /fiches/favoris
 
 # Sitemap
-Sitemap: https://workyt.fr/sitemap.xml 
+Sitemap: https://workyt.fr/sitemap.xml

@@ -20,11 +20,11 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: "summary_large_image",
-        site: "@workyt",
+        site: "@workyt_fr",
         title: "Créer une fiche de révision | Workyt",
         description:
             "Créez une fiche de révision pour aider les autres étudiants à réussir leurs examens.",
-        images: ["https://www.workyt.fr/workytfiche.png"],
+        images: ["https://workyt.fr/workytfiche.png"],
     },
 };
 

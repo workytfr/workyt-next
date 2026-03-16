@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid'; // Import de la bibliothèque UUID
+import { slugify } from '@/utils/slugify';
 
 /**
  * Interface représentant une fiche de révision
@@ -12,6 +13,7 @@ interface ILikedBy {
 export interface IRevision extends Document {
     revisionId: string; // Identifiant unique de la fiche
     title: string; // Titre de la fiche
+    slug: string; // Slug SEO-friendly
     content: string; // Contenu textuel de la fiche
     likes: number; // Nombre total de likes
     likedBy: ILikedBy[]; // Tableau des utilisateurs ayant liké la fiche
@@ -37,6 +39,10 @@ const RevisionSchema: Schema<IRevision> = new Schema({
         type: String,
         required: true,
     }, // Titre obligatoire
+    slug: {
+        type: String,
+        index: true,
+    }, // Slug SEO
     content: { type: String }, // Contenu textuel (optionnel si des fichiers sont fournis)
     likes: {
         type: Number,
@@ -94,6 +100,14 @@ const RevisionSchema: Schema<IRevision> = new Schema({
 /**
  * Vérification de la présence du modèle pour éviter une réinstanciation
  */
+// Auto-génération du slug à partir du titre
+RevisionSchema.pre('save', function (next) {
+    if (this.isModified('title') || !this.slug) {
+        this.slug = slugify(this.title);
+    }
+    next();
+});
+
 const Revision: Model<IRevision> =
     mongoose.models.Revision || mongoose.model<IRevision>('Revision', RevisionSchema);
 

@@ -35,6 +35,7 @@ import { Pagination, PaginationContent, PaginationItem, PaginationLink, Paginati
 import { calculateUserRank } from "@/lib/rankSystem";
 import { FlameIcon, getFlameLevel, FLAME_CONFIGS } from "@/components/ui/StreakIndicator";
 import useSWR from "swr";
+import { buildIdSlug } from "@/utils/slugify";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
@@ -443,7 +444,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                     <div
                                         key={question._id}
                                         className="p-4 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition cursor-pointer"
-                                        onClick={() => router.push(`/forum/${question._id}`)}
+                                        onClick={() => router.push(`/forum/${buildIdSlug(question._id, question.title)}`)}
                                     >
                                         <h3 className="font-semibold text-gray-800 line-clamp-2">{question.title}</h3>
                                         <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
@@ -477,7 +478,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                     <div
                                         key={answer._id}
                                         className="p-4 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition cursor-pointer"
-                                        onClick={() => router.push(`/forum/${answer.question?._id}`)}
+                                        onClick={() => router.push(`/forum/${buildIdSlug(answer.question?._id || '', answer.question?.title || '')}`)}
                                     >
                                         <h3 className="font-semibold text-gray-800 line-clamp-2">{answer.question?.title}</h3>
                                         <p className="text-sm text-gray-600 mt-2 line-clamp-2">{answer.content.substring(0, 100)}...</p>

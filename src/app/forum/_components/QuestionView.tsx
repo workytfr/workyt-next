@@ -23,6 +23,7 @@ import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
+import { buildIdSlug } from "@/utils/slugify";
 import ReportButton from "@/components/ReportButton";
 import BookmarkButton from "@/components/BookmarkButton";
 import "katex/dist/katex.min.css";
@@ -222,7 +223,7 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                                     <div className="bg-emerald-100 px-4 py-2 border-t border-emerald-200">
                                         <button
                                             className="text-emerald-700 font-medium text-sm hover:text-emerald-800 transition-colors flex items-center gap-1.5"
-                                            onClick={() => router.push(`/fiches/${revision._id}`)}
+                                            onClick={() => router.push(`/fiches/${buildIdSlug(revision._id, revision.title || '')}`)}
                                         >
                                             <FaBookOpen className="text-xs" /> Lire la fiche complète
                                         </button>

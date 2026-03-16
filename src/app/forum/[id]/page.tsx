@@ -1,67 +1,92 @@
 import { Metadata } from "next";
 import React from "react";
+import { notFound, redirect } from "next/navigation";
 import QuestionDetailPage from "@/app/forum/_components/QuestionDetailPage";
-import { BASE_URL } from "@/utils/constants";
 import dbConnect from "@/lib/mongodb";
 import Question from "@/models/Question";
+import Answer from "@/models/Answer";
+import { extractIdFromSlug, buildIdSlug, slugify } from "@/utils/slugify";
 
-// Interface mise à jour pour correspondre au format de params utilisé ailleurs
 interface PageProps {
     params: Promise<{ id: string }>;
 }
 
-// Génération des paramètres statiques pour l'indexation SEO
+/**
+ * Trouve une question par ID (composite id-slug) ou par slug pur.
+ * Supporte : "64a1b2c3...-mon-slug", "64a1b2c3...", "mon-slug"
+ */
+async function findQuestion(idSlug: string, populateFields?: any) {
+    const objectId = extractIdFromSlug(idSlug);
+
+    // Cas 1 : on a trouvé un ObjectID valide au début
+    if (objectId) {
+        const query = Question.findById(objectId);
+        if (populateFields) query.populate(populateFields);
+        const question = await query;
+        if (question) return { question, id: objectId };
+    }
+
+    // Cas 2 : pas d'ObjectID → chercher par slug
+    const query = Question.findOne({ slug: idSlug });
+    if (populateFields) query.populate(populateFields);
+    const question = await query;
+    if (question) return { question, id: question._id.toString() };
+
+    return null;
+}
+
+// Génération des paramètres statiques pour l'indexation SEO (avec slug dans l'URL)
 export async function generateStaticParams() {
     try {
-        // Connexion à la base de données avec timeout
         await Promise.race([
             dbConnect(),
-            new Promise((_, reject) => 
+            new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Timeout de connexion DB')), 5000)
             )
         ]);
-        
-        // Récupération des questions validées et résolues pour la génération statique
-        const questions = await Question.find({ 
-            status: { $in: ['Validée', 'Résolue'] } 
+
+        const questions = await Question.find({
+            status: { $in: ['Validée', 'Résolue'] }
         })
-        .select('_id')
-        .limit(100); // Limiter pour éviter un build trop long
-        
+        .select('_id title slug')
+        .limit(100);
+
         return questions.map((question) => ({
-            id: question._id.toString(),
+            id: buildIdSlug(question._id.toString(), question.slug || question.title),
         }));
     } catch (error) {
         console.error('Erreur lors de la génération des paramètres statiques:', error);
-        // Retourner un tableau vide en cas d'erreur pour permettre le build
         return [];
     }
 }
 
 export const generateMetadata = async ({ params }: PageProps): Promise<Metadata> => {
     try {
-        // Récupération des paramètres de l'URL
-        const { id } = await params;
+        const { id: idSlug } = await params;
 
-        // Connexion directe à la base de données pour éviter les erreurs de fetch lors du build
         await Promise.race([
             dbConnect(),
-            new Promise((_, reject) => 
+            new Promise((_, reject) =>
                 setTimeout(() => reject(new Error('Timeout de connexion DB')), 5000)
             )
         ]);
-        
-        const question = await Question.findById(id).populate({
-            path: "user",
-            select: "username points",
-        });
 
-        if (!question) {
+        const result = await findQuestion(idSlug, { path: "user", select: "username points" });
+
+        if (!result) {
             return {
                 title: "Question non trouvée",
                 description: "La question que vous recherchez n'existe pas ou a été supprimée.",
             };
         }
+
+        const { question, id } = result;
+
+        // Construire l'URL canonique avec slug
+        const slug = question.slug || slugify(question.title);
+        const canonicalPath = buildIdSlug(id, slug);
+        const canonicalUrl = `https://workyt.fr/forum/${canonicalPath}`;
+
         let metaDescription = "";
         if (question.description && question.description.whatINeed) {
             metaDescription = question.description.whatINeed;
@@ -98,12 +123,11 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
             openGraph: {
                 title: question.title,
                 description: metaDescription,
-                url: `https://workyt.fr/forum/${id}`,
+                url: canonicalUrl,
                 siteName: "Workyt",
                 type: "article",
                 images: [
                     {
-                        // Attachments stockés comme clés (uploads/xxx) ou anciennes URLs complètes
                         url: (question.attachments && question.attachments.length > 0 && (question.attachments[0].startsWith("http") ? question.attachments[0] : `https://workyt.fr/api/file-proxy?questionId=${id}&index=0`)) ||
                             "https://workyt.fr/default-thumbnail.png",
                         width: 1200,
@@ -121,7 +145,7 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
                 creator: "@workyt_fr",
             },
             alternates: {
-                canonical: `https://workyt.fr/forum/${id}`,
+                canonical: canonicalUrl,
             },
         };
     } catch (error) {
@@ -133,56 +157,128 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
     }
 };
 
-// Composant de page mis à jour pour utiliser async/await avec les params
 export default async function QuestionPage({ params }: PageProps) {
-    const { id } = await params;
+    const { id: idSlug } = await params;
 
-    // JSON-LD structured data (schema.org QAPage) pour les rich snippets Google
-    let jsonLd = null;
+    await dbConnect();
+    const result = await findQuestion(idSlug, { path: 'user', select: 'username' });
+
+    if (!result) {
+        notFound();
+    }
+
+    const { id } = result;
+    const question: any = result.question.toObject ? result.question.toObject() : result.question;
+
+    // Redirection 301 vers l'URL canonique si le format n'est pas id-slug
+    const slug = question.slug || slugify(question.title);
+    const canonicalParam = buildIdSlug(id, slug);
+    if (idSlug !== canonicalParam) {
+        redirect(`/forum/${canonicalParam}`);
+    }
+
+    // JSON-LD structured data pour les rich snippets Google
+    let jsonLd: object[] = [];
     try {
-        await dbConnect();
-        const question: any = await Question.findById(id).populate('user', 'username').lean();
+        const slug = question.slug || slugify(question.title);
+        const canonicalPath = buildIdSlug(id, slug);
+        const pageUrl = `https://workyt.fr/forum/${canonicalPath}`;
 
-        if (question) {
-            jsonLd = {
-                "@context": "https://schema.org",
-                "@type": "QAPage",
-                "mainEntity": {
-                    "@type": "Question",
-                    "name": question.title,
-                    "text": question.description?.whatINeed || question.description?.whatIDid || '',
-                    "dateCreated": question.createdAt?.toISOString(),
-                    "author": {
-                        "@type": "Person",
-                        "name": question.user?.username || "Anonyme",
-                    },
-                    "about": [
-                        { "@type": "Thing", "name": question.subject },
-                        { "@type": "Thing", "name": question.classLevel },
-                    ],
-                    "answerCount": 0,
-                    "upvoteCount": question.points || 0,
+        // Compter les vraies réponses pour cette question
+        const answerCount = await Answer.countDocuments({ question: id });
+
+        // Récupérer la meilleure réponse si elle existe (pour le rich snippet "accepted answer")
+        const bestAnswer: any = await Answer.findOne({
+            question: id,
+            status: 'Meilleure Réponse'
+        }).populate('user', 'username').lean();
+
+        // Schema QAPage - permet les rich snippets Q&A dans Google
+        const qaSchema: any = {
+            "@context": "https://schema.org",
+            "@type": "QAPage",
+            "mainEntity": {
+                "@type": "Question",
+                "name": question.title,
+                "text": question.description?.whatINeed || question.description?.whatIDid || '',
+                "dateCreated": question.createdAt ? new Date(question.createdAt).toISOString() : undefined,
+                "author": {
+                    "@type": "Person",
+                    "name": question.user?.username || "Anonyme",
                 },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": "Workyt",
-                    "url": "https://workyt.fr",
+                "about": [
+                    { "@type": "Thing", "name": question.subject },
+                    { "@type": "Thing", "name": question.classLevel },
+                ],
+                "answerCount": answerCount,
+                "upvoteCount": question.points || 0,
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "Workyt",
+                "url": "https://workyt.fr",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://workyt.fr/default-thumbnail.png",
                 },
-                "inLanguage": "fr",
+            },
+            "inLanguage": "fr",
+        };
+
+        // Ajouter la meilleure réponse acceptée si disponible (booste les rich snippets)
+        if (bestAnswer) {
+            qaSchema.mainEntity.acceptedAnswer = {
+                "@type": "Answer",
+                "text": bestAnswer.content?.replace(/<[^>]*>/g, ' ').slice(0, 300),
+                "dateCreated": bestAnswer.createdAt ? new Date(bestAnswer.createdAt).toISOString() : undefined,
+                "author": {
+                    "@type": "Person",
+                    "name": bestAnswer.user?.username || "Anonyme",
+                },
+                "upvoteCount": bestAnswer.likes || 0,
             };
         }
+
+        jsonLd.push(qaSchema);
+
+        // Schema BreadcrumbList - améliore la navigation dans les résultats Google
+        jsonLd.push({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Accueil",
+                    "item": "https://workyt.fr",
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Forum",
+                    "item": "https://workyt.fr/forum",
+                },
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": question.title,
+                    "item": pageUrl,
+                },
+            ],
+        });
     } catch {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
     return (
         <>
-            {jsonLd && (
+            {jsonLd.map((schema, index) => (
                 <script
+                    key={index}
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
                 />
-            )}
+            ))}
             <QuestionDetailPage id={id} />
         </>
     );

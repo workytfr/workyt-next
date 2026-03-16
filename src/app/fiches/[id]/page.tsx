@@ -1,14 +1,34 @@
 import { Metadata } from "next";
 import FicheView from "@/app/fiches/_components/FicheView";
 import React from "react";
+import { notFound, redirect } from "next/navigation";
 import dbConnect from "@/lib/mongodb";
 import Revision from "@/models/Revision";
+import { extractIdFromSlug, buildIdSlug, slugify } from "@/utils/slugify";
 
 interface PageProps {
     params: Promise<{ id: string }>;
 }
 
-// Génération des paramètres statiques pour l'indexation SEO
+/**
+ * Trouve une fiche par ID (composite id-slug) ou par slug pur.
+ */
+async function findFiche(idSlug: string) {
+    const objectId = extractIdFromSlug(idSlug);
+
+    if (objectId) {
+        const fiche: any = await Revision.findById(objectId).populate('author', 'username').lean();
+        if (fiche) return { fiche, id: objectId };
+    }
+
+    // Fallback : chercher par slug
+    const fiche: any = await Revision.findOne({ slug: idSlug }).populate('author', 'username').lean();
+    if (fiche) return { fiche, id: fiche._id.toString() };
+
+    return null;
+}
+
+// Génération des paramètres statiques pour l'indexation SEO (avec slug)
 export async function generateStaticParams() {
     try {
         await Promise.race([
@@ -19,12 +39,12 @@ export async function generateStaticParams() {
         ]);
 
         const fiches = await Revision.find({})
-            .select('_id')
+            .select('_id title slug')
             .lean()
             .limit(200);
 
         return fiches.map((fiche: any) => ({
-            id: fiche._id.toString(),
+            id: buildIdSlug(fiche._id.toString(), fiche.slug || fiche.title),
         }));
     } catch (error) {
         console.error('Erreur lors de la génération des paramètres statiques fiches:', error);
@@ -32,7 +52,6 @@ export async function generateStaticParams() {
     }
 }
 
-// Nettoyage du HTML pour obtenir du texte brut pour les descriptions meta
 function stripHtml(html: string): string {
     return html
         .replace(/<[^>]*>/g, ' ')
@@ -46,7 +65,7 @@ function stripHtml(html: string): string {
 
 export const generateMetadata = async ({ params }: PageProps): Promise<Metadata> => {
     try {
-        const { id } = await params;
+        const { id: idSlug } = await params;
 
         await Promise.race([
             dbConnect(),
@@ -55,14 +74,19 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
             )
         ]);
 
-        const fiche: any = await Revision.findById(id).populate('author', 'username').lean();
+        const result = await findFiche(idSlug);
 
-        if (!fiche) {
+        if (!result) {
             return {
                 title: "Fiche non trouvée - Workyt",
                 description: "La fiche que vous recherchez n'existe pas ou a été supprimée.",
             };
         }
+
+        const { fiche, id } = result;
+        const slug = fiche.slug || slugify(fiche.title);
+        const canonicalPath = buildIdSlug(id, slug);
+        const canonicalUrl = `https://workyt.fr/fiches/${canonicalPath}`;
 
         const plainContent = stripHtml(fiche.content || '');
         const metaDescription = plainContent
@@ -71,7 +95,6 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
 
         const title = `${fiche.title} - ${fiche.subject} ${fiche.level} | Workyt`;
         const authorName = fiche.author?.username || 'Workyt';
-        const canonicalUrl = `https://workyt.fr/fiches/${id}`;
         const imageUrl = fiche.files?.[0] || 'https://workyt.fr/default-thumbnail.png';
 
         return {
@@ -139,60 +162,110 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
 };
 
 export default async function FichePage({ params }: PageProps) {
-    const { id } = await params;
+    const { id: idSlug } = await params;
+
+    await dbConnect();
+    const result = await findFiche(idSlug);
+
+    if (!result) {
+        notFound();
+    }
+
+    const { fiche, id } = result;
+
+    // Redirection 301 vers l'URL canonique si le format n'est pas id-slug
+    const slug = fiche.slug || slugify(fiche.title);
+    const canonicalParam = buildIdSlug(id, slug);
+    if (idSlug !== canonicalParam) {
+        redirect(`/fiches/${canonicalParam}`);
+    }
 
     // JSON-LD structured data pour les moteurs de recherche
-    let jsonLd = null;
+    let jsonLd: object[] = [];
     try {
-        await dbConnect();
-        const fiche: any = await Revision.findById(id).populate('author', 'username').lean();
+        const slug = fiche.slug || slugify(fiche.title);
+        const canonicalPath = buildIdSlug(id, slug);
+        const pageUrl = `https://workyt.fr/fiches/${canonicalPath}`;
+        const plainContent = stripHtml(fiche.content || '');
 
-        if (fiche) {
-            const plainContent = stripHtml(fiche.content || '');
-            jsonLd = {
-                "@context": "https://schema.org",
-                "@type": "Article",
-                "headline": fiche.title,
-                "description": plainContent.slice(0, 200),
-                "author": {
-                    "@type": "Person",
-                    "name": fiche.author?.username || "Workyt",
+        // Schema LearningResource (plus spécifique qu'Article pour du contenu éducatif)
+        jsonLd.push({
+            "@context": "https://schema.org",
+            "@type": "LearningResource",
+            "headline": fiche.title,
+            "name": fiche.title,
+            "description": plainContent.slice(0, 200),
+            "learningResourceType": "Fiche de révision",
+            "educationalLevel": fiche.level,
+            "about": {
+                "@type": "Thing",
+                "name": fiche.subject,
+            },
+            "author": {
+                "@type": "Person",
+                "name": fiche.author?.username || "Workyt",
+            },
+            "publisher": {
+                "@type": "Organization",
+                "name": "Workyt",
+                "url": "https://workyt.fr",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://workyt.fr/default-thumbnail.png",
                 },
-                "publisher": {
-                    "@type": "Organization",
-                    "name": "Workyt",
-                    "url": "https://workyt.fr",
+            },
+            "datePublished": fiche.createdAt ? new Date(fiche.createdAt).toISOString() : undefined,
+            "mainEntityOfPage": {
+                "@type": "WebPage",
+                "@id": pageUrl,
+            },
+            "inLanguage": "fr",
+            "interactionStatistic": {
+                "@type": "InteractionCounter",
+                "interactionType": "https://schema.org/LikeAction",
+                "userInteractionCount": fiche.likes || 0,
+            },
+            "isAccessibleForFree": true,
+        });
+
+        // Schema BreadcrumbList
+        jsonLd.push({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            "itemListElement": [
+                {
+                    "@type": "ListItem",
+                    "position": 1,
+                    "name": "Accueil",
+                    "item": "https://workyt.fr",
                 },
-                "datePublished": fiche.createdAt?.toISOString(),
-                "mainEntityOfPage": {
-                    "@type": "WebPage",
-                    "@id": `https://workyt.fr/fiches/${id}`,
+                {
+                    "@type": "ListItem",
+                    "position": 2,
+                    "name": "Fiches de révision",
+                    "item": "https://workyt.fr/fiches",
                 },
-                "about": {
-                    "@type": "Thing",
-                    "name": fiche.subject,
+                {
+                    "@type": "ListItem",
+                    "position": 3,
+                    "name": fiche.title,
+                    "item": pageUrl,
                 },
-                "educationalLevel": fiche.level,
-                "inLanguage": "fr",
-                "interactionStatistic": {
-                    "@type": "InteractionCounter",
-                    "interactionType": "https://schema.org/LikeAction",
-                    "userInteractionCount": fiche.likes || 0,
-                },
-            };
-        }
+            ],
+        });
     } catch {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
     return (
         <>
-            {jsonLd && (
+            {jsonLd.map((schema, index) => (
                 <script
+                    key={index}
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                    dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
                 />
-            )}
+            ))}
             <FicheView id={id} />
         </>
     );

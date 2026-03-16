@@ -40,10 +40,10 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
         },
         twitter: {
             card: "summary_large_image",
-            site: "@workyt",
+            site: "@workyt_fr",
             title,
             description,
-            images: ["https://www.workyt.fr/avatars/default.png"],
+            images: ["https://workyt.fr/avatars/default.png"],
         },
     };
 }

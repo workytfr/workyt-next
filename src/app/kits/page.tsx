@@ -12,8 +12,29 @@ import PartenairesView from "@/components/home/partenaires";
 
 
 export const metadata: Metadata = {
-    title: 'Workyt - La plate-forme d\'apprentissage gratuite',
-    description: 'Les ressources d\'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l\'éducation sont l\'accès, le manque de confiance et le coût.',
+    title: 'Kits & Outils | Workyt',
+    description: 'Découvrez les outils gratuits Workyt : minuteur Pomodoro, solveur d\'équations et plus encore pour optimiser vos révisions.',
+    keywords: 'outils scolaires, pomodoro, solveur équations, révisions, Workyt',
+    openGraph: {
+        title: 'Kits & Outils | Workyt',
+        description: 'Outils gratuits pour optimiser vos révisions : minuteur Pomodoro, solveur d\'équations et plus.',
+        type: 'website',
+        url: 'https://workyt.fr/kits',
+        siteName: 'Workyt',
+        locale: 'fr_FR',
+        images: [{ url: 'https://workyt.fr/default-thumbnail.png', width: 1200, height: 630, alt: 'Kits Workyt' }],
+    },
+    twitter: {
+        card: 'summary_large_image',
+        site: '@workyt_fr',
+        creator: '@workyt_fr',
+        title: 'Kits & Outils | Workyt',
+        description: 'Outils gratuits pour optimiser vos révisions sur Workyt.',
+        images: ['https://workyt.fr/default-thumbnail.png'],
+    },
+    alternates: {
+        canonical: 'https://workyt.fr/kits',
+    },
 }
 
 export default function Home() {

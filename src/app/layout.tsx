@@ -31,6 +31,12 @@ export const metadata: Metadata = {
     authors: [{ name: "Workyt" }],
     creator: "Workyt",
     publisher: "Workyt",
+    icons: {
+        icon: [
+            { url: "/icon.svg", type: "image/svg+xml" },
+        ],
+        apple: "/default-thumbnail.png",
+    },
     robots: {
         index: true,
         follow: true,
@@ -72,9 +78,48 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
+    // JSON-LD WebSite schema avec SearchAction pour la sitelinks searchbox Google
+    const websiteSchema = {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Workyt",
+        "url": "https://workyt.fr",
+        "description": "Plateforme d'entraide scolaire gratuite : cours, fiches de révision, forum d'aide aux devoirs.",
+        "inLanguage": "fr",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": {
+                "@type": "EntryPoint",
+                "urlTemplate": "https://workyt.fr/forum?search={search_term_string}",
+            },
+            "query-input": "required name=search_term_string",
+        },
+    };
+
+    // JSON-LD Organization schema pour le Knowledge Panel Google
+    const organizationSchema = {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Workyt",
+        "url": "https://workyt.fr",
+        "logo": "https://workyt.fr/default-thumbnail.png",
+        "sameAs": [
+            "https://twitter.com/workyt_fr",
+        ],
+        "description": "Plateforme d'entraide scolaire gratuite pour les élèves du collège et du lycée.",
+    };
+
     return (
         <html lang="fr" suppressHydrationWarning>
         <body className={`${funnelDisplay.variable} ${montserrat.variable} font-sans overflow-x-hidden`}>
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+        />
+        <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+        />
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <ClientProviders>
             {children}

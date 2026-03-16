@@ -1,10 +1,12 @@
 import mongoose, { Schema, Document, Model, ObjectId } from "mongoose";
+import { slugify } from "@/utils/slugify";
 
 /**
  * Interface représentant un cours
  */
 export interface ICourse extends Document {
     title: string;
+    slug: string;
     description: string;
     authors: ObjectId[]; // Liste des auteurs du cours
     status: "en_attente_publication" | "en_attente_verification" | "publie" | "annule";
@@ -20,6 +22,7 @@ export interface ICourse extends Document {
  */
 const CourseSchema: Schema = new Schema({
     title: { type: String, required: true },
+    slug: { type: String, index: true },
     description: { type: String, required: true },
     authors: [{ type: Schema.Types.ObjectId, ref: "User", required: true }], // Liste des auteurs
     status: {
@@ -47,6 +50,14 @@ CourseSchema.virtual("sections", {
 // Active l'inclusion des virtuals dans le JSON/objet final
 CourseSchema.set("toJSON", { virtuals: true });
 CourseSchema.set("toObject", { virtuals: true });
+
+// Auto-génération du slug à partir du titre
+CourseSchema.pre('save', function (next) {
+    if (this.isModified('title') || !this.slug) {
+        this.slug = slugify(this.title as string);
+    }
+    next();
+});
 
 const Course: Model<ICourse> = mongoose.models.Course || mongoose.model<ICourse>("Course", CourseSchema);
 

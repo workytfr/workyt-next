@@ -1,30 +1,35 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    metadataBase: new URL("https://www.workyt.fr"),
-    title: "Cours | Workyt - La plate-forme d'apprentissage gratuite",
-    description: "Accédez à une large sélection de cours sur Workyt et développez vos compétences professionnelles et personnelles.",
+    title: "Cours gratuits | Workyt - Plateforme d'apprentissage",
+    description: "Accédez à des cours gratuits sur Workyt : mathématiques, physique, français, histoire et plus. Contenu de qualité pour collégiens et lycéens.",
+    keywords: "cours gratuits, apprentissage, mathématiques, physique, français, lycée, collège, bac, brevet",
     openGraph: {
-        title: "Cours | Workyt - La plate-forme d'apprentissage gratuite",
-        description: "Découvrez des formations de qualité sur Workyt pour booster votre carrière.",
+        title: "Cours gratuits | Workyt",
+        description: "Accédez à des cours gratuits pour le collège et le lycée sur Workyt.",
         images: [
             {
-                url: "/workytfiche.png",
+                url: "https://workyt.fr/workytcours.png",
                 width: 1200,
                 height: 630,
-                alt: "Aperçu des cours Workyt avec différentes catégories d'apprentissage.",
+                alt: "Cours gratuits Workyt",
             },
         ],
         type: "website",
-        url: "https://www.workyt.com/cours",
+        url: "https://workyt.fr/cours",
         siteName: "Workyt",
+        locale: "fr_FR",
     },
     twitter: {
         card: "summary_large_image",
-        site: "@workyt",
-        title: "Cours | Workyt - La plate-forme d'apprentissage gratuite",
-        images: ["https://www.workyt.fr/workytfiche.png"],
-        description: "Trouvez des cours adaptés à vos besoins et apprenez auprès d'experts.",
+        site: "@workyt_fr",
+        creator: "@workyt_fr",
+        title: "Cours gratuits | Workyt",
+        description: "Accédez à des cours gratuits pour le collège et le lycée sur Workyt.",
+        images: ["https://workyt.fr/workytcours.png"],
+    },
+    alternates: {
+        canonical: "https://workyt.fr/cours",
     },
 };
 

@@ -10,6 +10,7 @@ import { MdInfoOutline, MdInsertComment } from "react-icons/md";
 import ProfileAvatar from "@/components/ui/profile";
 import SubjectIcon from "@/components/fiches/SubjectIcon";
 import { levelColors, subjectColors, subjectGradients } from "@/data/educationData";
+import { buildIdSlug } from "@/utils/slugify";
 
 interface Fiche {
     _id: string;
@@ -70,7 +71,7 @@ const FicheCard = ({ fiche, username }: { fiche: Fiche; username: string }) => {
 
             {/* Contenu */}
             <div className="flex-1 p-4 flex flex-col">
-                <Link href={`/fiches/${fiche._id}`} className="flex-1">
+                <Link href={`/fiches/${buildIdSlug(fiche._id, fiche.title)}`} className="flex-1">
                     <h2 className="text-base font-semibold text-gray-800 group-hover:text-orange-500 transition-colors line-clamp-2 mb-2">
                         {fiche.title}
                     </h2>

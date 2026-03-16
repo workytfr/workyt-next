@@ -2,6 +2,8 @@ import { MetadataRoute } from 'next'
 import dbConnect from '@/lib/mongodb'
 import Question from '@/models/Question'
 import Revision from '@/models/Revision'
+import Course from '@/models/Course'
+import { buildIdSlug, slugify } from '@/utils/slugify'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://workyt.fr'
@@ -55,35 +57,47 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       )
     ])
 
-    // Récupération des questions du forum et des fiches en parallèle
-    const [questions, fiches] = await Promise.all([
+    // Récupération des questions, fiches et cours en parallèle
+    const [questions, fiches, courses] = await Promise.all([
       Question.find({ status: { $in: ['Validée', 'Résolue'] } })
-        .select('_id createdAt')
+        .select('_id title slug createdAt')
         .sort({ createdAt: -1 })
         .limit(1000),
       Revision.find({})
-        .select('_id createdAt')
+        .select('_id title slug createdAt')
         .sort({ createdAt: -1 })
         .limit(1000),
+      Course.find({ status: 'publie' })
+        .select('_id title slug updatedAt')
+        .sort({ updatedAt: -1 })
+        .limit(500),
     ])
 
-    // Génération des URLs des questions
+    // URLs des questions du forum avec slug SEO
     const questionPages: MetadataRoute.Sitemap = questions.map((question) => ({
-      url: `${baseUrl}/forum/${question._id}`,
+      url: `${baseUrl}/forum/${buildIdSlug(question._id.toString(), question.slug || question.title)}`,
       lastModified: question.createdAt,
       changeFrequency: 'weekly' as const,
       priority: 0.7,
     }))
 
-    // Génération des URLs des fiches de révision
-    const fichePages: MetadataRoute.Sitemap = fiches.map((fiche) => ({
-      url: `${baseUrl}/fiches/${fiche._id}`,
+    // URLs des fiches de révision avec slug SEO
+    const fichePages: MetadataRoute.Sitemap = fiches.map((fiche: any) => ({
+      url: `${baseUrl}/fiches/${buildIdSlug(fiche._id.toString(), fiche.slug || fiche.title)}`,
       lastModified: fiche.createdAt,
       changeFrequency: 'monthly' as const,
       priority: 0.7,
     }))
 
-    return [...staticPages, ...questionPages, ...fichePages]
+    // URLs des cours publiés avec slug SEO
+    const coursePages: MetadataRoute.Sitemap = courses.map((course: any) => ({
+      url: `${baseUrl}/cours/${buildIdSlug(course._id.toString(), course.slug || course.title)}`,
+      lastModified: course.updatedAt,
+      changeFrequency: 'weekly' as const,
+      priority: 0.8,
+    }))
+
+    return [...staticPages, ...questionPages, ...fichePages, ...coursePages]
   } catch (error) {
     console.error('Erreur lors de la génération du sitemap:', error)
     // En cas d'erreur, retourner au moins les pages statiques

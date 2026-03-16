@@ -33,6 +33,7 @@ import { getSubjectColor, getLevelColor, educationData } from "@/data/educationD
 import Image from "next/image";
 import { motion } from "framer-motion";
 import BookmarkButton from "@/components/BookmarkButton";
+import { buildIdSlug } from "@/utils/slugify";
 
 // Types pour éviter les erreurs TS2339: Property does not exist on type 'never'
 interface User {
@@ -475,7 +476,7 @@ export default function ForumPageClient() {
                             <motion.div key={question._id} variants={itemVariants}>
                                 <Card
                                     className="bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
-                                    onClick={() => router.push(`/forum/${question._id}`)}
+                                    onClick={() => router.push(`/forum/${buildIdSlug(question._id, question.title)}`)}
                                 >
                                     {/* En-tête avec status badge */}
                                     <div className="relative">

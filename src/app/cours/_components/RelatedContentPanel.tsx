@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { buildIdSlug } from "@/utils/slugify";
 import {
     FileText, MessageCircle, Sparkles, ChevronUp, ChevronDown,
     Heart, CheckCircle, Clock, HelpCircle, Award, ExternalLink
@@ -184,7 +185,7 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                                             return (
                                                 <Link
                                                     key={f.id}
-                                                    href={`/fiches/${f.id}`}
+                                                    href={`/fiches/${buildIdSlug(f.id, f.title)}`}
                                                     className="block p-2.5 rounded-lg hover:bg-[#f7f6f3] transition-colors group"
                                                 >
                                                     <div className="flex items-start gap-2">
@@ -243,7 +244,7 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                                             return (
                                                 <Link
                                                     key={q.id}
-                                                    href={`/forum/${q.id}`}
+                                                    href={`/forum/${buildIdSlug(q.id, q.title)}`}
                                                     className="block p-2.5 rounded-lg hover:bg-[#f7f6f3] transition-colors group"
                                                 >
                                                     <div className="flex items-start gap-2">

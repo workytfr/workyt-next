@@ -20,24 +20,36 @@ import * as React from "react";
 import { Metadata } from 'next'
 
 
-export const metadata = {
-    title: "Workyt - La plate-forme d'apprentissage gratuite",
-    description:
-        "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
+export const metadata: Metadata = {
+    title: "Workyt - Plateforme d'entraide scolaire gratuite",
+    description: "Workyt est une plateforme d'entraide scolaire gratuite. Cours, fiches de révision, forum d'aide aux devoirs et outils pour réussir au collège et au lycée. Rejoignez la communauté !",
+    keywords: "entraide scolaire, aide devoirs, cours gratuits, fiches de révision, forum scolaire, bac, brevet, lycée, collège, plateforme éducative",
     openGraph: {
         type: "website",
-        title: "Workyt - La plateforme d'apprentissage",
-        description:
-            "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
-        url: "https://www.workyt.fr",
+        title: "Workyt - Plateforme d'entraide scolaire gratuite",
+        description: "Cours gratuits, fiches de révision, forum d'aide aux devoirs. Tout pour réussir au collège et au lycée.",
+        url: "https://workyt.fr",
+        siteName: "Workyt",
         locale: "fr_FR",
+        images: [
+            {
+                url: "https://workyt.fr/default-thumbnail.png",
+                width: 1200,
+                height: 630,
+                alt: "Workyt - Plateforme d'entraide scolaire gratuite",
+            },
+        ],
     },
     twitter: {
         card: "summary_large_image",
-        title: "Workyt - La plateforme d'apprentissage",
-        description:
-            "Les ressources d'apprentissage gratuites sont au cœur de notre mission sociale, car nous pensons que les principaux obstacles au début de l'éducation sont l'accès, le manque de confiance et le coût.",
-        images: ["https://www.workyt.fr/workytfiche.png"],
+        site: "@workyt_fr",
+        creator: "@workyt_fr",
+        title: "Workyt - Plateforme d'entraide scolaire gratuite",
+        description: "Cours gratuits, fiches de révision, forum d'aide aux devoirs. Tout pour réussir au collège et au lycée.",
+        images: ["https://workyt.fr/default-thumbnail.png"],
+    },
+    alternates: {
+        canonical: "https://workyt.fr",
     },
 };
 
