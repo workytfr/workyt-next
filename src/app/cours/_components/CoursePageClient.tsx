@@ -128,7 +128,7 @@ function ContentView({ content, onBack }: { content: SelectedContent; onBack: ()
 
             <div className="max-w-3xl">
                 {content.kind === 'lesson' ? (
-                    <LessonView title={content.lesson.title} content={content.lesson.content || ""} />
+                    <LessonView title={content.lesson.title} content={content.lesson.content || ""} audioUrl={content.lesson.audioUrl} />
                 ) : content.kind === 'exercises' ? (
                     <ExerciseList exercises={content.exercises} title={content.sectionTitle} />
                 ) : content.kind === 'quizzes' ? (

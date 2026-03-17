@@ -16,10 +16,11 @@ connectDB();
 export const GET = async (req: NextRequest) => {
     const ficheId = req.nextUrl.searchParams.get("ficheId");
     const questionId = req.nextUrl.searchParams.get("questionId");
+    const fileParam = req.nextUrl.searchParams.get("file");
     const fileIndex = parseInt(req.nextUrl.searchParams.get("index") || "0", 10);
 
-    if (!ficheId && !questionId) {
-        return NextResponse.json({ error: "ficheId ou questionId requis" }, { status: 400 });
+    if (!ficheId && !questionId && !fileParam) {
+        return NextResponse.json({ error: "ficheId, questionId ou file requis" }, { status: 400 });
     }
 
     if (!process.env.S3_BUCKET_NAME || !process.env.S3_ENDPOINT || !process.env.S3_ACCESS_KEY || !process.env.S3_SECRET_KEY) {
@@ -30,6 +31,29 @@ export const GET = async (req: NextRequest) => {
     const bucketName = process.env.S3_BUCKET_NAME;
 
     try {
+        // Accès direct par clé R2 (pour audio TTS)
+        if (fileParam) {
+            // Sécurité : n'autoriser que le dossier audio-tts/
+            if (!fileParam.startsWith("audio-tts/")) {
+                return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
+            }
+
+            const response = await getFileFromStorage(bucketName, fileParam);
+            if (!response.Body) {
+                return NextResponse.json({ error: "Fichier vide" }, { status: 500 });
+            }
+
+            const bytes = await response.Body.transformToByteArray();
+            return new NextResponse(Buffer.from(bytes), {
+                status: 200,
+                headers: {
+                    "Content-Type": "audio/mpeg",
+                    "Content-Disposition": "inline",
+                    "Cache-Control": "public, max-age=604800",
+                },
+            });
+        }
+
         let fileUrl: string;
         let defaultPrefix: string;
 

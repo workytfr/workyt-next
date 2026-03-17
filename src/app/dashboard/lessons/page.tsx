@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/Badge";
-import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, FileText, Video, Users, Calendar } from "lucide-react";
+import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, FileText, Video, Users, Calendar, Volume2, VolumeX } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { handleApiError } from "@/utils/apiErrorHandler";
 import LessonForm from "./../_components/LessonForm";
@@ -41,6 +41,7 @@ export default function LessonsPage() {
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [isFormDirty, setIsFormDirty] = useState(false);
     const [loadingLessons, setLoadingLessons] = useState(false);
+    const [ttsLoading, setTtsLoading] = useState<string | null>(null);
     const [page, setPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalLessons, setTotalLessons] = useState(0);
@@ -200,6 +201,74 @@ export default function LessonsPage() {
         } catch (err) {
             console.error("Erreur réseau :", err);
             showToast({ title: "Erreur réseau", variant: "destructive" });
+        }
+    };
+
+    // Génération TTS
+    const handleGenerateTTS = async (lessonId: string) => {
+        if (!session?.accessToken) return;
+        if (!confirm("Générer l'audio pour cette leçon ? (utilise un crédit ElevenLabs)")) return;
+
+        setTtsLoading(lessonId);
+        try {
+            const res = await fetch("/api/tts", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session.accessToken}`,
+                },
+                body: JSON.stringify({ lessonId }),
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                showToast({ title: data.error || "Erreur lors de la génération", variant: "destructive" });
+                return;
+            }
+
+            const data = await res.json();
+            setLessons((prev) =>
+                prev.map((l) => (l._id === lessonId ? { ...l, audioUrl: data.audioUrl } as ILesson : l))
+            );
+            showToast({ title: `Audio généré ! (${data.remaining} générations restantes aujourd'hui)` });
+        } catch (err) {
+            console.error("Erreur TTS :", err);
+            showToast({ title: "Erreur réseau", variant: "destructive" });
+        } finally {
+            setTtsLoading(null);
+        }
+    };
+
+    // Suppression TTS
+    const handleDeleteTTS = async (lessonId: string) => {
+        if (!session?.accessToken) return;
+        if (!confirm("Supprimer l'audio de cette leçon ?")) return;
+
+        setTtsLoading(lessonId);
+        try {
+            const res = await fetch("/api/tts", {
+                method: "DELETE",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${session.accessToken}`,
+                },
+                body: JSON.stringify({ lessonId }),
+            });
+
+            if (!res.ok) {
+                showToast({ title: "Erreur lors de la suppression", variant: "destructive" });
+                return;
+            }
+
+            setLessons((prev) =>
+                prev.map((l) => (l._id === lessonId ? { ...l, audioUrl: undefined } as ILesson : l))
+            );
+            showToast({ title: "Audio supprimé" });
+        } catch (err) {
+            console.error("Erreur suppression TTS :", err);
+            showToast({ title: "Erreur réseau", variant: "destructive" });
+        } finally {
+            setTtsLoading(null);
         }
     };
 
@@ -471,6 +540,34 @@ export default function LessonsPage() {
                                             >
                                                 <Pencil className="w-4 h-4" />
                                             </Button>
+                                            {isAdmin && (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className={lesson.audioUrl ? "text-green-600 hover:text-red-500" : "text-gray-400 hover:text-blue-600"}
+                                                            onClick={() =>
+                                                                lesson.audioUrl
+                                                                    ? handleDeleteTTS(lesson._id as string)
+                                                                    : handleGenerateTTS(lesson._id as string)
+                                                            }
+                                                            disabled={ttsLoading === (lesson._id as string)}
+                                                        >
+                                                            {ttsLoading === (lesson._id as string) ? (
+                                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                                            ) : lesson.audioUrl ? (
+                                                                <Volume2 className="w-4 h-4" />
+                                                            ) : (
+                                                                <VolumeX className="w-4 h-4" />
+                                                            )}
+                                                        </Button>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        {lesson.audioUrl ? "Supprimer l'audio" : "Générer l'audio TTS"}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )}
                                             <Button
                                                 variant="ghost"
                                                 size="sm"

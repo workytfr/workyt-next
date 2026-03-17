@@ -13,6 +13,7 @@ export interface Lesson {
     title: string;
     content?: string;
     image?: string;
+    audioUrl?: string;
     order?: number;
 }
 
