@@ -6,6 +6,7 @@ import { useSession } from "next-auth/react";
 import { Sidebar } from "./SidebarCours";
 import { Course, Lesson, Section, Exercise, Quiz, SelectedContent, QuizCompletionResult, NavigableItem } from "./types";
 import ExerciseCard from "./ExerciseCard";
+import ContextualQuestionModal from "./ContextualQuestionModal";
 import LessonView from "./LessonView";
 import QuizCard from "./QuizCard";
 import QuizViewer from "./QuizViewer";
@@ -25,7 +26,7 @@ import "./styles/notion-theme.css";
 // Skeleton pendant le chargement
 function LoadingSkeleton() {
     return (
-        <div className="flex h-screen bg-white overflow-hidden">
+        <div className="flex h-[calc(100dvh-48px)] bg-white overflow-hidden">
             <div className="hidden md:block w-72 bg-[#f7f6f3] border-r border-[#e3e2e0] flex-shrink-0">
                 <div className="p-4 border-b border-[#e3e2e0]">
                     <Skeleton className="h-5 w-3/4" />
@@ -52,7 +53,7 @@ function LoadingSkeleton() {
 // Message d'erreur
 function ErrorMessage({ error }: { error: string | null }) {
     return (
-        <div className="min-h-screen bg-white flex items-center justify-center p-4 overflow-hidden">
+        <div className="min-h-[calc(100dvh-48px)] bg-white flex items-center justify-center p-4 overflow-hidden">
             <div className="text-center max-w-md">
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-red-600 text-xl">!</span>
@@ -65,7 +66,7 @@ function ErrorMessage({ error }: { error: string | null }) {
 }
 
 // Vue d'un contenu sélectionné
-function ContentView({ content, onBack }: { content: SelectedContent; onBack: () => void }) {
+function ContentView({ content, onBack, courseId }: { content: SelectedContent; onBack: () => void; courseId: string }) {
     const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
     const [quizzes, setQuizzes] = useState<Quiz[]>([]);
 
@@ -103,7 +104,7 @@ function ContentView({ content, onBack }: { content: SelectedContent; onBack: ()
         const isCompleted = completedQuiz?.completed || false;
 
         return (
-            <div className="w-full overflow-x-hidden">
+            <div className="w-full min-w-0">
                 <div className="max-w-3xl">
                     <QuizViewer
                         quiz={selectedQuiz as Quiz & { questions: NonNullable<Quiz['questions']> }}
@@ -117,7 +118,7 @@ function ContentView({ content, onBack }: { content: SelectedContent; onBack: ()
     }
 
     return (
-        <div className="w-full overflow-x-hidden">
+        <div className="w-full min-w-0">
             <button
                 onClick={onBack}
                 className="notion-button notion-button-ghost mb-6 text-sm"
@@ -128,7 +129,7 @@ function ContentView({ content, onBack }: { content: SelectedContent; onBack: ()
 
             <div className="max-w-3xl">
                 {content.kind === 'lesson' ? (
-                    <LessonView title={content.lesson.title} content={content.lesson.content || ""} audioUrl={content.lesson.audioUrl} />
+                    <LessonView title={content.lesson.title} content={content.lesson.content || ""} audioUrl={content.lesson.audioUrl} lessonId={content.lesson._id} courseId={courseId} sectionId={content.sectionId} />
                 ) : content.kind === 'exercises' ? (
                     <ExerciseList exercises={content.exercises} title={content.sectionTitle} />
                 ) : content.kind === 'quizzes' ? (
@@ -143,6 +144,8 @@ function ContentView({ content, onBack }: { content: SelectedContent; onBack: ()
 
 // Liste d'exercices
 function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: string }) {
+    const [qaExercise, setQaExercise] = useState<{ _id: string; title: string } | null>(null);
+
     return (
         <div className="max-w-3xl">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e3e2e0]">
@@ -154,12 +157,27 @@ function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: stri
                     <h1 className="text-xl font-semibold text-[#37352f]">{title}</h1>
                 </div>
             </div>
-            
+
             <div className="space-y-6">
                 {exercises.map((ex, idx) => (
-                    <ExerciseCard key={ex._id} exercise={{ ...ex, content: ex.content || "" }} index={idx} />
+                    <ExerciseCard
+                        key={ex._id}
+                        exercise={{ ...ex, content: ex.content || "" }}
+                        index={idx}
+                        onAskQuestion={() => setQaExercise({ _id: ex._id, title: ex.title })}
+                    />
                 ))}
             </div>
+
+            {qaExercise && (
+                <ContextualQuestionModal
+                    isOpen={!!qaExercise}
+                    onClose={() => setQaExercise(null)}
+                    contextType="exercise"
+                    contextId={qaExercise._id}
+                    contextTitle={qaExercise.title}
+                />
+            )}
         </div>
     );
 }
@@ -534,7 +552,7 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
     const breadcrumbKind = selectedContent?.kind;
 
     return (
-        <div className="flex h-screen bg-white overflow-hidden">
+        <div className="flex h-[calc(100dvh-48px)] bg-white overflow-hidden">
             {/* Sidebar desktop */}
             <div className="hidden md:block w-72 flex-shrink-0 bg-[#f7f6f3] border-r border-[#e3e2e0]">
                 <SidebarWrapper
@@ -562,7 +580,7 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
                     {/* Content */}
                     {selectedContent ? (
                         <>
-                            <ContentView content={selectedContent} onBack={handleBackToOverview} />
+                            <ContentView content={selectedContent} onBack={handleBackToOverview} courseId={cours._id} />
                             <ContentNavigation
                                 prev={prev}
                                 next={next}

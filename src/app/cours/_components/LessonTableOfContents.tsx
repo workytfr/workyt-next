@@ -95,76 +95,43 @@ export default function LessonTableOfContents({ items }: LessonTableOfContentsPr
     if (items.length === 0) return null;
 
     return (
-        <>
-            {/* Desktop - sticky sidebar droite */}
-            <nav className="hidden lg:block sticky top-6 w-52 flex-shrink-0 max-h-[80vh] overflow-y-auto notion-scrollbar">
-                <div className="border-l border-[#e3e2e0] pl-4">
-                    <h3 className="text-xs font-medium text-[#9ca3af] uppercase tracking-wide mb-3">
-                        Sur cette page
-                    </h3>
-                    <ul className="space-y-1">
-                        {items.map((item) => (
-                            <li key={item.id}>
-                                <button
-                                    onClick={() => scrollTo(item.id)}
-                                    className={`w-full text-left text-sm py-1 transition-colors ${
-                                        item.level === 3 ? 'pl-3 text-[#9ca3af]' : 'text-[#6b6b6b]'
-                                    } ${
-                                        activeId === item.id
-                                            ? 'text-[#f97316] font-medium'
-                                            : 'hover:text-[#37352f]'
-                                    }`}
-                                >
-                                    <span className="line-clamp-2">{item.text}</span>
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            </nav>
+        <div className="relative">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                className="fixed z-40 right-4 bottom-20 lg:bottom-6 p-2 bg-white/80 backdrop-blur-sm border border-[#e3e2e0] text-[#9ca3af] rounded-lg shadow-sm hover:text-[#6b6b6b] hover:shadow-md transition-all"
+                aria-label="Sommaire de la leçon"
+            >
+                {isOpen ? <X className="w-4 h-4" /> : <List className="w-4 h-4" />}
+            </button>
 
-            {/* Mobile/Tablette - bouton flottant */}
-            <div className="lg:hidden">
-                <button
-                    onClick={() => setIsOpen(!isOpen)}
-                    className="fixed z-40 right-4 bottom-20 p-2.5 bg-white border border-[#e3e2e0] text-[#6b6b6b] rounded-lg shadow-md hover:bg-[#f7f6f3] transition-all"
-                    aria-label="Sommaire de la leçon"
-                >
-                    <List className="w-5 h-5" />
-                </button>
-
-                {isOpen && (
-                    <>
-                        <div className="fixed inset-0 bg-black/20 z-40" onClick={() => setIsOpen(false)} />
-                        <div className="fixed right-4 bottom-32 z-50 w-72 max-h-[60vh] bg-white border border-[#e3e2e0] rounded-lg shadow-xl overflow-y-auto notion-scrollbar">
-                            <div className="sticky top-0 bg-white border-b border-[#e3e2e0] px-4 py-3 flex items-center justify-between">
-                                <h3 className="text-sm font-medium text-[#37352f]">Sur cette page</h3>
-                                <button onClick={() => setIsOpen(false)} className="text-[#9ca3af] hover:text-[#6b6b6b]">
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                            <ul className="p-3 space-y-1">
-                                {items.map((item) => (
-                                    <li key={item.id}>
-                                        <button
-                                            onClick={() => scrollTo(item.id)}
-                                            className={`w-full text-left text-sm py-2 px-3 rounded-md transition-colors ${
-                                                item.level === 3 ? 'pl-6 text-[#9ca3af]' : 'text-[#6b6b6b]'
-                                            } ${
-                                                activeId === item.id
-                                                    ? 'bg-[#fff7ed] text-[#f97316] font-medium'
-                                                    : 'hover:bg-[#f7f6f3]'
-                                            }`}
-                                        >
-                                            <span className="line-clamp-2">{item.text}</span>
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
+            {isOpen && (
+                <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+                    <div className="fixed right-4 bottom-32 lg:bottom-16 z-50 w-64 max-h-[55vh] bg-white border border-[#e3e2e0] rounded-xl shadow-lg overflow-y-auto notion-scrollbar">
+                        <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-[#e3e2e0] px-4 py-2.5">
+                            <span className="text-xs font-medium text-[#9ca3af] uppercase tracking-wide">Sur cette page</span>
                         </div>
-                    </>
-                )}
-            </div>
-        </>
+                        <ul className="p-2 space-y-0.5">
+                            {items.map((item) => (
+                                <li key={item.id}>
+                                    <button
+                                        onClick={() => scrollTo(item.id)}
+                                        className={`w-full text-left text-xs py-1.5 px-3 rounded-md transition-colors ${
+                                            item.level === 3 ? 'pl-6 text-[#9ca3af]' : 'text-[#6b6b6b]'
+                                        } ${
+                                            activeId === item.id
+                                                ? 'bg-[#fff7ed] text-[#f97316] font-medium'
+                                                : 'hover:bg-[#f7f6f3]'
+                                        }`}
+                                    >
+                                        <span className="line-clamp-2">{item.text}</span>
+                                    </button>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+                </>
+            )}
+        </div>
     );
 }

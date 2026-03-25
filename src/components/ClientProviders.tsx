@@ -13,6 +13,8 @@ export default function ClientProviders({ children }: { children: React.ReactNod
   
   // Cacher la navbar et le footer sur le dashboard
   const isDashboard = pathname?.startsWith("/dashboard");
+  // Pages cours détail : pas de footer (layout plein écran avec sidebar)
+  const isCourseDetail = pathname?.match(/^\/cours\/[^/]+$/) !== null;
 
   return (
     <SessionProvider>
@@ -21,7 +23,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
         <TooltipProvider>
           {children}
         </TooltipProvider>
-        {!isDashboard && <Footer />}
+        {!isDashboard && !isCourseDetail && <Footer />}
       </ThemeProvider>
     </SessionProvider>
   );

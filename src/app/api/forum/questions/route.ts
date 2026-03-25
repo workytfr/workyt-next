@@ -22,11 +22,19 @@ export async function GET(req: NextRequest) {
         const limit = parseInt(searchParams.get("limit") || "10", 10);
         const skip = (page - 1) * limit;
 
+        // Filtres contextuels
+        const contextType = searchParams.get("contextType");
+        const contextId = searchParams.get("contextId");
+        const courseId = searchParams.get("courseId");
+
         // Construction du filtre avec recherche améliorée
         let filter: any = {};
         if (subject) filter.subject = subject;
         if (classLevel) filter.classLevel = classLevel;
         if (status) filter.status = status;
+        if (contextType) filter.contextType = contextType;
+        if (contextId) filter.contextId = contextId;
+        if (courseId) filter.courseId = courseId;
         
         // Recherche améliorée : titre + contenu + description
         if (title) {

@@ -15,6 +15,11 @@ export interface IQuestion extends Document {
     points: number;
     status: 'Non validée' | 'Validée' | 'Résolue';
     createdAt: Date;
+    contextType?: 'lesson' | 'exercise' | 'general';
+    contextId?: ObjectId;
+    contextTitle?: string;
+    courseId?: ObjectId;
+    sectionId?: ObjectId;
 }
 
 const QuestionSchema: Schema = new Schema({
@@ -38,7 +43,16 @@ const QuestionSchema: Schema = new Schema({
         enum: ['Non validée', 'Validée', 'Résolue'],
         default: 'Non validée'
     },
-    createdAt: { type: Date, default: Date.now }
+    createdAt: { type: Date, default: Date.now },
+    contextType: {
+        type: String,
+        enum: ['lesson', 'exercise', 'general'],
+        default: undefined
+    },
+    contextId: { type: Schema.Types.ObjectId },
+    contextTitle: { type: String },
+    courseId: { type: Schema.Types.ObjectId, ref: 'Course' },
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section' }
 });
 
 // Auto-génération du slug à partir du titre

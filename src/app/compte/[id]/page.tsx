@@ -19,7 +19,8 @@ import {
     File,
     HelpCircle,
     MessageCircle,
-    Gem
+    Gem,
+    Mail,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import UserRank from "@/components/ui/UserRank";
@@ -87,6 +88,51 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
         { revalidateOnFocus: false }
     );
     const currentStreak = streakData?.success ? streakData.data.currentStreak || 0 : 0;
+
+    // Newsletter preferences
+    const [newsletterPrefs, setNewsletterPrefs] = useState<{ hebdo: boolean; classique: boolean } | null>(null);
+    const [newsletterLoading, setNewsletterLoading] = useState(false);
+
+    useEffect(() => {
+        if (!id || !session?.user?.id) return;
+        if (session.user.id !== id && session.user.role !== 'Admin') return;
+        fetch('/api/newsletter/preferences')
+            .then(res => res.json())
+            .then(data => {
+                if (data.newsletterPreferences) {
+                    setNewsletterPrefs(data.newsletterPreferences);
+                } else if (typeof data.newsletterOptIn === 'boolean') {
+                    setNewsletterPrefs({ hebdo: data.newsletterOptIn, classique: data.newsletterOptIn });
+                }
+            })
+            .catch(() => {});
+    }, [id, session?.user?.id]);
+
+    const toggleNewsletterPref = async (type: 'hebdo' | 'classique') => {
+        if (!newsletterPrefs) return;
+        setNewsletterLoading(true);
+        try {
+            const newValue = !newsletterPrefs[type];
+            const res = await fetch('/api/newsletter/preferences', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    newsletterPreferences: { [type]: newValue },
+                }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setNewsletterPrefs(data.newsletterPreferences);
+                Toast({
+                    title: newValue ? "Newsletter activee" : "Newsletter desactivee",
+                });
+            }
+        } catch {
+            Toast({ title: "Erreur", variant: "destructive" });
+        } finally {
+            setNewsletterLoading(false);
+        }
+    };
 
     // Fonction pour formater les points
     const formatPoints = (points: number): string => {
@@ -388,6 +434,54 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                         disabled={!isEditing}
                                     />
                                 </div>
+                                {/* Newsletter Preferences */}
+                                {newsletterPrefs !== null && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <Mail className="w-5 h-5 text-indigo-500" />
+                                            <p className="text-sm font-semibold text-gray-800">Preferences newsletter</p>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-800">Newsletter hebdomadaire</p>
+                                                <p className="text-xs text-gray-500">Recap de ton activite et du nouveau contenu chaque semaine</p>
+                                            </div>
+                                            <button
+                                                onClick={() => toggleNewsletterPref('hebdo')}
+                                                disabled={newsletterLoading}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                                                    newsletterPrefs.hebdo ? 'bg-indigo-600' : 'bg-gray-300'
+                                                } ${newsletterLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            >
+                                                <span
+                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                                                        newsletterPrefs.hebdo ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-800">Newsletters classiques</p>
+                                                <p className="text-xs text-gray-500">Annonces, nouveautes et actualites de Workyt</p>
+                                            </div>
+                                            <button
+                                                onClick={() => toggleNewsletterPref('classique')}
+                                                disabled={newsletterLoading}
+                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
+                                                    newsletterPrefs.classique ? 'bg-indigo-600' : 'bg-gray-300'
+                                                } ${newsletterLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                                            >
+                                                <span
+                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
+                                                        newsletterPrefs.classique ? 'translate-x-6' : 'translate-x-1'
+                                                    }`}
+                                                />
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="flex justify-end gap-4">
                                     {isEditing ? (
                                         <>

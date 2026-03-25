@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import crypto from 'crypto';
 
 /**
  * Interface représentant un utilisateur
@@ -17,6 +18,12 @@ export interface IUser extends Document {
     bio: string;
     discordId?: string;
     verified: boolean;
+    newsletterOptIn: boolean;
+    newsletterPreferences: {
+        hebdo: boolean;
+        classique: boolean;
+    };
+    unsubscribeToken: string;
     createdAt: Date;
     resetPasswordToken?: string;
     resetPasswordExpiry?: Date;
@@ -133,6 +140,26 @@ const UserSchema = new Schema<IUser>({
         maxlength: [500, 'La bio ne peut pas dépasser 500 caractères'],
         trim: true,
         default: ""
+    },
+    newsletterOptIn: {
+        type: Boolean,
+        default: true,
+    },
+    newsletterPreferences: {
+        hebdo: {
+            type: Boolean,
+            default: true,
+        },
+        classique: {
+            type: Boolean,
+            default: true,
+        },
+    },
+    unsubscribeToken: {
+        type: String,
+        default: () => crypto.randomUUID(),
+        unique: true,
+        sparse: true,
     },
     createdAt: {
         type: Date,

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ForumPageClient from "./_components/ForumPageClient";
 import { Metadata } from "next";
 
@@ -38,5 +38,9 @@ export const metadata: Metadata = {
 };
 
 export default function ForumPage() {
-    return <ForumPageClient />;
+    return (
+        <Suspense>
+            <ForumPageClient />
+        </Suspense>
+    );
 }

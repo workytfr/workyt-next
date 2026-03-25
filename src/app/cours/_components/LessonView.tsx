@@ -3,6 +3,7 @@
 import React, { useMemo, useState, useRef, useEffect } from "react";
 import { FaBook, FaLightbulb, FaBookOpen, FaCalculator, FaExclamationCircle, FaInfoCircle, FaClock, FaVolumeUp, FaPause, FaPlay } from "react-icons/fa";
 import LessonTableOfContents, { addHeadingIds, extractHeadings } from "./LessonTableOfContents";
+import LessonQASection from "./LessonQASection";
 import { estimateReadingTime } from "./utils/readingTime";
 
 // Unified & Rehype
@@ -19,6 +20,9 @@ interface LessonViewProps {
     title: string;
     content: string;
     audioUrl?: string;
+    lessonId?: string;
+    courseId?: string;
+    sectionId?: string;
 }
 
 // Configuration des blocs
@@ -348,7 +352,7 @@ function AudioPlayer({ audioUrl }: { audioUrl: string }) {
     );
 }
 
-export default function LessonView({ title, content, audioUrl }: LessonViewProps) {
+export default function LessonView({ title, content, audioUrl, lessonId, courseId, sectionId }: LessonViewProps) {
     let processedHtml: string;
 
     try {
@@ -476,20 +480,27 @@ export default function LessonView({ title, content, audioUrl }: LessonViewProps
                 )}
             </header>
 
-            {/* Contenu + TOC */}
-            <div className="flex gap-8 items-start">
-                {/* Contenu principal */}
-                <div
-                    className="flex-1 min-w-0 prose prose-lg max-w-none notion-lesson-content"
-                    style={{ lineHeight: '1.8' }}
-                    dangerouslySetInnerHTML={{ __html: htmlWithIds }}
-                />
+            {/* Contenu principal */}
+            <div
+                className="prose prose-lg max-w-none notion-lesson-content"
+                style={{ lineHeight: '1.8' }}
+                dangerouslySetInnerHTML={{ __html: htmlWithIds }}
+            />
 
-                {/* Sommaire */}
-                {tocItems.length > 0 && (
-                    <LessonTableOfContents items={tocItems} />
-                )}
-            </div>
+            {/* Sommaire (bouton flottant) */}
+            {tocItems.length > 0 && (
+                <LessonTableOfContents items={tocItems} />
+            )}
+
+            {/* Section Q&A */}
+            {lessonId && courseId && sectionId && (
+                <LessonQASection
+                    lessonId={lessonId}
+                    lessonTitle={title}
+                    courseId={courseId}
+                    sectionId={sectionId}
+                />
+            )}
         </article>
     );
 }

@@ -101,6 +101,24 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                 </div>
             </div>
 
+            {/* Lien vers la ressource contextuelle */}
+            {question.contextType && question.contextType !== 'general' && question.contextTitle && (
+                <div className="mx-6 mt-4 px-4 py-3 bg-purple-50 border border-purple-100 rounded-xl flex items-center gap-3">
+                    <FaBookOpen className="text-purple-500 flex-shrink-0" />
+                    <span className="text-sm text-purple-700">
+                        Cette question concerne {question.contextType === 'lesson' ? 'la leçon' : "l'exercice"} : <strong>{question.contextTitle}</strong>
+                    </span>
+                    {question.courseId && (
+                        <Link
+                            href={`/cours/${question.courseId}?section=${question.sectionId || ''}&lesson=${question.contextType === 'lesson' ? question.contextId : ''}`}
+                            className="ml-auto text-sm text-purple-600 hover:text-purple-800 font-medium whitespace-nowrap"
+                        >
+                            Voir la ressource →
+                        </Link>
+                    )}
+                </div>
+            )}
+
             {/* Corps de la question */}
             <div className="p-6">
                 {/* Titre de la question */}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,6 +59,9 @@ interface Question {
     description: Description;
     answerCount: number;
     attachments: Array<any>;
+    contextType?: 'lesson' | 'exercise' | 'general';
+    contextTitle?: string;
+    contextId?: string;
 }
 
 interface PaginationData {
@@ -75,6 +78,7 @@ interface QuestionsResponse {
 
 export default function ForumPageClient() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { data: session, status: sessionStatus } = useSession();
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState<boolean>(false);
@@ -87,13 +91,18 @@ export default function ForumPageClient() {
     const [isFiltering, setIsFiltering] = useState<boolean>(false);
     const [showFilters, setShowFilters] = useState<boolean>(false);
     const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
+    const [contextFilter, setContextFilter] = useState<string>(searchParams.get("contextType") || "");
+    const [contextIdFilter, setContextIdFilter] = useState<string>(searchParams.get("contextId") || "");
 
     useEffect(() => {
         async function fetchQuestions() {
             setLoading(true);
             setIsFiltering(true);
             try {
-                const response = await fetch(`/api/forum/questions?page=${page}&limit=10&title=${search}&subject=${subject}&classLevel=${classLevel}&status=${status}`);
+                let url = `/api/forum/questions?page=${page}&limit=10&title=${search}&subject=${subject}&classLevel=${classLevel}&status=${status}`;
+                if (contextFilter) url += `&contextType=${contextFilter}`;
+                if (contextIdFilter) url += `&contextId=${contextIdFilter}`;
+                const response = await fetch(url);
                 const data: QuestionsResponse = await response.json();
                 if (data.success) {
                     setQuestions(data.data);
@@ -107,7 +116,7 @@ export default function ForumPageClient() {
             }
         }
         fetchQuestions();
-    }, [page, search, subject, classLevel, status]);
+    }, [page, search, subject, classLevel, status, contextFilter, contextIdFilter]);
 
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -185,17 +194,17 @@ export default function ForumPageClient() {
                                     type="button"
                                     onClick={() => setShowFilters(!showFilters)}
                                     className={`flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg flex-1 sm:flex-none transition-all duration-200 ${
-                                        showFilters || subject || classLevel || status
+                                        showFilters || subject || classLevel || status || contextFilter
                                             ? "bg-orange-500 hover:bg-orange-600 text-white shadow-md"
                                             : "bg-gray-100 hover:bg-gray-200 text-gray-700"
                                     }`}
                                 >
-                                    <FaFilter className={showFilters ? "animate-pulse" : ""} /> 
+                                    <FaFilter className={showFilters ? "animate-pulse" : ""} />
                                     <span>
                                         {showFilters ? "Masquer les filtres" : "Filtres"}
-                                        {(subject || classLevel || status) && (
+                                        {(subject || classLevel || status || contextFilter) && (
                                             <span className="ml-1 text-xs bg-white text-orange-500 rounded-full px-1.5 py-0.5">
-                                                {[subject, classLevel, status].filter(Boolean).length}
+                                                {[subject, classLevel, status, contextFilter].filter(Boolean).length}
                                             </span>
                                         )}
                                     </span>
@@ -379,8 +388,52 @@ export default function ForumPageClient() {
                                         </div>
                                     </motion.div>
 
+                                    {/* Filtre Type de question */}
+                                    <motion.div
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: 0.35 }}
+                                    >
+                                        <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                                            <span className="w-2 h-2 bg-violet-500 rounded-full animate-pulse"></span>
+                                            Type de question
+                                        </h3>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button
+                                                onClick={() => { setContextFilter(""); setContextIdFilter(""); setPage(1); }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    contextFilter === ""
+                                                        ? "bg-orange-500 text-white shadow-md transform scale-105"
+                                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                                }`}
+                                            >
+                                                Toutes
+                                            </button>
+                                            <button
+                                                onClick={() => { setContextFilter("lesson"); setContextIdFilter(""); setPage(1); }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    contextFilter === "lesson"
+                                                        ? "bg-violet-500 text-white shadow-md transform scale-105"
+                                                        : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                                                }`}
+                                            >
+                                                Questions de leçons
+                                            </button>
+                                            <button
+                                                onClick={() => { setContextFilter("exercise"); setContextIdFilter(""); setPage(1); }}
+                                                className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                                                    contextFilter === "exercise"
+                                                        ? "bg-violet-500 text-white shadow-md transform scale-105"
+                                                        : "bg-gray-100 text-gray-600 hover:bg-violet-100 hover:text-violet-700"
+                                                }`}
+                                            >
+                                                Questions d&apos;exercices
+                                            </button>
+                                        </div>
+                                    </motion.div>
+
                                     {/* Actions */}
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ opacity: 0, y: 20 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: 0.4 }}
@@ -404,7 +457,12 @@ export default function ForumPageClient() {
                                                         {status}
                                                     </span>
                                                 )}
-                                                {!subject && !classLevel && !status && (
+                                                {contextFilter && (
+                                                    <span className="px-2 py-1 bg-violet-100 text-violet-700 rounded-full text-xs">
+                                                        {contextFilter === 'lesson' ? 'Leçons' : 'Exercices'}
+                                                    </span>
+                                                )}
+                                                {!subject && !classLevel && !status && !contextFilter && (
                                                     <span className="text-gray-400">Aucun</span>
                                                 )}
                                             </div>
@@ -417,6 +475,8 @@ export default function ForumPageClient() {
                                                     setSubject("");
                                                     setClassLevel("");
                                                     setStatus("");
+                                                    setContextFilter("");
+                                                    setContextIdFilter("");
                                                     setPage(1);
                                                 }}
                                                 className="text-gray-600 hover:text-gray-800 text-sm bg-gray-100 hover:bg-gray-200"
@@ -528,6 +588,11 @@ export default function ForumPageClient() {
                                             <span className="flex items-center text-xs bg-amber-50 text-amber-700 border border-amber-200 px-2 py-1 rounded-full">
                                                 <FaCoins className="text-amber-500 mr-1" /> {question.points} pts
                                             </span>
+                                            {question.contextType && question.contextType !== 'general' && question.contextTitle && (
+                                                <Badge className="bg-purple-100 text-purple-700 border border-purple-200 text-xs">
+                                                    {question.contextType === 'lesson' ? 'Leçon' : 'Exercice'} : {question.contextTitle.length > 30 ? question.contextTitle.substring(0, 30) + '...' : question.contextTitle}
+                                                </Badge>
+                                            )}
                                         </div>
                                     </div>
 

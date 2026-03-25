@@ -413,7 +413,6 @@
   max-width: 720px;
   margin: 0 auto;
   padding: var(--notion-gap-4xl) var(--notion-gap-xl);
-  overflow-x: hidden;
 }
 
 .notion-lesson-title {
@@ -520,7 +519,8 @@
   margin: 1.5rem 0;
   font-size: 0.9375rem;
   border-radius: var(--notion-radius-lg);
-  overflow: hidden;
+  display: block;
+  overflow-x: auto;
 }
 
 .notion-lesson-content th,

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "fixCourses": "ts-node scripts/fixCourses.ts",
-    "seedQuests": "tsx scripts/seedQuests.ts"
+    "seedQuests": "tsx scripts/seedQuests.ts",
+    "newsletter": "tsx scripts/sendNewsletter.ts",
+    "newsletter:migrate": "tsx scripts/migrateNewsletterFields.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.726.1",
@@ -87,6 +89,7 @@
     "next": "^16.1.6",
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.6",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.9",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.4.296",
@@ -127,6 +130,7 @@
     "@types/jsonwebtoken": "^9.0.7",
     "@types/mongoose": "^5.11.96",
     "@types/node": "^20",
+    "@types/node-cron": "^3.0.11",
     "@types/nodemailer": "^6.4.17",
     "@types/react": "^19.2.14",
     "@types/react-beautiful-dnd": "^13.1.8",
