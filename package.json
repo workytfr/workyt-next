@@ -120,6 +120,7 @@
   "overrides": {
     "minimatch": ">=10.2.1",
     "glob": ">=11.0.0",
+    "effect": ">=3.20.0",
     "eigen-avatar-generator": {
       "react": "$react"
     }
