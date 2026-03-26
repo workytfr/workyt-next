@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
         const content = formData.get("content") as string;
         const subject = formData.get("subject") as string;
         const level = formData.get("level") as string;
+        const courseId = formData.get("courseId") as string | null;
 
         if (!title || !subject || !level) {
             return NextResponse.json({ error: "Données obligatoires manquantes." }, { status: 400 });
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
             files: fileURLs,
             createdAt: new Date(),
             status,
+            ...(courseId ? { courseId } : {}),
         });
 
         const { addPointsWithBoost } = await import('@/lib/pointsService');

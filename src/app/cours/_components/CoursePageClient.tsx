@@ -13,9 +13,10 @@ import QuizViewer from "./QuizViewer";
 import CourseBreadcrumb from "./CourseBreadcrumb";
 import ContentNavigation from "./ContentNavigation";
 import CourseDescription from "./CourseDescription";
+import CourseFichesSection from "./CourseFichesSection";
 import { useCourseNavigation, navigableToSelected } from "./hooks/useCourseNavigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight } from "lucide-react";
+import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight, HelpCircle, FileCheck } from "lucide-react";
 import {
     Drawer,
     DrawerContent,
@@ -235,13 +236,71 @@ function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
     );
 }
 
+// Stats du cours (questions forum + fiches)
+function CourseStats({ courseId }: { courseId: string }) {
+    const [questionsCount, setQuestionsCount] = useState(0);
+    const [fichesCount, setFichesCount] = useState(0);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const [qRes, fRes] = await Promise.all([
+                    fetch(`/api/forum/questions/by-course?courseId=${courseId}`),
+                    fetch(`/api/fiches/by-course?courseId=${courseId}`),
+                ]);
+                if (qRes.ok) {
+                    const qData = await qRes.json();
+                    setQuestionsCount(qData.total || 0);
+                }
+                if (fRes.ok) {
+                    const fData = await fRes.json();
+                    setFichesCount(fData.total || 0);
+                }
+            } catch { /* silently fail */ } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, [courseId]);
+
+    if (loading) return null;
+    if (questionsCount === 0 && fichesCount === 0) return null;
+
+    return (
+        <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="flex items-center gap-3 p-4 bg-purple-50 border border-purple-100 rounded-xl">
+                <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <HelpCircle className="w-5 h-5 text-purple-600" />
+                </div>
+                <div>
+                    <p className="text-lg font-bold text-purple-700">{questionsCount}</p>
+                    <p className="text-xs text-purple-500">question{questionsCount > 1 ? 's' : ''} de forum</p>
+                </div>
+            </div>
+            <div className="flex items-center gap-3 p-4 bg-orange-50 border border-orange-100 rounded-xl">
+                <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <FileCheck className="w-5 h-5 text-orange-600" />
+                </div>
+                <div>
+                    <p className="text-lg font-bold text-orange-700">{fichesCount}</p>
+                    <p className="text-xs text-orange-500">fiche{fichesCount > 1 ? 's' : ''} de révision</p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 // Aperçu du cours
 function CourseOverview({ cours, onOpenSidebar }: { cours: Course; onOpenSidebar?: () => void }) {
     return (
         <div className="max-w-3xl">
             <CourseHeader cours={cours} />
-            
+
             <div className="notion-divider" />
+
+            {/* Stats questions + fiches */}
+            <CourseStats courseId={cours._id} />
 
             {/* Sections visibles sur mobile */}
             <div className="md:hidden mb-6">
@@ -277,7 +336,7 @@ function CourseOverview({ cours, onOpenSidebar }: { cours: Course; onOpenSidebar
                     )}
                 </div>
             </div>
-            
+
             <div className="bg-[#f7f6f3] rounded-2xl p-8 text-center">
                 <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
                     <BookOpen className="w-7 h-7 text-[#9ca3af]" />
@@ -286,7 +345,7 @@ function CourseOverview({ cours, onOpenSidebar }: { cours: Course; onOpenSidebar
                     Commencez votre apprentissage
                 </h3>
                 <p className="text-sm text-[#6b6b6b] max-w-md mx-auto">
-                    Sélectionnez une section dans le menu de gauche pour accéder aux leçons, 
+                    Sélectionnez une section dans le menu de gauche pour accéder aux leçons,
                     exercices et quiz.
                 </p>
             </div>
@@ -588,9 +647,19 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
                             />
                         </>
                     ) : (
-                        <CourseOverview 
-                            cours={cours} 
+                        <CourseOverview
+                            cours={cours}
                             onOpenSidebar={() => setDrawerOpen(true)}
+                        />
+                    )}
+
+                    {/* Fiches de révision — fin du cours */}
+                    {!selectedContent && (
+                        <CourseFichesSection
+                            courseId={cours._id}
+                            courseTitle={cours.title}
+                            courseMatiere={cours.matiere}
+                            courseNiveau={cours.niveau}
                         />
                     )}
                 </div>

@@ -38,8 +38,9 @@ export const GET = async (req: NextRequest) => {
         }
 
         const fiches = await Revision.find(filter)
-            .populate("author", "username points role _id") // Populate `author` avec l'ID et le rôle
-            .select("title content likes comments status level subject createdAt") // Exclude `files`
+            .populate("author", "username points role _id")
+            .populate("courseId", "title slug")
+            .select("title content likes comments status level subject courseId createdAt")
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit);
@@ -54,6 +55,7 @@ export const GET = async (req: NextRequest) => {
             status: fiche.status,
             level: fiche.level,
             subject: fiche.subject,
+            course: fiche.courseId || null,
             createdAt: fiche.createdAt,
         }));
 

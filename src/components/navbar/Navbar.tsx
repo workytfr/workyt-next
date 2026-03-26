@@ -37,6 +37,7 @@ import {
     ChevronRight,
     Gift,
     Search,
+    Ticket,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import ProfileCard from "@/components/ui/ProfileCard";
@@ -322,6 +323,10 @@ export default function Navbar() {
                                                     <PersonIcon className="w-4 h-4 text-gray-400" />
                                                     Mon Compte
                                                 </Link>
+                                                <Link href="/award" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
+                                                    <Ticket className="w-4 h-4 text-orange-400" />
+                                                    Workyt Award
+                                                </Link>
                                                 <Link href="/recompenses" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors" onClick={() => setIsProfileOpen(false)}>
                                                     <StarIcon className="w-4 h-4 text-gray-400" />
                                                     Récompenses
@@ -550,6 +555,10 @@ export default function Navbar() {
                                 <Link href={`/compte/${session.user.id}`} className="flex items-center gap-3 min-h-[44px] px-5 py-3 text-sm text-gray-700 active:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
                                     <PersonIcon className="w-4 h-4 text-gray-400 shrink-0" />
                                     Mon Compte
+                                </Link>
+                                <Link href="/award" className="flex items-center gap-3 min-h-[44px] px-5 py-3 text-sm text-gray-700 active:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
+                                    <Ticket className="w-4 h-4 text-orange-400 shrink-0" />
+                                    Workyt Award
                                 </Link>
                                 <Link href="/recompenses" className="flex items-center gap-3 min-h-[44px] px-5 py-3 text-sm text-gray-700 active:bg-gray-50 transition-colors" onClick={closeMobileMenu}>
                                     <StarIcon className="w-4 h-4 text-gray-400 shrink-0" />

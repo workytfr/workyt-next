@@ -11,7 +11,7 @@ import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import SubjectIcon from "@/components/fiches/SubjectIcon";
 import { CalendarIcon, LockClosedIcon, ReloadIcon } from "@radix-ui/react-icons";
-import { FileText, ArrowLeft } from "lucide-react";
+import { FileText, ArrowLeft, BookOpen } from "lucide-react";
 import CommentForm from "@/app/fiches/_components/CommentForm";
 import FileViewer from "@/app/fiches/_components/FileViewer";
 import LikedByList from "@/app/fiches/_components/LikedByList";
@@ -232,9 +232,20 @@ export default function FicheView({ id }: FicheViewProps) {
                                 <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1 rounded-full text-sm">{fiche.level}</Badge>
                             </div>
                             <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{fiche.title}</h1>
-                            <div className="flex items-center text-white/80 text-sm">
-                                <CalendarIcon className="mr-2" />
-                                <span>Publié le {new Date(fiche.createdAt).toLocaleDateString("fr-FR")}</span>
+                            <div className="flex flex-wrap items-center gap-3 text-white/80 text-sm">
+                                <span className="flex items-center">
+                                    <CalendarIcon className="mr-2" />
+                                    Publié le {new Date(fiche.createdAt).toLocaleDateString("fr-FR")}
+                                </span>
+                                {fiche.courseId && (
+                                    <Link
+                                        href={`/cours/${fiche.courseId._id || fiche.courseId}`}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors text-xs font-medium"
+                                    >
+                                        <BookOpen className="w-3.5 h-3.5" />
+                                        {fiche.courseId.title || "Voir le cours"}
+                                    </Link>
+                                )}
                             </div>
                         </div>
                         <BookmarkButton revisionId={fiche._id} size="lg" className="mt-2 p-2 bg-white/20 backdrop-blur-sm rounded-full" />

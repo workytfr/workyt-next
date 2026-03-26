@@ -22,6 +22,10 @@ import {
     Store,
     ChevronRight,
     Sparkles,
+    Gem,
+    Gift,
+    ArrowRight,
+    Package,
 } from "lucide-react";
 import "@/app/cours/_components/styles/notion-theme.css";
 
@@ -72,6 +76,10 @@ interface Partner {
         free: boolean;
         premium: boolean;
     };
+    availableCodes?: {
+        free: number;
+        premium: number;
+    };
     offers: {
         free?: {
             type: string;
@@ -104,46 +112,25 @@ const categories = [
 ];
 
 const categoryColors: Record<string, string> = {
-    restauration: "bg-orange-100 text-orange-800",
-    sport: "bg-blue-100 text-blue-800",
-    culture: "bg-purple-100 text-purple-800",
-    tech: "bg-green-100 text-green-800",
-    "bien-etre": "bg-pink-100 text-pink-800",
-    loisirs: "bg-yellow-100 text-yellow-800",
-    autre: "bg-gray-100 text-gray-800",
+    restauration: "bg-orange-100 text-orange-800 border-orange-200",
+    sport: "bg-blue-100 text-blue-800 border-blue-200",
+    culture: "bg-purple-100 text-purple-800 border-purple-200",
+    tech: "bg-green-100 text-green-800 border-green-200",
+    "bien-etre": "bg-pink-100 text-pink-800 border-pink-200",
+    loisirs: "bg-yellow-100 text-yellow-800 border-yellow-200",
+    autre: "bg-gray-100 text-gray-800 border-gray-200",
 };
-
-const avantages = [
-    {
-        icon: Ticket,
-        title: "Offres exclusives",
-        description:
-            "Accédez à des réductions et codes promo réservés aux membres Workyt dans toute la France.",
-    },
-    {
-        icon: Star,
-        title: "Partenaires vérifiés",
-        description:
-            "Chaque partenaire est sélectionné pour la qualité de ses services et son engagement envers les étudiants.",
-    },
-    {
-        icon: Heart,
-        title: "Soutien à l'éducation",
-        description:
-            "Nos partenaires partagent notre mission : rendre l'apprentissage accessible et valoriser l'effort.",
-    },
-    {
-        icon: TrendingUp,
-        title: "Économies garanties",
-        description:
-            "Profitez d'avantages concrets : réductions, offres de bienvenue et avantages premium avec vos gemmes.",
-    },
-];
 
 function formatOfferValue(type: string, value: number): string {
     if (type === "percentage") return `-${value}%`;
     if (type === "fixed") return `-${value}\u20AC`;
     return "Offre de bienvenue";
+}
+
+function getTotalAvailableCodes(partner: Partner): number {
+    const free = (partner.offersEnabled?.free && partner.availableCodes?.free) ? partner.availableCodes.free : 0;
+    const premium = (partner.offersEnabled?.premium && partner.availableCodes?.premium) ? partner.availableCodes.premium : 0;
+    return free + premium;
 }
 
 export default function PartenairesPageClient() {
@@ -159,7 +146,7 @@ export default function PartenairesPageClient() {
                 const res = await fetch("/api/partners?active=true");
                 if (res.ok) {
                     const data = await res.json();
-                    setPartners(data.partners || []);
+                    setPartners(Array.isArray(data) ? data : data.partners || []);
                 }
             } catch (error) {
                 console.error("Erreur lors du chargement des partenaires:", error);
@@ -171,6 +158,7 @@ export default function PartenairesPageClient() {
     }, []);
 
     const cities = [...new Set(partners.map((p) => p.city))].sort();
+    const totalCodes = partners.reduce((sum, p) => sum + getTotalAvailableCodes(p), 0);
 
     const filteredPartners = partners.filter((partner) => {
         const matchesSearch =
@@ -188,7 +176,7 @@ export default function PartenairesPageClient() {
     return (
         <div className="notion-layout notion-animate-fade-in min-h-screen">
             {/* Hero */}
-            <header className="bg-white">
+            <header className="bg-white border-b border-[#e3e2e0]">
                 <div className="notion-container-wide py-16 md:py-20">
                     <div className="max-w-3xl">
                         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 text-sm font-medium mb-5">
@@ -208,6 +196,36 @@ export default function PartenairesPageClient() {
             </header>
 
             <main className="notion-container-wide py-12 md:py-16">
+                {/* Bandeau Workyt Award - CTA principal */}
+                <section className="mb-12">
+                    <Link href="/award" className="block group">
+                        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-orange-500 via-orange-400 to-amber-400 p-6 md:p-8 text-white shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-200/60 transition-all duration-300">
+                            <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+                            <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-white/5 rounded-full blur-2xl translate-y-1/2" />
+                            <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                <div className="flex items-start gap-4">
+                                    <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
+                                        <img src="/badge/diamond.png" alt="" width={32} height={32} className="object-contain" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl md:text-2xl font-bold mb-1">Workyt Award</h2>
+                                        <p className="text-white/90 text-sm md:text-base max-w-lg">
+                                            Utilisez vos gemmes pour débloquer des codes promo exclusifs chez nos partenaires.
+                                            {totalCodes > 0 && (
+                                                <span className="font-semibold"> {totalCodes} code{totalCodes > 1 ? 's' : ''} disponible{totalCodes > 1 ? 's' : ''} !</span>
+                                            )}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 px-5 py-2.5 bg-white text-orange-600 rounded-full text-sm font-semibold group-hover:bg-orange-50 transition-colors shrink-0">
+                                    Obtenir mes réductions
+                                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </div>
+                            </div>
+                        </div>
+                    </Link>
+                </section>
+
                 {/* Partenaires officiels - logos */}
                 <section className="mb-16">
                     <div className="text-center mb-8">
@@ -249,7 +267,12 @@ export default function PartenairesPageClient() {
                 <section className="mb-16">
                     <h2 className="notion-heading mb-8">Pourquoi nos partenaires s'engagent</h2>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                        {avantages.map((item) => (
+                        {[
+                            { icon: Ticket, title: "Offres exclusives", description: "Accédez à des réductions et codes promo réservés aux membres Workyt dans toute la France." },
+                            { icon: Star, title: "Partenaires vérifiés", description: "Chaque partenaire est sélectionné pour la qualité de ses services et son engagement envers les étudiants." },
+                            { icon: Heart, title: "Soutien à l'éducation", description: "Nos partenaires partagent notre mission : rendre l'apprentissage accessible et valoriser l'effort." },
+                            { icon: TrendingUp, title: "Économies garanties", description: "Profitez d'avantages concrets : réductions, offres de bienvenue et avantages premium avec vos gemmes." },
+                        ].map((item) => (
                             <div
                                 key={item.title}
                                 className="bg-white border border-[#e3e2e0] rounded-2xl p-6 hover:border-orange-200 hover:shadow-md transition-all duration-300"
@@ -322,11 +345,21 @@ export default function PartenairesPageClient() {
 
                 {/* Section partenaires */}
                 <section>
-                    <div className="flex items-center gap-3 mb-6">
-                        <Store className="w-6 h-6" style={{ color: "var(--notion-accent)" }} />
-                        <h2 className="notion-heading !mb-0">
-                            Tous nos partenaires
-                        </h2>
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                        <div className="flex items-center gap-3">
+                            <Store className="w-6 h-6" style={{ color: "var(--notion-accent)" }} />
+                            <h2 className="notion-heading !mb-0">
+                                Toutes les réductions
+                            </h2>
+                        </div>
+                        {!isLoading && totalCodes > 0 && (
+                            <div className="flex items-center gap-2 px-4 py-2 bg-green-50 border border-green-200 rounded-full">
+                                <Package className="w-4 h-4 text-green-600" />
+                                <span className="text-sm font-medium text-green-700">
+                                    {totalCodes} code{totalCodes > 1 ? 's' : ''} promo disponible{totalCodes > 1 ? 's' : ''}
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Filtres */}
@@ -506,7 +539,7 @@ export default function PartenairesPageClient() {
                             partenaires. Gagnez des gemmes en étant actif sur Workyt !
                         </p>
                         <Link
-                            href="/gems"
+                            href="/award"
                             className="inline-flex items-center gap-2 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-white rounded-full text-sm font-medium transition-colors"
                         >
                             Découvrir les gemmes
@@ -525,133 +558,148 @@ function PartnerCard({ partner }: { partner: Partner }) {
 
     const hasFreeOffer = partner.offersEnabled?.free && partner.offers.free;
     const hasPremiumOffer = partner.offersEnabled?.premium && partner.offers.premium;
+    const totalCodes = getTotalAvailableCodes(partner);
+
+    // Meilleure offre à afficher
+    const bestOffer = hasPremiumOffer && partner.offers.premium
+        ? formatOfferValue(partner.offers.premium.type, partner.offers.premium.value)
+        : hasFreeOffer && partner.offers.free
+        ? formatOfferValue(partner.offers.free.type, partner.offers.free.value)
+        : null;
 
     return (
-        <div className="group bg-white border border-[#e3e2e0] rounded-2xl overflow-hidden hover:border-orange-200 hover:shadow-lg hover:shadow-orange-100/50 transition-all duration-300">
-            {/* Image */}
-            <div className="relative h-48 bg-gray-100 overflow-hidden">
-                <Image
-                    src={partner.image}
-                    alt={partner.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    unoptimized
-                />
-                <div className="absolute top-3 left-3">
-                    <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${colorClass}`}
-                    >
-                        {category?.icon} {category?.label}
-                    </span>
-                </div>
-                {(hasFreeOffer || hasPremiumOffer) && (
-                    <div className="absolute top-3 right-3">
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/90 backdrop-blur-sm rounded-full text-xs font-bold text-[#f97316]">
-                            <Ticket className="w-3.5 h-3.5" />
-                            {hasFreeOffer && partner.offers.free
-                                ? formatOfferValue(
-                                      partner.offers.free.type,
-                                      partner.offers.free.value
-                                  )
-                                : hasPremiumOffer && partner.offers.premium
-                                ? formatOfferValue(
-                                      partner.offers.premium.type,
-                                      partner.offers.premium.value
-                                  )
-                                : "Offre"}
+        <Link href="/award" className="block group">
+            <div className="bg-white border border-[#e3e2e0] rounded-2xl overflow-hidden hover:border-orange-200 hover:shadow-lg hover:shadow-orange-100/50 transition-all duration-300 h-full flex flex-col">
+                {/* Image */}
+                <div className="relative h-44 bg-gray-100 overflow-hidden">
+                    <Image
+                        src={partner.image}
+                        alt={partner.name}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                        unoptimized
+                    />
+                    {/* Overlay gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+                    {/* Badge catégorie */}
+                    <div className="absolute top-3 left-3">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${colorClass}`}>
+                            {category?.icon} {category?.label}
                         </span>
                     </div>
-                )}
-            </div>
 
-            {/* Contenu */}
-            <div className="p-5">
-                <div className="flex items-start gap-3 mb-3">
-                    <div className="w-10 h-10 rounded-xl bg-gray-50 border border-[#e3e2e0] flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        <Image
-                            src={partner.logo}
-                            alt={partner.name}
-                            width={32}
-                            height={32}
-                            className="object-contain"
-                            unoptimized
-                        />
-                    </div>
-                    <div className="min-w-0">
-                        <h3 className="text-sm font-semibold text-[#37352f] group-hover:text-[#f97316] transition-colors truncate">
-                            {partner.name}
-                        </h3>
-                        <p className="text-xs text-[#9ca3af] flex items-center gap-1 mt-0.5">
-                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                            {partner.city}
-                        </p>
-                    </div>
-                </div>
-
-                <p className="text-xs text-[#6b6b6b] leading-relaxed mb-4 line-clamp-2">
-                    {partner.description}
-                </p>
-
-                {/* Offres */}
-                <div className="space-y-2 mb-4">
-                    {hasFreeOffer && partner.offers.free && (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-green-50 rounded-lg">
-                            <Ticket className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
-                            <span className="text-xs text-green-800 font-medium truncate">
-                                Gratuit : {partner.offers.free.description}
+                    {/* Badge réduction */}
+                    {bestOffer && (
+                        <div className="absolute top-3 right-3">
+                            <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-white/95 backdrop-blur-sm rounded-full text-sm font-bold text-[#f97316] shadow-sm">
+                                <Ticket className="w-3.5 h-3.5" />
+                                {bestOffer}
                             </span>
                         </div>
                     )}
-                    {hasPremiumOffer && partner.offers.premium && (
-                        <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 rounded-lg">
-                            <Star className="w-3.5 h-3.5 text-orange-600 flex-shrink-0" />
-                            <span className="text-xs text-orange-800 font-medium truncate">
-                                Premium : {partner.offers.premium.description}
+
+                    {/* Badge codes disponibles */}
+                    {totalCodes > 0 && (
+                        <div className="absolute bottom-3 left-3">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-green-500 text-white rounded-full text-xs font-medium shadow-sm">
+                                <Gift className="w-3 h-3" />
+                                {totalCodes} code{totalCodes > 1 ? 's' : ''} dispo
+                            </span>
+                        </div>
+                    )}
+                    {totalCodes === 0 && (hasFreeOffer || hasPremiumOffer) && (
+                        <div className="absolute bottom-3 left-3">
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-500/80 text-white rounded-full text-xs font-medium">
+                                Rupture de stock
                             </span>
                         </div>
                     )}
                 </div>
 
-                {/* Contact */}
-                <div className="flex items-center gap-3 pt-3 border-t border-[#e3e2e0]">
-                    {partner.website && (
-                        <a
-                            href={partner.website}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[#9ca3af] hover:text-[#f97316] transition-colors"
-                            title="Site web"
-                        >
-                            <Globe className="w-4 h-4" />
-                        </a>
-                    )}
-                    {partner.phone && (
-                        <a
-                            href={`tel:${partner.phone}`}
-                            className="text-[#9ca3af] hover:text-[#f97316] transition-colors"
-                            title="Téléphone"
-                        >
-                            <Phone className="w-4 h-4" />
-                        </a>
-                    )}
-                    {partner.email && (
-                        <a
-                            href={`mailto:${partner.email}`}
-                            className="text-[#9ca3af] hover:text-[#f97316] transition-colors"
-                            title="Email"
-                        >
-                            <Mail className="w-4 h-4" />
-                        </a>
-                    )}
-                    <Link
-                        href="/gems"
-                        className="ml-auto inline-flex items-center gap-1 text-xs text-[#f97316] hover:text-[#ea580c] font-medium transition-colors"
-                    >
-                        Voir les offres
-                        <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
+                {/* Contenu */}
+                <div className="p-5 flex flex-col flex-1">
+                    <div className="flex items-start gap-3 mb-3">
+                        <div className="w-11 h-11 rounded-xl bg-gray-50 border border-[#e3e2e0] flex items-center justify-center flex-shrink-0 overflow-hidden">
+                            <Image
+                                src={partner.logo}
+                                alt={partner.name}
+                                width={36}
+                                height={36}
+                                className="object-contain"
+                                unoptimized
+                            />
+                        </div>
+                        <div className="min-w-0">
+                            <h3 className="text-sm font-semibold text-[#37352f] group-hover:text-[#f97316] transition-colors truncate">
+                                {partner.name}
+                            </h3>
+                            <p className="text-xs text-[#9ca3af] flex items-center gap-1 mt-0.5">
+                                <MapPin className="w-3 h-3 flex-shrink-0" />
+                                {partner.city}
+                            </p>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-[#6b6b6b] leading-relaxed mb-4 line-clamp-2 flex-1">
+                        {partner.description}
+                    </p>
+
+                    {/* Offres */}
+                    <div className="space-y-2 mb-4">
+                        {hasFreeOffer && partner.offers.free && (
+                            <div className="flex items-center justify-between px-3 py-2 bg-green-50 rounded-lg border border-green-100">
+                                <div className="flex items-center gap-2">
+                                    <Ticket className="w-3.5 h-3.5 text-green-600 flex-shrink-0" />
+                                    <span className="text-xs text-green-800 font-medium">
+                                        Offre gratuite
+                                    </span>
+                                </div>
+                                <span className="text-xs font-bold text-green-700">
+                                    {formatOfferValue(partner.offers.free.type, partner.offers.free.value)}
+                                </span>
+                            </div>
+                        )}
+                        {hasPremiumOffer && partner.offers.premium && (
+                            <div className="flex items-center justify-between px-3 py-2 bg-purple-50 rounded-lg border border-purple-100">
+                                <div className="flex items-center gap-2">
+                                    <Gem className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+                                    <span className="text-xs text-purple-800 font-medium">
+                                        Premium
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-xs font-bold text-purple-700">
+                                        {formatOfferValue(partner.offers.premium.type, partner.offers.premium.value)}
+                                    </span>
+                                    <span className="text-[10px] text-purple-500 bg-purple-100 px-1.5 py-0.5 rounded-full">
+                                        {partner.offers.premium.gemsCost} gemmes
+                                    </span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-3 border-t border-[#e3e2e0]">
+                        <div className="flex items-center gap-3">
+                            {partner.website && (
+                                <Globe className="w-4 h-4 text-[#9ca3af]" />
+                            )}
+                            {partner.phone && (
+                                <Phone className="w-4 h-4 text-[#9ca3af]" />
+                            )}
+                            {partner.email && (
+                                <Mail className="w-4 h-4 text-[#9ca3af]" />
+                            )}
+                        </div>
+                        <span className="inline-flex items-center gap-1 text-xs text-[#f97316] font-medium group-hover:gap-2 transition-all">
+                            Voir les offres
+                            <ChevronRight className="w-3.5 h-3.5" />
+                        </span>
+                    </div>
                 </div>
             </div>
-        </div>
+        </Link>
     );
 }

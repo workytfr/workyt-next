@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
                 ]);
                 pObj.availableCodesFree = freeCodes;
                 pObj.availableCodesPremium = premiumCodes;
+                pObj.availableCodes = { free: freeCodes, premium: premiumCodes };
                 return pObj;
             })
         );
@@ -67,7 +68,22 @@ export async function POST(req: NextRequest) {
         await dbConnect();
         
         const body = await req.json();
-        
+
+        // Nettoyer les chaînes vides pour les champs optionnels numériques
+        const optionalNumericFields = ['maxUsesPerDay', 'maxUsesPerUser'];
+        for (const field of optionalNumericFields) {
+            if (body[field] === '' || body[field] === null) {
+                delete body[field];
+            }
+        }
+        // Nettoyer les chaînes vides pour les champs optionnels string
+        const optionalStringFields = ['promoCodePrefix', 'website', 'phone', 'email', 'endDate'];
+        for (const field of optionalStringFields) {
+            if (body[field] === '') {
+                delete body[field];
+            }
+        }
+
         // Validation des données requises
         const requiredFields = ['name', 'description', 'logo', 'image', 'category', 'city', 'address'];
         for (const field of requiredFields) {

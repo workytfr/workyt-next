@@ -35,18 +35,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    // Vérifier si l'utilisateur a déjà un code promo attribué (globalement, tous partenaires confondus)
-    const existingCode = await PromoCode.findOne({ assignedTo: user._id });
+    // Vérifier si l'utilisateur a déjà un code promo pour CE partenaire
+    const existingCode = await PromoCode.findOne({ assignedTo: user._id, partnerId });
     if (existingCode) {
-      // L'user a déjà un code, lui retourner son code existant
-      const existingPartner = await Partner.findById(existingCode.partnerId);
       return NextResponse.json({
         success: true,
         alreadyHasCode: true,
         data: {
-          message: 'Vous avez déjà un code promo actif. Un seul code promo par utilisateur.',
+          message: 'Vous avez déjà un code promo pour ce partenaire.',
           promoCode: existingCode.code,
-          partnerName: existingPartner?.name || 'Partenaire',
+          partnerName: (await Partner.findById(existingCode.partnerId))?.name || 'Partenaire',
           offerType: existingCode.offerType,
           partnerId: existingCode.partnerId,
           assignedAt: existingCode.assignedAt

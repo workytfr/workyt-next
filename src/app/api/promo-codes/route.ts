@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     const partnerId = searchParams.get('partnerId');
     const myCode = searchParams.get('myCode'); // Si l'user veut voir son code
 
-    // Un user veut voir son code attribué
+    // Un user veut voir ses codes attribués
     if (myCode === 'true') {
       const User = (await import('@/models/User')).default;
       const user = await User.findOne({ email: session.user.email });
@@ -34,12 +34,12 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
       }
 
-      const userCode = await PromoCode.findOne({ assignedTo: user._id })
+      const userCodes = await PromoCode.find({ assignedTo: user._id })
         .populate('partnerId', 'name logo image category city');
 
       return NextResponse.json({
-        hasCode: !!userCode,
-        code: userCode || null
+        hasCodes: userCodes.length > 0,
+        codes: userCodes
       });
     }
 

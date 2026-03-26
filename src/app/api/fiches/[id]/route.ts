@@ -28,7 +28,8 @@ export const GET = async (req: NextRequest, { params }: { params: Promise<{ id: 
             .populate({
                 path: "likedBy.userId",
                 select: "username",
-            });
+            })
+            .populate("courseId", "title slug");
 
         if (!fiche) {
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });

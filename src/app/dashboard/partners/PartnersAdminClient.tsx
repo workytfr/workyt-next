@@ -20,7 +20,12 @@ import {
     Package,
     CheckCircle,
     Clock,
-    AlertCircle
+    AlertCircle,
+    Info,
+    Image,
+    Link,
+    Calendar,
+    Tag
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -818,12 +823,21 @@ export default function PartnersAdminClient() {
             {/* Modal d'ajout/édition */}
             {showAddModal && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-                        <div className="p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <h2 className="text-2xl font-bold">
-                                    {editingPartner ? 'Modifier le partenaire' : 'Ajouter un partenaire'}
-                                </h2>
+                    <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl">
+                        {/* Header */}
+                        <div className="sticky top-0 bg-white border-b px-6 py-4 rounded-t-xl z-10">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${editingPartner ? 'bg-blue-100' : 'bg-green-100'}`}>
+                                        {editingPartner ? <Edit className="w-5 h-5 text-blue-600" /> : <Plus className="w-5 h-5 text-green-600" />}
+                                    </div>
+                                    <div>
+                                        <h2 className="text-xl font-bold text-gray-900">
+                                            {editingPartner ? 'Modifier le partenaire' : 'Nouveau partenaire'}
+                                        </h2>
+                                        <p className="text-sm text-gray-500">Les champs avec * sont obligatoires</p>
+                                    </div>
+                                </div>
                                 <Button
                                     variant="ghost"
                                     size="sm"
@@ -833,175 +847,244 @@ export default function PartnersAdminClient() {
                                         resetForm();
                                     }}
                                 >
-                                    <X className="w-4 h-4" />
+                                    <X className="w-5 h-5" />
                                 </Button>
                             </div>
+                        </div>
 
-                            <form onSubmit={handleSubmit} className="space-y-6">
-                                {/* Informations de base */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-6">
+                            <form onSubmit={handleSubmit} className="space-y-8">
+                                {/* Section 1 : Identité */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b">
+                                        <Store className="w-5 h-5 text-gray-600" />
+                                        <h3 className="text-lg font-semibold text-gray-800">Identité du partenaire</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="name">Nom *</Label>
+                                            <Input
+                                                id="name"
+                                                value={formData.name}
+                                                onChange={(e) => handleInputChange('name', e.target.value.slice(0, 100))}
+                                                placeholder="Nom du partenaire"
+                                                required
+                                                maxLength={100}
+                                            />
+                                            <p className={`text-xs mt-1 text-right ${formData.name.length > 80 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                                {formData.name.length}/100
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="category">Catégorie *</Label>
+                                            <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Sélectionner une catégorie" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {categories.map(cat => (
+                                                        <SelectItem key={cat.value} value={cat.value}>
+                                                            {cat.icon} {cat.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+                                    </div>
+
                                     <div>
-                                        <Label htmlFor="name">Nom du partenaire *</Label>
-                                        <Input
-                                            id="name"
-                                            value={formData.name}
-                                            onChange={(e) => handleInputChange('name', e.target.value)}
+                                        <Label htmlFor="description">Description *</Label>
+                                        <Textarea
+                                            id="description"
+                                            value={formData.description}
+                                            onChange={(e) => handleInputChange('description', e.target.value.slice(0, 2000))}
+                                            rows={3}
+                                            placeholder="Décrivez le partenaire, ses activités et ses services..."
                                             required
+                                            maxLength={2000}
                                         />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="category">Catégorie *</Label>
-                                        <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Sélectionner une catégorie" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {categories.map(cat => (
-                                                    <SelectItem key={cat.value} value={cat.value}>
-                                                        {cat.icon} {cat.label}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                        <p className={`text-xs mt-1 text-right ${formData.description.length > 1800 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                            {formData.description.length}/2000
+                                        </p>
                                     </div>
                                 </div>
 
-                                <div>
-                                    <Label htmlFor="description">Description *</Label>
-                                    <Textarea
-                                        id="description"
-                                        value={formData.description}
-                                        onChange={(e) => handleInputChange('description', e.target.value)}
-                                        rows={3}
-                                        required
-                                    />
-                                </div>
+                                {/* Section 2 : Localisation & Contact */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b">
+                                        <MapPin className="w-5 h-5 text-gray-600" />
+                                        <h3 className="text-lg font-semibold text-gray-800">Localisation & Contact</h3>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="city">Ville *</Label>
+                                            <Input
+                                                id="city"
+                                                value={formData.city}
+                                                onChange={(e) => handleInputChange('city', e.target.value)}
+                                                placeholder="Ex: Paris, Sans Adresse..."
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="address">Adresse *</Label>
+                                            <Input
+                                                id="address"
+                                                value={formData.address}
+                                                onChange={(e) => handleInputChange('address', e.target.value)}
+                                                placeholder="Ex: 12 rue de la Paix, En ligne..."
+                                                required
+                                            />
+                                        </div>
+                                    </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="city">Ville *</Label>
-                                        <Input
-                                            id="city"
-                                            value={formData.city}
-                                            onChange={(e) => handleInputChange('city', e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="address">Adresse *</Label>
-                                        <Input
-                                            id="address"
-                                            value={formData.address}
-                                            onChange={(e) => handleInputChange('address', e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <Label htmlFor="website">Site web</Label>
-                                        <Input
-                                            id="website"
-                                            type="url"
-                                            value={formData.website}
-                                            onChange={(e) => handleInputChange('website', e.target.value)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="phone">Téléphone</Label>
-                                        <Input
-                                            id="phone"
-                                            value={formData.phone}
-                                            onChange={(e) => handleInputChange('phone', e.target.value)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="email">Email</Label>
-                                        <Input
-                                            id="email"
-                                            type="email"
-                                            value={formData.email}
-                                            onChange={(e) => handleInputChange('email', e.target.value)}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div>
-                                        <Label htmlFor="logo">URL du logo *</Label>
-                                        <Input
-                                            id="logo"
-                                            value={formData.logo}
-                                            onChange={(e) => handleInputChange('logo', e.target.value)}
-                                            required
-                                        />
-                                    </div>
-                                    <div>
-                                        <Label htmlFor="image">URL de l&apos;image *</Label>
-                                        <Input
-                                            id="image"
-                                            value={formData.image}
-                                            onChange={(e) => handleInputChange('image', e.target.value)}
-                                            required
-                                        />
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <Label htmlFor="website" className="flex items-center gap-1">
+                                                <Globe className="w-3.5 h-3.5" /> Site web
+                                            </Label>
+                                            <Input
+                                                id="website"
+                                                type="url"
+                                                value={formData.website}
+                                                onChange={(e) => handleInputChange('website', e.target.value)}
+                                                placeholder="https://..."
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="phone" className="flex items-center gap-1">
+                                                <Phone className="w-3.5 h-3.5" /> Téléphone
+                                            </Label>
+                                            <Input
+                                                id="phone"
+                                                value={formData.phone}
+                                                onChange={(e) => handleInputChange('phone', e.target.value)}
+                                                placeholder="01 23 45 67 89"
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="email" className="flex items-center gap-1">
+                                                <Mail className="w-3.5 h-3.5" /> Email
+                                            </Label>
+                                            <Input
+                                                id="email"
+                                                type="email"
+                                                value={formData.email}
+                                                onChange={(e) => handleInputChange('email', e.target.value)}
+                                                placeholder="contact@..."
+                                            />
+                                        </div>
                                     </div>
                                 </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    <div>
-                                        <Label htmlFor="startDate">Date de début *</Label>
-                                        <Input
-                                            id="startDate"
-                                            type="date"
-                                            value={formData.startDate}
-                                            onChange={(e) => handleInputChange('startDate', e.target.value)}
-                                            required
-                                        />
+                                {/* Section 3 : Visuels */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b">
+                                        <Image className="w-5 h-5 text-gray-600" />
+                                        <h3 className="text-lg font-semibold text-gray-800">Visuels</h3>
                                     </div>
-                                    <div>
-                                        <Label htmlFor="endDate">Date de fin</Label>
-                                        <Input
-                                            id="endDate"
-                                            type="date"
-                                            value={formData.endDate}
-                                            onChange={(e) => handleInputChange('endDate', e.target.value)}
-                                        />
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <Switch
-                                            id="isActive"
-                                            checked={formData.isActive}
-                                            onCheckedChange={(checked) => handleInputChange('isActive', checked)}
-                                        />
-                                        <Label htmlFor="isActive">Actif</Label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <Label htmlFor="logo">URL du logo *</Label>
+                                            <Input
+                                                id="logo"
+                                                value={formData.logo}
+                                                onChange={(e) => handleInputChange('logo', e.target.value)}
+                                                placeholder="https://example.com/logo.png"
+                                                required
+                                            />
+                                            {formData.logo && (
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    <img src={formData.logo} alt="Aperçu logo" className="w-10 h-10 rounded-full object-cover border" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                                                    <span className="text-xs text-gray-400">Aperçu</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="image">URL de l&apos;image *</Label>
+                                            <Input
+                                                id="image"
+                                                value={formData.image}
+                                                onChange={(e) => handleInputChange('image', e.target.value)}
+                                                placeholder="https://example.com/image.png"
+                                                required
+                                            />
+                                            {formData.image && (
+                                                <div className="mt-2">
+                                                    <img src={formData.image} alt="Aperçu image" className="w-full h-20 rounded-lg object-cover border" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
 
-                                {/* Info sur les codes promo */}
-                                <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Ticket className="w-5 h-5 text-orange-600" />
-                                        <h3 className="font-semibold text-orange-800">Codes promo</h3>
+                                {/* Section 4 : Planification */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b">
+                                        <Calendar className="w-5 h-5 text-gray-600" />
+                                        <h3 className="text-lg font-semibold text-gray-800">Planification</h3>
                                     </div>
-                                    <p className="text-sm text-orange-700">
-                                        Les codes promo sont gérés via un pool de codes uniques.
-                                        Après avoir créé le partenaire, utilisez le bouton <Ticket className="w-3 h-3 inline" /> pour générer un batch de codes.
-                                        Chaque utilisateur recevra un code unique et ne pourra avoir qu&apos;un seul code promo actif.
-                                    </p>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        <div>
+                                            <Label htmlFor="startDate">Date de début *</Label>
+                                            <Input
+                                                id="startDate"
+                                                type="date"
+                                                value={formData.startDate}
+                                                onChange={(e) => handleInputChange('startDate', e.target.value)}
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <Label htmlFor="endDate">Date de fin</Label>
+                                            <Input
+                                                id="endDate"
+                                                type="date"
+                                                value={formData.endDate}
+                                                onChange={(e) => handleInputChange('endDate', e.target.value)}
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-3 pt-6">
+                                            <Switch
+                                                id="isActive"
+                                                checked={formData.isActive}
+                                                onCheckedChange={(checked) => handleInputChange('isActive', checked)}
+                                            />
+                                            <Label htmlFor="isActive" className="flex items-center gap-1.5">
+                                                <span className={`w-2 h-2 rounded-full ${formData.isActive ? 'bg-green-500' : 'bg-red-400'}`} />
+                                                {formData.isActive ? 'Actif' : 'Inactif'}
+                                            </Label>
+                                        </div>
+                                    </div>
                                 </div>
 
-                                {/* Types d'offres activés */}
-                                <div className="border-t pt-6">
-                                    <h3 className="text-lg font-semibold mb-4">Types d&apos;offres disponibles</h3>
-                                    <p className="text-sm text-gray-500 mb-3">
-                                        Choisissez quels types d&apos;offres seront visibles pour ce partenaire.
-                                        Vous pouvez activer uniquement les offres premium (payantes en gemmes) si souhaité.
+                                {/* Info codes promo */}
+                                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                    <div className="flex items-start gap-3">
+                                        <Info className="w-5 h-5 text-blue-600 mt-0.5 shrink-0" />
+                                        <div>
+                                            <h4 className="font-semibold text-blue-800 mb-1">Codes promo</h4>
+                                            <p className="text-sm text-blue-700">
+                                                Les codes promo sont gérés via un pool de codes uniques.
+                                                Après avoir créé le partenaire, utilisez le bouton <Ticket className="w-3 h-3 inline" /> pour générer un batch de codes.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Section 5 : Types d'offres */}
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2 pb-2 border-b">
+                                        <Tag className="w-5 h-5 text-gray-600" />
+                                        <h3 className="text-lg font-semibold text-gray-800">Offres</h3>
+                                    </div>
+                                    <p className="text-sm text-gray-500">
+                                        Activez les types d&apos;offres disponibles pour ce partenaire.
                                     </p>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div className={`flex items-center justify-between p-3 rounded-lg border ${formData.offersEnabled.free ? 'bg-green-50 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
+                                        <div className={`flex items-center justify-between p-4 rounded-lg border-2 transition-colors ${formData.offersEnabled.free ? 'bg-green-50 border-green-300' : 'bg-gray-50 border-gray-200'}`}>
                                             <div>
-                                                <Label htmlFor="enableFree" className="font-medium">Offre gratuite</Label>
+                                                <Label htmlFor="enableFree" className="font-semibold">Offre gratuite</Label>
                                                 <p className="text-xs text-gray-500">Sans coût en gemmes</p>
                                             </div>
                                             <Switch
@@ -1013,9 +1096,9 @@ export default function PartnersAdminClient() {
                                                 }))}
                                             />
                                         </div>
-                                        <div className={`flex items-center justify-between p-3 rounded-lg border ${formData.offersEnabled.premium ? 'bg-purple-50 border-purple-200' : 'bg-gray-50 border-gray-200'}`}>
+                                        <div className={`flex items-center justify-between p-4 rounded-lg border-2 transition-colors ${formData.offersEnabled.premium ? 'bg-purple-50 border-purple-300' : 'bg-gray-50 border-gray-200'}`}>
                                             <div>
-                                                <Label htmlFor="enablePremium" className="font-medium">Offre premium</Label>
+                                                <Label htmlFor="enablePremium" className="font-semibold">Offre premium</Label>
                                                 <p className="text-xs text-gray-500">Coût en gemmes</p>
                                             </div>
                                             <Switch
@@ -1029,14 +1112,20 @@ export default function PartnersAdminClient() {
                                         </div>
                                     </div>
                                     {!formData.offersEnabled.free && !formData.offersEnabled.premium && (
-                                        <p className="text-sm text-red-600 mt-2">Au moins un type d&apos;offre doit être activé.</p>
+                                        <p className="text-sm text-red-600 flex items-center gap-1">
+                                            <AlertCircle className="w-4 h-4" />
+                                            Au moins un type d&apos;offre doit être activé.
+                                        </p>
                                     )}
                                 </div>
 
                                 {/* Offre gratuite */}
                                 {formData.offersEnabled.free && (
-                                <div className="border-t pt-6">
-                                    <h3 className="text-lg font-semibold mb-4 text-green-700">Offre Gratuite</h3>
+                                <div className="space-y-4 bg-green-50/50 p-5 rounded-xl border border-green-200">
+                                    <h3 className="text-lg font-semibold text-green-700 flex items-center gap-2">
+                                        <CheckCircle className="w-5 h-5" />
+                                        Offre Gratuite
+                                    </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div>
                                             <Label htmlFor="freeType">Type d&apos;offre</Label>
@@ -1071,29 +1160,38 @@ export default function PartnersAdminClient() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-4">
+                                    <div>
                                         <Label htmlFor="freeDescription">Description de l&apos;offre *</Label>
                                         <Textarea
                                             id="freeDescription"
                                             value={formData.offers.free.description}
-                                            onChange={(e) => handleInputChange('offers.free.description', e.target.value)}
+                                            onChange={(e) => handleInputChange('offers.free.description', e.target.value.slice(0, 500))}
                                             rows={2}
                                             required
+                                            maxLength={500}
+                                            placeholder="Décrivez l'offre gratuite proposée..."
                                         />
+                                        <p className={`text-xs mt-1 text-right ${formData.offers.free.description.length > 450 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                            {formData.offers.free.description.length}/500
+                                        </p>
                                     </div>
 
-                                    <div className="mt-4">
+                                    <div>
                                         <Label htmlFor="freePromoDescription">Description de la promo *</Label>
                                         <Input
                                             id="freePromoDescription"
                                             value={formData.offers.free.promoDescription}
-                                            onChange={(e) => handleInputChange('offers.free.promoDescription', e.target.value)}
+                                            onChange={(e) => handleInputChange('offers.free.promoDescription', e.target.value.slice(0, 300))}
                                             placeholder="Ex: Utilisez ce code sur le site pour 10% de réduction"
                                             required
+                                            maxLength={300}
                                         />
+                                        <p className={`text-xs mt-1 text-right ${formData.offers.free.promoDescription.length > 270 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                            {formData.offers.free.promoDescription.length}/300
+                                        </p>
                                     </div>
 
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <div className="flex items-center space-x-2">
                                             <Switch
                                                 id="freeJustificationRequired"
@@ -1123,15 +1221,19 @@ export default function PartnersAdminClient() {
                                     </div>
 
                                     {formData.offers.free.justificationRequired && (
-                                        <div className="mt-4">
+                                        <div>
                                             <Label htmlFor="freeJustificationTemplate">Template du justificatif</Label>
                                             <Textarea
                                                 id="freeJustificationTemplate"
                                                 value={formData.offers.free.justificationTemplate}
-                                                onChange={(e) => handleInputChange('offers.free.justificationTemplate', e.target.value)}
+                                                onChange={(e) => handleInputChange('offers.free.justificationTemplate', e.target.value.slice(0, 500))}
                                                 rows={2}
                                                 placeholder="Template personnalisé pour le justificatif"
+                                                maxLength={500}
                                             />
+                                            <p className={`text-xs mt-1 text-right ${formData.offers.free.justificationTemplate.length > 450 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                                {formData.offers.free.justificationTemplate.length}/500
+                                            </p>
                                         </div>
                                     )}
                                 </div>
@@ -1139,8 +1241,11 @@ export default function PartnersAdminClient() {
 
                                 {/* Offre premium */}
                                 {formData.offersEnabled.premium && (
-                                <div className="border-t pt-6">
-                                    <h3 className="text-lg font-semibold mb-4 text-purple-700">Offre Premium</h3>
+                                <div className="space-y-4 bg-purple-50/50 p-5 rounded-xl border border-purple-200">
+                                    <h3 className="text-lg font-semibold text-purple-700 flex items-center gap-2">
+                                        <Gem className="w-5 h-5" />
+                                        Offre Premium
+                                    </h3>
                                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                         <div>
                                             <Label htmlFor="premiumType">Type d&apos;offre</Label>
@@ -1174,7 +1279,9 @@ export default function PartnersAdminClient() {
                                             />
                                         </div>
                                         <div>
-                                            <Label htmlFor="premiumGemsCost">Coût en gemmes *</Label>
+                                            <Label htmlFor="premiumGemsCost" className="flex items-center gap-1">
+                                                <Gem className="w-3.5 h-3.5 text-purple-500" /> Coût en gemmes *
+                                            </Label>
                                             <Input
                                                 id="premiumGemsCost"
                                                 type="number"
@@ -1185,27 +1292,37 @@ export default function PartnersAdminClient() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-4">
+                                    <div>
                                         <Label htmlFor="premiumDescription">Description de l&apos;offre *</Label>
                                         <Textarea
                                             id="premiumDescription"
                                             value={formData.offers.premium.description}
-                                            onChange={(e) => handleInputChange('offers.premium.description', e.target.value)}
-                                            rows={2}
+                                            onChange={(e) => handleInputChange('offers.premium.description', e.target.value.slice(0, 500))}
+                                            rows={3}
                                             required
+                                            maxLength={500}
+                                            placeholder="Décrivez l'offre premium proposée..."
                                         />
+                                        <p className={`text-xs mt-1 text-right ${formData.offers.premium.description.length > 450 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                            {formData.offers.premium.description.length}/500
+                                        </p>
                                     </div>
 
-                                    <div className="mt-4">
+                                    <div>
                                         <Label htmlFor="premiumPromoDescription">Description de la promo *</Label>
                                         <Input
                                             id="premiumPromoDescription"
                                             value={formData.offers.premium.promoDescription}
-                                            onChange={(e) => handleInputChange('offers.premium.promoDescription', e.target.value)}
+                                            onChange={(e) => handleInputChange('offers.premium.promoDescription', e.target.value.slice(0, 300))}
+                                            maxLength={300}
+                                            placeholder="Ex: -20% sur l'abonnement annuel"
                                         />
+                                        <p className={`text-xs mt-1 text-right ${formData.offers.premium.promoDescription.length > 270 ? 'text-orange-500' : 'text-gray-400'}`}>
+                                            {formData.offers.premium.promoDescription.length}/300
+                                        </p>
                                     </div>
 
-                                    <div className="mt-4">
+                                    <div>
                                         <Label>Avantages supplémentaires</Label>
                                         <div className="space-y-2">
                                             {formData.offers.premium.additionalBenefits?.map((benefit, index) => (
@@ -1214,13 +1331,14 @@ export default function PartnersAdminClient() {
                                                         value={benefit}
                                                         onChange={(e) => updateAdditionalBenefit(index, e.target.value)}
                                                         placeholder="Avantage supplémentaire"
+                                                        maxLength={100}
                                                     />
                                                     <Button
                                                         type="button"
                                                         variant="outline"
                                                         size="sm"
                                                         onClick={() => removeAdditionalBenefit(index)}
-                                                        className="text-red-600"
+                                                        className="text-red-600 hover:bg-red-50"
                                                     >
                                                         <Trash2 className="w-4 h-4" />
                                                     </Button>
@@ -1231,7 +1349,7 @@ export default function PartnersAdminClient() {
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={addAdditionalBenefit}
-                                                className="w-full"
+                                                className="w-full border-dashed"
                                             >
                                                 <Plus className="w-4 h-4 mr-2" />
                                                 Ajouter un avantage
@@ -1239,7 +1357,7 @@ export default function PartnersAdminClient() {
                                         </div>
                                     </div>
 
-                                    <div className="mt-4">
+                                    <div>
                                         <Label htmlFor="premiumJustificationType">Type de justificatif</Label>
                                         <Select
                                             value={formData.offers.premium.justificationType}
@@ -1275,7 +1393,7 @@ export default function PartnersAdminClient() {
                                     </Button>
                                     <Button type="submit" className="flex items-center gap-2">
                                         <Save className="w-4 h-4" />
-                                        {editingPartner ? 'Mettre à jour' : 'Ajouter'}
+                                        {editingPartner ? 'Mettre à jour' : 'Ajouter le partenaire'}
                                     </Button>
                                 </div>
                             </form>

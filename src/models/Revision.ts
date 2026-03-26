@@ -23,6 +23,7 @@ export interface IRevision extends Document {
     files: string[]; // URLs des fichiers (images ou PDF)
     subject: string; // Matière (ex: Mathématiques, Physique)
     level: string; // Niveau ou classe (ex: Terminale, 1ère, Collège)
+    courseId?: mongoose.Types.ObjectId; // Référence optionnelle à un cours
     createdAt: Date; // Date de création
 }
 
@@ -91,6 +92,11 @@ const RevisionSchema: Schema<IRevision> = new Schema({
         type: String,
         required: true, // Le niveau ou classe est obligatoire
     }, // Exemple : Terminale, 1ère, Collège
+    courseId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course',
+        default: undefined,
+    },
     createdAt: {
         type: Date,
         default: Date.now,

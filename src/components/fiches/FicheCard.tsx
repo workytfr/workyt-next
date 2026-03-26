@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import { PiFireSimpleFill } from "react-icons/pi";
 import { MdInfoOutline, MdInsertComment } from "react-icons/md";
+import { BookOpen } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import SubjectIcon from "@/components/fiches/SubjectIcon";
 import { levelColors, subjectColors, subjectGradients } from "@/data/educationData";
@@ -22,6 +23,7 @@ interface Fiche {
     status: string;
     level: string;
     subject: string;
+    course?: { _id: string; title: string } | null;
     createdAt: string;
 }
 
@@ -66,6 +68,12 @@ const FicheCard = ({ fiche, username }: { fiche: Fiche; username: string }) => {
                     <Badge className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs px-2 py-0.5 rounded-full">
                         {fiche.subject}
                     </Badge>
+                    {fiche.course && (
+                        <Badge className="bg-orange-500/90 backdrop-blur-sm text-white text-xs px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <BookOpen className="w-3 h-3" />
+                            {fiche.course.title}
+                        </Badge>
+                    )}
                 </div>
             </div>
 

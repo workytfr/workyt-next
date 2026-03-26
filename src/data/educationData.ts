@@ -250,3 +250,66 @@ export function getSubjectGradient(subject: string): string {
 export function getSubjectIconComponent(subject: string): LucideIcon {
     return subjectIconComponents[subject] || BookOpen;
 }
+
+/**
+ * Vérifie si le dépôt de fiches est autorisé pour une matière et un niveau donnés.
+ * Par défaut, toutes les combinaisons sont autorisées sauf celles explicitement bloquées.
+ */
+export function canSubmitFicheForCourse(subject: string, level: string): boolean {
+    // Liste des combinaisons bloquées (matière + niveau)
+    const blockedCombinations: Array<{ subject?: string; level?: string }> = [
+        // Exemples de restrictions possibles:
+        // { subject: "EPS", level: "Doctorat" },
+        // { subject: "Arts Plastiques" }, // Bloque toute la matière
+        // { level: "BTS" }, // Bloque tout le niveau
+    ];
+
+    // Vérifier si la matière existe dans notre référentiel
+    const isValidSubject = educationData.subjects.includes(subject);
+    const isValidLevel = educationData.levels.includes(level);
+
+    // Si la matière ou le niveau n'existe pas dans notre référentiel, on bloque
+    if (!isValidSubject || !isValidLevel) {
+        return false;
+    }
+
+    // Vérifier les combinaisons bloquées
+    const isBlocked = blockedCombinations.some((blocked) => {
+        const matchSubject = blocked.subject ? blocked.subject === subject : true;
+        const matchLevel = blocked.level ? blocked.level === level : true;
+        return matchSubject && matchLevel;
+    });
+
+    return !isBlocked;
+}
+
+/**
+ * Retourne la raison du blocage du dépôt de fiche pour une matière/niveau.
+ * Utile pour afficher un message explicatif.
+ */
+export function getFicheSubmissionBlockedReason(subject: string, level: string): string | null {
+    const isValidSubject = educationData.subjects.includes(subject);
+    const isValidLevel = educationData.levels.includes(level);
+
+    if (!isValidSubject) {
+        return `La matière "${subject}" n'est pas reconnue dans notre référentiel.`;
+    }
+
+    if (!isValidLevel) {
+        return `Le niveau "${level}" n'est pas reconnu dans notre référentiel.`;
+    }
+
+    // Vérifier les combinaisons spécifiques bloquées
+    const blockedCombinations: Array<{ subject?: string; level?: string; reason: string }> = [
+        // Exemples:
+        // { subject: "EPS", level: "Doctorat", reason: "Le dépôt de fiches EPS n'est pas disponible pour le Doctorat." },
+    ];
+
+    const blocked = blockedCombinations.find((b) => {
+        const matchSubject = b.subject ? b.subject === subject : true;
+        const matchLevel = b.level ? b.level === level : true;
+        return matchSubject && matchLevel;
+    });
+
+    return blocked?.reason || null;
+}
