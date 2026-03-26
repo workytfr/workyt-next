@@ -143,7 +143,7 @@ const PartnerSchema = new Schema<IPartner>({
             description: {
                 type: String,
                 trim: true,
-                maxlength: [200, 'La description ne peut pas dépasser 200 caractères']
+                maxlength: [500, 'La description ne peut pas dépasser 500 caractères']
             },
             conditions: {
                 type: String,
@@ -193,7 +193,7 @@ const PartnerSchema = new Schema<IPartner>({
             description: {
                 type: String,
                 trim: true,
-                maxlength: [200, 'La description ne peut pas dépasser 200 caractères']
+                maxlength: [500, 'La description ne peut pas dépasser 500 caractères']
             },
             conditions: {
                 type: String,
