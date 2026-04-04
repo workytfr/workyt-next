@@ -6,6 +6,7 @@ import Lesson from "@/models/Lesson";
 import Exercise from "@/models/Exercise";
 import Quiz from "@/models/Quiz";
 import authMiddleware from "@/middlewares/authMiddleware";
+import { hasPermission } from "@/lib/roles";
 
 /**
  * 🚀 GET - Récupérer un cours spécifique (Accès public)
@@ -53,7 +54,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Vous ne pouvez modifier que vos propres cours." }, { status: 403 });
         }
 
-        if (!["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!(await hasPermission(user.role, 'course.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

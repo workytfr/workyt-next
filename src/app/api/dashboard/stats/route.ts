@@ -7,6 +7,7 @@ import Exercise from '@/models/Exercise';
 import Quiz from '@/models/Quiz';
 import User from '@/models/User';
 import authMiddleware from '@/middlewares/authMiddleware';
+import { hasPermission } from '@/lib/roles';
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
     try {
         const user = await authMiddleware(req);
 
-        if (!user || typeof user.role !== 'string' || !['Helpeur', 'Rédacteur', 'Correcteur', 'Admin'].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'dashboard.access'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 

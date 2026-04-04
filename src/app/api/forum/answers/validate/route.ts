@@ -6,6 +6,7 @@ import Question from "@/models/Question";
 import User from "@/models/User";
 import PointTransaction from "@/models/PointTransaction";
 import { BadgeService } from "@/lib/badgeService";
+import { hasPermission } from "@/lib/roles";
 
 export async function POST(req: NextRequest) {
     try {
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
 
         // ✅ Vérifier si l'utilisateur est autorisé à valider la réponse
         const isOwner = user._id.toString() === question.user._id.toString();
-        const isStaff = ["Admin", "Correcteur", "Helpeur"].includes(user.role);
+        const isStaff = await hasPermission(user.role, 'forum.validate_answer');
 
         if (!isOwner && !isStaff) {
             return NextResponse.json(

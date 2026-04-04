@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import Exercise, { DifficultyLevel } from "@/models/Exercise";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
+import { hasPermission } from "@/lib/roles";
 
 /**
  * 🚀 GET - Récupérer un exercice spécifique (Accès public)
@@ -37,7 +38,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!user.role || typeof user.role !== 'string' || !["Helpeur", "Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!(await hasPermission(user.role, 'course.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

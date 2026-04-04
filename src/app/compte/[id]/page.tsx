@@ -37,6 +37,7 @@ import { calculateUserRank } from "@/lib/rankSystem";
 import { FlameIcon, getFlameLevel, FLAME_CONFIGS } from "@/components/ui/StreakIndicator";
 import useSWR from "swr";
 import { buildIdSlug } from "@/utils/slugify";
+import AccountCompetencies from "../_components/AccountCompetencies";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
@@ -341,6 +342,9 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                             <BadgeDisplay userId={id} />
                         </CardContent>
                     </Card>
+
+                    {/* Compétences — uniquement visible par le propriétaire */}
+                    {isOwner && <AccountCompetencies />}
 
                     {/* Contribution Graph Section - compact style GitHub */}
                     <Card className="border border-gray-200 rounded-2xl shadow-sm">

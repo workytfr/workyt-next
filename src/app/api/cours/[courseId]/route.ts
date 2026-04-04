@@ -5,6 +5,7 @@ import dbConnect from "@/lib/mongodb";
 import Course from "@/models/Course";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { isValidObjectId } from "mongoose";
+import { hasPermission } from "@/lib/roles";
 
 export async function GET(
     req: NextRequest,
@@ -35,7 +36,7 @@ export async function GET(
         const query: any = { _id: courseId };
 
         // If user is not authorized to see unpublished content
-        if (!user || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
             query.status = "publie";
         }
 
@@ -59,7 +60,7 @@ export async function GET(
         const response = {
             cours,
             userRole: user?.role || "anonymous",
-            canEdit: user && typeof user.role === 'string' && ["Rédacteur", "Correcteur", "Admin"].includes(user.role)
+            canEdit: user ? await hasPermission(user.role, 'course.edit') : false
         };
 
         return NextResponse.json(response, { status: 200 });
@@ -90,7 +91,7 @@ export async function PATCH(
         // Require authentication for updates
         const user = await authMiddleware(req);
 
-        if (!user || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
             return NextResponse.json(
                 { error: "Accès non autorisé" },
                 { status: 403 }

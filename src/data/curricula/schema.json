@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Curriculum Seed",
+  "description": "Format de données pour importer un programme scolaire dans Workyt",
+  "type": "object",
+  "required": ["version", "cycle", "level", "subject", "themes"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Année scolaire du programme",
+      "example": "2025-2026"
+    },
+    "cycle": {
+      "type": "string",
+      "enum": ["cycle3", "cycle4", "lycee", "superieur"]
+    },
+    "level": {
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ],
+      "description": "Niveau(x) concerné(s)"
+    },
+    "subject": {
+      "type": "string",
+      "description": "Identifiant de la matière (ex: mathematiques)"
+    },
+    "track": {
+      "type": "string",
+      "description": "Filière (optionnel, pour lycée/supérieur)"
+    },
+    "sourceReference": {
+      "type": "string",
+      "description": "Référence au Bulletin Officiel"
+    },
+    "themes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "order", "chapters"],
+        "properties": {
+          "name": { "type": "string" },
+          "order": { "type": "integer" },
+          "chapters": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["name", "skills"],
+              "properties": {
+                "name": { "type": "string" },
+                "subChapter": { "type": "string" },
+                "levels": {
+                  "type": "array",
+                  "items": { "type": "string" },
+                  "description": "Sous-ensemble de niveaux pour ce chapitre"
+                },
+                "estimatedHours": { "type": "number" },
+                "examFrequency": { "type": "number", "minimum": 0, "maximum": 100 },
+                "order": { "type": "integer" },
+                "skills": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "required": ["id", "description"],
+                    "properties": {
+                      "id": { "type": "string", "description": "Identifiant unique de la compétence" },
+                      "description": { "type": "string" },
+                      "difficulty": { "type": "integer", "minimum": 1, "maximum": 5 },
+                      "keywords": { "type": "array", "items": { "type": "string" } },
+                      "prerequisites": { "type": "array", "items": { "type": "string" } }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -6,10 +6,10 @@ import User from '@/models/User';
 import mongoose from 'mongoose';
 
 export interface CreateNotificationData {
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout';
     recipientId: string;
     senderId: string;
-    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest';
+    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation';
     relatedEntityId: string;
     title: string;
     message: string;
@@ -402,6 +402,85 @@ export class NotificationService {
             });
         } catch (error) {
             console.error('Erreur lors de la notification de quête complétée:', error);
+        }
+    }
+
+    /**
+     * Notifie les helpers qu'une évaluation a été soumise
+     */
+    static async notifyEvaluationSubmitted(
+        studentId: string,
+        studentName: string,
+        courseTitle: string,
+        submissionId: string
+    ): Promise<void> {
+        try {
+            const helpers = await User.find(
+                { role: { $in: ['Correcteur', 'Helpeur', 'Admin'] } },
+                '_id'
+            ).lean();
+
+            for (const helper of helpers) {
+                await this.createNotification({
+                    type: 'evaluation_submitted',
+                    recipientId: helper._id.toString(),
+                    senderId: studentId,
+                    relatedEntityType: 'evaluation',
+                    relatedEntityId: submissionId,
+                    title: 'Nouvelle évaluation à corriger',
+                    message: `${studentName} a soumis une évaluation pour "${courseTitle}".`,
+                });
+            }
+        } catch (error) {
+            console.error('Erreur notification évaluation soumise:', error);
+        }
+    }
+
+    /**
+     * Notifie l'élève que son évaluation a été corrigée
+     */
+    static async notifyEvaluationGraded(
+        studentId: string,
+        evaluatorId: string,
+        grade: number,
+        courseTitle: string,
+        submissionId: string
+    ): Promise<void> {
+        try {
+            await this.createNotification({
+                type: 'evaluation_graded',
+                recipientId: studentId,
+                senderId: evaluatorId,
+                relatedEntityType: 'evaluation',
+                relatedEntityId: submissionId,
+                title: 'Évaluation corrigée',
+                message: `Votre évaluation pour "${courseTitle}" a été notée : ${grade}/20.`,
+            });
+        } catch (error) {
+            console.error('Erreur notification évaluation corrigée:', error);
+        }
+    }
+
+    /**
+     * Notifie l'élève que son évaluation a expiré (timeout → 0/20)
+     */
+    static async notifyEvaluationTimeout(
+        studentId: string,
+        courseTitle: string,
+        submissionId: string
+    ): Promise<void> {
+        try {
+            await this.createNotification({
+                type: 'evaluation_timeout',
+                recipientId: studentId,
+                senderId: studentId,
+                relatedEntityType: 'evaluation',
+                relatedEntityId: submissionId,
+                title: 'Évaluation non soumise',
+                message: `Temps dépassé pour l'évaluation de "${courseTitle}". Note : 0/20.`,
+            });
+        } catch (error) {
+            console.error('Erreur notification évaluation timeout:', error);
         }
     }
 }

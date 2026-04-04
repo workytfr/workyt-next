@@ -6,6 +6,7 @@ import User from "@/models/User";
 import { optionalAuthMiddleware } from "@/middlewares/authMiddleware";
 import { Types, isValidObjectId } from "mongoose";
 import { escapeRegex } from "@/utils/escapeRegex";
+import { hasPermission } from "@/lib/roles";
 
 // Forcer le rendu dynamique pour éviter l'erreur
 export const dynamic = "force-dynamic";
@@ -33,7 +34,7 @@ export async function GET(req: NextRequest) {
 
         // Pour un accès public aux cours, on affiche uniquement ceux qui sont publiés
         // Les utilisateurs avec des rôles spécifiques peuvent voir tous les cours
-        if (!user || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
             filters.status = "publie";
         }
 

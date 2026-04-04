@@ -7,6 +7,7 @@ import User from "@/models/User";
 import Comment from "@/models/Comment";
 import Report from "@/models/Report";
 import { generateSignedUrl, deleteFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils";
+import { hasPermission } from "@/lib/roles";
 
 // Connexion à MongoDB
 connectDB();
@@ -80,7 +81,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Non autorisé." }, { status: 401 });
         }
 
-        if (!session.user.role || typeof session.user.role !== 'string' || !["Admin", "Correcteur", "Rédacteur", "Helpeur"].includes(session.user.role)) {
+        if (!(await hasPermission(session.user.role as string, 'fiche.edit'))) {
             return NextResponse.json(
                 { success: false, message: "Accès refusé. Vous n'avez pas les permissions nécessaires pour modifier cette fiche." },
                 { status: 403 }
@@ -94,7 +95,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
 
         const body = await req.json();
 
-        const allowedFields = ['title', 'content', 'subject', 'level', 'status', 'files'];
+        const allowedFields = ['title', 'content', 'subject', 'level', 'status', 'files', 'competencies'];
         const updatedData: Record<string, any> = {};
         for (const field of allowedFields) {
             if (body[field] !== undefined) {

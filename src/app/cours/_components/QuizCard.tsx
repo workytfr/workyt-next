@@ -1,189 +1,221 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { CheckCircle, PlayCircle, Trophy, Target, Star, Lock, Zap, Timer, Award } from 'lucide-react';
-import { useSession } from 'next-auth/react';
-import { Quiz } from './types';
-import "./styles/notion-theme.css";
+import React, { useState, useEffect } from "react";
+import { Quiz } from "./types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/button";
+import { Award, Clock, CheckCircle2, HelpCircle, Trophy, ChevronDown, ChevronUp } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface QuizCardProps {
-    quiz: Quiz;
+    quiz: Quiz & { 
+        completed?: boolean; 
+        percentage?: number; 
+        score?: number; 
+        maxScore?: number;
+        competencies?: string[];
+    };
     onStartQuiz: (quizId: string) => void;
 }
 
+interface CompetencyInfo {
+    skillId: string;
+    description: string;
+    status: "not_started" | "in_progress" | "failed" | "mastered";
+    nextReview?: string;
+}
+
 export default function QuizCard({ quiz, onStartQuiz }: QuizCardProps) {
-    const { data: session } = useSession();
-    const [isHovered, setIsHovered] = useState(false);
+    const [showCompetencies, setShowCompetencies] = useState(false);
+    const [competencyDetails, setCompetencyDetails] = useState<CompetencyInfo[]>([]);
+    const [loading, setLoading] = useState(false);
 
-    const getScoreColor = (percentage: number) => {
-        if (percentage >= 80) return '#10b981';
-        if (percentage >= 60) return '#f59e0b';
-        return '#ef4444';
+    // Fetch competency details when expanded
+    useEffect(() => {
+        if (showCompetencies && quiz.competencies && quiz.competencies.length > 0 && competencyDetails.length === 0) {
+            fetchCompetencyDetails();
+        }
+    }, [showCompetencies]);
+
+    const fetchCompetencyDetails = async () => {
+        if (!quiz.competencies || quiz.competencies.length === 0) return;
+        
+        setLoading(true);
+        try {
+            const response = await fetch(`/api/competencies/by-skills?skills=${quiz.competencies.join(',')}`);
+            if (response.ok) {
+                const data = await response.json();
+                setCompetencyDetails(data.competencies || []);
+            }
+        } catch (error) {
+            console.error("Error fetching competency details:", error);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const getScoreBgColor = (percentage: number) => {
-        if (percentage >= 80) return '#ecfdf5';
-        if (percentage >= 60) return '#fffbeb';
-        return '#fef2f2';
+    // Calculate total points
+    const totalPoints = quiz.questions?.reduce((sum, q) => sum + (q.point || 0), 0) || 0;
+
+    // Determine score color
+    const getScoreColor = (percentage?: number) => {
+        if (!percentage) return "text-gray-500";
+        if (percentage >= 80) return "text-green-600";
+        if (percentage >= 60) return "text-orange-600";
+        return "text-red-600";
     };
 
-    const getScoreLabel = (percentage: number) => {
-        if (percentage >= 80) return 'Excellent';
-        if (percentage >= 60) return 'Bien';
-        return 'À revoir';
+    // Determine button text
+    const getButtonText = () => {
+        if (quiz.completed) return "Revoir le quiz";
+        return "Commencer le quiz";
+    };
+
+    const statusColors: Record<string, string> = {
+        not_started: "bg-gray-100 text-gray-600 border-gray-200",
+        in_progress: "bg-amber-100 text-amber-700 border-amber-200",
+        failed: "bg-red-100 text-red-700 border-red-200",
+        mastered: "bg-emerald-100 text-emerald-700 border-emerald-200",
     };
 
     return (
-        <div 
-            className={`notion-card p-0 overflow-hidden transition-all duration-300 ${
-                quiz.completed ? 'ring-2' : ''
-            } ${
-                session?.user ? 'cursor-pointer' : ''
-            }`}
-            style={{
-                borderRadius: '24px',
-                ['--tw-ring-color' as string]: quiz.completed ? getScoreColor(quiz.percentage || 0) : 'transparent'
-            }}
-            onMouseEnter={() => setIsHovered(true)}
-            onMouseLeave={() => setIsHovered(false)}
-            onClick={() => session?.user && onStartQuiz(quiz._id)}
-        >
-            {/* Header avec gradient */}
-            <div 
-                className={`px-6 py-5 relative overflow-hidden ${
-                    quiz.completed 
-                        ? 'bg-gradient-to-r from-green-50 to-emerald-50' 
-                        : 'bg-gradient-to-r from-orange-50 to-amber-50'
-                }`}
-            >
-                {/* Pattern de fond subtil */}
-                <div 
-                    className="absolute inset-0 opacity-30"
-                    style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg width='20' height='20' viewBox='0 0 20 20' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'%3E%3Ccircle cx='3' cy='3' r='1'/%3E%3Ccircle cx='13' cy='13' r='1'/%3E%3C/g%3E%3C/svg%3E")`
-                    }}
-                />
-                
-                <div className="relative flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                        <div 
-                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-sm ${
-                                quiz.completed 
-                                    ? 'bg-white text-green-500' 
-                                    : 'bg-white text-orange-500'
-                            }`}
-                        >
-                            {quiz.completed ? (
-                                <Award className="w-6 h-6" />
-                            ) : (
-                                <Zap className="w-6 h-6" />
-                            )}
+        <Card className={cn(
+            "group overflow-hidden transition-all duration-200",
+            "hover:shadow-lg hover:border-orange-200",
+            quiz.completed ? "border-green-200 bg-green-50/30" : "border-gray-200"
+        )}>
+            <CardHeader className="pb-3">
+                <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                        <div className={cn(
+                            "p-2.5 rounded-xl shrink-0 transition-colors",
+                            quiz.completed ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
+                        )}>
+                            {quiz.completed ? <Trophy className="w-5 h-5" /> : <Award className="w-5 h-5" />}
                         </div>
-                        <div>
-                            <h3 className="font-semibold text-[#37352f] line-clamp-1 text-base">
+                        <div className="min-w-0 flex-1">
+                            <CardTitle className="text-base font-semibold text-gray-900 truncate">
                                 {quiz.title}
-                            </h3>
-                            {quiz.completed && quiz.percentage !== undefined && (
-                                <span 
-                                    className="text-xs font-medium px-2 py-0.5 rounded-full mt-1 inline-block"
-                                    style={{ 
-                                        color: getScoreColor(quiz.percentage),
-                                        backgroundColor: getScoreBgColor(quiz.percentage)
-                                    }}
-                                >
-                                    {getScoreLabel(quiz.percentage)} • {quiz.percentage}%
-                                </span>
+                            </CardTitle>
+                            {quiz.description && (
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                    {quiz.description}
+                                </p>
                             )}
                         </div>
                     </div>
-                    
-                    {/* Badge de statut */}
-                    <div 
-                        className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                            quiz.completed 
-                                ? 'bg-green-100 text-green-600' 
-                                : 'bg-orange-100 text-orange-600'
-                        }`}
-                    >
-                        {quiz.completed ? <CheckCircle className="w-4 h-4" /> : <PlayCircle className="w-4 h-4" />}
+                    {quiz.completed && (
+                        <Badge 
+                            variant="outline" 
+                            className={cn(
+                                "shrink-0 font-semibold",
+                                getScoreColor(quiz.percentage)
+                            )}
+                        >
+                            {quiz.percentage?.toFixed(0)}%
+                        </Badge>
+                    )}
+                </div>
+            </CardHeader>
+
+            <CardContent className="pt-0 space-y-3">
+                {/* Stats */}
+                <div className="flex items-center gap-4 text-sm text-gray-600">
+                    <div className="flex items-center gap-1.5">
+                        <HelpCircle className="w-4 h-4 text-gray-400" />
+                        <span>{quiz.questions?.length || 0} questions</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                        <Trophy className="w-4 h-4 text-gray-400" />
+                        <span>{totalPoints} points</span>
                     </div>
                 </div>
-            </div>
-            
-            {/* Content */}
-            <div className="px-6 py-5">
-                {quiz.description && (
-                    <p className="text-sm text-[#6b6b6b] line-clamp-2 mb-4 leading-relaxed">
-                        {quiz.description}
-                    </p>
-                )}
-                
-                {/* Stats en ligne */}
-                <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center gap-1.5 text-sm text-[#6b6b6b]">
-                        <Target className="w-4 h-4 text-[#9ca3af]" />
-                        <span>{quiz.questionsCount} questions</span>
-                    </div>
-                    <div className="w-1 h-1 rounded-full bg-[#e3e2e0]" />
-                    <div className="flex items-center gap-1.5 text-sm text-[#6b6b6b]">
-                        <Trophy className="w-4 h-4 text-[#9ca3af]" />
-                        <span>{quiz.totalPoints} pts</span>
-                    </div>
-                </div>
-                
-                {/* Score si complété */}
-                {quiz.completed && quiz.percentage !== undefined && (
-                    <div className="mb-4">
-                        <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm text-[#6b6b6b]">Votre score</span>
-                            <span className="text-sm font-semibold" style={{ color: getScoreColor(quiz.percentage) }}>
-                                {quiz.score}/{quiz.maxScore}
+
+                {/* Competencies Toggle */}
+                {quiz.competencies && quiz.competencies.length > 0 && (
+                    <div className="border-t border-gray-100 pt-3">
+                        <button
+                            onClick={() => setShowCompetencies(!showCompetencies)}
+                            className="flex items-center gap-2 text-sm text-gray-600 hover:text-orange-600 transition-colors w-full"
+                        >
+                            <Award className="w-4 h-4 text-orange-500" />
+                            <span className="flex-1 text-left">
+                                {quiz.competencies.length} compétence{quiz.competencies.length > 1 ? 's' : ''} validée{quiz.competencies.length > 1 ? 's' : ''}
                             </span>
-                        </div>
-                        <div className="w-full h-2 bg-[#f1f1ef] rounded-full overflow-hidden">
-                            <div 
-                                className="h-full rounded-full transition-all duration-500"
-                                style={{ 
-                                    width: `${quiz.percentage}%`,
-                                    backgroundColor: getScoreColor(quiz.percentage)
-                                }}
-                            />
-                        </div>
-                    </div>
-                )}
-                
-                {/* Bouton d'action */}
-                {session?.user ? (
-                    <button 
-                        className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                            quiz.completed 
-                                ? 'bg-[#ecfdf5] text-green-700 hover:bg-green-100 border border-green-200' 
-                                : 'bg-[#37352f] text-white hover:bg-black'
-                        }`}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            onStartQuiz(quiz._id);
-                        }}
-                    >
-                        {quiz.completed ? (
-                            <>
-                                <CheckCircle className="w-4 h-4" />
-                                Revoir le quiz
-                            </>
-                        ) : (
-                            <>
-                                <PlayCircle className="w-4 h-4" />
-                                Commencer
-                            </>
+                            {showCompetencies ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+
+                        {showCompetencies && (
+                            <div className="mt-2 space-y-2">
+                                {loading ? (
+                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                        <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+                                        Chargement...
+                                    </div>
+                                ) : competencyDetails.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {competencyDetails.map((comp) => (
+                                            <Badge
+                                                key={comp.skillId}
+                                                variant="outline"
+                                                className={cn(
+                                                    "text-xs font-medium cursor-help",
+                                                    statusColors[comp.status] || statusColors.not_started
+                                                )}
+                                                title={comp.description}
+                                            >
+                                                {comp.skillId}
+                                                {comp.status === "mastered" && <CheckCircle2 className="w-3 h-3 ml-1" />}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {quiz.competencies.map((skillId) => (
+                                            <Badge
+                                                key={skillId}
+                                                variant="outline"
+                                                className="text-xs font-medium bg-gray-50"
+                                            >
+                                                {skillId}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         )}
-                    </button>
-                ) : (
-                    <div className="flex items-center justify-center gap-2 py-3 px-4 bg-[#f1f1ef] rounded-xl text-sm text-[#9ca3af]">
-                        <Lock className="w-4 h-4" />
-                        <span>Connexion requise</span>
                     </div>
                 )}
-            </div>
-        </div>
+
+                {/* Score info if completed */}
+                {quiz.completed && quiz.score !== undefined && quiz.maxScore !== undefined && (
+                    <div className="flex items-center justify-between text-sm bg-white/50 rounded-lg p-2">
+                        <span className="text-gray-600">Score</span>
+                        <span className={cn("font-semibold", getScoreColor(quiz.percentage))}>
+                            {quiz.score} / {quiz.maxScore} pts
+                        </span>
+                    </div>
+                )}
+
+                {/* Action Button */}
+                <Button
+                    onClick={() => onStartQuiz(quiz._id)}
+                    className={cn(
+                        "w-full transition-all",
+                        quiz.completed
+                            ? "bg-green-600 hover:bg-green-700 text-white"
+                            : "bg-orange-600 hover:bg-orange-700 text-white"
+                    )}
+                    size="sm"
+                >
+                    {getButtonText()}
+                </Button>
+            </CardContent>
+        </Card>
     );
 }

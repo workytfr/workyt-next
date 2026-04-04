@@ -6,6 +6,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
 import { handleApiError } from "@/utils/apiErrorResponse";
 import { escapeRegex } from "@/utils/escapeRegex";
+import { hasPermission } from "@/lib/roles";
 
 /**
  * 🚀 GET - Récupérer les leçons avec pagination et recherche avancée
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
         const user = await authMiddleware(req);
 
         // 🔒 Vérification des permissions (Accès staff uniquement)
-        if (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'lesson.create'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
         await dbConnect();
         const user = await authMiddleware(req);
 
-        if (!user || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'lesson.create'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -152,7 +153,7 @@ export async function PATCH(req: NextRequest) {
         const user = await authMiddleware(req);
 
         // 🔒 Vérification des permissions (Accès Correcteur et Admin uniquement)
-        if (!user || !["Correcteur", "Admin"].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'lesson.approve'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

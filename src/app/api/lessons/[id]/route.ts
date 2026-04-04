@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
 import authMiddleware from "@/middlewares/authMiddleware";
+import { hasPermission } from "@/lib/roles";
 
 /**
  * 🚀 PUT - Mettre à jour une leçon (Réservé aux Rédacteurs pour leurs propres leçons, aux Correcteurs et Admins)
@@ -30,7 +31,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Vous ne pouvez modifier que vos propres leçons." }, { status: 403 });
         }
 
-        if (!["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!(await hasPermission(user.role, 'lesson.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

@@ -7,6 +7,7 @@ import PointTransaction from '@/models/PointTransaction';
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { hasPermission } from "@/lib/roles";
 
 // Configuration de Cloudflare R2 via AWS SDK
 const s3 = new S3Client({
@@ -90,7 +91,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const status = (user.role && typeof user.role === 'string' && ["Helpeur", "Rédacteur", "Correcteur", "Admin"].includes(user.role)) ? "Certifiée" : "Non Certifiée";
+        const status = (await hasPermission(user.role, 'fiche.create')) ? "Certifiée" : "Non Certifiée";
 
         const newRevision = await Revision.create({
             title,

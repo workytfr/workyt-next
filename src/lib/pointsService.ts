@@ -11,7 +11,8 @@ type PointAction =
   | 'unlikeAnswer'
   | 'validateAnswer'
   | 'createQuestion'
-  | 'completeQuiz';
+  | 'completeQuiz'
+  | 'completeEvaluation';
 
 /**
  * Ajoute des points a un utilisateur en appliquant le boost actif si present.

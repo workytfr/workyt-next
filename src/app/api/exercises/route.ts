@@ -5,6 +5,7 @@ import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
 import { escapeRegex } from "@/utils/escapeRegex";
+import { hasPermission } from "@/lib/roles";
 
 /**
  * GET - Récupérer les exercices avec pagination et filtres
@@ -91,7 +92,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!user.role || typeof user.role !== 'string' || !["Helpeur", "Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!(await hasPermission(user.role, 'course.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

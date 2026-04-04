@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
+import { hasPermission } from "@/lib/roles";
 
 /**
  * 🚀 PUT - Réorganiser l'ordre des sections (Drag & Drop)
@@ -15,7 +16,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!(await hasPermission(user.role, 'section.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

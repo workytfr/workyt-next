@@ -14,6 +14,8 @@ import CourseBreadcrumb from "./CourseBreadcrumb";
 import ContentNavigation from "./ContentNavigation";
 import CourseDescription from "./CourseDescription";
 import CourseFichesSection from "./CourseFichesSection";
+import CourseCompetencies from "./CourseCompetencies";
+import CourseEvaluation from "./CourseEvaluation";
 import { useCourseNavigation, navigableToSelected } from "./hooks/useCourseNavigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight, HelpCircle, FileCheck } from "lucide-react";
@@ -84,8 +86,8 @@ function ContentView({ content, onBack, courseId }: { content: SelectedContent; 
         try {
             const response = await fetch(`/api/quizzes/${quizId}`);
             if (response.ok) {
-                const quiz = await response.json();
-                setSelectedQuiz(quiz);
+                const data = await response.json();
+                setSelectedQuiz(data.quiz);
             }
         } catch (error) {
             console.error('Erreur lors du chargement du quiz:', error);
@@ -651,6 +653,16 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
                             cours={cours}
                             onOpenSidebar={() => setDrawerOpen(true)}
                         />
+                    )}
+
+                    {/* Évaluation du trimestre */}
+                    {!selectedContent && (
+                        <CourseEvaluation courseId={cours._id} />
+                    )}
+
+                    {/* Compétences du programme — au-dessus des fiches */}
+                    {!selectedContent && (
+                        <CourseCompetencies courseId={cours._id} />
                     )}
 
                     {/* Fiches de révision — fin du cours */}

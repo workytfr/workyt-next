@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import authMiddleware from '@/middlewares/authMiddleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { hasPermission } from '@/lib/roles';
 
 export const runtime = 'nodejs';
 
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
     try {
         // Vérification de l'authentification et des rôles autorisés
         const user = await authMiddleware(req);
-        if (!user || !['Helpeur', 'Rédacteur', 'Correcteur', 'Admin'].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'dashboard.access'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 

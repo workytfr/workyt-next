@@ -5,6 +5,7 @@ import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import authMiddleware from '@/middlewares/authMiddleware';
 import { escapeRegex } from '@/utils/escapeRegex';
+import { hasPermission, getRolesMap } from '@/lib/roles';
 
 // Forcer le rendu dynamique pour cette route
 export const dynamic = "force-dynamic";
@@ -150,7 +151,8 @@ export async function PATCH(req: NextRequest) {
         const updateObj: any = {};
 
         if (role) {
-            if (!['Apprenti', 'Helpeur', 'Rédacteur', 'Correcteur', 'Modérateur', 'Admin'].includes(role)) {
+            const rolesMap = await getRolesMap();
+            if (!rolesMap.has(role)) {
                 return NextResponse.json({ error: 'Rôle invalide.' }, { status: 400 });
             }
             updateObj.role = role;

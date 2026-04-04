@@ -6,10 +6,11 @@ import {
     AccordionTrigger,
     AccordionContent,
 } from "@/components/ui/Accordion";
-import { BookOpen, FileText, Trophy, Check, Clock, ChevronRight } from "lucide-react";
+import { BookOpen, FileText, Trophy, Check, Clock, ChevronRight, Award } from "lucide-react";
 import { Section, SelectedContent } from "./types";
 import { useSession } from "next-auth/react";
 import { estimateReadingTime } from "./utils/readingTime";
+import { SectionCompetencies } from "./SectionCompetencies";
 import "./styles/notion-theme.css";
 
 interface SectionAccordionProps {
@@ -199,6 +200,14 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                         )}
 
                         {/* Vide */}
+                        {/* Compétences */}
+                        {sectionData.quizzes && sectionData.quizzes.length > 0 && (
+                            <SectionCompetencies 
+                                quizzes={sectionData.quizzes} 
+                                className="mt-2"
+                            />
+                        )}
+
                         {!sectionData.lessons?.length && !sectionData.exercises?.length && !sectionData.quizzes?.length && (
                             <p className="text-sm text-[#9ca3af] px-3 py-3">
                                 Aucun contenu dans cette section

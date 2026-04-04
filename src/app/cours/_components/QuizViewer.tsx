@@ -7,7 +7,7 @@ import { Progress } from '@/components/ui/Progress';
 import {
     CheckCircle, XCircle, Trophy, Clock, ArrowLeft, ArrowRight,
     ChevronLeft, AlertCircle, Lightbulb, Send, ArrowUp, ArrowDown,
-    GripVertical, Code2, SlidersHorizontal, Link2
+    GripVertical, Code2, SlidersHorizontal, Link2, Award, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -19,6 +19,15 @@ import { Quiz as SharedQuiz, QuizQuestion, QuizCompletionResult, QuizDetailedAns
 
 interface QuizViewerQuiz extends SharedQuiz {
     questions: QuizQuestion[];
+    competencies?: string[];
+}
+
+interface CompetencyInfo {
+    skillId: string;
+    description: string;
+    difficulty: number;
+    status: "not_started" | "in_progress" | "failed" | "mastered";
+    nextReview?: string;
 }
 
 interface QuizViewerProps {
@@ -44,14 +53,44 @@ function formatTime(seconds: number): string {
 }
 
 // --- Classement (Ordering) ---
+function shuffleArray(arr: number[], seed: number): number[] {
+    const shuffled = [...arr];
+    // Fisher-Yates with simple seed-based pseudo-random
+    let s = seed;
+    for (let i = shuffled.length - 1; i > 0; i--) {
+        s = (s * 1664525 + 1013904223) & 0x7fffffff;
+        const j = s % (i + 1);
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    // Avoid returning the already-correct order
+    const isIdentity = shuffled.every((v, idx) => v === idx);
+    if (isIdentity && shuffled.length > 1) {
+        [shuffled[0], shuffled[1]] = [shuffled[1], shuffled[0]];
+    }
+    return shuffled;
+}
+
 function ClassementInput({ items, value, onChange, renderLatex }: {
     items: string[];
     value: any;
     onChange: (v: number[]) => void;
     renderLatex: (text: string) => React.ReactNode;
 }) {
-    // Initialize with original order indices if no value
-    const order: number[] = Array.isArray(value) ? value : items.map((_, i) => i);
+    // Initialize with a shuffled order so the user must reorder
+    const initialOrder = useMemo(() => {
+        if (Array.isArray(value)) return value;
+        const indices = items.map((_, i) => i);
+        return shuffleArray(indices, items.length * 7 + 31);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    const order: number[] = Array.isArray(value) ? value : initialOrder;
+
+    // Set the shuffled order as the initial answer
+    useEffect(() => {
+        if (!Array.isArray(value)) {
+            onChange(initialOrder);
+        }
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const moveItem = (fromIdx: number, toIdx: number) => {
         if (toIdx < 0 || toIdx >= order.length) return;
@@ -388,6 +427,9 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
     const [results, setResults] = useState<DetailedResults | null>(null);
     const [direction, setDirection] = useState(0);
     const [networkError, setNetworkError] = useState<string | null>(null);
+    const [showCompetencies, setShowCompetencies] = useState(false);
+    const [competencyDetails, setCompetencyDetails] = useState<CompetencyInfo[]>([]);
+    const [loadingCompetencies, setLoadingCompetencies] = useState(false);
 
     useEffect(() => {
         if (!session) {
@@ -401,6 +443,30 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
 
         return () => clearInterval(timer);
     }, [session, router]);
+
+    // Fetch competency details
+    useEffect(() => {
+        if (quiz.competencies && quiz.competencies.length > 0) {
+            fetchCompetencyDetails();
+        }
+    }, [quiz.competencies]);
+
+    const fetchCompetencyDetails = async () => {
+        if (!quiz.competencies || quiz.competencies.length === 0) return;
+        
+        setLoadingCompetencies(true);
+        try {
+            const response = await fetch(`/api/competencies/by-skills?skills=${quiz.competencies.join(',')}`);
+            if (response.ok) {
+                const data = await response.json();
+                setCompetencyDetails(data.competencies || []);
+            }
+        } catch (error) {
+            console.error("Error fetching competency details:", error);
+        } finally {
+            setLoadingCompetencies(false);
+        }
+    };
 
     const answeredCount = useMemo(() => {
         return quiz.questions.filter((q, i) => {
@@ -491,6 +557,12 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                 const result = await response.json();
                 setResults(result);
                 setShowResults(true);
+                
+                // Record competency progress for each skill
+                if (quiz.competencies && quiz.competencies.length > 0) {
+                    await recordCompetencyProgress(result.percentage);
+                }
+                
                 onComplete(result);
             } else {
                 const error = await response.json();
@@ -500,6 +572,31 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
             setNetworkError('Erreur réseau. Vérifiez votre connexion et réessayez.');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const recordCompetencyProgress = async (percentage: number) => {
+        if (!quiz.competencies || quiz.competencies.length === 0) return;
+        
+        try {
+            // Record progress for each competency
+            const promises = quiz.competencies.map(async (skillId) => {
+                const response = await fetch('/api/competencies/record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        skillId,
+                        score: percentage,
+                        source: 'quiz',
+                        sourceId: quiz._id,
+                    }),
+                });
+                return response.ok;
+            });
+            
+            await Promise.all(promises);
+        } catch (error) {
+            console.error("Error recording competency progress:", error);
         }
     };
 
@@ -682,6 +779,72 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                     <Progress value={results.percentage} className="h-2 mt-4 max-w-md mx-auto" />
                 </div>
 
+                {/* Competencies validated */}
+                {quiz.competencies && quiz.competencies.length > 0 && (
+                    <div className="bg-white rounded-2xl p-5 sm:p-6 mb-6 border-2 border-orange-100">
+                        <div className="flex items-center gap-2 mb-3">
+                            <Award className="w-5 h-5 text-orange-500" />
+                            <h3 className="font-semibold text-gray-900">Compétences validées</h3>
+                        </div>
+                        {competencyDetails.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                                {competencyDetails.map((comp) => {
+                                    const isMastered = results.percentage >= 80;
+                                    const isFailed = results.percentage < 40;
+                                    const statusColors: Record<string, string> = {
+                                        not_started: "bg-gray-100 text-gray-600",
+                                        in_progress: "bg-amber-100 text-amber-700",
+                                        failed: "bg-red-100 text-red-700",
+                                        mastered: "bg-emerald-100 text-emerald-700",
+                                    };
+                                    return (
+                                        <Badge
+                                            key={comp.skillId}
+                                            className={`text-sm px-3 py-1 ${
+                                                isMastered 
+                                                    ? 'bg-emerald-100 text-emerald-700' 
+                                                    : isFailed 
+                                                        ? 'bg-red-100 text-red-700'
+                                                        : 'bg-amber-100 text-amber-700'
+                                            }`}
+                                        >
+                                            {comp.skillId}
+                                            {isMastered && <CheckCircle className="w-3.5 h-3.5 ml-1 inline" />}
+                                            {!isMastered && !isFailed && <Clock className="w-3.5 h-3.5 ml-1 inline" />}
+                                        </Badge>
+                                    );
+                                })}
+                            </div>
+                        ) : (
+                            <div className="flex flex-wrap gap-2">
+                                {quiz.competencies.map((skillId) => (
+                                    <Badge
+                                        key={skillId}
+                                        className={`text-sm px-3 py-1 ${
+                                            results.percentage >= 80 
+                                                ? 'bg-emerald-100 text-emerald-700' 
+                                                : results.percentage < 40 
+                                                    ? 'bg-red-100 text-red-700'
+                                                    : 'bg-amber-100 text-amber-700'
+                                        }`}
+                                    >
+                                        {skillId}
+                                    </Badge>
+                                ))}
+                            </div>
+                        )}
+                        <p className="text-xs text-gray-500 mt-3">
+                            {results.percentage >= 80 
+                                ? "🎉 Bravo ! Ces compétences sont maintenant maîtrisées."
+                                : results.percentage >= 60 
+                                    ? "👍 Bon travail ! Continuez à pratiquer pour maîtriser ces compétences."
+                                    : results.percentage >= 40 
+                                        ? "💪 Encore un peu d'effort ! Revoyez les concepts et réessayez."
+                                        : "📚 Ces compétences nécessitent plus de travail. Consultez les cours associés."}
+                        </p>
+                    </div>
+                )}
+
                 {/* Detailed answers */}
                 <h3 className="text-lg font-semibold text-[#37352f] mb-4">Détail des réponses</h3>
                 <div className="space-y-4">
@@ -834,6 +997,74 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                         )}
                     </div>
                 </div>
+
+                {/* Competencies Section */}
+                {quiz.competencies && quiz.competencies.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-[#e3e2e0]">
+                        <button
+                            onClick={() => setShowCompetencies(!showCompetencies)}
+                            className="flex items-center gap-2 text-sm text-[#6b6b6b] hover:text-[#f97316] transition-colors w-full"
+                        >
+                            <Award className="w-4 h-4 text-orange-500" />
+                            <span className="flex-1 text-left">
+                                Ce quiz valide {quiz.competencies.length} compétence{quiz.competencies.length > 1 ? 's' : ''}
+                            </span>
+                            {showCompetencies ? (
+                                <ChevronUp className="w-4 h-4" />
+                            ) : (
+                                <ChevronDown className="w-4 h-4" />
+                            )}
+                        </button>
+                        
+                        {showCompetencies && (
+                            <div className="mt-3">
+                                {loadingCompetencies ? (
+                                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                                        <div className="w-4 h-4 border-2 border-orange-300 border-t-transparent rounded-full animate-spin" />
+                                        Chargement des compétences...
+                                    </div>
+                                ) : competencyDetails.length > 0 ? (
+                                    <div className="flex flex-wrap gap-2">
+                                        {competencyDetails.map((comp) => {
+                                            const statusColors: Record<string, string> = {
+                                                not_started: "bg-gray-100 text-gray-600 border-gray-200",
+                                                in_progress: "bg-amber-100 text-amber-700 border-amber-200",
+                                                failed: "bg-red-100 text-red-700 border-red-200",
+                                                mastered: "bg-emerald-100 text-emerald-700 border-emerald-200",
+                                            };
+                                            return (
+                                                <Badge
+                                                    key={comp.skillId}
+                                                    variant="outline"
+                                                    className={`text-xs font-medium ${statusColors[comp.status] || statusColors.not_started}`}
+                                                    title={comp.description}
+                                                >
+                                                    {comp.skillId}
+                                                    {comp.status === "mastered" && <CheckCircle className="w-3 h-3 ml-1 inline" />}
+                                                    {comp.status === "in_progress" && comp.nextReview && new Date(comp.nextReview) <= new Date() && (
+                                                        <span className="ml-1 text-[10px]">À réviser</span>
+                                                    )}
+                                                </Badge>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {quiz.competencies.map((skillId) => (
+                                            <Badge
+                                                key={skillId}
+                                                variant="outline"
+                                                className="text-xs font-medium bg-gray-50"
+                                            >
+                                                {skillId}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
 
                 {/* Progress bar */}
                 <Progress value={progress} className="h-1.5 mb-3" />

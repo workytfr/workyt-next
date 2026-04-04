@@ -6,8 +6,7 @@ import User from "@/models/User";
 import connectDB from "@/lib/mongodb";
 import { callOpenRouter, extractJSON } from "@/lib/openrouter";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
-
-const ALLOWED_ROLES = ["Admin"];
+import { hasPermission } from "@/lib/roles";
 const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_TEXT_LENGTH = 100_000;
 
@@ -112,7 +111,7 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    if (!ALLOWED_ROLES.includes(user.role)) {
+    if (!(await hasPermission(user.role, 'course.create'))) {
         return NextResponse.json(
             { message: "Rôle insuffisant pour générer un cours." },
             { status: 403 }

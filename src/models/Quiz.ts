@@ -46,6 +46,7 @@ export interface IQuiz extends Document {
     title: string; // Titre du quiz
     description?: string; // Brève description du quiz
     questions: IQuestion[]; // Liste des questions
+    competencies?: string[]; // Liste des skillIds des compétences validées par ce quiz
     timeBonus?: ITimeBonus;
     timePenalty?: ITimePenalty;
     createdAt: Date;
@@ -60,6 +61,7 @@ const QuizSchema: Schema = new Schema({
     lessonId: { type: Schema.Types.ObjectId, ref: 'Lesson', required: false },
     title: { type: String, required: true },
     description: { type: String },
+    competencies: [{ type: String }], // Skill IDs from CurriculumNode
     questions: [
         {
             question: { type: String, required: true },

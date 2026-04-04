@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
 import authMiddleware from "@/middlewares/authMiddleware";
+import { hasPermission } from "@/lib/roles";
 
 /**
  * PUT - Réorganiser l'ordre des leçons (Drag & Drop)
@@ -15,7 +16,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!(await hasPermission(user.role, 'lesson.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

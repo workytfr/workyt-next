@@ -12,10 +12,11 @@ import {
     Plus, Trash2, Save, X, Calculator, Loader2, ChevronDown, ChevronUp,
     HelpCircle, Image, Lightbulb, GripVertical, ArrowRight, ArrowUp, ArrowDown,
     Code2, SlidersHorizontal, ListOrdered, Link2, CheckCircle2, Type, ToggleLeft,
-    Copy, Clock
+    Copy, Clock, Target
 } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
+import SkillPicker from '@/components/ui/SkillPicker';
 
 interface ICourse {
     _id: string;
@@ -101,6 +102,9 @@ export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, i
     const [selectedSectionId, setSelectedSectionId] = useState<string>(
         propSectionId || initialData?.sectionId?._id || initialData?.sectionId || ''
     );
+
+    // Compétences liées
+    const [competencies, setCompetencies] = useState<string[]>(initialData?.competencies || []);
 
     // Bonus / Malus temps
     const [timeBonusEnabled, setTimeBonusEnabled] = useState(initialData?.timeBonus?.enabled || false);
@@ -261,6 +265,7 @@ export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, i
                 description,
                 sectionId: selectedSectionId,
                 questions,
+                competencies,
                 timeBonus: {
                     enabled: timeBonusEnabled,
                     targetTime: timeBonusTarget * 60, // convert minutes to seconds
@@ -1108,6 +1113,27 @@ export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, i
                             )}
                         </>
                     )}
+                </CardContent>
+            </Card>
+
+            {/* Compétences liées */}
+            <Card className="border-2">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                        <Target className="w-5 h-5 text-orange-500" />
+                        Compétences du programme
+                        <span className="text-xs font-normal text-gray-400">(optionnel)</span>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm text-gray-500 mb-3">
+                        Liez ce quiz aux compétences du programme officiel. Les élèves valideront automatiquement ces compétences en réussissant le quiz.
+                    </p>
+                    <SkillPicker
+                        selectedSkills={competencies}
+                        onChange={setCompetencies}
+                        placeholder="Rechercher une compétence (ex: équation, fraction, calcul...)"
+                    />
                 </CardContent>
             </Card>
 

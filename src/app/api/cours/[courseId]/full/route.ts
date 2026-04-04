@@ -6,6 +6,7 @@ import Course from "@/models/Course";
 import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { isValidObjectId } from "mongoose";
+import { hasPermission } from "@/lib/roles";
 
 export async function GET(
     req: NextRequest,
@@ -36,7 +37,7 @@ export async function GET(
         const query: any = { _id: courseId };
 
         // If user is not authorized to see unpublished content
-        if (!user || typeof user.role !== 'string' || !["Rédacteur", "Correcteur", "Admin"].includes(user.role)) {
+        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
             query.status = "publie";
         }
 

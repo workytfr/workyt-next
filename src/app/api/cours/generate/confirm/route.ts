@@ -5,9 +5,9 @@ import Course from "@/models/Course";
 import Section from "@/models/Section";
 import Lesson from "@/models/Lesson";
 
-connectDB();
+import { hasPermission } from "@/lib/roles";
 
-const ALLOWED_ROLES = ["Admin"];
+connectDB();
 
 interface LessonDraft {
     title: string;
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (!ALLOWED_ROLES.includes(user.role)) {
+        if (!(await hasPermission(user.role, 'course.create'))) {
             return NextResponse.json(
                 { success: false, message: "Rôle insuffisant." },
                 { status: 403 }

@@ -65,6 +65,7 @@ export interface Quiz {
     totalPoints?: number;
     timeBonus?: TimeBonus;
     timePenalty?: TimePenalty;
+    competencies?: string[]; // Skill IDs from CurriculumNode
     // Proprietes runtime ajoutees cote client
     completed?: boolean;
     score?: number;

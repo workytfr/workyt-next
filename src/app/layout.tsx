@@ -33,9 +33,10 @@ export const metadata: Metadata = {
     publisher: "Workyt",
     icons: {
         icon: [
+            { url: "/favicon-48x48.png", sizes: "48x48", type: "image/png" },
             { url: "/icon.svg", type: "image/svg+xml" },
         ],
-        apple: "/default-thumbnail.png",
+        apple: "/apple-touch-icon.png",
     },
     robots: {
         index: true,
@@ -102,7 +103,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
         "@type": "Organization",
         "name": "Workyt",
         "url": "https://workyt.fr",
-        "logo": "https://workyt.fr/default-thumbnail.png",
+        "logo": {
+            "@type": "ImageObject",
+            "url": "https://workyt.fr/apple-touch-icon.png",
+            "width": 180,
+            "height": 180,
+        },
         "sameAs": [
             "https://twitter.com/workyt_fr",
         ],

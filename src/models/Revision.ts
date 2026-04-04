@@ -24,6 +24,7 @@ export interface IRevision extends Document {
     subject: string; // Matière (ex: Mathématiques, Physique)
     level: string; // Niveau ou classe (ex: Terminale, 1ère, Collège)
     courseId?: mongoose.Types.ObjectId; // Référence optionnelle à un cours
+    competencies?: string[]; // Skill IDs (uniquement pour fiches certifiées)
     createdAt: Date; // Date de création
 }
 
@@ -95,6 +96,10 @@ const RevisionSchema: Schema<IRevision> = new Schema({
     courseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course',
+        default: undefined,
+    },
+    competencies: {
+        type: [String],
         default: undefined,
     },
     createdAt: {

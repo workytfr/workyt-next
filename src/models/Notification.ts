@@ -6,13 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export interface INotification extends Document {
     notificationId: string;
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout';
     recipient: ObjectId; // Utilisateur qui reçoit la notification
     sender: ObjectId; // Utilisateur qui déclenche la notification
     title: string;
     message: string;
     relatedEntity?: {
-        type: 'question' | 'answer' | 'fiche' | 'comment' | 'quest';
+        type: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation';
         id: ObjectId;
     };
     isRead: boolean;
@@ -33,7 +33,7 @@ const NotificationSchema: Schema<INotification> = new Schema({
     },
     type: {
         type: String,
-        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated', 'quest_completed'],
+        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated', 'quest_completed', 'evaluation_submitted', 'evaluation_graded', 'evaluation_timeout'],
         required: true
     },
     recipient: {
@@ -57,7 +57,7 @@ const NotificationSchema: Schema<INotification> = new Schema({
     relatedEntity: {
         type: {
             type: String,
-            enum: ['question', 'answer', 'fiche', 'comment', 'quest']
+            enum: ['question', 'answer', 'fiche', 'comment', 'quest', 'evaluation']
         },
         id: {
             type: mongoose.Schema.Types.ObjectId

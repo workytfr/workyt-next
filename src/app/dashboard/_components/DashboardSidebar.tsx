@@ -20,15 +20,34 @@ import {
   Store,
   Shield,
   Menu,
+  GraduationCap,
   X,
   Plus,
   Sparkles,
   BarChart3,
+  FileCheck,
 } from "lucide-react";
 import "../styles/dashboard-theme.css";
 
+interface NavChild {
+  name: string;
+  href: string;
+  icon?: React.ComponentType<{ className?: string }>;
+  external?: boolean;
+}
+
+interface NavItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  children?: NavChild[];
+  roles?: string[];
+  adminOnly?: boolean;
+  moderatorOnly?: boolean;
+}
+
 // Navigation items avec leurs permissions
-const navItems = [
+const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   {
     name: "Cours",
@@ -44,10 +63,22 @@ const navItems = [
   { name: "Leçons", href: "/dashboard/lessons", icon: FileText },
   { name: "Quiz", href: "/dashboard/quizzes", icon: CircleDot },
   { name: "Exercices", href: "/dashboard/exercises", icon: Library },
+  {
+    name: "Évaluations",
+    href: "/dashboard/evaluations",
+    icon: FileCheck,
+    roles: ["Correcteur", "Helpeur", "Rédacteur", "Admin", "Modérateur"],
+    children: [
+      { name: "Corrections", href: "/dashboard/evaluations" },
+      { name: "Banque", href: "/dashboard/evaluations/manage" },
+    ],
+  },
   { name: "Certificats", href: "/dashboard/certificates", icon: Award },
+  { name: "Programmes", href: "/dashboard/curriculum", icon: GraduationCap, adminOnly: true },
   { name: "Partenaires", href: "/dashboard/partners", icon: Store, adminOnly: true },
   { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
   { name: "Modération", href: "/dashboard/moderation", icon: Shield, moderatorOnly: true },
+  { name: "Rôles", href: "/dashboard/roles", icon: Shield, adminOnly: true },
   { name: "Bénévoles", href: "/dashboard/statistiques", icon: BarChart3, adminOnly: true },
   { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];
@@ -60,11 +91,11 @@ const navGroups = [
   },
   {
     title: "Contenu",
-    items: ["Cours", "Sections", "Leçons", "Quiz", "Exercices"],
+    items: ["Cours", "Sections", "Leçons", "Quiz", "Exercices", "Évaluations"],
   },
   {
     title: "Administration",
-    items: ["Certificats", "Partenaires", "Utilisateurs", "Modération", "Bénévoles"],
+    items: ["Certificats", "Programmes", "Partenaires", "Utilisateurs", "Modération", "Rôles", "Bénévoles"],
   },
   {
     title: "Configuration",
@@ -73,7 +104,7 @@ const navGroups = [
 ];
 
 interface NavItemProps {
-  item: typeof navItems[0];
+  item: NavItem;
   isActive: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
@@ -181,6 +212,9 @@ export default function DashboardSidebar() {
 
   // Filtrer les éléments selon le rôle
   const filteredNavItems = navItems.filter((item) => {
+    if (item.roles && !item.roles.includes(user?.role || '')) {
+      return false;
+    }
     if (item.adminOnly && user?.role !== "Admin") {
       return false;
     }
@@ -200,7 +234,7 @@ export default function DashboardSidebar() {
     );
   };
 
-  const isItemActive = (item: typeof navItems[0]) => {
+  const isItemActive = (item: NavItem) => {
     if (pathname === item.href) return true;
     if (item.children) {
       return item.children.some((child) => pathname === child.href);
@@ -257,7 +291,7 @@ export default function DashboardSidebar() {
             // Filtrer les items du groupe selon les permissions
             const groupItems = group.items
               .map((name) => filteredNavItems.find((item) => item.name === name))
-              .filter(Boolean) as typeof navItems;
+              .filter(Boolean) as NavItem[];
 
             if (groupItems.length === 0) return null;
 

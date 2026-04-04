@@ -24,5 +24,31 @@ export async function register() {
         });
 
         console.log('[Newsletter] Cron programme : chaque mercredi a 8h, timezone Europe/Paris');
+
+        // Vérification des évaluations expirées (timeout) — toutes les minutes
+        const { checkEvaluationTimeouts } = await import('@/lib/cron/evaluationTimeout');
+        cron.default.schedule('* * * * *', async () => {
+            try {
+                const result = await checkEvaluationTimeouts();
+                if (result.processed > 0) {
+                    console.log(`[EvalTimeout] ${result.processed} timeout(s) traité(s), ${result.errors} erreur(s)`);
+                }
+            } catch (error) {
+                console.error('[EvalTimeout] Erreur:', error);
+            }
+        }, {
+            timezone: 'Europe/Paris',
+        });
+
+        console.log('[EvalTimeout] Cron programme : chaque minute, timezone Europe/Paris');
+
+        // Seed des rôles par défaut
+        const { seedRoles } = await import('@/lib/roles');
+        try {
+            await seedRoles();
+            console.log('[Roles] Rôles par défaut vérifiés/créés');
+        } catch (error) {
+            console.error('[Roles] Erreur seed:', error);
+        }
     }
 }

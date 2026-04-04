@@ -13,6 +13,14 @@ import "@/models/Lesson";
 import "@/models/Question";
 import "@/models/Exercise";
 import "@/models/Notification";
+import "@/models/CurriculumNode";
+import "@/models/StudentAcademicProfile";
+import "@/models/CompetencyProgress";
+import "@/models/Evaluation";
+import "@/models/EvaluationDraw";
+import "@/models/EvaluationSubmission";
+import "@/models/EvaluationGrade";
+import "@/models/Role";
 
 const connectDB = async (): Promise<void> => {
     const { MONGODB_URI, NODE_ENV } = process.env;

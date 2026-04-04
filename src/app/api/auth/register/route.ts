@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
+import StudentAcademicProfile from "@/models/StudentAcademicProfile";
 import nodemailer from "nodemailer";
 import { rateLimit, getIP, rateLimitResponse } from '@/lib/rateLimit';
 
@@ -10,11 +11,14 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`register:${getIP(req)}`, 3, 1_800_000);
     if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
-    const { name, email, password, username } = await req.json();
+    const { name, email, password, username, hasAcceptedPrivacyPolicy, academicProfile } = await req.json();
 
     if (!name || !email || !password || !username) {
         return NextResponse.json({ message: "Tous les champs sont requis" }, { status: 400 });
     }
+
+    // Le profil académique est optionnel à l'inscription
+    // L'utilisateur pourra le compléter plus tard via /compte/profil-scolaire
 
     try {
         await connectDB();
@@ -40,24 +44,46 @@ export async function POST(req: NextRequest) {
         const hashedPassword = await bcrypt.hash(password, 12);
 
         // Création du nouvel utilisateur
-        // Le modèle User se chargera automatiquement de :
-        // - Normaliser le username (lowercase, trim, etc.)
-        // - Valider le format email et username
-        // - Vérifier l'unicité du username
         const newUser = new User({
             name: name.trim(),
-            email: email.trim(), // Le modèle convertira automatiquement en lowercase
-            username: username.trim(), // Le modèle normalisera automatiquement
+            email: email.trim(),
+            username: username.trim(),
             password: hashedPassword,
             role: "Apprenti",
             points: 20,
             badges: [],
             isAdmin: false,
             bio: "",
+            hasAcceptedPrivacyPolicy: hasAcceptedPrivacyPolicy || false,
         });
 
         // Sauvegarde avec validation automatique
         await newUser.save();
+
+        // Création du profil académique
+        // Création du profil académique seulement si les données sont fournies
+        if (academicProfile?.currentGrade && academicProfile?.cycle) {
+            try {
+                const studentProfile = new StudentAcademicProfile({
+                    userId: newUser._id,
+                    currentGrade: academicProfile.currentGrade,
+                    cycle: academicProfile.cycle,
+                    track: academicProfile.track || undefined,
+                    specialities: academicProfile.specialities || [],
+                    options: academicProfile.options || [],
+                    preferences: {
+                        dailyStudyTime: 45,
+                        preferredStudyDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+                        pace: 'moderate',
+                        reminderEnabled: true,
+                    },
+                    upcomingExams: [],
+                });
+                await studentProfile.save();
+            } catch (profileError) {
+                console.error("Erreur création profil académique:", profileError);
+            }
+        }
 
         // Envoi de l'email de confirmation
         const transporter = nodemailer.createTransport({
@@ -69,6 +95,24 @@ export async function POST(req: NextRequest) {
                 pass: process.env.SMTP_PASSWORD,
             },
         });
+
+        // Format du niveau pour l'email
+        const levelLabels: Record<string, string> = {
+            '6eme': '6ème',
+            '5eme': '5ème',
+            '4eme': '4ème',
+            '3eme': '3ème',
+            '2nde': 'Seconde',
+            '1ere': 'Première',
+            'terminale': 'Terminale',
+        };
+
+        const cycleLabels: Record<string, string> = {
+            'cycle3': 'Cycle 3 (CM1-6ème)',
+            'cycle4': 'Cycle 4 (5ème-3ème)',
+            'lycee': 'Lycée',
+            'superieur': 'Études Supérieures',
+        };
 
         const mailOptions = {
             from: '"Workyt" <noreply@workyt.fr>',
@@ -88,7 +132,26 @@ export async function POST(req: NextRequest) {
                             <li style="padding: 5px 0;"><strong>Points de départ:</strong> ${newUser.points}</li>
                         </ul>
                     </div>
-                    <p>Nous espérons que vous apprécierez votre expérience d'apprentissage avec nous.</p>
+                    ${academicProfile?.cycle ? `
+                    <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f97316;">
+                        <h4 style="color: #e65100; margin-top: 0;">Votre profil scolaire</h4>
+                        <p style="margin: 5px 0;"><strong>Niveau :</strong> ${cycleLabels[academicProfile.cycle] || academicProfile.cycle}</p>
+                        ${academicProfile.currentGrade ? `<p style="margin: 5px 0;"><strong>Classe :</strong> ${levelLabels[academicProfile.currentGrade] || academicProfile.currentGrade}</p>` : ''}
+                        ${academicProfile.track ? `<p style="margin: 5px 0;"><strong>Filière :</strong> ${academicProfile.track}</p>` : ''}
+                        ${academicProfile.specialities && academicProfile.specialities.length > 0 ? `<p style="margin: 5px 0;"><strong>Spécialités :</strong> ${academicProfile.specialities.join(', ')}</p>` : ''}
+                    </div>
+                    ` : `
+                    <div style="background-color: #fff3e0; padding: 15px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f97316;">
+                        <h4 style="color: #e65100; margin-top: 0;">Complétez votre profil scolaire</h4>
+                        <p>Indiquez votre niveau pour débloquer votre grille de compétences personnalisée !</p>
+                    </div>
+                    `}
+                    <p style="text-align: center; margin-top: 30px;">
+                        <a href="${process.env.NEXT_PUBLIC_APP_URL}/${academicProfile?.cycle ? 'progression' : 'compte/profil-scolaire'}"
+                           style="background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                            ${academicProfile?.cycle ? 'Voir ma progression' : 'Compléter mon profil'}
+                        </a>
+                    </p>
                     <p style="text-align: center; margin-top: 30px;">
                         À bientôt,<br>
                         <strong>L'équipe Workyt</strong>
@@ -106,7 +169,11 @@ export async function POST(req: NextRequest) {
                 email: newUser.email,
                 username: newUser.username,
                 role: newUser.role,
-                points: newUser.points
+                points: newUser.points,
+                academicProfile: {
+                    cycle: academicProfile.cycle,
+                    currentGrade: academicProfile.currentGrade,
+                }
             }
         }, { status: 201 });
 

@@ -109,10 +109,6 @@ const UserSchema = new Schema<IUser>({
     },
     role: {
         type: String,
-        enum: {
-            values: ['Apprenti', 'Helpeur', 'Rédacteur', 'Correcteur', 'Modérateur', 'Admin'],
-            message: 'Rôle invalide'
-        },
         required: true,
         default: 'Apprenti',
     },
