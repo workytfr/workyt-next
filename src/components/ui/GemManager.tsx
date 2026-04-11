@@ -697,7 +697,7 @@ const GemManager: React.FC = () => {
                 { filename: 'FoxySably.webp', label: 'FoxySably', desc: 'Personnage Sably', price: 30 },
                 { filename: 'FoxyLmdpc.webp', label: 'Foxy Lmdpc', desc: 'Lemondedupc.fr', price: 2, partner: true },
                 { filename: 'FoxyStagey.webp', label: 'Foxy Stagey', desc: 'Stagey.fr', price: 2, partner: true },
-                { filename: 'FoxyYumego.webp', label: 'Foxy YumeGo', desc: 'yumego.ai', price: 2, partner: true, link: 'https://yumego.ai/' },
+                { filename: 'FoxyYumego.webp', label: 'Foxy YumeGo', desc: 'Japonais avec Netflix (extension Chrome)', price: 2, partner: true, link: 'https://yumego.ai/' },
               ].map((img) => {
                 const bp = getItemButtonProps('profileImage', img.filename, img.price);
                 return (

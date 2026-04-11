@@ -33,6 +33,14 @@ const partenairesList = [
         description: "Plateforme éducative open-source",
         darkBg: true,
     },
+    {
+        name: "YumeGo",
+        logo: "/yumego.png",
+        website: "https://yumego.ai/",
+        description:
+            "Extension Chrome pour apprendre le japonais avec Netflix — traduction des sous-titres, suivi JLPT et vocabulaire",
+        darkBg: true,
+    },
 ];
 
 const PartenairesView = () => {
