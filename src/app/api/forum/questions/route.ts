@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         const questions = await Question.find(filter)
             .populate({
                 path: "user",
-                select: "username points",
+                select: "username points image",
             })
             .sort({ createdAt: -1 })
             .skip(skip)

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { FileCheck, Plus, ChevronRight, Heart, X, Upload, Loader2, Lock } from "lucide-react";
 import { motion } from "framer-motion";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { buildIdSlug } from "@/utils/slugify";
 import ProfileAvatar from "@/components/ui/profile";

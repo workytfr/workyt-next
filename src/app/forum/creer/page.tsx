@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 import { Skeleton } from "@/components/ui/skeleton";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 import { educationData } from "@/data/educationData";
 import { FaFileUpload, FaGraduationCap, FaCheck, FaSpinner, FaPen, FaTrash, FaImage, FaQuestion } from "react-icons/fa";
 import rehypeKatex from "rehype-katex";
@@ -212,7 +212,7 @@ export default function ForumPostPage() {
                             <FaPen className="text-blue-500" /> Ce que j&apos;ai fait
                         </h3>
                         <p className="text-sm text-indigo-600 mb-3">Décrivez ce que vous avez déjà fait pour résoudre votre problème.</p>
-                        <div className="rounded-lg overflow-hidden">
+                        <div className="rounded-lg overflow-hidden" data-color-mode="light">
                             <MDEditor
                                 value={whatIDid}
                                 onChange={setWhatIDid}
@@ -231,7 +231,7 @@ export default function ForumPostPage() {
                             <FaPen className="text-purple-500" /> Ce que j&apos;attends
                         </h3>
                         <p className="text-sm text-purple-600 mb-3">Décrivez ce que vous attendez de la communauté.</p>
-                        <div className="rounded-lg overflow-hidden">
+                        <div className="rounded-lg overflow-hidden" data-color-mode="light">
                             <MDEditor
                                 value={whatINeed}
                                 onChange={setWhatINeed}

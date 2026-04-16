@@ -11,7 +11,7 @@ import {
     SelectValue,
 } from "@/components/ui/Select";
 import Image from "next/image";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "katex/dist/katex.min.css";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
@@ -215,6 +215,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             />
 
             {/* 📌 Contenu de l'exercice */}
+            <div data-color-mode="light">
             <MDEditor
                 value={formData.content}
                 onChange={(value) => setFormData({ ...formData, content: value || "" })}
@@ -224,8 +225,10 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
                     rehypePlugins: [rehypeKatex],
                 }}
             />
+            </div>
 
             {/* 📌 Texte de correction */}
+            <div data-color-mode="light">
             <MDEditor
                 value={formData.correctionText}
                 onChange={(value) => setFormData({ ...formData, correctionText: value || "" })}
@@ -235,6 +238,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
                     rehypePlugins: [rehypeKatex],
                 }}
             />
+            </div>
 
             {/* 📌 Sélection de la difficulté */}
             <label className="block text-sm font-medium text-gray-700">Sélectionner une difficulté</label>

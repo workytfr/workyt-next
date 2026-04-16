@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import Image from "next/image";
 import { educationData } from "@/data/educationData";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "katex/dist/katex.min.css";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
@@ -124,11 +124,10 @@ export default function CourseForm({ course, onSuccess, onError }: CourseFormPro
             />
 
             <label className="block text-sm font-medium text-gray-700">Description du cours</label>
-            <div className="border rounded-md">
+            <div className="border rounded-md" data-color-mode="light">
                 <MDEditor
                     value={formData.description}
                     onChange={(value) => setFormData({ ...formData, description: value || "" })}
-                    highlightEnable={false}
                     previewOptions={{
                         remarkPlugins: [remarkMath],
                         rehypePlugins: [rehypeKatex],

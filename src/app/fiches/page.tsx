@@ -16,13 +16,13 @@ import {
     PaginationPrevious,
 } from "@/components/ui/Pagination";
 import { PiFireSimpleFill } from "react-icons/pi";
-import { MdSearch, MdInsertComment, MdInfoOutline, MdClose } from "react-icons/md";
+import { MdSearch, MdInsertComment, MdInfoOutline } from "react-icons/md";
 import { FiPlusCircle, FiBookmark } from "react-icons/fi";
-import { SlidersHorizontal, ArrowUpDown, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { SlidersHorizontal, ArrowUpDown, X, ChevronLeft, ChevronRight, FileText, Sparkles } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import SubjectIcon from "@/components/fiches/SubjectIcon";
 import InfoDrawer from "@/app/fiches/_components/InfoDrawer";
-import { educationData, subjectColors, levelColors, subjectGradients } from "@/data/educationData";
+import { educationData, subjectGradients } from "@/data/educationData";
 import { buildIdSlug } from "@/utils/slugify";
 
 interface Fiche {
@@ -134,26 +134,18 @@ export default function SearchPage() {
 
     const sortedFiches = [...fiches].sort((a, b) => {
         switch (sortBy) {
-            case "popular":
-                return b.likes - a.likes;
-            case "comments":
-                return b.comments - a.comments;
-            case "oldest":
-                return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+            case "popular": return b.likes - a.likes;
+            case "comments": return b.comments - a.comments;
+            case "oldest": return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
             case "recent":
-            default:
-                return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+            default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         }
     });
 
     const handleDateRangeChange = (value: string) => {
         const selectedOption = dateRangeOptions.find((option) => option.label === value);
         if (selectedOption) {
-            setFilters((prev) => ({
-                ...prev,
-                startDate: selectedOption.startDate,
-                endDate: selectedOption.endDate,
-            }));
+            setFilters((prev) => ({ ...prev, startDate: selectedOption.startDate, endDate: selectedOption.endDate }));
         }
     };
 
@@ -170,7 +162,6 @@ export default function SearchPage() {
             setFilters((prev) => ({ ...prev, subject }));
         }
         setPagination((prev) => ({ ...prev, page: 1 }));
-        // Trigger search after state update
         setTimeout(() => fetchFilteredData(), 0);
     };
 
@@ -195,163 +186,129 @@ export default function SearchPage() {
 
     const hasActiveFilters = filters.query || filters.level || filters.subject || filters.startDate;
 
-    const headerStyle = {
-        backgroundImage: `linear-gradient(135deg, #FF8C42 0%, #FF5E78 50%, #FF4B6E 100%), url(/noise.webp)`,
-        backgroundSize: "cover, 2%",
-        backgroundBlendMode: "overlay",
-    };
-
-    const SkeletonCard = () => (
-        <div className="flex flex-col bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100 animate-pulse">
-            <div className="h-24 bg-gray-200"></div>
-            <div className="p-4 space-y-3">
-                <div className="h-5 bg-gray-200 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-200 rounded w-full"></div>
-                <div className="h-3 bg-gray-200 rounded w-5/6"></div>
-                <div className="flex justify-between items-center pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 bg-gray-200 rounded-full"></div>
-                        <div className="h-3 w-16 bg-gray-200 rounded"></div>
-                    </div>
-                    <div className="flex gap-3">
-                        <div className="h-3 w-8 bg-gray-200 rounded"></div>
-                        <div className="h-3 w-8 bg-gray-200 rounded"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-
     return (
-        <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div
-                className="pt-14 pb-8 px-4 sm:px-6 rounded-b-[2rem] shadow-lg mb-0"
-                style={headerStyle}
-            >
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-2">
-                        <div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-white">Fiches de révision</h1>
-                            <p className="text-white/80 text-base sm:text-lg mt-1">Découvrez et partagez des fiches de qualité</p>
+        <div className="min-h-screen bg-white">
+            {/* Hero */}
+            <header className="border-b border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16 sm:pb-14">
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
+                        <div className="max-w-xl">
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-50 text-pink-600 text-xs font-medium mb-4">
+                                <FileText className="w-3.5 h-3.5" />
+                                Ressources communautaires
+                            </div>
+                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-3">
+                                Fiches de révision
+                            </h1>
+                            <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
+                                Découvrez et partagez des fiches de qualité pour réviser efficacement.
+                            </p>
                         </div>
                         <Link href="/fiches/creer" className="shrink-0">
-                            <Button className="flex items-center gap-2 py-2.5 px-5 bg-white text-orange-500 hover:bg-orange-50 transition-all shadow-md rounded-full font-medium">
-                                <FiPlusCircle size={18} />
-                                <span className="hidden sm:inline">Déposer une fiche</span>
-                                <span className="sm:hidden">Créer</span>
-                            </Button>
+                            <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors">
+                                <FiPlusCircle size={16} />
+                                Déposer une fiche
+                            </button>
                         </Link>
                     </div>
 
-                    {/* Barre de recherche */}
-                    <div className="relative flex items-center max-w-3xl bg-white rounded-2xl shadow-lg overflow-hidden mt-4">
-                        <MdSearch size={22} className="text-gray-400 ml-4 sm:ml-5 shrink-0" />
+                    {/* Search bar */}
+                    <div className="relative flex items-center max-w-2xl mt-8">
+                        <MdSearch size={20} className="absolute left-3.5 text-gray-400" />
                         <input
                             type="text"
                             placeholder="Rechercher une fiche..."
-                            className="w-full py-3.5 sm:py-4 px-3 sm:px-4 outline-none text-base"
+                            className="w-full pl-10 pr-28 py-3 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
                             value={filters.query}
                             onChange={(e) => handleFilterChange("query", e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                         />
-                        <div className="flex items-center gap-1.5 pr-2 sm:pr-3 shrink-0">
-                            <Button
-                                variant="ghost"
-                                className={`rounded-full p-2 sm:p-2.5 transition-colors ${showFilters ? 'bg-orange-100 text-orange-500' : 'hover:bg-gray-100 text-gray-500'}`}
+                        <div className="absolute right-2 flex items-center gap-1.5">
+                            <button
+                                className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-orange-100 text-orange-500' : 'hover:bg-gray-100 text-gray-400'}`}
                                 onClick={() => setShowFilters(!showFilters)}
                             >
-                                <SlidersHorizontal size={18} />
-                            </Button>
-                            <Button
-                                className="rounded-full px-4 sm:px-5 py-2 bg-gradient-to-r from-orange-400 to-pink-500 hover:opacity-90 transition-opacity text-white text-sm sm:text-base"
+                                <SlidersHorizontal size={16} />
+                            </button>
+                            <button
+                                className="px-4 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
                                 onClick={handleSearch}
                             >
-                                <span className="hidden sm:inline">Rechercher</span>
-                                <MdSearch size={18} className="sm:hidden" />
-                            </Button>
+                                Rechercher
+                            </button>
                         </div>
                     </div>
                 </div>
-            </div>
+            </header>
 
-            {/* Barre de navigation par matière - chips scrollables */}
-            <div className="sticky top-0 z-30 bg-white border-b border-gray-100 shadow-sm">
+            {/* Subject chips */}
+            <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100">
                 <div className="max-w-7xl mx-auto flex items-stretch">
-                    {/* Flèche gauche - en dehors de la zone scrollable pour ne pas intercepter les clics */}
                     {canScrollLeft && (
                         <button
                             type="button"
                             onClick={() => scrollSubjects("left")}
-                            className="shrink-0 flex items-center justify-center w-10 bg-white border-r border-gray-100 hover:bg-gray-50 transition-colors"
-                            aria-label="Défiler vers la gauche"
+                            className="shrink-0 flex items-center justify-center w-10 hover:bg-gray-50 transition-colors"
                         >
-                            <ChevronLeft size={20} className="text-gray-500" />
+                            <ChevronLeft size={18} className="text-gray-400" />
                         </button>
                     )}
-
                     <div
                         ref={subjectScrollRef}
-                        className="flex-1 flex items-center gap-2 px-4 sm:px-6 py-3 overflow-x-auto scrollbar-hide min-w-0"
+                        className="flex-1 flex items-center gap-1.5 px-4 sm:px-6 py-2.5 overflow-x-auto min-w-0"
                         style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                     >
-                        {/* Chip "Toutes" */}
                         <button
                             onClick={() => handleSubjectChipClick("")}
-                            className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                 !activeSubjectFilter
-                                    ? "bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-sm"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                    ? "bg-gray-900 text-white"
+                                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                             }`}
                         >
                             Toutes
                         </button>
-
                         {educationData.subjects.map((subject) => (
                             <button
                                 key={subject}
                                 onClick={() => handleSubjectChipClick(subject)}
-                                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
+                                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                                     activeSubjectFilter === subject
-                                        ? "bg-gradient-to-r from-orange-400 to-pink-500 text-white shadow-sm"
-                                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                        ? "bg-gray-900 text-white"
+                                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
                                 }`}
                             >
                                 <SubjectIcon
                                     subject={subject}
-                                    size={14}
-                                    className={activeSubjectFilter === subject ? "text-white" : "text-gray-500"}
+                                    size={12}
+                                    className={activeSubjectFilter === subject ? "text-white" : "text-gray-400"}
                                 />
                                 <span className="whitespace-nowrap">{subject.length > 25 ? subject.split("(")[0].trim() : subject}</span>
                             </button>
                         ))}
                     </div>
-
-                    {/* Flèche droite - en dehors de la zone scrollable pour ne pas intercepter les clics */}
                     {canScrollRight && (
                         <button
                             type="button"
                             onClick={() => scrollSubjects("right")}
-                            className="shrink-0 flex items-center justify-center w-10 bg-white border-l border-gray-100 hover:bg-gray-50 transition-colors"
-                            aria-label="Défiler vers la droite"
+                            className="shrink-0 flex items-center justify-center w-10 hover:bg-gray-50 transition-colors"
                         >
-                            <ChevronRight size={20} className="text-gray-500" />
+                            <ChevronRight size={18} className="text-gray-400" />
                         </button>
                     )}
                 </div>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 pt-4">
-                {/* Filtres avancés */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 pt-6">
+                {/* Advanced filters */}
                 {showFilters && (
-                    <div className="bg-white p-4 sm:p-5 rounded-2xl shadow-sm mb-4 border border-gray-100 animate-in slide-in-from-top-2">
+                    <div className="p-4 sm:p-5 rounded-2xl bg-gray-50/80 border border-gray-100 mb-5 animate-in slide-in-from-top-2">
                         <div className="flex items-center justify-between mb-3">
-                            <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                <SlidersHorizontal size={14} />
-                                Filtres avancés
-                            </h3>
+                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                                <SlidersHorizontal size={12} /> Filtres avancés
+                            </span>
                             <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
-                                <X size={18} />
+                                <X size={16} />
                             </button>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -359,7 +316,7 @@ export default function SearchPage() {
                                 value={filters.level || "all"}
                                 onValueChange={(value) => handleFilterChange("level", value === "all" ? "" : value)}
                             >
-                                <SelectTrigger className="h-11 rounded-xl text-black">
+                                <SelectTrigger className="h-10 rounded-xl text-sm text-black">
                                     <SelectValue placeholder="Tous les niveaux" className="text-black" />
                                 </SelectTrigger>
                                 <SelectContent className="text-black">
@@ -374,7 +331,7 @@ export default function SearchPage() {
                                 value={filters.startDate && filters.endDate ? "Autre" : "Tout"}
                                 onValueChange={handleDateRangeChange}
                             >
-                                <SelectTrigger className="h-11 rounded-xl text-black">
+                                <SelectTrigger className="h-10 rounded-xl text-sm text-black">
                                     <SelectValue placeholder="Filtrer par date" className="text-black" />
                                 </SelectTrigger>
                                 <SelectContent className="text-black">
@@ -388,49 +345,47 @@ export default function SearchPage() {
                                 <Button
                                     variant="outline"
                                     onClick={clearAllFilters}
-                                    className="h-11 rounded-xl text-gray-600 gap-2"
+                                    className="h-10 rounded-xl text-gray-600 gap-2 text-sm"
                                 >
-                                    <X size={14} /> Effacer les filtres
+                                    <X size={14} /> Effacer
                                 </Button>
                             )}
                         </div>
                     </div>
                 )}
 
-                {/* Barre d'actions : résultats + tri + favoris */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                    <div className="flex items-center gap-3 flex-wrap">
+                {/* Action bar */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
+                    <div className="flex items-center gap-2.5 flex-wrap">
                         {!loading && fiches.length > 0 && (
-                            <span className="text-gray-600 font-medium text-sm">
-                                {fiches.length} fiche{fiches.length > 1 ? "s" : ""} trouvée{fiches.length > 1 ? "s" : ""}
+                            <span className="text-sm text-gray-500">
+                                <span className="font-medium text-gray-800">{fiches.length}</span> fiche{fiches.length > 1 ? "s" : ""}
                             </span>
                         )}
-                        {/* Filtres actifs */}
                         {activeSubjectFilter && (
-                            <Badge className="bg-orange-50 text-orange-600 border border-orange-200 flex items-center gap-1 pr-1">
-                                <SubjectIcon subject={activeSubjectFilter} size={12} className="text-orange-500" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
+                                <SubjectIcon subject={activeSubjectFilter} size={10} className="text-gray-500" />
                                 {activeSubjectFilter.length > 20 ? activeSubjectFilter.split("(")[0].trim() : activeSubjectFilter}
-                                <button onClick={() => handleSubjectChipClick("")} className="ml-1 p-0.5 rounded-full hover:bg-orange-100">
-                                    <X size={12} />
+                                <button onClick={() => handleSubjectChipClick("")} className="ml-0.5 hover:text-gray-900">
+                                    <X size={10} />
                                 </button>
-                            </Badge>
+                            </span>
                         )}
                         {filters.level && (
-                            <Badge className="bg-blue-50 text-blue-600 border border-blue-200 flex items-center gap-1 pr-1">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
                                 {filters.level}
-                                <button onClick={() => { handleFilterChange("level", ""); handleSearch(); }} className="ml-1 p-0.5 rounded-full hover:bg-blue-100">
-                                    <X size={12} />
+                                <button onClick={() => { handleFilterChange("level", ""); handleSearch(); }} className="ml-0.5 hover:text-gray-900">
+                                    <X size={10} />
                                 </button>
-                            </Badge>
+                            </span>
                         )}
                     </div>
 
-                    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                        {/* Tri */}
-                        <div className="flex items-center gap-1.5 bg-white rounded-xl border border-gray-200 px-2.5 py-1.5">
-                            <ArrowUpDown size={14} className="text-gray-400" />
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2.5 py-1.5">
+                            <ArrowUpDown size={12} className="text-gray-400" />
                             <select
-                                className="text-sm bg-transparent outline-none text-gray-700 cursor-pointer"
+                                className="text-xs bg-transparent outline-none text-gray-600 cursor-pointer"
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                             >
@@ -442,129 +397,129 @@ export default function SearchPage() {
                         </div>
                         <InfoDrawer />
                         <Link href="/fiches/favoris">
-                            <Button variant="outline" className="rounded-xl flex items-center gap-1.5 text-sm px-3">
-                                <FiBookmark size={14} />
-                                <span className="hidden sm:inline">Mes favoris</span>
-                            </Button>
+                            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
+                                <FiBookmark size={12} />
+                                <span className="hidden sm:inline">Favoris</span>
+                            </button>
                         </Link>
                     </div>
                 </div>
 
-                {/* Grille de fiches */}
+                {/* Cards grid */}
                 {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-                        {[...Array(6)].map((_, index) => (
-                            <SkeletonCard key={index} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {[...Array(6)].map((_, i) => (
+                            <div key={i} className="rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
+                                <div className="h-20 bg-gray-100" />
+                                <div className="p-4 space-y-3">
+                                    <div className="h-4 bg-gray-100 rounded w-3/4" />
+                                    <div className="h-3 bg-gray-100 rounded w-full" />
+                                    <div className="h-3 bg-gray-100 rounded w-5/6" />
+                                    <div className="flex justify-between pt-3 border-t border-gray-50">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-6 h-6 bg-gray-100 rounded-full" />
+                                            <div className="h-3 w-14 bg-gray-100 rounded" />
+                                        </div>
+                                        <div className="flex gap-3">
+                                            <div className="h-3 w-6 bg-gray-100 rounded" />
+                                            <div className="h-3 w-6 bg-gray-100 rounded" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         ))}
                     </div>
                 ) : error ? (
-                    <div className="bg-red-50 text-red-600 p-6 rounded-2xl text-center border border-red-100">
-                        <p>{error}</p>
-                    </div>
+                    <div className="text-center py-16 text-red-500 text-sm">{error}</div>
                 ) : fiches.length === 0 ? (
-                    <div className="text-center py-16 sm:py-20">
-                        <div className="text-gray-300 mb-4">
-                            <MdSearch size={56} className="mx-auto" />
+                    <div className="text-center py-20">
+                        <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
+                            <MdSearch size={28} className="text-gray-300" />
                         </div>
-                        <h3 className="text-xl font-medium text-gray-700 mb-2">Aucune fiche trouvée</h3>
-                        <p className="text-gray-500 mb-6">Essayez de modifier vos critères de recherche</p>
-                        {hasActiveFilters && (
-                            <Button onClick={clearAllFilters} variant="outline" className="rounded-full px-6 mb-4">
-                                <X size={14} className="mr-2" /> Effacer les filtres
-                            </Button>
-                        )}
-                        <div>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-1">Aucune fiche trouvée</h3>
+                        <p className="text-sm text-gray-500 mb-5">Modifiez vos critères ou créez la première fiche</p>
+                        <div className="flex items-center justify-center gap-3">
+                            {hasActiveFilters && (
+                                <button onClick={clearAllFilters} className="text-sm font-medium text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg border border-gray-200">
+                                    Effacer les filtres
+                                </button>
+                            )}
                             <Link href="/fiches/creer">
-                                <Button className="bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-full px-6">
-                                    <FiPlusCircle size={16} className="mr-2" />
-                                    Créer la première fiche
-                                </Button>
+                                <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors">
+                                    <FiPlusCircle size={14} />
+                                    Créer une fiche
+                                </button>
                             </Link>
                         </div>
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {sortedFiches.map((fiche) => {
                             const gradient = subjectGradients[fiche.subject] || "from-gray-500 to-gray-400";
-
                             return (
-                                <div
+                                <Link
                                     key={fiche.id}
-                                    className="group relative flex flex-col bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden border border-gray-100"
+                                    href={`/fiches/${buildIdSlug(fiche.id, fiche.title)}`}
+                                    className="group flex flex-col rounded-2xl border border-gray-100 bg-white hover:border-gray-200 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-200 overflow-hidden"
                                 >
-                                    {/* En-tête coloré par matière */}
-                                    <div className={`relative bg-gradient-to-r ${gradient} p-4 pb-6`}>
-                                        <SubjectIcon subject={fiche.subject} size={24} className="text-white/90" />
-
-                                        {fiche.status !== "Non Certifiée" && (
-                                            <div className="absolute top-3 right-3">
-                                                <Tooltip>
-                                                    <TooltipTrigger>
-                                                        <Image
-                                                            src={`/badge/${fiche.status}.svg`}
-                                                            alt={`Statut: ${fiche.status}`}
-                                                            width={28}
-                                                            height={28}
-                                                            className="drop-shadow-md cursor-pointer"
-                                                        />
-                                                    </TooltipTrigger>
-                                                    <TooltipContent>
-                                                        <div className="flex items-center gap-2">
-                                                            <MdInfoOutline size={16} className="text-blue-500" />
-                                                            <span>Fiche <strong>{fiche.status}</strong></span>
-                                                        </div>
-                                                    </TooltipContent>
-                                                </Tooltip>
-                                            </div>
-                                        )}
-
-                                        <div className="flex flex-wrap gap-1.5 mt-2">
-                                            <Badge className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs px-2 py-0.5 rounded-full">
+                                    {/* Colored header */}
+                                    <div className={`relative bg-gradient-to-r ${gradient} px-4 py-4`}>
+                                        <div className="flex items-center justify-between">
+                                            <SubjectIcon subject={fiche.subject} size={20} className="text-white/90" />
+                                            {fiche.status !== "Non Certifiée" && (
+                                                <Image
+                                                    src={`/badge/${fiche.status}.svg`}
+                                                    alt={fiche.status}
+                                                    width={22}
+                                                    height={22}
+                                                    className="drop-shadow-md"
+                                                />
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5 mt-2.5">
+                                            <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-sm text-white font-medium">
                                                 {fiche.level}
-                                            </Badge>
-                                            <Badge className="bg-white/90 backdrop-blur-sm text-gray-800 text-xs px-2 py-0.5 rounded-full">
+                                            </span>
+                                            <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-sm text-white font-medium">
                                                 {fiche.subject.length > 25 ? fiche.subject.split("(")[0].trim() : fiche.subject}
-                                            </Badge>
+                                            </span>
                                         </div>
                                     </div>
 
-                                    {/* Contenu */}
+                                    {/* Content */}
                                     <div className="flex-1 p-4 flex flex-col">
-                                        <Link href={`/fiches/${buildIdSlug(fiche.id, fiche.title)}`} className="flex-1">
-                                            <h2 className="text-base font-semibold text-gray-800 group-hover:text-orange-500 transition-colors line-clamp-2 mb-2">
-                                                {fiche.title}
-                                            </h2>
-                                            <p className="text-sm text-gray-500 line-clamp-3 mb-3">
-                                                {fiche.content}
-                                            </p>
-                                        </Link>
+                                        <h2 className="text-sm font-semibold text-gray-900 group-hover:text-orange-600 transition-colors line-clamp-2 mb-1.5">
+                                            {fiche.title}
+                                        </h2>
+                                        <p className="text-xs text-gray-500 line-clamp-2 mb-3 flex-1">
+                                            {fiche.content}
+                                        </p>
 
-                                        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                                            <Link href={`/compte/${fiche.authors?._id}`} className="flex items-center gap-2 min-w-0">
+                                        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
+                                            <div className="flex items-center gap-2 min-w-0">
                                                 <ProfileAvatar
                                                     username={fiche.authors?.username || "Inconnu"}
                                                     points={fiche.authors?.points || 0}
                                                     userId={fiche.authors?._id}
                                                     size="small"
                                                 />
-                                                <span className="text-xs text-gray-600 truncate">
+                                                <span className="text-xs text-gray-500 truncate">
                                                     {fiche.authors?.username || "Inconnu"}
                                                 </span>
-                                            </Link>
-
-                                            <div className="flex items-center gap-3 text-xs text-gray-500 shrink-0">
-                                                <div className="flex items-center gap-1">
-                                                    <PiFireSimpleFill className="text-orange-400" size={14} />
-                                                    <span>{fiche.likes}</span>
-                                                </div>
-                                                <div className="flex items-center gap-1">
-                                                    <MdInsertComment className="text-blue-400" size={14} />
-                                                    <span>{fiche.comments}</span>
-                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
+                                                <span className="inline-flex items-center gap-1">
+                                                    <PiFireSimpleFill className="text-orange-400" size={12} />
+                                                    {fiche.likes}
+                                                </span>
+                                                <span className="inline-flex items-center gap-1">
+                                                    <MdInsertComment className="text-blue-400" size={12} />
+                                                    {fiche.comments}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
+                                </Link>
                             );
                         })}
                     </div>
@@ -572,52 +527,52 @@ export default function SearchPage() {
 
                 {/* Pagination */}
                 {fiches.length > 0 && pagination.totalPages > 1 && (
-                    <div className="mt-10">
-                        <Pagination>
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious
-                                        href={pagination.page > 1 ? "#" : undefined}
-                                        onClick={pagination.page > 1 ? () => handlePageChange(pagination.page - 1) : undefined}
-                                        className={pagination.page === 1 ? "opacity-50 pointer-events-none" : ""}
-                                    />
-                                </PaginationItem>
-                                {[...Array(Math.min(pagination.totalPages, 5))].map((_, index) => {
-                                    // Afficher les pages intelligemment
-                                    let pageNum: number;
-                                    if (pagination.totalPages <= 5) {
-                                        pageNum = index + 1;
-                                    } else if (pagination.page <= 3) {
-                                        pageNum = index + 1;
-                                    } else if (pagination.page >= pagination.totalPages - 2) {
-                                        pageNum = pagination.totalPages - 4 + index;
-                                    } else {
-                                        pageNum = pagination.page - 2 + index;
-                                    }
-                                    return (
-                                        <PaginationItem key={pageNum}>
-                                            <PaginationLink
-                                                href="#"
-                                                isActive={pageNum === pagination.page}
-                                                onClick={() => handlePageChange(pageNum)}
-                                                className={pageNum === pagination.page
-                                                    ? "bg-gradient-to-r from-orange-400 to-pink-500 text-white rounded-xl"
-                                                    : "rounded-xl"}
-                                            >
-                                                {pageNum}
-                                            </PaginationLink>
-                                        </PaginationItem>
-                                    );
-                                })}
-                                <PaginationItem>
-                                    <PaginationNext
-                                        href={pagination.page < pagination.totalPages ? "#" : undefined}
-                                        onClick={pagination.page < pagination.totalPages ? () => handlePageChange(pagination.page + 1) : undefined}
-                                        className={pagination.page === pagination.totalPages ? "opacity-50 pointer-events-none" : ""}
-                                    />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
+                    <div className="flex items-center justify-center gap-1 mt-10 pt-8 border-t border-gray-100">
+                        <button
+                            onClick={() => pagination.page > 1 && handlePageChange(pagination.page - 1)}
+                            disabled={pagination.page === 1}
+                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="hidden sm:inline">Précédent</span>
+                        </button>
+
+                        <div className="flex items-center gap-1 px-2">
+                            {[...Array(Math.min(pagination.totalPages, 5))].map((_, index) => {
+                                let pageNum: number;
+                                if (pagination.totalPages <= 5) {
+                                    pageNum = index + 1;
+                                } else if (pagination.page <= 3) {
+                                    pageNum = index + 1;
+                                } else if (pagination.page >= pagination.totalPages - 2) {
+                                    pageNum = pagination.totalPages - 4 + index;
+                                } else {
+                                    pageNum = pagination.page - 2 + index;
+                                }
+                                return (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => handlePageChange(pageNum)}
+                                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
+                                            pageNum === pagination.page
+                                                ? "bg-gray-900 text-white"
+                                                : "text-gray-600 hover:bg-gray-100"
+                                        }`}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        <button
+                            onClick={() => pagination.page < pagination.totalPages && handlePageChange(pagination.page + 1)}
+                            disabled={pagination.page >= pagination.totalPages}
+                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                        >
+                            <span className="hidden sm:inline">Suivant</span>
+                            <ChevronRight className="w-4 h-4" />
+                        </button>
                     </div>
                 )}
             </div>

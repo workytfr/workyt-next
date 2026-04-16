@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { educationData } from "@/data/educationData";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 
 export default function UploadForm() {
     const { data: session, status } = useSession();
@@ -122,7 +122,7 @@ export default function UploadForm() {
                         onChange={(e) => setTitle(e.target.value)}
                         className="w-full p-4 border border-gray-300 rounded bg-white text-black"
                     />
-                    <div className="flex-grow">
+                    <div className="flex-grow" data-color-mode="light">
                         <MDEditor
                             value={content}
                             onChange={setContent}

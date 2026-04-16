@@ -23,7 +23,7 @@ import {
   Save,
   X,
 } from "lucide-react";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "katex/dist/katex.min.css";
 import rehypeKatex from "rehype-katex";
@@ -743,6 +743,7 @@ export default function CourseManagementPage() {
               </div>
               <div>
                 <label className="dash-label">Description</label>
+                <div data-color-mode="light">
                 <MDEditor
                   value={editedCourse.description}
                   onChange={(value) =>
@@ -754,6 +755,7 @@ export default function CourseManagementPage() {
                     rehypePlugins: [rehypeKatex],
                   }}
                 />
+                </div>
               </div>
 
               {/* Image de couverture */}

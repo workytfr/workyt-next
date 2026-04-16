@@ -1,18 +1,5 @@
 @import "md-editor-rt/lib/style.css";
 
-/* Fix décalage curseur/lettre dans l'éditeur Markdown (@uiw/react-md-editor)
-   Les couches texte (textarea + overlay syntax highlighting) doivent partager
-   la même police, taille et line-height pour que le curseur s'aligne correctement.
-   Voir: https://github.com/uiwjs/react-md-editor/issues/503 et #578 */
-.w-md-editor-text-pre,
-.w-md-editor-text-input,
-.w-md-editor-text > .w-md-editor-text-pre,
-.w-md-editor-text-pre > code {
-  font-family: inherit !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-}
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -895,6 +882,54 @@
   overflow: hidden;
 }
 
+/* ==========================================
+   CHEST ANIMATION KEYFRAMES
+   ========================================== */
+@keyframes chest-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-4px) rotate(-2deg); }
+  75% { transform: translateX(4px) rotate(2deg); }
+}
+
+@keyframes chest-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.15); }
+  70% { transform: scale(0.95); }
+  100% { transform: scale(1.05); }
+}
+
+@keyframes chest-flash {
+  0% { opacity: 0.9; transform: scale(1); }
+  100% { opacity: 0; transform: scale(2.5); }
+}
+
+@keyframes chest-glow {
+  0% { opacity: 0; transform: scale(0.3); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+@keyframes chest-particle {
+  0% {
+    opacity: 1;
+    transform: translate(-50%, -50%) translate(0, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) translate(var(--tx), var(--ty)) scale(0);
+  }
+}
+
+@keyframes chest-star {
+  0% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1.2) rotate(180deg); }
+  100% { opacity: 0; transform: scale(0.5) rotate(360deg); }
+}
+
+@keyframes chest-reward {
+  0% { opacity: 0; transform: translateY(20px) scale(0.9); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
 /* Safe area pour navbar mobile (notch, home indicator) */
 .safe-area-top {
   padding-top: env(safe-area-inset-top, 0);
@@ -1313,4 +1348,159 @@ html, body {
 @keyframes flame-particle-3 {
   0% { transform: translateY(0) scale(1); opacity: 0.7; }
   100% { transform: translateY(-7px) translateX(-2px) scale(0); opacity: 0; }
+}
+
+/* ==========================================
+   @uiw/react-md-editor — Force light mode + fix cursor alignment
+   Placé EN FIN de fichier pour garantir la priorité CSS maximale.
+   ========================================== */
+
+/* 1. Force light mode via CSS variables */
+.w-md-editor,
+.w-md-editor[data-color-mode="dark"],
+[data-color-mode="dark"] .w-md-editor {
+  --color-canvas-default: #ffffff !important;
+  --color-canvas-subtle: #f6f8fa !important;
+  --color-border-default: #d0d7de !important;
+  --color-border-muted: #d8dee4 !important;
+  --color-fg-default: #24292f !important;
+  --color-fg-muted: #57606a !important;
+  --color-neutral-muted: rgba(175, 184, 193, 0.2) !important;
+  --color-accent-fg: #0969da !important;
+  --color-accent-emphasis: #0969da !important;
+  --color-attention-subtle: #fff8c5 !important;
+  --color-danger-fg: #cf222e !important;
+  --color-prettylights-syntax-comment: #6e7781 !important;
+  --color-prettylights-syntax-constant: #0550ae !important;
+  --color-prettylights-syntax-entity: #8250df !important;
+  --color-prettylights-syntax-storage-modifier-import: #24292f !important;
+  --color-prettylights-syntax-entity-tag: #116329 !important;
+  --color-prettylights-syntax-keyword: #cf222e !important;
+  --color-prettylights-syntax-string: #0a3069 !important;
+  --color-prettylights-syntax-variable: #953800 !important;
+  --color-prettylights-syntax-markup-heading: #0550ae !important;
+  color: #24292f !important;
+  background-color: #ffffff !important;
+}
+
+/* 2. Toolbar light */
+.w-md-editor .w-md-editor-toolbar,
+.w-md-editor-toolbar {
+  background-color: #f6f8fa !important;
+  border-color: #d0d7de !important;
+}
+.w-md-editor-toolbar li > button,
+.w-md-editor .w-md-editor-toolbar li > button {
+  color: #57606a !important;
+}
+
+/* 3. Preview pane light — both .w-md-editor-preview AND .wmde-markdown */
+.w-md-editor-preview,
+.w-md-editor .w-md-editor-preview,
+.wmde-markdown,
+.w-md-editor .wmde-markdown,
+.wmde-markdown-color,
+.w-md-editor .wmde-markdown-color {
+  background-color: #ffffff !important;
+  color: #24292f !important;
+}
+.wmde-markdown h1,
+.wmde-markdown h2,
+.wmde-markdown h3,
+.wmde-markdown h4,
+.wmde-markdown h5,
+.wmde-markdown h6,
+.wmde-markdown p,
+.wmde-markdown li,
+.wmde-markdown td,
+.wmde-markdown th,
+.wmde-markdown blockquote,
+.wmde-markdown a {
+  color: #24292f !important;
+}
+.wmde-markdown code {
+  background-color: rgba(175, 184, 193, 0.2) !important;
+  color: #24292f !important;
+}
+.wmde-markdown pre {
+  background-color: #f6f8fa !important;
+}
+.wmde-markdown pre code {
+  color: #24292f !important;
+  background-color: transparent !important;
+}
+.wmde-markdown hr {
+  border-color: #d0d7de !important;
+  background-color: #d0d7de !important;
+}
+.wmde-markdown table tr {
+  background-color: #ffffff !important;
+  border-color: #d0d7de !important;
+}
+.wmde-markdown table tr:nth-child(2n) {
+  background-color: #f6f8fa !important;
+}
+.wmde-markdown table th,
+.wmde-markdown table td {
+  border-color: #d0d7de !important;
+}
+.wmde-markdown blockquote {
+  border-left-color: #d0d7de !important;
+}
+
+/* 4. Override prefers-color-scheme dark for the editor */
+@media (prefers-color-scheme: dark) {
+  .w-md-editor,
+  .w-md-editor[data-color-mode="dark"],
+  [data-color-mode="dark"] .w-md-editor {
+    --color-canvas-default: #ffffff !important;
+    --color-canvas-subtle: #f6f8fa !important;
+    --color-border-default: #d0d7de !important;
+    --color-border-muted: #d8dee4 !important;
+    --color-fg-default: #24292f !important;
+    --color-fg-muted: #57606a !important;
+    --color-neutral-muted: rgba(175, 184, 193, 0.2) !important;
+    color: #24292f !important;
+    background-color: #ffffff !important;
+  }
+  .w-md-editor-preview,
+  .wmde-markdown,
+  .wmde-markdown-color {
+    background-color: #ffffff !important;
+    color: #24292f !important;
+  }
+}
+
+/* 5. Fix cursor/text alignment — textarea and pre/code overlay MUST share
+   the exact same font, size, line-height. The textarea selector is made
+   highly specific to beat the @layer base { textarea { font-family: ... } } rule. */
+.w-md-editor .w-md-editor-text-pre,
+.w-md-editor .w-md-editor-text-input,
+.w-md-editor .w-md-editor-text > .w-md-editor-text-pre,
+.w-md-editor .w-md-editor-text-pre > code,
+.w-md-editor textarea.w-md-editor-text-input,
+.w-md-editor-text textarea,
+.w-md-editor textarea {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace !important;
+  font-size: 14px !important;
+  line-height: 1.6 !important;
+  letter-spacing: normal !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  text-transform: none !important;
+  word-spacing: normal !important;
+  text-indent: 0 !important;
+  -webkit-text-fill-color: inherit !important;
+}
+
+/* 6. Content area light background */
+.w-md-editor-content,
+.w-md-editor .w-md-editor-content {
+  background-color: #ffffff !important;
+}
+.w-md-editor-input,
+.w-md-editor .w-md-editor-input {
+  background-color: #ffffff !important;
+  color: #24292f !important;
 }

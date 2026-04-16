@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 import {
     FaPaperclip,
     FaTimes,
@@ -172,7 +172,7 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose }) => {
                         </div>
 
                         {/* Éditeur Markdown */}
-                        <div className="mb-4">
+                        <div className="mb-4" data-color-mode="light">
 <MDEditor
                             value={content}
                             onChange={(value) => setContent(value || "")}

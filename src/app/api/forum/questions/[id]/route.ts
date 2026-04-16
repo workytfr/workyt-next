@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const question = await Question.findById(resolvedParams.id).populate({
             path: "user",
-            select: "username points",
+            select: "username points image",
         });
 
         if (!question) {
@@ -67,7 +67,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         const answers = await Answer.find({ question: resolvedParams.id })
             .populate({
                 path: "user",
-                select: "username points",
+                select: "username points image",
             })
             .sort({ createdAt: 1 })
             .skip((page - 1) * limit)

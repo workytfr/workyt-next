@@ -21,7 +21,7 @@ import {
 import { educationData } from "@/data/educationData";
 import { UploadButton } from "@/utils/uploadthing";
 import Image from "next/image";
-import MDEditor from "@uiw/react-md-editor";
+import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "@uiw/react-md-editor/markdown-editor.css";
 import "katex/dist/katex.min.css";
 import rehypeKatex from "rehype-katex";
@@ -373,7 +373,7 @@ export default function CreateCoursePage() {
 
             <div className="dash-form-group">
               <label className="dash-label">Description</label>
-              <div className="border border-[#e3e2e0] rounded-lg overflow-hidden">
+              <div className="border border-[#e3e2e0] rounded-lg overflow-hidden" data-color-mode="light">
                 <MDEditor
                   value={courseData.description}
                   onChange={(value) =>
@@ -683,7 +683,7 @@ export default function CreateCoursePage() {
                   {courseData.title}
                 </h2>
                 {courseData.description && (
-                  <div className="prose prose-sm max-w-none text-[#6b6b6b] mb-6">
+                  <div className="prose prose-sm max-w-none text-[#6b6b6b] mb-6" data-color-mode="light">
                     <MDEditor.Markdown
                       source={courseData.description}
                       remarkPlugins={[remarkMath]}
