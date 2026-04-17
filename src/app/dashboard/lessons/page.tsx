@@ -351,8 +351,8 @@ export default function LessonsPage() {
                                 <Plus className="mr-2 h-4 w-4" /> Ajouter une leçon
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="max-w-4xl w-full max-h-[80vh] overflow-y-auto">
-                            <DialogHeader>
+                        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 flex flex-col gap-0 overflow-hidden">
+                            <DialogHeader className="px-6 py-4 border-b shrink-0">
                                 <DialogTitle>
                                     {selectedLesson ? "Modifier la leçon" : "Ajouter une nouvelle leçon"}
                                 </DialogTitle>

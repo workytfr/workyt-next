@@ -206,35 +206,43 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
     };
 
     return (
-        <div className="max-h-[80vh] overflow-y-auto p-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-                <Input
-                    placeholder="Rechercher un cours..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <Select onValueChange={setSelectedCourseId} disabled={loadingCourses}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Choisissez un cours" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {loadingCourses ? (
-                            <Loader2 className="animate-spin w-5 h-5 mx-auto" />
-                        ) : filteredCourses.length > 0 ? (
-                            filteredCourses.map((course) => (
-                                <SelectItem key={course._id} value={course._id}>
-                                    {course.title}
-                                </SelectItem>
-                            ))
-                        ) : (
-                            <div className="px-2 py-4 text-sm text-gray-500 text-center">
-                                Aucun cours trouvé
-                            </div>
-                        )}
-                    </SelectContent>
-                </Select>
-                {selectedCourseId && (
-                    <Select onValueChange={setSectionId} disabled={!selectedCourseId}>
+        <form
+            onSubmit={handleSubmit}
+            className="flex flex-col flex-1 min-h-0 overflow-hidden"
+        >
+            {/* Barre métadonnées compacte */}
+            <div className="px-6 py-3 border-b bg-gray-50/50 shrink-0">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                    <Input
+                        placeholder="Rechercher un cours..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                    <Select onValueChange={setSelectedCourseId} disabled={loadingCourses}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Choisissez un cours" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {loadingCourses ? (
+                                <Loader2 className="animate-spin w-5 h-5 mx-auto" />
+                            ) : filteredCourses.length > 0 ? (
+                                filteredCourses.map((course) => (
+                                    <SelectItem key={course._id} value={course._id}>
+                                        {course.title}
+                                    </SelectItem>
+                                ))
+                            ) : (
+                                <div className="px-2 py-4 text-sm text-gray-500 text-center">
+                                    Aucun cours trouvé
+                                </div>
+                            )}
+                        </SelectContent>
+                    </Select>
+                    <Select
+                        onValueChange={setSectionId}
+                        disabled={!selectedCourseId}
+                        value={sectionId}
+                    >
                         <SelectTrigger>
                             <SelectValue placeholder="Sélectionner une section" />
                         </SelectTrigger>
@@ -248,22 +256,37 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
                                 ))}
                         </SelectContent>
                     </Select>
-                )}
+                    <Input
+                        placeholder="Titre de la leçon"
+                        value={title}
+                        onChange={(e) => setTitle(e.target.value)}
+                    />
+                </div>
+            </div>
+
+            {/* Éditeur qui remplit tout l'espace disponible */}
+            <div className="flex-1 min-h-0 overflow-hidden">
+                <RichTextEditor content={content} onChange={setContent} fullHeight />
+            </div>
+
+            {/* Pied de page avec fichiers et bouton de soumission */}
+            <div className="px-6 py-3 border-t bg-gray-50/50 shrink-0 flex items-center gap-3 flex-wrap">
                 <Input
-                    placeholder="Titre de la leçon"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
+                    type="file"
+                    multiple
+                    onChange={handleFilesChange}
+                    className="max-w-xs"
                 />
-                <RichTextEditor content={content} onChange={setContent} />
-                <Input type="file" multiple onChange={handleFilesChange} />
                 {files.length > 0 && (
-                    <ul className="list-disc ml-4">
-                        {files.map((file, index) => (
-                            <li key={index}>{file.name}</li>
-                        ))}
-                    </ul>
+                    <span className="text-xs text-gray-500">
+                        {files.length} fichier{files.length > 1 ? "s" : ""} sélectionné{files.length > 1 ? "s" : ""}
+                    </span>
                 )}
-                <Button type="submit" disabled={loading || !sectionId}>
+                <Button
+                    type="submit"
+                    disabled={loading || !sectionId}
+                    className="ml-auto"
+                >
                     {loading
                         ? lesson
                             ? "Mise à jour en cours..."
@@ -272,7 +295,7 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
                             ? "Modifier la leçon"
                             : "Créer la leçon"}
                 </Button>
-            </form>
-        </div>
+            </div>
+        </form>
     );
 }

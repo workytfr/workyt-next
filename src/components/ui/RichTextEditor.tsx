@@ -24,6 +24,7 @@ import MenuBar from './MenuBarEditor';
 interface RichTextEditorProps {
     content: string;
     onChange: (content: string) => void;
+    fullHeight?: boolean;
 }
 
 const lowlightInstance = createLowlight(all);
@@ -34,7 +35,7 @@ function defaultShouldRender(state: any, pos: number, node: any) {
     return node.type.name === 'text' && $pos.parent.type.name !== 'codeBlock';
 }
 
-export default function RichTextEditor({ content, onChange }: RichTextEditorProps) {
+export default function RichTextEditor({ content, onChange, fullHeight = false }: RichTextEditorProps) {
     // Le hook useEditor doit être appelé directement dans le composant, sans condition.
     const editor = useEditor({
         extensions: [
@@ -73,7 +74,11 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
         content,
         immediatelyRender: false,
         editorProps: {
-            attributes: { class: 'ProseMirror min-h-[156px] border rounded-md bg-slate-50 py-2 px-3' },
+            attributes: {
+                class: fullHeight
+                    ? 'ProseMirror min-h-full bg-white py-4 px-6 outline-none'
+                    : 'ProseMirror min-h-[156px] border rounded-md bg-slate-50 py-2 px-3',
+            },
         },
         onUpdate: ({ editor }) => {
             onChange(editor.getHTML());
@@ -262,10 +267,21 @@ export default function RichTextEditor({ content, onChange }: RichTextEditorProp
                 }
             `}</style>
 
-            <div>
-                <MenuBar editor={editor} />
-                <EditorContent editor={editor} />
-            </div>
+            {fullHeight ? (
+                <div className="flex flex-col h-full min-h-0">
+                    <div className="sticky top-0 z-10 bg-white border-b shrink-0">
+                        <MenuBar editor={editor} />
+                    </div>
+                    <div className="flex-1 min-h-0 overflow-y-auto">
+                        <EditorContent editor={editor} className="h-full" />
+                    </div>
+                </div>
+            ) : (
+                <div>
+                    <MenuBar editor={editor} />
+                    <EditorContent editor={editor} />
+                </div>
+            )}
         </>
     );
 }

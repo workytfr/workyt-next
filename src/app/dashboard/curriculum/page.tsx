@@ -51,12 +51,20 @@ interface CurriculumNode {
   };
 }
 
+interface SuperieurCategory {
+  key: string;
+  label: string;
+  levels: { value: string; label: string }[];
+  tracks: { value: string; label: string }[];
+}
+
 interface LevelsConfig {
   [key: string]: {
     label: string;
-    levels: { value: string; label: string }[];
+    levels?: { value: string; label: string }[];
     subjects?: string[];
     commonSubjects?: string[];
+    categories?: SuperieurCategory[];
   };
 }
 
@@ -76,6 +84,31 @@ const DIFFICULTY_COLORS = [
   "bg-red-100 text-red-700",
 ];
 
+// Calcule un % de couverture pour un node selon la présence de contenu lié
+function nodeCoverage(node: CurriculumNode): number {
+  const lc = node.linkedContent;
+  if (!lc) return 0;
+  const parts = [
+    (lc.fiches?.length || 0) > 0 ? 1 : 0,
+    (lc.courses?.length || 0) > 0 ? 1 : 0,
+    (lc.quizzes?.length || 0) > 0 ? 1 : 0,
+  ];
+  return Math.round((parts.reduce((a, b) => a + b, 0) / 3) * 100);
+}
+
+function aggregateCoverage(nodes: CurriculumNode[]): number {
+  if (nodes.length === 0) return 0;
+  const sum = nodes.reduce((acc, n) => acc + nodeCoverage(n), 0);
+  return Math.round(sum / nodes.length);
+}
+
+function coverageClass(pct: number): string {
+  if (pct === 0) return "bg-gray-100 text-gray-500";
+  if (pct < 34) return "bg-red-100 text-red-700";
+  if (pct < 67) return "bg-orange-100 text-orange-700";
+  return "bg-green-100 text-green-700";
+}
+
 export default function CurriculumAdminPage() {
   const { data: session } = useSession();
   const [nodes, setNodes] = useState<CurriculumNode[]>([]);
@@ -91,7 +124,9 @@ export default function CurriculumAdminPage() {
 
   // Filtres
   const [filterCycle, setFilterCycle] = useState("");
+  const [filterCategory, setFilterCategory] = useState(""); // superieur only
   const [filterLevel, setFilterLevel] = useState("");
+  const [filterTrack, setFilterTrack] = useState("");
   const [filterSubject, setFilterSubject] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -110,6 +145,7 @@ export default function CurriculumAdminPage() {
       const params = new URLSearchParams();
       if (filterCycle) params.set("cycle", filterCycle);
       if (filterLevel) params.set("level", filterLevel);
+      if (filterTrack) params.set("track", filterTrack);
       if (filterSubject) params.set("subject", filterSubject);
 
       const res = await fetch(`/api/curriculum?${params}`, {
@@ -124,7 +160,7 @@ export default function CurriculumAdminPage() {
     } finally {
       setLoading(false);
     }
-  }, [session?.accessToken, filterCycle, filterLevel, filterSubject]);
+  }, [session?.accessToken, filterCycle, filterLevel, filterTrack, filterSubject]);
 
   useEffect(() => {
     fetchNodes();
@@ -247,6 +283,9 @@ export default function CurriculumAdminPage() {
       const match =
         node.chapter.toLowerCase().includes(q) ||
         node.theme.toLowerCase().includes(q) ||
+        node.subject.toLowerCase().includes(q) ||
+        node.level.toLowerCase().includes(q) ||
+        (node.track || "").toLowerCase().includes(q) ||
         node.skills.some(
           (s) =>
             s.description.toLowerCase().includes(q) ||
@@ -261,9 +300,49 @@ export default function CurriculumAdminPage() {
   }, {});
 
   const totalSkills = nodes.reduce((acc, n) => acc + n.skills.length, 0);
-  const availableLevels = levelsConfig && filterCycle ? levelsConfig[filterCycle]?.levels || [] : [];
-  const availableSubjects = levelsConfig && filterCycle
-    ? (levelsConfig[filterCycle] as any)?.subjects || (levelsConfig[filterCycle] as any)?.commonSubjects || []
+  const isSuperieur = filterCycle === "superieur";
+  const superieurCategories: SuperieurCategory[] =
+    (levelsConfig?.superieur?.categories as SuperieurCategory[]) || [];
+  const selectedCategory = isSuperieur
+    ? superieurCategories.find((c) => c.key === filterCategory)
+    : undefined;
+
+  const availableLevels = isSuperieur
+    ? selectedCategory?.levels || []
+    : levelsConfig && filterCycle
+      ? levelsConfig[filterCycle]?.levels || []
+      : [];
+
+  const availableTracks = isSuperieur ? selectedCategory?.tracks || [] : [];
+
+  // Matières : statiques pour collège/lycée, dérivées des nodes chargés pour le supérieur
+  const staticSubjects: string[] =
+    !isSuperieur && levelsConfig && filterCycle
+      ? (levelsConfig[filterCycle] as any)?.subjects ||
+        (levelsConfig[filterCycle] as any)?.commonSubjects ||
+        []
+      : [];
+  const dynamicSubjects = isSuperieur
+    ? [...new Set(nodes.map((n) => n.subject))].sort()
+    : [];
+  const availableSubjects = isSuperieur ? dynamicSubjects : staticSubjects;
+
+  // Mode recherche : liste plate de skills matchés avec contexte complet
+  const searchResults = searchQuery
+    ? nodes.flatMap((node) => {
+        const q = searchQuery.toLowerCase();
+        return node.skills
+          .filter(
+            (s) =>
+              s.description.toLowerCase().includes(q) ||
+              s.keywords.some((k) => k.toLowerCase().includes(q)) ||
+              s.skillId.toLowerCase().includes(q) ||
+              node.chapter.toLowerCase().includes(q) ||
+              node.theme.toLowerCase().includes(q) ||
+              node.subject.toLowerCase().includes(q)
+          )
+          .map((skill) => ({ skill, node }));
+      })
     : [];
 
   return (
@@ -275,8 +354,19 @@ export default function CurriculumAdminPage() {
             <GraduationCap className="w-7 h-7 text-[#f97316]" />
             Programmes Scolaires
           </h1>
-          <p className="text-sm text-[#6b6b6b] mt-1">
-            {nodes.length} chapitres &middot; {totalSkills} compétences
+          <p className="text-sm text-[#6b6b6b] mt-1 flex items-center gap-2">
+            <span>{nodes.length} chapitres &middot; {totalSkills} compétences</span>
+            {nodes.length > 0 && (() => {
+              const pct = aggregateCoverage(nodes);
+              return (
+                <span
+                  className={`text-xs px-1.5 py-0.5 rounded font-medium ${coverageClass(pct)}`}
+                  title="Couverture Workyt globale : fiches / cours / quiz liés"
+                >
+                  {pct}% couvert
+                </span>
+              );
+            })()}
           </p>
         </div>
         <button
@@ -325,12 +415,14 @@ export default function CurriculumAdminPage() {
             <Filter className="w-4 h-4 text-[#6b6b6b]" />
             <span className="text-sm font-medium text-[#37352f]">Filtres</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <select
               value={filterCycle}
               onChange={(e) => {
                 setFilterCycle(e.target.value);
+                setFilterCategory("");
                 setFilterLevel("");
+                setFilterTrack("");
                 setFilterSubject("");
               }}
               className="dash-input"
@@ -343,11 +435,30 @@ export default function CurriculumAdminPage() {
               ))}
             </select>
 
+            {isSuperieur && (
+              <select
+                value={filterCategory}
+                onChange={(e) => {
+                  setFilterCategory(e.target.value);
+                  setFilterLevel("");
+                  setFilterTrack("");
+                }}
+                className="dash-input"
+              >
+                <option value="">Toutes les catégories</option>
+                {superieurCategories.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <select
               value={filterLevel}
               onChange={(e) => setFilterLevel(e.target.value)}
               className="dash-input"
-              disabled={!filterCycle}
+              disabled={!filterCycle || (isSuperieur && !filterCategory)}
             >
               <option value="">Tous les niveaux</option>
               {availableLevels.map((l: any) => (
@@ -357,11 +468,27 @@ export default function CurriculumAdminPage() {
               ))}
             </select>
 
+            {isSuperieur && (
+              <select
+                value={filterTrack}
+                onChange={(e) => setFilterTrack(e.target.value)}
+                className="dash-input"
+                disabled={!filterCategory}
+              >
+                <option value="">Toutes les filières</option>
+                {availableTracks.map((t) => (
+                  <option key={t.value} value={t.value}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            )}
+
             <select
               value={filterSubject}
               onChange={(e) => setFilterSubject(e.target.value)}
               className="dash-input"
-              disabled={!filterCycle}
+              disabled={!filterCycle || (isSuperieur && availableSubjects.length === 0)}
             >
               <option value="">Toutes les matières</option>
               {(Array.isArray(availableSubjects) ? availableSubjects : []).map((s: string) => (
@@ -390,6 +517,74 @@ export default function CurriculumAdminPage() {
         <div className="flex items-center justify-center py-20">
           <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
         </div>
+      ) : searchQuery ? (
+        <div className="space-y-2">
+          <div className="text-xs text-[#6b6b6b] px-1">
+            {searchResults.length} compétence{searchResults.length > 1 ? "s" : ""} trouvée{searchResults.length > 1 ? "s" : ""} pour &laquo; {searchQuery} &raquo;
+          </div>
+          {searchResults.length === 0 ? (
+            <div className="dash-empty">
+              <Search className="dash-empty-icon" />
+              <h3 className="dash-empty-title">Aucune compétence</h3>
+              <p className="text-sm text-[#6b6b6b]">
+                Essayez un autre mot-clé ou élargissez les filtres
+              </p>
+            </div>
+          ) : (
+            <div className="dash-card">
+              <div className="dash-card-body p-0 divide-y divide-[#e3e2e0]">
+                {searchResults.slice(0, 200).map(({ skill, node }) => (
+                  <div key={`${node.nodeId}-${skill.skillId}`} className="px-4 py-3 hover:bg-[#f7f6f3]">
+                    <div className="flex items-start gap-2">
+                      <span
+                        className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold shrink-0 mt-0.5 ${
+                          DIFFICULTY_COLORS[skill.difficulty]
+                        }`}
+                      >
+                        {skill.difficulty}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-[#37352f]">{skill.description}</div>
+                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1 text-xs text-[#6b6b6b]">
+                          <span className="dash-badge">{CYCLE_LABELS[node.cycle] || node.cycle}</span>
+                          <span>&rsaquo;</span>
+                          <span className="dash-badge">{node.level}</span>
+                          {node.track && (
+                            <>
+                              <span>&rsaquo;</span>
+                              <span className="dash-badge">{node.track}</span>
+                            </>
+                          )}
+                          <span>&rsaquo;</span>
+                          <span className="dash-badge">{node.subject}</span>
+                          <span>&rsaquo;</span>
+                          <span className="truncate">{node.theme}</span>
+                          <span>&rsaquo;</span>
+                          <span className="truncate font-medium text-[#37352f]">{node.chapter}</span>
+                        </div>
+                        {skill.keywords.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-1.5">
+                            {skill.keywords.map((k) => (
+                              <span key={k} className="text-[10px] px-1.5 py-0.5 rounded bg-[#f3f4f6] text-[#6b6b6b]">
+                                {k}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <code className="text-[10px] text-[#9ca3af] shrink-0 mt-0.5">{skill.skillId}</code>
+                    </div>
+                  </div>
+                ))}
+                {searchResults.length > 200 && (
+                  <div className="px-4 py-2 text-xs text-[#9ca3af] text-center">
+                    Affichage limité aux 200 premiers résultats. Affinez la recherche.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       ) : Object.keys(grouped).length === 0 ? (
         <div className="dash-empty">
           <FileJson className="dash-empty-icon" />
@@ -414,6 +609,18 @@ export default function CurriculumAdminPage() {
                 )}
                 <BookOpen className="w-4 h-4 text-[#f97316]" />
                 <span className="font-semibold text-[#37352f]">{theme}</span>
+                {(() => {
+                  const themeNodes = Object.values(chapters).flat();
+                  const pct = aggregateCoverage(themeNodes);
+                  return (
+                    <span
+                      className={`ml-2 text-xs px-1.5 py-0.5 rounded font-medium ${coverageClass(pct)}`}
+                      title="Couverture Workyt : fiches / cours / quiz liés"
+                    >
+                      {pct}%
+                    </span>
+                  );
+                })()}
                 <span className="text-xs text-[#9ca3af] ml-auto">
                   {Object.keys(chapters).length} chapitres &middot;{" "}
                   {Object.values(chapters)
@@ -444,6 +651,17 @@ export default function CurriculumAdminPage() {
                           <span className="font-medium text-sm text-[#37352f]">
                             {chapter}
                           </span>
+                          {(() => {
+                            const pct = aggregateCoverage(chapterNodes);
+                            return (
+                              <span
+                                className={`ml-2 text-xs px-1.5 py-0.5 rounded font-medium ${coverageClass(pct)}`}
+                                title="Couverture Workyt : fiches / cours / quiz liés"
+                              >
+                                {pct}%
+                              </span>
+                            );
+                          })()}
                           <div className="flex items-center gap-1 ml-2">
                             {levels.map((l) => (
                               <span

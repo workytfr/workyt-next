@@ -16,10 +16,13 @@ export default function RichTextEditorClientWrapper(props: any) {
   if (!mounted) return null;
 
   return (
-    <div ref={containerRef}>
+    <div
+      ref={containerRef}
+      className={props.fullHeight ? "h-full flex flex-col min-h-0" : undefined}
+    >
       {containerRef.current
         ? createPortal(<RichTextEditor {...props} />, containerRef.current)
         : null}
     </div>
   );
-} 
+}
