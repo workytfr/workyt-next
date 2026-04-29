@@ -107,7 +107,7 @@ export default function LearningSimulations() {
                     <div className="max-w-2xl">
                         <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
                             <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
-                            <span>07</span>
+                            <span>03</span>
                             <span>Simulations live</span>
                         </div>
                         <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl lg:text-7xl">

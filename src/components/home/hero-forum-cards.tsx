@@ -186,15 +186,6 @@ export default function HeroForumCards() {
         ))}
       </div>
 
-      {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 1.2 }}
-        className="mt-3 text-center text-[10px] font-medium text-[rgba(26,21,18,0.5)]"
-      >
-        + 3 200 questions résolues cette semaine
-      </motion.div>
     </div>
   );
 }

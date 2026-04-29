@@ -40,7 +40,7 @@ export function WobbleCardDemo() {
                 <div className="lg:col-span-5">
                     <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(253,250,244,0.6)]">
                         <span className="inline-block w-8 border-t border-[rgba(253,250,244,0.3)]" />
-                        <span>02</span>
+                        <span>04</span>
                         <span>Notre mission</span>
                     </div>
                     <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl">
@@ -68,10 +68,10 @@ export function WobbleCardDemo() {
                         </div>
                         <div className="rounded-2xl border border-[rgba(253,250,244,0.15)] p-4">
                             <div className="font-serif-display text-4xl text-[var(--wk-accent-2)]">
-                                5 ans
+                                Depuis 2020
                             </div>
                             <div className="mt-1 text-sm text-[rgba(253,250,244,0.7)]">
-                                Au service des workeurs depuis 2021
+                                Né en confinement, asso officielle depuis mars 2022
                             </div>
                         </div>
                     </div>
