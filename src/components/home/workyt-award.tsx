@@ -3,7 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Ticket, ArrowRight, Gift, Gem, MapPin } from "lucide-react";
+import {
+    Ticket,
+    ArrowRight,
+    Gift,
+    MapPin,
+    Sparkles,
+    ArrowUpRight,
+} from "lucide-react";
 
 interface PartnerPreview {
     _id: string;
@@ -22,7 +29,7 @@ interface PartnerPreview {
 
 function formatOffer(type: string, value: number): string {
     if (type === "percentage") return `-${value}%`;
-    if (type === "fixed") return `-${value}\u20AC`;
+    if (type === "fixed") return `-${value}€`;
     return "Offre";
 }
 
@@ -36,15 +43,27 @@ const WorkytAwardSection = () => {
                 const res = await fetch("/api/partners?active=true");
                 if (res.ok) {
                     const data = await res.json();
-                    const list: PartnerPreview[] = Array.isArray(data) ? data : data.partners || [];
+                    const list: PartnerPreview[] = Array.isArray(data)
+                        ? data
+                        : data.partners || [];
                     setPartners(list.slice(0, 4));
-                    setTotalCodes(list.reduce((sum: number, p: PartnerPreview) => {
-                        const free = (p.offersEnabled?.free !== false && p.availableCodes?.free) ? p.availableCodes.free : 0;
-                        const premium = (p.offersEnabled?.premium !== false && p.availableCodes?.premium) ? p.availableCodes.premium : 0;
-                        return sum + free + premium;
-                    }, 0));
+                    setTotalCodes(
+                        list.reduce((sum: number, p: PartnerPreview) => {
+                            const free =
+                                p.offersEnabled?.free !== false && p.availableCodes?.free
+                                    ? p.availableCodes.free
+                                    : 0;
+                            const premium =
+                                p.offersEnabled?.premium !== false && p.availableCodes?.premium
+                                    ? p.availableCodes.premium
+                                    : 0;
+                            return sum + free + premium;
+                        }, 0)
+                    );
                 }
-            } catch { /* silently fail */ }
+            } catch {
+                /* silently fail */
+            }
         };
         fetchPartners();
     }, []);
@@ -52,33 +71,74 @@ const WorkytAwardSection = () => {
     if (partners.length === 0) return null;
 
     return (
-        <div className="py-14 bg-white">
-            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <section
+            id="award"
+            className="relative overflow-hidden bg-[#fff8ee] px-4 py-20 md:py-28"
+        >
+            <div
+                className="wk-cahier pointer-events-none absolute inset-0 opacity-[0.35]"
+                aria-hidden="true"
+            />
+
+            <div className="relative mx-auto max-w-[1400px]">
                 {/* Header */}
-                <div className="text-center mb-10">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 text-sm font-medium mb-4">
-                        <Gift className="w-4 h-4" />
-                        Workyt Award
+                <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                    <div className="max-w-2xl">
+                        <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
+                            <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
+                            <span>06</span>
+                            <span>Workyt Award</span>
+                        </div>
+                        <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl">
+                            Vos réductions{" "}
+                            <span className="italic text-[var(--wk-accent)]">
+                                exclusives
+                            </span>
+                            .
+                        </h2>
+                        <p className="mt-4 max-w-md text-[rgba(26,21,18,0.7)]">
+                            Utilisez vos gemmes pour débloquer des codes promo chez nos partenaires éducatifs.
+                            {totalCodes > 0 && (
+                                <span className="ml-1 font-semibold text-[#1a5a1a]">
+                                    {totalCodes} code{totalCodes > 1 ? "s" : ""} disponible{totalCodes > 1 ? "s" : ""} !
+                                </span>
+                            )}
+                        </p>
                     </div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">
-                        Vos{" "}
-                        <span className="bg-gradient-to-r from-orange-500 to-amber-400 bg-clip-text text-transparent">
-                            réductions exclusives
-                        </span>
-                    </h2>
-                    <p className="text-gray-500 max-w-xl mx-auto text-sm">
-                        Utilisez vos gemmes pour débloquer des codes promo chez nos partenaires.
-                        {totalCodes > 0 && (
-                            <span className="font-semibold text-green-600"> {totalCodes} code{totalCodes > 1 ? 's' : ''} disponible{totalCodes > 1 ? 's' : ''} !</span>
-                        )}
-                    </p>
+
+                    <div className="relative">
+                        <div
+                            className="wk-float-y rotate-[-4deg] rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white p-4 shadow-xl"
+                            style={{ animationDelay: "-1s" }}
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[rgba(255,106,26,0.12)] text-[var(--wk-accent)]">
+                                    <Gift className="h-5 w-5" />
+                                </div>
+                                <div>
+                                    <div className="font-mono-ui text-[10px] uppercase tracking-widest text-[rgba(26,21,18,0.5)]">
+                                        Gemmes → Codes
+                                    </div>
+                                    <div className="font-serif-display text-xl">
+                                        100 pts = 1 💎
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
-                {/* Grille partenaires */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    {partners.map((partner) => {
-                        const codes = ((partner.offersEnabled?.free !== false && partner.availableCodes?.free) ? partner.availableCodes.free : 0) +
-                            ((partner.offersEnabled?.premium !== false && partner.availableCodes?.premium) ? partner.availableCodes.premium : 0);
+                {/* Partners grid */}
+                <div className="mb-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    {partners.map((partner, i) => {
+                        const codes =
+                            (partner.offersEnabled?.free !== false && partner.availableCodes?.free
+                                ? partner.availableCodes.free
+                                : 0) +
+                            (partner.offersEnabled?.premium !== false &&
+                            partner.availableCodes?.premium
+                                ? partner.availableCodes.premium
+                                : 0);
                         const bestOffer = partner.offers.premium
                             ? formatOffer(partner.offers.premium.type, partner.offers.premium.value)
                             : partner.offers.free
@@ -86,54 +146,72 @@ const WorkytAwardSection = () => {
                             : null;
 
                         return (
-                            <Link key={partner._id} href="/award" className="group">
-                                <div className="relative bg-white border border-gray-100 hover:border-orange-200 rounded-2xl overflow-hidden transition-all duration-300 hover:shadow-lg hover:shadow-orange-100/50 hover:-translate-y-1">
-                                    {/* Image */}
-                                    <div className="relative h-28 bg-gray-100 overflow-hidden">
-                                        <Image
-                                            src={partner.image}
-                                            alt={partner.name}
-                                            fill
-                                            className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                            unoptimized
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                                        {bestOffer && (
-                                            <div className="absolute top-2 right-2">
-                                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-white/95 backdrop-blur-sm rounded-full text-xs font-bold text-orange-600">
-                                                    <Ticket className="w-3 h-3" />
-                                                    {bestOffer}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {codes > 0 && (
-                                            <div className="absolute bottom-2 left-2">
-                                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-green-500 text-white rounded-full text-[10px] font-medium">
-                                                    {codes} dispo
-                                                </span>
-                                            </div>
-                                        )}
+                            <Link
+                                key={partner._id}
+                                href="/award"
+                                className="wk-tilt group relative flex flex-col overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white transition hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(26,21,18,0.08)]"
+                            >
+                                <div className="relative h-36 overflow-hidden bg-[var(--wk-paper-2)]">
+                                    <Image
+                                        src={partner.image}
+                                        alt={`Offre partenaire ${partner.name} sur Workyt Award`}
+                                        fill
+                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        unoptimized
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+                                    {bestOffer && (
+                                        <div className="absolute right-3 top-3">
+                                            <span className="wk-pulse-glow inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 text-xs font-bold text-[var(--wk-accent)] shadow-lg">
+                                                <Ticket className="h-3 w-3" />
+                                                {bestOffer}
+                                            </span>
+                                        </div>
+                                    )}
+                                    {codes > 0 && (
+                                        <div className="absolute bottom-3 left-3">
+                                            <span className="inline-flex items-center gap-1 rounded-full bg-[#1a5a1a] px-2.5 py-1 text-[10px] font-semibold text-white">
+                                                <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#7ed957]" />
+                                                {codes} dispo
+                                            </span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="flex flex-1 flex-col p-5">
+                                    <div className="mb-2 flex items-center justify-between">
+                                        <span className="wk-chip !border-[#ffd8a8] !bg-[#fff3e0] !text-[#7a3a0a]">
+                                            <Sparkles className="h-3 w-3" />
+                                            {partner.category?.toUpperCase() || "AWARD"}
+                                        </span>
+                                        <span className="font-mono-ui text-[10px] text-[rgba(26,21,18,0.4)]">
+                                            {String(i + 1).padStart(2, "0")}
+                                        </span>
                                     </div>
 
-                                    {/* Info */}
-                                    <div className="p-4">
-                                        <div className="flex items-center gap-2.5 mb-1">
-                                            <Image
-                                                src={partner.logo}
-                                                alt=""
-                                                width={24}
-                                                height={24}
-                                                className="rounded-full object-cover"
-                                                unoptimized
-                                            />
-                                            <h3 className="text-sm font-semibold text-gray-800 group-hover:text-orange-600 transition-colors truncate">
-                                                {partner.name}
-                                            </h3>
-                                        </div>
-                                        <p className="text-xs text-gray-400 flex items-center gap-1">
-                                            <MapPin className="w-3 h-3" />
-                                            {partner.city}
-                                        </p>
+                                    <div className="mt-1 flex items-center gap-2.5">
+                                        <Image
+                                            src={partner.logo}
+                                            alt=""
+                                            width={28}
+                                            height={28}
+                                            className="h-7 w-7 rounded-full border border-[rgba(26,21,18,0.1)] object-cover"
+                                            unoptimized
+                                        />
+                                        <h3 className="font-serif-display truncate text-lg leading-tight">
+                                            {partner.name}
+                                        </h3>
+                                    </div>
+
+                                    <p className="mt-2 flex items-center gap-1 text-[11px] text-[rgba(26,21,18,0.55)]">
+                                        <MapPin className="h-3 w-3" />
+                                        {partner.city}
+                                    </p>
+
+                                    <div className="mt-3 flex items-center gap-1 text-xs font-semibold text-[var(--wk-accent)] opacity-0 transition group-hover:opacity-100">
+                                        Débloquer
+                                        <ArrowUpRight className="h-3 w-3" />
                                     </div>
                                 </div>
                             </Link>
@@ -143,16 +221,13 @@ const WorkytAwardSection = () => {
 
                 {/* CTA */}
                 <div className="text-center">
-                    <Link
-                        href="/award"
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-400 hover:from-orange-600 hover:to-amber-500 text-white rounded-full text-sm font-semibold transition-all shadow-lg shadow-orange-200/50 hover:shadow-xl hover:shadow-orange-200/60"
-                    >
+                    <Link href="/award" className="wk-btn-orange wk-animate-shine inline-flex">
                         Voir toutes les réductions
-                        <ArrowRight className="w-4 h-4" />
+                        <ArrowRight className="h-4 w-4" />
                     </Link>
                 </div>
             </div>
-        </div>
+        </section>
     );
 };
 

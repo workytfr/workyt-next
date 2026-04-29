@@ -31,7 +31,28 @@ const nextConfig = {
         ];
     },
     // Exclure pdf-parse du bundling serveur (nécessite le worker pdf.js en natif)
-    serverExternalPackages: ["pdf-parse"],
+    // + @uploadthing/mime-types pour éviter les erreurs de build sur ses fichiers .md
+    serverExternalPackages: ["pdf-parse", "@uploadthing/mime-types"],
+    // Transpile @uploadthing — Turbopack (Next 16) bute sinon sur les .d.cts qui
+    // contiennent du ESM alors que leur extension annonce CommonJS.
+    // Note : @uploadthing/mime-types reste en serverExternalPackages (plus haut),
+    // ne pas le remettre ici (conflit au build webpack).
+    transpilePackages: [
+        "@uploadthing/react",
+        "@uploadthing/shared",
+        "uploadthing",
+    ],
+    // Turbopack : ignorer les README.md et fichiers markdown embarqués dans certains
+    // packages (@uploadthing/mime-types, @uploadthing/react) — ils n'ont pas à être
+    // bundlés côté client.
+    turbopack: {
+        rules: {
+            "*.md": {
+                loaders: [{ loader: "raw-loader" }],
+                as: "*.js",
+            },
+        },
+    },
     // Configuration pour le SEO
     experimental: {
         optimizeCss: true,

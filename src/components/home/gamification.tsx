@@ -56,25 +56,22 @@ const STREAK_MILESTONES = [
 
 export function GamificationSection() {
     return (
-        <div className="py-16 bg-gradient-to-br from-gray-50 to-gray-100">
+        <section id="gamification" className="relative overflow-hidden bg-[var(--wk-paper)] py-20 md:py-28">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Header */}
-                <div className="text-center mb-16">
-                    <Badge variant="outline" className="mb-4 px-4 py-2 text-sm font-medium bg-gradient-to-r from-purple-500 to-pink-500 text-white border-none">
-                        <Zap className="w-4 h-4 mr-2" />
-                        Système de progression
-                    </Badge>
-                    <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                        Apprends.{" "}
-                        <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                            Progresse.
-                        </span>
-                        {" "}Débloque.
+                <div className="mb-16 max-w-3xl">
+                    <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
+                        <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
+                        <span>04</span>
+                        <span>Gamification</span>
+                    </div>
+                    <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl lg:text-7xl">
+                        Apprends. <span className="italic text-[var(--wk-accent)]">Progresse.</span> Débloque.
                     </h2>
-                    <div className="max-w-3xl mx-auto">
+                    <div className="mt-6">
                         <TextGenerateEffect
                             words="Chaque action sur Workyt te rapporte des points : créer des fiches, répondre au forum, compléter des quiz. Tu commences avec 20 points offerts pour bien démarrer ! Accumule des points pour monter de niveau, débloquer des badges et personnaliser ton profil avec des gemmes."
-                            className="text-lg md:text-xl text-gray-600 leading-relaxed"
+                            className="text-base md:text-lg text-[rgba(26,21,18,0.7)] leading-relaxed"
                         />
                     </div>
                 </div>
@@ -454,34 +451,40 @@ export function GamificationSection() {
                 </div>
 
                 {/* ========== CTA ========== */}
-                <div className="text-center">
-                    <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-8 text-white">
-                        <Gift className="w-12 h-12 mx-auto mb-4" />
-                        <h3 className="text-2xl md:text-3xl font-bold mb-3">
-                            Prêt à commencer ton aventure ?
-                        </h3>
-                        <p className="text-purple-100 text-base mb-6 max-w-2xl mx-auto">
-                            Rejoins la communauté, contribue et regarde ta flamme grandir.
-                            Chaque fiche, chaque réponse, chaque quiz te rapproche du prochain monde !
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link
-                                href="/cours"
-                                className="bg-white text-purple-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors"
-                            >
+                <div className="relative overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.1)] bg-[var(--wk-ink)] p-8 text-[var(--wk-paper)] md:p-12">
+                    <div
+                        className="pointer-events-none absolute inset-0 opacity-[0.12]"
+                        style={{
+                            background:
+                                "radial-gradient(ellipse at 70% 20%, #ff6a1a 0%, transparent 55%)",
+                        }}
+                    />
+                    <div className="relative grid items-center gap-8 md:grid-cols-[1fr_auto]">
+                        <div>
+                            <Gift className="mb-4 h-10 w-10 text-[var(--wk-accent-2)]" />
+                            <h3 className="font-serif-display text-3xl leading-[0.95] md:text-5xl">
+                                Prêt à commencer ton <span className="italic text-[var(--wk-accent-2)]">aventure</span> ?
+                            </h3>
+                            <p className="mt-4 max-w-2xl text-[rgba(253,250,244,0.75)]">
+                                Rejoins la communauté, contribue et regarde ta flamme grandir. Chaque fiche, chaque réponse, chaque quiz te rapproche du prochain monde.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
+                            <Link href="/cours" className="wk-btn-orange wk-animate-shine">
                                 Découvrir les cours
+                                <ArrowRight className="h-4 w-4" />
                             </Link>
                             <Link
                                 href="/fiches"
-                                className="bg-purple-700 border border-purple-400 px-8 py-3 rounded-lg font-semibold hover:bg-purple-800 transition-colors flex items-center justify-center gap-2"
+                                className="wk-btn-ghost !border-[rgba(253,250,244,0.2)] !bg-[rgba(253,250,244,0.08)] !text-[var(--wk-paper)] hover:!bg-[rgba(253,250,244,0.15)]"
                             >
-                                <FileText className="w-4 h-4" />
+                                <FileText className="h-4 w-4" />
                                 Déposer une fiche
                             </Link>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     );
 }

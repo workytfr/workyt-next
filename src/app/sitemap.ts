@@ -5,6 +5,8 @@ import Revision from '@/models/Revision'
 import Course from '@/models/Course'
 import { buildIdSlug, slugify } from '@/utils/slugify'
 
+export const revalidate = 3600
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://workyt.fr'
 

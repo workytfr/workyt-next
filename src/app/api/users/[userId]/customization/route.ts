@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import ProfileCustomization from '@/models/ProfileCustomization';
 import User from '@/models/User';
@@ -13,8 +14,8 @@ export async function GET(
 
     const { userId } = await params;
 
-    if (!userId) {
-      return NextResponse.json({ error: 'ID utilisateur requis' }, { status: 400 });
+    if (!userId || !mongoose.isValidObjectId(userId)) {
+      return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
     const user = await User.findById(userId);

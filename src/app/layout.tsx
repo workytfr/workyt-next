@@ -54,7 +54,7 @@ export const metadata: Metadata = {
                 url: "/default-thumbnail.png",
                 width: 1200,
                 height: 630,
-                alt: "Workyt",
+                alt: "Workyt — Plateforme d'entraide scolaire gratuite pour le collège et le lycée",
             },
         ],
     },
@@ -65,6 +65,9 @@ export const metadata: Metadata = {
     },
     alternates: {
         canonical: "https://workyt.fr",
+        languages: {
+            "fr-FR": "https://workyt.fr",
+        },
     },
 };
 
@@ -138,10 +141,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
             strategy="afterInteractive"
         />
         {/* Tidio Script */}
-        <script
-            src="//code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
-            async
-        ></script>
+        <Script
+            src="https://code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
+            strategy="lazyOnload"
+        />
         {/* Cookie Consent Scripts */}
         <script
             type="text/javascript"

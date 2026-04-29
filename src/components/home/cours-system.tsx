@@ -2,237 +2,303 @@
 
 import React from "react";
 import Link from "next/link";
-import { WobbleCard } from "../ui/wobble-card";
-import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
-import { Badge } from "@/components/ui/Badge";
-import { BookOpen, FileText, Trophy, Users, Zap, Target, Brain, Share2, Clock, Star } from "lucide-react";
 import Image from "next/image";
+import {
+    BookOpen,
+    FileText,
+    Trophy,
+    Users,
+    Zap,
+    Target,
+    Brain,
+    Share2,
+    Clock,
+    Star,
+    Check,
+    Sparkles,
+    ArrowRight,
+    ArrowUpRight,
+} from "lucide-react";
 
 export function CoursSystemSection() {
     const features = [
         {
-            icon: <BookOpen className="w-6 h-6" />,
+            icon: <BookOpen className="h-5 w-5" />,
             title: "Cours Interactifs",
-            description: "Des cours structurés avec théorie, exercices pratiques et quiz de validation pour un apprentissage progressif."
+            description:
+                "Des cours structurés avec théorie, exercices pratiques et quiz de validation pour un apprentissage progressif.",
+            accent: "#ff6a1a",
         },
         {
-            icon: <FileText className="w-6 h-6" />,
+            icon: <FileText className="h-5 w-5" />,
             title: "Fiches de Révision",
-            description: "Partagez vos synthèses et accédez à celles de la communauté pour réviser efficacement."
+            description:
+                "Partagez vos synthèses et accédez à celles de la communauté pour réviser efficacement.",
+            accent: "#7ed957",
         },
         {
-            icon: <Target className="w-6 h-6" />,
+            icon: <Target className="h-5 w-5" />,
             title: "Quiz & Points",
-            description: "Testez vos connaissances avec des quiz et gagnez des points pour chaque bonne réponse."
+            description:
+                "Testez vos connaissances avec des quiz et gagnez des points pour chaque bonne réponse.",
+            accent: "#6ec1e4",
         },
         {
-            icon: <Share2 className="w-6 h-6" />,
+            icon: <Share2 className="h-5 w-5" />,
             title: "Partage Collaboratif",
-            description: "Une plateforme d'entraide où chaque ressource partagée enrichit l'apprentissage de tous."
-        }
+            description:
+                "Une plateforme d'entraide où chaque ressource partagée enrichit l'apprentissage de tous.",
+            accent: "#c77dff",
+        },
     ];
 
     return (
-        <div className="py-16 bg-gradient-to-br from-blue-50 to-indigo-100">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header Section */}
-                <div className="text-center mb-16">
-                    <Badge variant="outline" className="mb-4 px-4 py-2 text-sm font-medium bg-gradient-to-r from-blue-600 to-indigo-600 text-white border-none">
-                        <BookOpen className="w-4 h-4 mr-2" />
-                        Système d&apos;Apprentissage Complet
-                    </Badge>
-                    <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
-                        <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                            Cours & Ressources
-                        </span>
-                        {" "}Collaboratives
-                    </h2>
-                    <div className="max-w-3xl mx-auto">
-                        <TextGenerateEffect
-                            words="Découvrez notre écosystème d'apprentissage complet ! Des cours structurés aux fiches de révision partagées, en passant par des quiz interactifs et des manuels d'exercices. Chaque ressource contribue à la réussite collective et vous récompense pour votre engagement."
-                            className="text-lg md:text-xl text-gray-600 leading-relaxed"
-                        />
+        <section
+            id="cours"
+            className="relative overflow-hidden bg-[#fff8ee] px-4 py-20 md:py-28"
+        >
+            {/* Notebook pattern subtle */}
+            <div
+                className="wk-cahier pointer-events-none absolute inset-0 opacity-[0.35]"
+                aria-hidden="true"
+            />
+
+            <div className="relative mx-auto max-w-[1400px]">
+                {/* Header */}
+                <div className="mb-12 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                    <div className="max-w-2xl">
+                        <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
+                            <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
+                            <span>03</span>
+                            <span>Système de cours</span>
+                        </div>
+                        <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl lg:text-7xl">
+                            Des cours qui{" "}
+                            <span className="italic text-[var(--wk-accent)]">
+                                donnent envie
+                            </span>{" "}
+                            d&apos;ouvrir le cahier.
+                        </h2>
+                    </div>
+                    <Link href="/cours" className="wk-btn-ink self-start md:self-end">
+                        Explorer tous les cours
+                        <ArrowRight className="h-4 w-4" />
+                    </Link>
+                </div>
+
+                {/* Main two cards */}
+                <div className="mb-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+                    {/* Cours Interactifs */}
+                    <div className="wk-tilt group relative overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-6 md:p-8">
+                        <div className="mb-5 flex items-center justify-between">
+                            <span className="wk-chip !border-[#ffd8a8] !bg-[#fff3e0] !text-[#7a3a0a]">
+                                <Sparkles className="h-3 w-3" />
+                                COURS
+                            </span>
+                            <span className="font-mono-ui text-[11px] text-[rgba(26,21,18,0.4)]">
+                                01
+                            </span>
+                        </div>
+                        <h3 className="font-serif-display text-3xl leading-tight md:text-4xl">
+                            Cours interactifs <span className="italic">📚</span>
+                        </h3>
+                        <p className="mt-3 text-[rgba(26,21,18,0.7)]">
+                            Des cours complets structurés comme de véritables manuels numériques avec théorie, exercices pratiques et évaluations.
+                        </p>
+                        <div className="mt-6 space-y-3">
+                            {[
+                                { icon: Brain, t: "Théorie & Concepts", d: "Cours détaillés avec explications claires" },
+                                { icon: Target, t: "Exercices Pratiques", d: "Manuel d'exercices intégré avec corrections" },
+                                { icon: Trophy, t: "Quiz de Validation", d: "Gagnez des points pour chaque quiz réussi" },
+                            ].map((row) => (
+                                <div
+                                    key={row.t}
+                                    className="flex items-start gap-3 rounded-2xl border border-[rgba(26,21,18,0.06)] bg-[var(--wk-paper)] p-3"
+                                >
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(255,106,26,0.12)] text-[var(--wk-accent)]">
+                                        <row.icon className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-semibold">{row.t}</div>
+                                        <div className="text-xs text-[rgba(26,21,18,0.55)]">{row.d}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Fiches Collaboratives */}
+                    <div className="wk-tilt group relative overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-6 md:p-8">
+                        <div className="mb-5 flex items-center justify-between">
+                            <span className="wk-chip !border-[#bce8c2] !bg-[#edfbef] !text-[#1a5a1a]">
+                                <Sparkles className="h-3 w-3" />
+                                FICHES
+                            </span>
+                            <span className="font-mono-ui text-[11px] text-[rgba(26,21,18,0.4)]">
+                                02
+                            </span>
+                        </div>
+                        <h3 className="font-serif-display text-3xl leading-tight md:text-4xl">
+                            Fiches collaboratives <span className="italic">📝</span>
+                        </h3>
+                        <p className="mt-3 text-[rgba(26,21,18,0.7)]">
+                            Partagez vos synthèses et bénéficiez du travail de toute la communauté pour réviser plus efficacement.
+                        </p>
+                        <div className="mt-6 space-y-3">
+                            {[
+                                { icon: Share2, t: "Partage de Ressources", d: "Créez et partagez vos fiches de révision" },
+                                { icon: Users, t: "Entraide Communautaire", d: "Accédez aux fiches de vos camarades" },
+                                { icon: Star, t: "Système de Points", d: "Gagnez des points pour chaque fiche créée" },
+                            ].map((row) => (
+                                <div
+                                    key={row.t}
+                                    className="flex items-start gap-3 rounded-2xl border border-[rgba(26,21,18,0.06)] bg-[var(--wk-paper)] p-3"
+                                >
+                                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(126,217,87,0.15)] text-[#1a5a1a]">
+                                        <row.icon className="h-4 w-4" />
+                                    </div>
+                                    <div>
+                                        <div className="text-sm font-semibold">{row.t}</div>
+                                        <div className="text-xs text-[rgba(26,21,18,0.55)]">{row.d}</div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
-                {/* Main Cards Grid */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-16">
-                    {/* Cours Interactifs */}
-                    <WobbleCard
-                        containerClassName="col-span-1 bg-gradient-to-br from-blue-600 to-blue-800 min-h-[450px]"
-                        className=""
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center mb-4">
-                                <BookOpen className="w-8 h-8 text-blue-200 mr-3" />
-                                <h3 className="text-2xl md:text-3xl font-bold text-white">
-                                    Cours Interactifs 📚
-                                </h3>
+                {/* Manuel d'exercices — dark ink featured */}
+                <div className="relative mb-10 overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.1)] bg-[var(--wk-ink)] text-[var(--wk-paper)]">
+                    <div
+                        className="pointer-events-none absolute inset-0 opacity-[0.12]"
+                        style={{
+                            background:
+                                "radial-gradient(ellipse at 70% 20%, #ff6a1a 0%, transparent 55%)",
+                        }}
+                    />
+                    <div className="relative grid items-center gap-8 p-8 md:p-12 lg:grid-cols-[1.2fr_1fr]">
+                        <div>
+                            <div className="font-mono-ui inline-flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-[rgba(253,250,244,0.6)]">
+                                <Target className="h-3 w-3" />
+                                Manuel d&apos;exercices
                             </div>
-                            <p className="text-blue-100 text-lg leading-relaxed mb-6">
-                                Des cours complets structurés comme de véritables manuels numériques avec théorie, exercices pratiques et évaluations.
-                            </p>
-                            <div className="space-y-4">
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Brain className="w-5 h-5 text-blue-200 mr-2" />
-                                        <div className="text-white font-semibold">Théorie & Concepts</div>
-                                    </div>
-                                    <div className="text-blue-200 text-sm">Cours détaillés avec explications claires</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Target className="w-5 h-5 text-blue-200 mr-2" />
-                                        <div className="text-white font-semibold">Exercices Pratiques</div>
-                                    </div>
-                                    <div className="text-blue-200 text-sm">Manuel d&apos;exercices intégré avec corrections</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Trophy className="w-5 h-5 text-blue-200 mr-2" />
-                                        <div className="text-white font-semibold">Quiz de Validation</div>
-                                    </div>
-                                    <div className="text-blue-200 text-sm">Gagnez des points pour chaque quiz réussi</div>
-                                </div>
-                            </div>
-                        </div>
-                    </WobbleCard>
-
-                    {/* Fiches de Révision */}
-                    <WobbleCard containerClassName="col-span-1 bg-gradient-to-br from-green-600 to-emerald-700 min-h-[450px]">
-                        <div className="p-6">
-                            <div className="flex items-center mb-4">
-                                <FileText className="w-8 h-8 text-green-200 mr-3" />
-                                <h3 className="text-2xl md:text-3xl font-bold text-white">
-                                    Fiches Collaboratives 📝
-                                </h3>
-                            </div>
-                            <p className="text-green-100 text-lg leading-relaxed mb-6">
-                                Partagez vos synthèses et bénéficiez du travail de toute la communauté pour réviser plus efficacement.
-                            </p>
-                            <div className="space-y-4">
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Share2 className="w-5 h-5 text-green-200 mr-2" />
-                                        <div className="text-white font-semibold">Partage de Ressources</div>
-                                    </div>
-                                    <div className="text-green-200 text-sm">Créez et partagez vos fiches de révision</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Users className="w-5 h-5 text-green-200 mr-2" />
-                                        <div className="text-white font-semibold">Entraide Communautaire</div>
-                                    </div>
-                                    <div className="text-green-200 text-sm">Accédez aux fiches de vos camarades</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Star className="w-5 h-5 text-green-200 mr-2" />
-                                        <div className="text-white font-semibold">Système de Points</div>
-                                    </div>
-                                    <div className="text-green-200 text-sm">Gagnez des points pour chaque fiche créée</div>
-                                </div>
-                            </div>
-                        </div>
-                    </WobbleCard>
-                </div>
-
-                {/* Manuel d'Exercices Section */}
-                <WobbleCard containerClassName="col-span-1 lg:col-span-3 bg-gradient-to-r from-purple-900 via-indigo-900 to-blue-900 min-h-[400px] mb-16">
-                    <div className="flex flex-col lg:flex-row items-center justify-between p-8">
-                        <div className="lg:w-1/2 mb-8 lg:mb-0">
-                            <h3 className="text-3xl md:text-4xl font-bold text-white mb-6 flex items-center gap-3">
-                                <Target className="w-10 h-10 text-yellow-300" />
-                                Manuel d&apos;Exercices Interactif
+                            <h3 className="font-serif-display mt-3 text-3xl leading-[1] md:text-5xl">
+                                Un vrai manuel d&apos;exercices{" "}
+                                <span className="italic text-[var(--wk-accent-2)]">
+                                    interactif
+                                </span>
+                                .
                             </h3>
-                            <p className="text-gray-200 text-lg leading-relaxed mb-6">
-                                Chaque cours intègre un véritable manuel d&apos;exercices avec des problèmes graduels, des corrections détaillées et un système de points pour motiver votre progression.
+                            <p className="mt-4 max-w-xl text-[rgba(253,250,244,0.75)]">
+                                Chaque cours intègre un manuel d&apos;exercices avec problèmes graduels, corrections détaillées et système de points pour motiver la progression.
                             </p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Clock className="w-5 h-5 text-yellow-300 mr-2" />
-                                        <div className="text-white font-semibold">Exercices Progressifs</div>
+                            <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                                {[
+                                    { icon: Clock, t: "Exercices Progressifs", d: "Du débutant à l'avancé" },
+                                    { icon: Brain, t: "Corrections Détaillées", d: "Explications pas à pas" },
+                                    { icon: Zap, t: "Points & Progression", d: "Récompenses à chaque réussite" },
+                                    { icon: Trophy, t: "Quiz de Validation", d: "Testez vos acquis régulièrement" },
+                                ].map((row) => (
+                                    <div
+                                        key={row.t}
+                                        className="flex items-start gap-3 rounded-2xl border border-[rgba(253,250,244,0.12)] bg-[rgba(253,250,244,0.04)] p-3"
+                                    >
+                                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[rgba(255,181,71,0.18)] text-[var(--wk-accent-2)]">
+                                            <row.icon className="h-4 w-4" />
+                                        </div>
+                                        <div>
+                                            <div className="text-sm font-semibold text-[var(--wk-paper)]">{row.t}</div>
+                                            <div className="text-xs text-[rgba(253,250,244,0.6)]">{row.d}</div>
+                                        </div>
                                     </div>
-                                    <div className="text-gray-300 text-sm">Du niveau débutant à avancé</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Brain className="w-5 h-5 text-yellow-300 mr-2" />
-                                        <div className="text-white font-semibold">Corrections Détaillées</div>
-                                    </div>
-                                    <div className="text-gray-300 text-sm">Explications pas à pas</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Zap className="w-5 h-5 text-yellow-300 mr-2" />
-                                        <div className="text-white font-semibold">Points & Progression</div>
-                                    </div>
-                                    <div className="text-gray-300 text-sm">Récompenses pour chaque réussite</div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-4 backdrop-blur-sm">
-                                    <div className="flex items-center mb-2">
-                                        <Trophy className="w-5 h-5 text-yellow-300 mr-2" />
-                                        <div className="text-white font-semibold">Quiz de Validation</div>
-                                    </div>
-                                    <div className="text-gray-300 text-sm">Testez vos acquis régulièrement</div>
-                                </div>
+                                ))}
                             </div>
                         </div>
-                        <div className="lg:w-1/2 flex justify-center">
+
+                        {/* Mock quiz preview — notebook style */}
+                        <div className="relative rounded-3xl border border-[rgba(253,250,244,0.12)] bg-[rgba(253,250,244,0.04)] p-5">
                             <Image
                                 src="/AnimeCours.png"
-                                width={400}
-                                height={300}
-                                alt="Workyt cours system"
-                                className="rounded-2xl opacity-90 shadow-2xl"
+                                alt="Aperçu du système de cours Workyt"
+                                width={500}
+                                height={360}
+                                className="w-full rounded-2xl object-cover"
                             />
+                            <div className="mt-4 rounded-2xl border border-[rgba(253,250,244,0.12)] bg-[rgba(253,250,244,0.04)] p-4">
+                                <div className="font-mono-ui text-[10px] uppercase tracking-widest text-[rgba(253,250,244,0.6)]">
+                                    Quiz éclair · Maths
+                                </div>
+                                <div className="mt-1 text-sm font-semibold">
+                                    Développe (2x + 3)²
+                                </div>
+                                <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+                                    <button className="rounded-xl border border-[rgba(253,250,244,0.12)] bg-[rgba(253,250,244,0.04)] px-3 py-2 text-left text-xs hover:bg-[rgba(253,250,244,0.08)]">
+                                        4x² + 9
+                                    </button>
+                                    <button className="flex items-center gap-1 rounded-xl border border-[rgba(126,217,87,0.4)] bg-[rgba(126,217,87,0.2)] px-3 py-2 text-left text-xs font-semibold text-[#bdf5c4]">
+                                        <Check className="h-3 w-3" /> 4x² + 12x + 9
+                                    </button>
+                                    <button className="rounded-xl border border-[rgba(253,250,244,0.12)] bg-[rgba(253,250,244,0.04)] px-3 py-2 text-left text-xs hover:bg-[rgba(253,250,244,0.08)]">
+                                        2x² + 6x + 9
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                </WobbleCard>
+                </div>
 
-                {/* Features Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-                    {features.map((feature, index) => (
-                        <div key={index} className="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow duration-300 border border-gray-100">
-                            <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center text-white mb-4">
-                                {feature.icon}
+                {/* Features grid */}
+                <div className="mb-10 grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
+                    {features.map((f) => (
+                        <div
+                            key={f.title}
+                            className="wk-tilt group rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-6 transition hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(26,21,18,0.08)]"
+                        >
+                            <div
+                                className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl text-white"
+                                style={{ background: `linear-gradient(135deg, ${f.accent}, ${f.accent}cc)` }}
+                            >
+                                {f.icon}
                             </div>
-                            <h4 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h4>
-                            <p className="text-gray-600 text-sm leading-relaxed">{feature.description}</p>
+                            <h4 className="font-serif-display text-xl">{f.title}</h4>
+                            <p className="mt-2 text-sm leading-relaxed text-[rgba(26,21,18,0.65)]">
+                                {f.description}
+                            </p>
                         </div>
                     ))}
                 </div>
 
-                {/* Call to Action */}
-                <div className="text-center">
-                    <div className="bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl p-8 text-white">
-                        <BookOpen className="w-12 h-12 mx-auto mb-4" />
-                        <h3 className="text-2xl md:text-3xl font-bold mb-4">
-                            Commencez Votre Parcours d&apos;Apprentissage
-                        </h3>
-                        <p className="text-blue-100 text-lg mb-6 max-w-2xl mx-auto">
-                            Explorez nos cours interactifs, créez des fiches de révision, réussissez les quiz et gagnez des points. L&apos;apprentissage collaboratif vous attend !
-                        </p>
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                            <Link 
-                                href="/cours" 
-                                className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <BookOpen className="w-4 h-4" />
-                                Explorer les Cours
+                {/* CTA */}
+                <div className="relative overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-8 md:p-12">
+                    <div
+                        className="wk-cahier pointer-events-none absolute inset-0 opacity-[0.3]"
+                        aria-hidden="true"
+                    />
+                    <div className="relative grid items-center gap-6 md:grid-cols-[1fr_auto]">
+                        <div>
+                            <h3 className="font-serif-display text-3xl leading-[0.95] md:text-5xl">
+                                Commence ton{" "}
+                                <span className="italic text-[var(--wk-accent)]">parcours</span>{" "}
+                                d&apos;apprentissage.
+                            </h3>
+                            <p className="mt-3 max-w-2xl text-[rgba(26,21,18,0.7)]">
+                                Explore les cours interactifs, crée des fiches de révision, réussis les quiz et gagne des points. L&apos;apprentissage collaboratif t&apos;attend.
+                            </p>
+                        </div>
+                        <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
+                            <Link href="/cours" className="wk-btn-orange wk-animate-shine">
+                                <BookOpen className="h-4 w-4" />
+                                Explorer les cours
                             </Link>
-                            <Link 
-                                href="/fiches" 
-                                className="bg-blue-700 border border-blue-400 px-8 py-3 rounded-lg font-semibold hover:bg-blue-800 transition-colors flex items-center justify-center gap-2"
-                            >
-                                <FileText className="w-4 h-4" />
-                                Voir les Fiches
+                            <Link href="/fiches" className="wk-btn-ghost">
+                                <FileText className="h-4 w-4" />
+                                Voir les fiches
+                                <ArrowUpRight className="h-3.5 w-3.5" />
                             </Link>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
     );
 }

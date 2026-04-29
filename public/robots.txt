@@ -17,5 +17,63 @@ Disallow: /fiches/creer
 Disallow: /forum/creer
 Disallow: /fiches/favoris
 
+# AI crawlers — autorisation explicite pour améliorer la visibilité sur
+# les moteurs de recherche génératifs (ChatGPT, Perplexity, Gemini, etc.)
+User-agent: GPTBot
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+User-agent: ChatGPT-User
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+User-agent: OAI-SearchBot
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+User-agent: ClaudeBot
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+User-agent: Claude-Web
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+User-agent: PerplexityBot
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+User-agent: Google-Extended
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
+User-agent: Applebot-Extended
+Allow: /
+Disallow: /dashboard
+Disallow: /compte
+Disallow: /api
+Disallow: /admin
+
 # Sitemap
 Sitemap: https://workyt.fr/sitemap.xml

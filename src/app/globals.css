@@ -19,6 +19,289 @@
   animation: fade-in-up 0.5s ease-out;
 }
 
+/* ==========================================
+   HOMEPAGE 2026 — Design tokens & utilities
+   (handoff Claude Design, mappé sur Funnel Display + Montserrat)
+   ========================================== */
+:root {
+  --wk-accent: #ff6a1a;
+  --wk-accent-2: #ffb547;
+  --wk-accent-3: #6ec1e4;
+  --wk-accent-4: #7ed957;
+  --wk-ink: #1a1512;
+  --wk-paper: #fdfaf4;
+  --wk-paper-2: #f5efe3;
+}
+
+.font-serif-display {
+  font-family: var(--font-funnel-display), system-ui, sans-serif;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+.font-mono-ui {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+/* Grain overlay — subtle noise for grainy gradient feel */
+.wk-grain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.12 0 0 0 0 0.08 0 0 0 0 0.05 0 0 0 0.35 0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
+  opacity: 0.5;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+  z-index: 1;
+}
+.wk-grain > * { z-index: 2; }
+.wk-grain > *:not(.absolute):not([class*=" absolute"]) { position: relative; }
+
+/* Hero gradient — peach variant */
+.wk-gradient-peach {
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 20%, #ffd4a8 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 80% 10%, #ffb7c5 0%, transparent 55%),
+    radial-gradient(ellipse 90% 70% at 50% 90%, #ffde7a 0%, transparent 60%),
+    linear-gradient(160deg, #fff3e0 0%, #ffe8d1 45%, #ffd8b8 100%);
+}
+
+/* Marquee ticker */
+@keyframes wk-marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.wk-marquee-track {
+  animation: wk-marquee 40s linear infinite;
+  will-change: transform;
+}
+.wk-marquee-track:hover { animation-play-state: paused; }
+
+/* Floating animation for stickers / cards */
+@keyframes wk-float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+.wk-float-y { animation: wk-float-y 4s ease-in-out infinite; }
+
+/* Shine sweep across buttons */
+@keyframes wk-shine {
+  0% { transform: translateX(-150%) skewX(-20deg); }
+  100% { transform: translateX(250%) skewX(-20deg); }
+}
+.wk-animate-shine { position: relative; overflow: hidden; }
+.wk-animate-shine::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  animation: wk-shine 3s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* Ink button — primary dark */
+.wk-btn-ink {
+  background: var(--wk-ink);
+  color: var(--wk-paper);
+  border-radius: 999px;
+  padding: 14px 24px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.15s ease, background 0.2s;
+  box-shadow: 0 2px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+.wk-btn-ink:hover { transform: translateY(-1px); background: #000; }
+.wk-btn-ink:active { transform: translateY(1px); }
+
+/* Orange button — playful CTA */
+.wk-btn-orange {
+  background: var(--wk-accent);
+  color: #fff;
+  border-radius: 999px;
+  padding: 14px 24px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  transition: transform 0.15s ease, box-shadow 0.2s;
+  box-shadow: 0 4px 0 #c24a0a, 0 8px 20px rgba(255, 106, 26, 0.35);
+}
+.wk-btn-orange:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #c24a0a, 0 10px 24px rgba(255, 106, 26, 0.45);
+}
+.wk-btn-orange:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #c24a0a;
+}
+
+/* Ghost button — translucent */
+.wk-btn-ghost {
+  background: rgba(255, 255, 255, 0.7);
+  color: var(--wk-ink);
+  border-radius: 999px;
+  padding: 14px 24px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(26, 21, 18, 0.12);
+  backdrop-filter: blur(8px);
+  transition: background 0.2s;
+}
+.wk-btn-ghost:hover { background: rgba(255, 255, 255, 0.9); }
+
+/* Chip / pill */
+.wk-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: #fff;
+  border: 1px solid rgba(26, 21, 18, 0.1);
+}
+
+/* XP progression bar */
+.wk-xp-bar {
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(26, 21, 18, 0.08);
+  overflow: hidden;
+}
+.wk-xp-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--wk-accent), var(--wk-accent-2));
+  border-radius: 999px;
+  transition: width 0.6s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+/* Background textures */
+.wk-dotgrid {
+  background-image: radial-gradient(rgba(26, 21, 18, 0.12) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+.wk-gridlines {
+  background-image:
+    linear-gradient(to right, rgba(26, 21, 18, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(26, 21, 18, 0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+}
+
+/* Notebook paper — petits carreaux de cahier français (5mm) */
+.wk-cahier {
+  background-image:
+    linear-gradient(to right, rgba(26, 21, 18, 0.08) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(26, 21, 18, 0.08) 1px, transparent 1px),
+    linear-gradient(to right, rgba(26, 21, 18, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(26, 21, 18, 0.14) 1px, transparent 1px);
+  background-size:
+    10px 10px,
+    10px 10px,
+    50px 50px,
+    50px 50px;
+}
+
+/* Notebook paper — gros carreaux Seyès (lignes horizontales + marge rouge) */
+.wk-seyes {
+  background-image:
+    linear-gradient(to bottom, rgba(110, 193, 228, 0.25) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255, 106, 26, 0.35) 2px, transparent 2px);
+  background-size:
+    100% 28px,
+    100% 100%;
+  background-position:
+    0 0,
+    64px 0;
+  background-repeat: repeat;
+}
+
+/* ===== Flashy animations ===== */
+
+/* Sparkle twinkle — pour étoiles / points scintillants */
+@keyframes wk-twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.6) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+.wk-twinkle { animation: wk-twinkle 2.6s ease-in-out infinite; }
+
+/* Confetti fall — pour petits éléments qui descendent en tournant */
+@keyframes wk-confetti {
+  0% { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+  10% { opacity: 1; }
+  100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
+}
+.wk-confetti { animation: wk-confetti 5s linear infinite; }
+
+/* Orbit slow — rotation continue autour d'un point */
+@keyframes wk-orbit {
+  from { transform: rotate(0deg) translateX(var(--orbit-radius, 40px)) rotate(0deg); }
+  to { transform: rotate(360deg) translateX(var(--orbit-radius, 40px)) rotate(-360deg); }
+}
+.wk-orbit { animation: wk-orbit 14s linear infinite; }
+
+/* Wobble — léger balancement (pour stickers collés) */
+@keyframes wk-wobble {
+  0%, 100% { transform: rotate(var(--wobble-base, 0deg)); }
+  25% { transform: rotate(calc(var(--wobble-base, 0deg) + 4deg)); }
+  75% { transform: rotate(calc(var(--wobble-base, 0deg) - 4deg)); }
+}
+.wk-wobble { animation: wk-wobble 5s ease-in-out infinite; }
+
+/* Pulse-glow — halo rythmique */
+@keyframes wk-pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 106, 26, 0.4); }
+  50% { box-shadow: 0 0 0 16px rgba(255, 106, 26, 0); }
+}
+.wk-pulse-glow { animation: wk-pulse-glow 2.2s ease-out infinite; }
+
+/* Gradient-shift — animation du fond (titres) */
+@keyframes wk-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+.wk-gradient-text {
+  background: linear-gradient(90deg, #ff6a1a, #ffb547, #ff6a1a);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: wk-gradient-shift 4s ease-in-out infinite;
+}
+
+/* Bounce-in décalé pour entrées successives */
+@keyframes wk-bounce-in {
+  0% { opacity: 0; transform: scale(0.5) translateY(20px); }
+  60% { opacity: 1; transform: scale(1.08) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+.wk-bounce-in { animation: wk-bounce-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+
+/* Écriture au stylo — souligné qui apparaît */
+@keyframes wk-draw {
+  from { stroke-dashoffset: 420; }
+  to { stroke-dashoffset: 0; }
+}
+.wk-draw {
+  stroke-dasharray: 420;
+  stroke-dashoffset: 420;
+  animation: wk-draw 1.6s ease-out 0.4s forwards;
+}
+
+/* Tilt 3D subtil au survol */
+.wk-tilt {
+  transition: transform 0.3s cubic-bezier(0.2, 0.9, 0.3, 1);
+  transform-style: preserve-3d;
+}
+.wk-tilt:hover {
+  transform: perspective(800px) rotateX(3deg) rotateY(-3deg) scale(1.02);
+}
+
+::selection { background: #ffd7a8; color: var(--wk-ink); }
+
 @layer base {
   body {
     font-family: var(--font-funnel-display), system-ui, sans-serif;
@@ -957,30 +1240,54 @@ html, body {
   overflow: hidden;
 }
 
-/* Styles personnalisés pour la scrollbar */
+/* Styles personnalisés pour la scrollbar — modernes et discrets */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(26, 21, 18, 0.15);
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(26, 21, 18, 0.3);
+}
+
+/* Styles pour Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(26, 21, 18, 0.15) transparent;
+}
+
 .overflow-y-auto::-webkit-scrollbar {
-  width: 8px;
+  width: 6px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: transparent;
   border-radius: 4px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 4px;
+  background: rgba(26, 21, 18, 0.15);
+  border-radius: 999px;
   transition: background 0.2s ease;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: rgba(26, 21, 18, 0.3);
 }
 
-/* Styles pour Firefox */
 .overflow-y-auto {
   scrollbar-width: thin;
-  scrollbar-color: #c1c1c1 #f1f1f1;
+  scrollbar-color: rgba(26, 21, 18, 0.15) transparent;
 }
 
 /* Styles pour les tableaux markdown */

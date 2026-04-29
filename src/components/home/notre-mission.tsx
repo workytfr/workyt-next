@@ -1,68 +1,109 @@
 "use client";
+
 import Image from "next/image";
-import React from "react";
-import { WobbleCard } from "../ui/wobble-card";
+
+const missionCards = [
+    {
+        span: "col-span-6 md:col-span-4",
+        title: "🎓 Asso de 100+ bénévoles",
+        body: "Des profs, des étudiants, des passionnés. Tous bénévoles, tous là pour les workeurs.",
+    },
+    {
+        span: "col-span-6 md:col-span-2",
+        title: "🚀 Apprendre en jouant",
+        body: "Points, badges, streaks — la gamification qui motive, pas qui distrait.",
+    },
+    {
+        span: "col-span-6 md:col-span-3",
+        title: "🌱 Pédagogie douce",
+        body: "Des contenus relus par des profs, testés par des élèves, et amusants à lire.",
+    },
+    {
+        span: "col-span-6 md:col-span-3",
+        title: "💡 Opportunités",
+        body: "Ressources d'orientation, guides métiers et events pour ouvrir les portes.",
+    },
+];
 
 export function WobbleCardDemo() {
     return (
-        <div className="mt-10 grid grid-cols-1 lg:grid-cols-3 gap-4 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 bg-white">
-            {/* Carte 1 - Association */}
-            <WobbleCard
-                containerClassName="col-span-1 lg:col-span-2 h-full bg-pink-800 min-h-[400px] sm:min-h-[450px] lg:min-h-[300px]"
-                className="p-6 sm:p-8"
-            >
-                <div>
-                    <h2 className="text-left text-balance text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight text-white">
-                        🎓 Nous sommes une association comptant plus de 100 bénévoles actifs.
-                    </h2>
-                    <p className="mt-4 text-left text-sm sm:text-base leading-relaxed text-neutral-200">
-                        Avec nous, profitez de contenus de qualité, d&apos;une aide toujours dans la bonne humeur 😄 et d&apos;une éducation sans stress ! 🚀 Parce qu&apos;apprendre, c&apos;est aussi s&apos;amuser ! 📚😊
-                    </p>
-                </div>
-            </WobbleCard>
+        <section className="relative overflow-hidden bg-[var(--wk-ink)] px-4 py-20 text-[var(--wk-paper)] md:py-28">
+            <div
+                className="pointer-events-none absolute inset-0 opacity-[0.08]"
+                style={{
+                    background:
+                        "radial-gradient(ellipse at 50% 0%, #ff6a1a 0%, transparent 60%)",
+                }}
+            />
 
-            {/* Carte 2 - Opportunités */}
-            <WobbleCard 
-                containerClassName="col-span-1 min-h-[300px] sm:min-h-[350px] lg:min-h-[300px]"
-                className="p-6 sm:p-8"
-            >
-                <h2 className="text-left text-balance text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight text-white">
-                    🚀 Opportunités et inspiration
-                </h2>
-                <p className="mt-4 text-left text-sm sm:text-base leading-relaxed text-neutral-200">
-                    Nous ouvrons des portes pour que les Workeurs puissent façonner leur avenir de manière autonome et atteindre leurs objectifs. ✨ Investir dans la jeunesse, c&apos;est aussi la motiver et l&apos;inspirer, surtout en ces temps difficiles. 🌱
-                </p>
-            </WobbleCard>
-
-            {/* Carte 3 - Mission avec image */}
-            <WobbleCard 
-                containerClassName="col-span-1 lg:col-span-3 bg-blue-900 min-h-[500px] sm:min-h-[550px] lg:min-h-[350px] xl:min-h-[320px]"
-                className="p-6 sm:p-8 lg:p-10"
-            >
-                <div className="relative z-10 max-w-full lg:max-w-[55%] xl:max-w-[50%]">
-                    <h2 className="text-left text-balance text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight text-white">
-                        🌟 Votre succès est notre mission : Apprendre avec plaisir et sans stress !
+            <div className="relative mx-auto grid max-w-[1400px] gap-10 lg:grid-cols-12">
+                <div className="lg:col-span-5">
+                    <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(253,250,244,0.6)]">
+                        <span className="inline-block w-8 border-t border-[rgba(253,250,244,0.3)]" />
+                        <span>02</span>
+                        <span>Notre mission</span>
+                    </div>
+                    <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl">
+                        Une éducation{" "}
+                        <span className="italic text-[var(--wk-accent-2)]">
+                            joyeuse
+                        </span>
+                        , accessible à tous.
                     </h2>
-                    <p className="mt-4 text-left text-sm sm:text-base leading-relaxed text-neutral-200">
-                        Notre vision de l&apos;éducation est différente ! Nous nous démarquons par notre contenu original et notre approche dynamique pour vous offrir le meilleur.
-                        Découvrez vos forces et faiblesses avec nos exercices interactifs et apprenez à mieux vous connaître ! 💡 Répondez à toutes vos questions et préparez-vous pour le jour de l&apos;examen avec nos cours complets. 📚
+                    <p className="mt-6 max-w-md leading-relaxed text-[rgba(253,250,244,0.75)]">
+                        Workyt est une asso portée par 100+ bénévoles qui
+                        croient qu&apos;apprendre devrait être gratuit, simple
+                        et un peu fun. Pas de paywall, pas de jargon — juste des
+                        outils qui marchent, pour les 11-25 ans.
                     </p>
+
+                    <div className="mt-8 grid max-w-md grid-cols-2 gap-4">
+                        <div className="rounded-2xl border border-[rgba(253,250,244,0.15)] p-4">
+                            <div className="font-serif-display text-4xl text-[var(--wk-accent-2)]">
+                                100%
+                            </div>
+                            <div className="mt-1 text-sm text-[rgba(253,250,244,0.7)]">
+                                Gratuit, sans pub, sans collecte de données
+                            </div>
+                        </div>
+                        <div className="rounded-2xl border border-[rgba(253,250,244,0.15)] p-4">
+                            <div className="font-serif-display text-4xl text-[var(--wk-accent-2)]">
+                                5 ans
+                            </div>
+                            <div className="mt-1 text-sm text-[rgba(253,250,244,0.7)]">
+                                Au service des workeurs depuis 2021
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 hidden lg:block">
+                        <Image
+                            src="/workytanim.gif"
+                            width={220}
+                            height={220}
+                            alt="Workyt mascotte"
+                            unoptimized
+                            className="rounded-2xl"
+                        />
+                    </div>
                 </div>
-                
-                {/* Image - Positionnement adaptatif */}
-                <Image
-                    src="/workytanim.gif"
-                    width={500}
-                    height={500}
-                    alt="Workyt animation"
-                    className="absolute right-0 sm:-right-4 lg:-right-[5%] xl:-right-[2%] 
-                               bottom-0 sm:-bottom-4 lg:bottom-auto lg:top-1/2 lg:-translate-y-1/2
-                               w-[200px] sm:w-[280px] md:w-[320px] lg:w-[380px] xl:w-[420px]
-                               h-auto object-contain rounded-2xl
-                               opacity-90 lg:opacity-100"
-                    unoptimized
-                />
-            </WobbleCard>
-        </div>
+
+                <div className="grid grid-cols-6 content-start gap-4 lg:col-span-7">
+                    {missionCards.map((c) => (
+                        <div
+                            key={c.title}
+                            className={`${c.span} rounded-3xl border border-[rgba(253,250,244,0.1)] bg-[rgba(253,250,244,0.04)] p-6 transition hover:bg-[rgba(253,250,244,0.07)]`}
+                        >
+                            <div className="font-serif-display text-xl md:text-2xl">
+                                {c.title}
+                            </div>
+                            <div className="mt-2 text-sm leading-relaxed text-[rgba(253,250,244,0.7)]">
+                                {c.body}
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </section>
     );
 }

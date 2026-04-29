@@ -21,7 +21,7 @@ export default function ClientProviders({ children }: { children: React.ReactNod
       <ThemeProvider>
         {!isDashboard && <Navbar />}
         <TooltipProvider>
-          {children}
+          <main id="main-content">{children}</main>
         </TooltipProvider>
         {!isDashboard && !isCourseDetail && <Footer />}
       </ThemeProvider>
