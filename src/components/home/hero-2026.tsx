@@ -183,7 +183,7 @@ export default function Hero2026() {
                                 href="/cours"
                                 className="wk-btn-orange wk-animate-shine wk-pulse-glow"
                             >
-                                Commencer gratuitement
+                                Commencer à apprendre
                                 <ArrowRight className="h-4 w-4" />
                             </Link>
                             <Link href="/cours" className="wk-btn-ghost">

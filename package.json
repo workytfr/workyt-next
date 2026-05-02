@@ -91,7 +91,7 @@
     "next-auth": "^4.24.11",
     "next-themes": "^0.4.6",
     "node-cron": "^4.2.1",
-    "nodemailer": "^7.0.9",
+    "nodemailer": "^8.0.7",
     "pdf-parse": "^2.4.5",
     "pdfjs-dist": "^5.4.296",
     "react": "^19.2.4",
@@ -115,7 +115,7 @@
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
     "uploadthing": "^7.7.4",
-    "uuid": "^11.0.3",
+    "uuid": "^14.0.0",
     "vaul": "^1.1.2"
   },
   "overrides": {
@@ -124,6 +124,17 @@
     "effect": ">=3.20.0",
     "eigen-avatar-generator": {
       "react": "$react"
+    },
+    "postcss": "$postcss",
+    "gaxios": {
+      "uuid": ">=14.0.0"
+    },
+    "googleapis-common": {
+      "uuid": ">=14.0.0"
+    },
+    "next-auth": {
+      "nodemailer": ">=8.0.7",
+      "uuid": ">=14.0.0"
     }
   },
   "devDependencies": {
@@ -141,7 +152,7 @@
     "eslint": "^10.0.1",
     "eslint-config-next": "^16.1.6",
     "eslint-plugin-unicorn": "^55.0.0",
-    "postcss": "^8.4.41",
+    "postcss": "^8.5.10",
     "raw-loader": "^4.0.2",
     "tailwindcss": "^3.4.10",
     "ts-node": "^10.9.2",
