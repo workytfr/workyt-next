@@ -26,6 +26,7 @@ export interface IRevision extends Document {
     courseId?: mongoose.Types.ObjectId; // Référence optionnelle à un cours
     competencies?: string[]; // Skill IDs (uniquement pour fiches certifiées)
     createdAt: Date; // Date de création
+    updatedAt: Date; // Date de dernière modification
 }
 
 /**
@@ -106,7 +107,7 @@ const RevisionSchema: Schema<IRevision> = new Schema({
         type: Date,
         default: Date.now,
     }, // Date de création
-});
+}, { timestamps: true });
 
 /**
  * Vérification de la présence du modèle pour éviter une réinstanciation

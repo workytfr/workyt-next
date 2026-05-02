@@ -7,12 +7,20 @@ Allow: /forum
 Allow: /fiches
 Allow: /recompenses
 Allow: /gems
+Allow: /a-propos
+Allow: /partenaires
+Allow: /award
+Allow: /progression
+Allow: /mentions-legales
+Allow: /politique-confidentialite
 
-# Pages privées à ne pas indexer
+# Pages privées / authentifiées à ne pas indexer
 Disallow: /dashboard
 Disallow: /compte
 Disallow: /api
 Disallow: /admin
+Disallow: /evaluation
+Disallow: /calendrier
 Disallow: /fiches/creer
 Disallow: /forum/creer
 Disallow: /fiches/favoris

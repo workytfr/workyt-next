@@ -6,6 +6,8 @@ import Course from "@/models/Course";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { isValidObjectId } from "mongoose";
 import { hasPermission } from "@/lib/roles";
+import { notifySeo } from "@/lib/seoNotify";
+import { buildIdSlug } from "@/utils/slugify";
 
 export async function GET(
     req: NextRequest,
@@ -132,6 +134,17 @@ export async function PATCH(
                 { error: "Cours non trouvé" },
                 { status: 404 }
             );
+        }
+
+        // Si le cours vient d'être publié, on notifie les moteurs de recherche
+        if (updatedCourse.status === "publie") {
+            try {
+                const c: any = updatedCourse;
+                const slugForSeo = buildIdSlug(c._id.toString(), c.slug || c.title);
+                notifySeo(`https://workyt.fr/cours/${slugForSeo}`);
+            } catch (seoErr) {
+                console.error("notifySeo error (non blocking):", seoErr);
+            }
         }
 
         return NextResponse.json({ cours: updatedCourse }, { status: 200 });

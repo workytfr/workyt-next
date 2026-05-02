@@ -146,12 +146,15 @@ const Footer: React.FC = () => {
                             </h3>
                             <ul className="space-y-2.5">
                                 {[
+                                    { href: "/a-propos", label: "À propos de l'asso" },
                                     { href: "/partenaires", label: "Nos partenaires" },
                                     { href: "/award", label: "Workyt Award" },
                                     { href: "https://www.helloasso.com/associations/workyt/formulaires/1", label: "Faire un don" },
                                     { href: "https://www.journal-officiel.gouv.fr/pages/associations-detail-annonce/?q.id=id:202200100800", label: "Détails de l'association" },
                                     { href: "mailto:admin@workyt.fr", label: "Nous contacter" },
                                     { href: "https://discord.gg/workyt", label: "Discord" },
+                                    { href: "/mentions-legales", label: "Mentions légales" },
+                                    { href: "/politique-confidentialite", label: "Confidentialité" },
                                 ].map((link) => (
                                     <li key={link.label}>
                                         <Link href={link.href} className="text-sm text-[#78716c] hover:text-[#f97316] transition-colors duration-200">

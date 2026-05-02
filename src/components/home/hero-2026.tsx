@@ -235,16 +235,22 @@ export default function Hero2026() {
                             </div>
                         </div>
 
-                        {/* Mascotte en petit, bas-gauche du panneau */}
-                        <Image
-                            src="/workytanim.gif"
-                            alt="Mascotte Workyt — un personnage étudiant qui anime la plateforme d'entraide scolaire"
+                        {/* Mascotte en petit, bas-gauche du panneau — <video> au lieu d'un GIF 7 MB */}
+                        <video
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                            poster="/workytanim-poster.webp"
+                            aria-label="Mascotte Workyt — un personnage étudiant qui anime la plateforme d'entraide scolaire"
                             width={120}
                             height={120}
-                            priority
-                            unoptimized
                             className="wk-float-y pointer-events-none absolute -bottom-6 -left-10 z-20 hidden w-[110px] opacity-90 drop-shadow-[0_12px_40px_rgba(255,106,26,0.25)] lg:block"
-                        />
+                        >
+                            <source src="/workytanim.webm" type="video/webm" />
+                            <source src="/workytanim.mp4" type="video/mp4" />
+                        </video>
 
                         {/* Pile de cartes forum */}
                         <div className="relative mx-auto w-full max-w-[420px] lg:max-w-none">

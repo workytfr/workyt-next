@@ -17,26 +17,41 @@ export default function NotFound() {
             <p className="text-gray-500 mb-8 max-w-md">
                 La page que vous recherchez n&apos;existe pas ou a été déplacée.
             </p>
-            <div className="flex gap-4">
+            <div className="flex flex-wrap justify-center gap-3">
                 <Link
                     href="/"
-                    className="px-6 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
+                    className="px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
                 >
                     Accueil
                 </Link>
                 <Link
+                    href="/cours"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                    Cours
+                </Link>
+                <Link
                     href="/forum"
-                    className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
                     Forum
                 </Link>
                 <Link
                     href="/fiches"
-                    className="px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
                 >
                     Fiches
                 </Link>
             </div>
+            <p className="text-xs text-gray-400 mt-8">
+                <Link href="/sitemap.xml" className="hover:text-orange-500">
+                    Sitemap
+                </Link>{" "}
+                ·{" "}
+                <Link href="/a-propos" className="hover:text-orange-500">
+                    À propos
+                </Link>
+            </p>
         </div>
     );
 }

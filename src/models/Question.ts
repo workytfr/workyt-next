@@ -15,6 +15,7 @@ export interface IQuestion extends Document {
     points: number;
     status: 'Non validée' | 'Validée' | 'Résolue';
     createdAt: Date;
+    updatedAt: Date;
     contextType?: 'lesson' | 'exercise' | 'general';
     contextId?: ObjectId;
     contextTitle?: string;
@@ -53,7 +54,7 @@ const QuestionSchema: Schema = new Schema({
     contextTitle: { type: String },
     courseId: { type: Schema.Types.ObjectId, ref: 'Course' },
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section' }
-});
+}, { timestamps: true });
 
 // Auto-génération du slug à partir du titre
 QuestionSchema.pre('save', function (next) {

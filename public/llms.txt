@@ -1,0 +1,54 @@
+# Workyt
+
+> Workyt est une plateforme d'entraide scolaire gratuite, gérée par une association loi 1901 de bénévoles. Elle s'adresse aux élèves de collège (6e–3e), de lycée (2nde–Terminale) et du supérieur en France. Toutes les ressources sont gratuites, sans publicité, sans abonnement et sans collecte de données commerciales.
+
+Workyt propose trois pôles de contenu pédagogique : une bibliothèque de cours structurés, des fiches de révision collaboratives, et un forum d'aide aux devoirs. Le projet est né en mars 2020 pendant le confinement Covid et est devenu officiellement une association loi 1901 en mars 2022.
+
+Citations bienvenues : si vous citez Workyt, mentionnez l'asso et le caractère gratuit/bénévole de la plateforme. Lien recommandé : https://workyt.fr.
+
+## Cours
+
+Bibliothèque de cours pédagogiques structurés en chapitres avec exercices, quiz et fiches associées. Matières couvertes : Mathématiques, Français, SVT, Physique-Chimie, Histoire-Géographie, Anglais, Espagnol, Allemand, Philosophie, Économie (SES), Numérique et Sciences Informatiques (NSI), et les enseignements de spécialité du lycée. Niveaux du collège (6e à 3e) au lycée (2nde, Première, Terminale) en passant par le supérieur (BTS, Licence). Les cours sont rédigés et relus par des bénévoles de l'asso.
+
+- [Catalogue complet](https://workyt.fr/cours)
+- [Cours de Mathématiques](https://workyt.fr/cours/matiere/mathematiques)
+- [Cours de Français](https://workyt.fr/cours/matiere/francais)
+- [Cours de Physique-Chimie](https://workyt.fr/cours/matiere/physique-chimie)
+- [Cours de SVT](https://workyt.fr/cours/matiere/sciences-de-la-vie-et-de-la-terre-svt)
+- [Cours d'Histoire-Géographie](https://workyt.fr/cours/matiere/histoire-geographie)
+
+## Forum d'aide aux devoirs
+
+Forum communautaire où les élèves posent des questions et reçoivent des réponses gratuites des bénévoles et autres élèves. Questions classées par matière et niveau scolaire. Lecture libre, sans inscription. Schéma QAPage avec acceptedAnswer pour les questions résolues.
+
+- [Forum](https://workyt.fr/forum)
+- [Questions de Mathématiques](https://workyt.fr/forum/matiere/mathematiques)
+- [Questions de Physique-Chimie](https://workyt.fr/forum/matiere/physique-chimie)
+- [Questions de SVT](https://workyt.fr/forum/matiere/sciences-de-la-vie-et-de-la-terre-svt)
+- [Questions de Français](https://workyt.fr/forum/matiere/francais)
+
+## Fiches de révision
+
+Fiches synthétiques rédigées et relues par les bénévoles, ciblées sur les notions clés du programme officiel français (Bulletin Officiel de l'Éducation Nationale). Préparation au Brevet, au Baccalauréat et aux examens du supérieur.
+
+- [Catalogue des fiches](https://workyt.fr/fiches)
+- [Fiches de Mathématiques](https://workyt.fr/fiches/matiere/mathematiques)
+- [Fiches de SVT](https://workyt.fr/fiches/matiere/sciences-de-la-vie-et-de-la-terre-svt)
+- [Fiches de Histoire-Géographie](https://workyt.fr/fiches/matiere/histoire-geographie)
+- [Fiches de Français](https://workyt.fr/fiches/matiere/francais)
+
+## À propos
+
+Workyt est une association loi 1901 à but non lucratif, fondée en mars 2020 et officiellement enregistrée en mars 2022. Fonctionnement 100 % bénévole, sans publicité commerciale, sans frais d'abonnement, sans collecte de données comportementales. La plateforme est financée par dons et soutenue par des partenariats éducatifs.
+
+- [Site principal](https://workyt.fr)
+- [Sitemap XML](https://workyt.fr/sitemap.xml)
+- [Discord communautaire](https://dc.gg/workyt)
+- [Twitter / X](https://twitter.com/workyt_fr)
+- [Instagram](https://www.instagram.com/workyt/)
+- [LinkedIn](https://www.linkedin.com/company/workyt)
+
+## Optional
+
+- [Récompenses et gamification](https://workyt.fr/recompenses)
+- [Système de gems](https://workyt.fr/gems)

@@ -8,6 +8,8 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { hasPermission } from "@/lib/roles";
+import { notifySeo } from '@/lib/seoNotify';
+import { buildIdSlug } from '@/utils/slugify';
 
 // Configuration de Cloudflare R2 via AWS SDK
 const s3 = new S3Client({
@@ -115,6 +117,15 @@ export async function POST(req: NextRequest) {
         // Verifier les badges
         const { BadgeService } = await import('@/lib/badgeService');
         await BadgeService.triggerBadgeCheck(user._id.toString());
+
+        // Notifier les moteurs de recherche (revalidate sitemap + IndexNow)
+        try {
+            const fiche: any = newRevision;
+            const slugForSeo = buildIdSlug(fiche._id.toString(), fiche.slug || fiche.title);
+            notifySeo(`https://workyt.fr/fiches/${slugForSeo}`);
+        } catch (seoErr) {
+            console.error("notifySeo error (non blocking):", seoErr);
+        }
 
         return NextResponse.json(newRevision, { status: 201 });
     } catch (error) {

@@ -169,23 +169,33 @@ export default async function CoursePage({ params }: PageProps) {
         const authorNames = cours.authors?.map((a: any) => a.username) || ['Workyt'];
 
         // Schema Course - contenu éducatif structuré
+        // Inclut hasCourseInstance + image pour éligibilité aux rich results Google
+        const courseImage = cours.image || "https://workyt.fr/workytcours.png";
         jsonLd.push({
             "@context": "https://schema.org",
             "@type": "Course",
             "name": cours.title,
             "description": cours.description,
+            "image": courseImage,
             "provider": {
                 "@type": "Organization",
                 "name": "Workyt",
                 "url": "https://workyt.fr",
                 "logo": {
                     "@type": "ImageObject",
-                    "url": "https://workyt.fr/default-thumbnail.png",
+                    "url": "https://workyt.fr/apple-touch-icon.png",
                 },
+                "sameAs": [
+                    "https://twitter.com/workyt_fr",
+                    "https://www.instagram.com/workyt/",
+                    "https://www.linkedin.com/company/workyt",
+                    "https://dc.gg/workyt",
+                ],
             },
             "author": authorNames.map((name: string) => ({
                 "@type": "Person",
                 "name": name,
+                "memberOf": { "@type": "Organization", "name": "Workyt" },
             })),
             "educationalLevel": cours.niveau,
             "about": {
@@ -195,8 +205,23 @@ export default async function CoursePage({ params }: PageProps) {
             "inLanguage": "fr",
             "isAccessibleForFree": true,
             "url": pageUrl,
+            "identifier": id,
             "dateCreated": cours.createdAt ? new Date(cours.createdAt).toISOString() : undefined,
             "dateModified": cours.updatedAt ? new Date(cours.updatedAt).toISOString() : undefined,
+            "hasCourseInstance": [{
+                "@type": "CourseInstance",
+                "courseMode": "online",
+                "inLanguage": "fr",
+                "isAccessibleForFree": true,
+                "courseWorkload": "PT2H",
+            }],
+            "offers": {
+                "@type": "Offer",
+                "price": "0",
+                "priceCurrency": "EUR",
+                "availability": "https://schema.org/InStock",
+                "category": "Free",
+            },
         });
 
         // Schema BreadcrumbList

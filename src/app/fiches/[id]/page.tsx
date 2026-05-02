@@ -189,12 +189,15 @@ export default async function FichePage({ params }: PageProps) {
         const plainContent = stripHtml(fiche.content || '');
 
         // Schema LearningResource (plus spécifique qu'Article pour du contenu éducatif)
+        const ficheImage = fiche.files?.[0] || "https://workyt.fr/workytfiche.png";
         jsonLd.push({
             "@context": "https://schema.org",
             "@type": "LearningResource",
             "headline": fiche.title,
             "name": fiche.title,
             "description": plainContent.slice(0, 200),
+            "image": ficheImage,
+            "url": pageUrl,
             "learningResourceType": "Fiche de révision",
             "educationalLevel": fiche.level,
             "about": {
@@ -204,6 +207,7 @@ export default async function FichePage({ params }: PageProps) {
             "author": {
                 "@type": "Person",
                 "name": fiche.author?.username || "Workyt",
+                "memberOf": { "@type": "Organization", "name": "Workyt" },
             },
             "publisher": {
                 "@type": "Organization",
@@ -211,10 +215,19 @@ export default async function FichePage({ params }: PageProps) {
                 "url": "https://workyt.fr",
                 "logo": {
                     "@type": "ImageObject",
-                    "url": "https://workyt.fr/default-thumbnail.png",
+                    "url": "https://workyt.fr/apple-touch-icon.png",
                 },
+                "sameAs": [
+                    "https://twitter.com/workyt_fr",
+                    "https://www.instagram.com/workyt/",
+                    "https://www.linkedin.com/company/workyt",
+                    "https://dc.gg/workyt",
+                ],
             },
             "datePublished": fiche.createdAt ? new Date(fiche.createdAt).toISOString() : undefined,
+            "dateModified": fiche.updatedAt
+                ? new Date(fiche.updatedAt).toISOString()
+                : (fiche.createdAt ? new Date(fiche.createdAt).toISOString() : undefined),
             "mainEntityOfPage": {
                 "@type": "WebPage",
                 "@id": pageUrl,

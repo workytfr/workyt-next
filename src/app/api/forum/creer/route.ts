@@ -7,6 +7,8 @@ import PointTransaction from "@/models/PointTransaction";
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { notifySeo } from '@/lib/seoNotify';
+import { buildIdSlug } from '@/utils/slugify';
 
 // Exécuter ce route handler en runtime Node.js
 export const runtime = "nodejs";
@@ -158,6 +160,14 @@ export async function POST(req: NextRequest) {
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload),
         });
+
+        // Notifier les moteurs de recherche (revalidate sitemap + IndexNow → Bing/Yandex)
+        try {
+            const slugForSeo = buildIdSlug(question._id.toString(), question.slug || question.title);
+            notifySeo(`https://workyt.fr/forum/${slugForSeo}`);
+        } catch (seoErr) {
+            console.error("notifySeo error (non blocking):", seoErr);
+        }
 
         return NextResponse.json(question, { status: 201 });
     } catch (err: any) {

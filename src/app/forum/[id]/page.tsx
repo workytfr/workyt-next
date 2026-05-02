@@ -177,22 +177,33 @@ export default async function QuestionPage({ params }: PageProps) {
         redirect(`/forum/${canonicalParam}`);
     }
 
+    const pageUrl = `https://workyt.fr/forum/${canonicalParam}`;
+
+    // Pré-fetch SSR du compteur de réponses + meilleure réponse — utilisé à la fois
+    // pour le JSON-LD (rich snippets) et pour rendre le contenu visible à Googlebot
+    // dans le HTML statique (avant que QuestionDetailPage hydrate côté client).
+    let answerCount = 0;
+    let bestAnswer: any = null;
+    try {
+        answerCount = await Answer.countDocuments({ question: id });
+        bestAnswer = await Answer.findOne({
+            question: id,
+            status: 'Meilleure Réponse',
+        }).populate('user', 'username').lean();
+    } catch {
+        // Non bloquant
+    }
+
+    const stripHtmlText = (html: string) =>
+        (html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    const questionText = stripHtmlText(
+        question.description?.whatINeed || question.description?.whatIDid || ''
+    );
+    const bestAnswerText = bestAnswer ? stripHtmlText(bestAnswer.content || '') : '';
+
     // JSON-LD structured data pour les rich snippets Google
     let jsonLd: object[] = [];
     try {
-        const slug = question.slug || slugify(question.title);
-        const canonicalPath = buildIdSlug(id, slug);
-        const pageUrl = `https://workyt.fr/forum/${canonicalPath}`;
-
-        // Compter les vraies réponses pour cette question
-        const answerCount = await Answer.countDocuments({ question: id });
-
-        // Récupérer la meilleure réponse si elle existe (pour le rich snippet "accepted answer")
-        const bestAnswer: any = await Answer.findOne({
-            question: id,
-            status: 'Meilleure Réponse'
-        }).populate('user', 'username').lean();
-
         // Schema QAPage - permet les rich snippets Q&A dans Google
         const qaSchema: any = {
             "@context": "https://schema.org",
@@ -200,8 +211,10 @@ export default async function QuestionPage({ params }: PageProps) {
             "mainEntity": {
                 "@type": "Question",
                 "name": question.title,
-                "text": question.description?.whatINeed || question.description?.whatIDid || '',
+                "url": pageUrl,
+                "text": questionText,
                 "dateCreated": question.createdAt ? new Date(question.createdAt).toISOString() : undefined,
+                "dateModified": question.updatedAt ? new Date(question.updatedAt).toISOString() : (question.createdAt ? new Date(question.createdAt).toISOString() : undefined),
                 "author": {
                     "@type": "Person",
                     "name": question.user?.username || "Anonyme",
@@ -219,7 +232,7 @@ export default async function QuestionPage({ params }: PageProps) {
                 "url": "https://workyt.fr",
                 "logo": {
                     "@type": "ImageObject",
-                    "url": "https://workyt.fr/default-thumbnail.png",
+                    "url": "https://workyt.fr/apple-touch-icon.png",
                 },
             },
             "inLanguage": "fr",
@@ -229,7 +242,8 @@ export default async function QuestionPage({ params }: PageProps) {
         if (bestAnswer) {
             qaSchema.mainEntity.acceptedAnswer = {
                 "@type": "Answer",
-                "text": bestAnswer.content?.replace(/<[^>]*>/g, ' ').slice(0, 300),
+                "text": bestAnswerText.slice(0, 1000),
+                "url": `${pageUrl}#meilleure-reponse`,
                 "dateCreated": bestAnswer.createdAt ? new Date(bestAnswer.createdAt).toISOString() : undefined,
                 "author": {
                     "@type": "Person",

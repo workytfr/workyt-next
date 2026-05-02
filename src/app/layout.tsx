@@ -101,10 +101,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
     };
 
     // JSON-LD Organization schema pour le Knowledge Panel Google
+    // Cohérent avec EducationalOrganization sur la home — sameAs complet pour signaler
+    // tous les profils sociaux (Twitter, Instagram, LinkedIn, Discord) au Knowledge Graph.
     const organizationSchema = {
         "@context": "https://schema.org",
         "@type": "Organization",
         "name": "Workyt",
+        "alternateName": "Asso Workyt",
         "url": "https://workyt.fr",
         "logo": {
             "@type": "ImageObject",
@@ -114,8 +117,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
         },
         "sameAs": [
             "https://twitter.com/workyt_fr",
+            "https://www.instagram.com/workyt/",
+            "https://www.linkedin.com/company/workyt",
+            "https://dc.gg/workyt",
         ],
-        "description": "Plateforme d'entraide scolaire gratuite pour les élèves du collège et du lycée.",
+        "description": "Plateforme d'entraide scolaire gratuite portée par une association loi 1901 100 % bénévole. Cours, fiches de révision et forum d'aide aux devoirs pour collège, lycée et supérieur.",
+        "foundingDate": "2020",
+        "areaServed": { "@type": "Country", "name": "France" },
     };
 
     return (
@@ -145,53 +153,46 @@ export default function RootLayout({ children }: RootLayoutProps) {
             src="https://code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
             strategy="lazyOnload"
         />
-        {/* Cookie Consent Scripts */}
-        <script
-            type="text/javascript"
+        {/* Cookie Consent Scripts — chargés via next/script (lazyOnload pour pas bloquer le LCP) */}
+        <Script
+            id="consent-stub"
             src="https://cache.consentframework.com/js/pa/28806/c/pjmlS/stub"
+            strategy="lazyOnload"
             referrerPolicy="unsafe-url"
-            charSet="utf-8"
-            async
-        ></script>
-        <script
-            type="text/javascript"
+        />
+        <Script
+            id="consent-cmp"
             src="https://choices.consentframework.com/js/pa/28806/c/pjmlS/cmp"
+            strategy="lazyOnload"
             referrerPolicy="unsafe-url"
-            charSet="utf-8"
-            async
-        ></script>
-        {/* Google Ads Scripts */}
-        <script
-            async
+        />
+        {/* Google Ads / GTM — afterInteractive pour ne pas bloquer le LCP */}
+        <Script
+            id="gtag-src"
             src="https://www.googletagmanager.com/gtag/js?id=AW-10979332706"
-        ></script>
-        <script
-            id="google-analytics"
-            dangerouslySetInnerHTML={{
-                __html: `
-                            window.dataLayer = window.dataLayer || [];
-                            function gtag(){dataLayer.push(arguments);}
-                            gtag('js', new Date());
-                            gtag('config', 'AW-10979332706');
-                            gtag('event', 'conversion', {'send_to': 'AW-10979332706/HSH7CP-6g9sDEOKkrfMo'});
-                        `,
-            }}
-        ></script>
-        {/* Mailchimp Script */}
-        <script
-            id="mcjs"
-            dangerouslySetInnerHTML={{
-                __html: `
-                            (function(c,h,i,m,p){
-                                m = c.createElement(h),
-                                p = c.getElementsByTagName(h)[0],
-                                m.async = 1;
-                                m.src = i;
-                                p.parentNode.insertBefore(m,p);
-                            })(document,"script","https://chimpstatic.com/mcjs-connected/js/users/7e5e31a95d8d924397deba535/7bee0dc79cb596b3ac1a6081a.js");
-                        `,
-            }}
-        ></script>
+            strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+            {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', 'AW-10979332706');
+                gtag('event', 'conversion', {'send_to': 'AW-10979332706/HSH7CP-6g9sDEOKkrfMo'});
+            `}
+        </Script>
+        {/* Mailchimp — lazyOnload car non critique */}
+        <Script id="mcjs" strategy="lazyOnload">
+            {`
+                (function(c,h,i,m,p){
+                    m = c.createElement(h),
+                    p = c.getElementsByTagName(h)[0],
+                    m.async = 1;
+                    m.src = i;
+                    p.parentNode.insertBefore(m,p);
+                })(document,"script","https://chimpstatic.com/mcjs-connected/js/users/7e5e31a95d8d924397deba535/7bee0dc79cb596b3ac1a6081a.js");
+            `}
+        </Script>
         </body>
         </html>
     );

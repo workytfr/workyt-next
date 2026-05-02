@@ -52,7 +52,14 @@ const educationalOrganizationSchema = {
     "@type": "EducationalOrganization",
     "name": "Workyt",
     "url": "https://workyt.fr",
-    "logo": "https://workyt.fr/apple-touch-icon.png",
+    "logo": {
+        "@type": "ImageObject",
+        "url": "https://workyt.fr/apple-touch-icon.png",
+        "width": 180,
+        "height": 180,
+    },
+    "foundingDate": "2020",
+    "areaServed": { "@type": "Country", "name": "France" },
     "description":
         "Association d'entraide scolaire gratuite pour les élèves du collège et du lycée en France. Cours en ligne, fiches de révision, forum d'aide aux devoirs et gamification de l'apprentissage.",
     "inLanguage": "fr",
