@@ -19,8 +19,13 @@ const LikedByList: React.FC<LikedByProps> = ({ revisionId, likedBy, initialLikes
     const [loading, setLoading] = useState(false);
 
     const maxVisible = 5;
-    const visibleUsers = likedBy.slice(0, maxVisible);
-    const remainingUsers = likedBy.length > maxVisible ? likedBy.slice(maxVisible) : [];
+    // Filtre les entrées orphelines (utilisateur supprimé ou non populé)
+    const safeLikedBy = (likedBy || []).filter(
+        (like): like is { userId: { _id: string; username: string }; likedAt: string } =>
+            !!like && !!like.userId && typeof like.userId === 'object' && !!like.userId._id && !!like.userId.username
+    );
+    const visibleUsers = safeLikedBy.slice(0, maxVisible);
+    const remainingUsers = safeLikedBy.length > maxVisible ? safeLikedBy.slice(maxVisible) : [];
 
     // Vérification du statut du like
     useEffect(() => {

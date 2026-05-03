@@ -16,13 +16,18 @@ interface PageProps {
 async function findFiche(idSlug: string) {
     const objectId = extractIdFromSlug(idSlug);
 
+    const populates = [
+        { path: 'author', select: 'username' },
+        { path: 'likedBy.userId', select: 'username' },
+    ];
+
     if (objectId) {
-        const fiche: any = await Revision.findById(objectId).populate('author', 'username').lean();
+        const fiche: any = await Revision.findById(objectId).populate(populates).lean();
         if (fiche) return { fiche, id: objectId };
     }
 
     // Fallback : chercher par slug
-    const fiche: any = await Revision.findOne({ slug: idSlug }).populate('author', 'username').lean();
+    const fiche: any = await Revision.findOne({ slug: idSlug }).populate(populates).lean();
     if (fiche) return { fiche, id: fiche._id.toString() };
 
     return null;
@@ -270,8 +275,15 @@ export default async function FichePage({ params }: PageProps) {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
-    // Sérialise la fiche pour l'hydratation côté serveur (SEO)
-    const initialFiche = JSON.parse(JSON.stringify(fiche));
+    // Sérialise la fiche pour l'hydratation côté serveur (SEO).
+    // Filtre les likedBy dont l'utilisateur a été supprimé (userId null après populate).
+    const ficheForClient: any = { ...fiche };
+    if (Array.isArray(ficheForClient.likedBy)) {
+        ficheForClient.likedBy = ficheForClient.likedBy.filter(
+            (like: any) => like && like.userId && like.userId._id
+        );
+    }
+    const initialFiche = JSON.parse(JSON.stringify(ficheForClient));
 
     return (
         <>
