@@ -413,12 +413,12 @@ export function SidebarWrapper({
 }
 
 // Composant principal
-export default function CoursePage({ params }: { params: { coursId: string } }) {
+export default function CoursePage({ params, initialCours }: { params: { coursId: string }; initialCours?: Course | null }) {
     const searchParams = useSearchParams();
     const { data: session } = useSession();
-    const [cours, setCours] = useState<Course | null>(null);
+    const [cours, setCours] = useState<Course | null>(initialCours ?? null);
     const [fullCourse, setFullCourse] = useState<Course | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
+    const [isLoading, setIsLoading] = useState(!initialCours);
     const [error, setError] = useState<string | null>(null);
     const [selectedContent, setSelectedContent] = useState<SelectedContent | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
@@ -503,6 +503,8 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
     }, [updateUrl]);
 
     useEffect(() => {
+        // Si le cours a été pré-chargé côté serveur, on saute le fetch initial.
+        if (initialCours) return;
         const fetchCourse = async () => {
             try {
                 const res = await fetch(`/api/cours/${params.coursId}`);
@@ -516,7 +518,7 @@ export default function CoursePage({ params }: { params: { coursId: string } }) 
             }
         };
         fetchCourse();
-    }, [params.coursId]);
+    }, [params.coursId, initialCours]);
 
     useEffect(() => {
         fetch(`/api/cours/${params.coursId}/full`)

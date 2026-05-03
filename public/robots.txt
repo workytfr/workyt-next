@@ -14,10 +14,16 @@ Allow: /progression
 Allow: /mentions-legales
 Allow: /politique-confidentialite
 
+# Endpoints API publics en lecture — nécessaires à l'hydratation des pages
+# (sans ça, Googlebot reçoit "Cours/Fiche/Question introuvable" lors du rendu JS)
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
+Allow: /api/file-proxy
+
 # Pages privées / authentifiées à ne pas indexer
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
 Disallow: /evaluation
 Disallow: /calendrier
@@ -25,63 +31,121 @@ Disallow: /fiches/creer
 Disallow: /forum/creer
 Disallow: /fiches/favoris
 
+# Endpoints API sensibles à ne pas indexer
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
+Disallow: /api/notifications
+Disallow: /api/messages
+Disallow: /api/upload
+Disallow: /api/uploadthing
+
 # AI crawlers — autorisation explicite pour améliorer la visibilité sur
 # les moteurs de recherche génératifs (ChatGPT, Perplexity, Gemini, etc.)
 User-agent: GPTBot
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 User-agent: ChatGPT-User
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 User-agent: OAI-SearchBot
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 User-agent: ClaudeBot
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 User-agent: Claude-Web
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 User-agent: PerplexityBot
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 User-agent: Google-Extended
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 User-agent: Applebot-Extended
 Allow: /
+Allow: /api/cours/
+Allow: /api/fiches/
+Allow: /api/forum/questions/
 Disallow: /dashboard
 Disallow: /compte
-Disallow: /api
 Disallow: /admin
+Disallow: /api/auth
+Disallow: /api/admin
+Disallow: /api/user
+Disallow: /api/users
 
 # Sitemap
 Sitemap: https://workyt.fr/sitemap.xml

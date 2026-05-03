@@ -179,17 +179,23 @@ export default async function QuestionPage({ params }: PageProps) {
 
     const pageUrl = `https://workyt.fr/forum/${canonicalParam}`;
 
-    // Pré-fetch SSR du compteur de réponses + meilleure réponse — utilisé à la fois
-    // pour le JSON-LD (rich snippets) et pour rendre le contenu visible à Googlebot
-    // dans le HTML statique (avant que QuestionDetailPage hydrate côté client).
+    // Pré-fetch SSR du compteur de réponses + meilleure réponse + premières réponses
+    // — utilisé à la fois pour le JSON-LD (rich snippets) et pour rendre le contenu
+    // visible à Googlebot dans le HTML statique (hydratation initiale).
     let answerCount = 0;
     let bestAnswer: any = null;
+    let initialAnswers: any[] = [];
     try {
         answerCount = await Answer.countDocuments({ question: id });
         bestAnswer = await Answer.findOne({
             question: id,
             status: 'Meilleure Réponse',
         }).populate('user', 'username').lean();
+        initialAnswers = await Answer.find({ question: id })
+            .populate({ path: 'user', select: 'username points image' })
+            .sort({ createdAt: 1 })
+            .limit(10)
+            .lean();
     } catch {
         // Non bloquant
     }
@@ -284,6 +290,10 @@ export default async function QuestionPage({ params }: PageProps) {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
+    // Sérialise pour passer en props au composant client (hydratation SEO)
+    const initialQuestion = JSON.parse(JSON.stringify(question));
+    const initialAnswersSerialized = JSON.parse(JSON.stringify(initialAnswers));
+
     return (
         <>
             {jsonLd.map((schema, index) => (
@@ -293,7 +303,11 @@ export default async function QuestionPage({ params }: PageProps) {
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
                 />
             ))}
-            <QuestionDetailPage id={id} />
+            <QuestionDetailPage
+                id={id}
+                initialQuestion={initialQuestion}
+                initialAnswers={initialAnswersSerialized}
+            />
         </>
     );
 }

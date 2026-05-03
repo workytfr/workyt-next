@@ -26,22 +26,37 @@ import {
     BreadcrumbSeparator,
 } from "@/components/ui/Breadcrumb";
 
-export default function QuestionDetailPage({ id: propId }: { id?: string }) {
+interface QuestionDetailPageProps {
+    id?: string;
+    initialQuestion?: any;
+    initialAnswers?: any[];
+}
+
+export default function QuestionDetailPage({
+    id: propId,
+    initialQuestion,
+    initialAnswers,
+}: QuestionDetailPageProps) {
     const { data: session } = useSession();
     const params = useParams();
     // Utilisez l'ID passé en prop s'il existe, sinon récupérez-le depuis l'URL
     const id = propId || params?.id;
 
-    const [question, setQuestion] = useState<any>(null);
-    const [answers, setAnswers] = useState<any[]>([]);
+    const [question, setQuestion] = useState<any>(initialQuestion ?? null);
+    const [answers, setAnswers] = useState<any[]>(initialAnswers ?? []);
     const [revisions, setRevisions] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(!initialQuestion);
     const [error, setError] = useState<string | null>(null);
     const [showAnswerPopup, setShowAnswerPopup] = useState(false);
 
     const fetchQuestion = useCallback(async () => {
         if (!id) return;
-        setLoading(true);
+        // Premier passage : si on a déjà la donnée pré-chargée côté serveur,
+        // on lance le fetch en arrière-plan sans afficher le skeleton.
+        const hasInitial = !!initialQuestion;
+        if (!hasInitial) {
+            setLoading(true);
+        }
         setError(null);
 
         try {
@@ -57,11 +72,13 @@ export default function QuestionDetailPage({ id: propId }: { id?: string }) {
             setRevisions(data.revisions);
         } catch (error) {
             console.error("Erreur de récupération de la question", error);
-            setError("Une erreur s'est produite lors du chargement des données.");
+            if (!hasInitial) {
+                setError("Une erreur s'est produite lors du chargement des données.");
+            }
         } finally {
             setLoading(false);
         }
-    }, [id]);
+    }, [id, initialQuestion]);
 
     useEffect(() => {
         fetchQuestion();

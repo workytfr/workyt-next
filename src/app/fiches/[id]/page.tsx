@@ -270,6 +270,9 @@ export default async function FichePage({ params }: PageProps) {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
+    // Sérialise la fiche pour l'hydratation côté serveur (SEO)
+    const initialFiche = JSON.parse(JSON.stringify(fiche));
+
     return (
         <>
             {jsonLd.map((schema, index) => (
@@ -279,7 +282,7 @@ export default async function FichePage({ params }: PageProps) {
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
                 />
             ))}
-            <FicheView id={id} />
+            <FicheView id={id} initialFiche={initialFiche} />
         </>
     );
 }

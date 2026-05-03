@@ -27,6 +27,24 @@ async function findCourse(idSlug: string) {
     return null;
 }
 
+/**
+ * Charge le cours avec ses sections (même payload que GET /api/cours/[id]),
+ * pour pouvoir hydrater le client côté serveur et garantir l'indexation Google.
+ */
+async function findCourseWithSections(id: string) {
+    const cours: any = await Course.findOne({ _id: id, status: 'publie' })
+        .populate('authors', 'username')
+        .populate({
+            path: 'sections',
+            select: 'title order',
+            options: { sort: { order: 1 } },
+        })
+        .lean();
+    if (!cours) return null;
+    // Sérialisation JSON-safe (ObjectId, Date → string)
+    return JSON.parse(JSON.stringify(cours));
+}
+
 // Génération des paramètres statiques pour les cours publiés
 export async function generateStaticParams() {
     try {
@@ -253,6 +271,9 @@ export default async function CoursePage({ params }: PageProps) {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
+    // Pré-charge le cours avec sections pour l'hydratation côté serveur (SEO)
+    const initialCours = await findCourseWithSections(id);
+
     return (
         <>
             {jsonLd.map((schema, index) => (
@@ -262,7 +283,7 @@ export default async function CoursePage({ params }: PageProps) {
                     dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
                 />
             ))}
-            <CourseClientWrapper params={{ coursId: id }} />
+            <CourseClientWrapper params={{ coursId: id }} initialCours={initialCours} />
         </>
     );
 }

@@ -24,14 +24,15 @@ import { subjectGradients } from "@/data/educationData";
 
 interface FicheViewProps {
     id: string;
+    initialFiche?: any;
 }
 
-export default function FicheView({ id }: FicheViewProps) {
+export default function FicheView({ id, initialFiche }: FicheViewProps) {
     const { data: session } = useSession();
     const currentUser = session?.user || null;
 
-    const [fiche, setFiche] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
+    const [fiche, setFiche] = useState<any>(initialFiche ?? null);
+    const [loading, setLoading] = useState(!initialFiche);
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
@@ -81,7 +82,12 @@ export default function FicheView({ id }: FicheViewProps) {
     };
 
     useEffect(() => {
+        // Skip fetch initial si on a déjà la donnée pré-chargée côté serveur,
+        // mais on refetch sur retry (retryCount > 0) pour permettre la récupération
+        // après une erreur réseau.
+        if (initialFiche && retryCount === 0) return;
         fetchFiche();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, retryCount]);
 
     const handleRetry = () => {
