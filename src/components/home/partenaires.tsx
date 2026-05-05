@@ -42,6 +42,13 @@ const partenairesList = [
             "Extension Chrome pour apprendre le japonais avec Netflix — traduction des sous-titres, suivi JLPT et vocabulaire",
         darkBg: true,
     },
+    {
+        name: "Stagey",
+        logo: "/Stagey.svg",
+        website: "https://stagey.fr/",
+        description: "Recherche de stage pour étudiants",
+        darkBg: true,
+    },
 ];
 
 const PartenairesView = () => {
