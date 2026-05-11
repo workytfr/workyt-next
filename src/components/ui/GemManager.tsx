@@ -750,7 +750,7 @@ const GemManager: React.FC = () => {
                 { id: 'fumee', label: 'Contour fumée', price: 10, file: 'fumee.png', animated: true, rarity: 'rare', borderColor: 'border-gray-400', btnColor: 'bg-gray-700 hover:bg-gray-800' },
                 { id: 'poison_orange', label: 'Contour poison orange', price: 20, file: 'poison_orange.png', animated: true, rarity: 'legendary', borderColor: 'border-orange-400', btnColor: 'bg-orange-600 hover:bg-orange-700' },
                 { id: 'halloween_pumpkins_apng', label: 'Contour Halloween citrouilles', price: 3, file: 'halloween_pumpkins_apng.png', animated: true, rarity: 'common', borderColor: 'border-orange-300', btnColor: 'bg-orange-500 hover:bg-orange-600' },
-                { id: 'yumego_manga', label: 'Contour Yumego Manga', price: 5, file: 'yumego_manga.svg', partner: true, btnColor: 'bg-pink-500 hover:bg-pink-600' },
+                { id: 'yumego_manga', label: 'Contour Yumego Manga', price: 5, file: 'yumego_manga.apng', partner: true, btnColor: 'bg-pink-500 hover:bg-pink-600' },
               ].map((border) => {
                 const bp = getItemButtonProps('profileBorder', border.id, border.price);
                 const rarityBadge = border.rarity === 'common' ? { stars: '★', bg: 'bg-orange-100 text-orange-600' }
