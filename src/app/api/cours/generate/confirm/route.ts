@@ -4,6 +4,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import Course from "@/models/Course";
 import Section from "@/models/Section";
 import Lesson from "@/models/Lesson";
+import Quiz from "@/models/Quiz";
 
 import { hasPermission } from "@/lib/roles";
 
@@ -21,12 +22,30 @@ interface SectionDraft {
     lessons: LessonDraft[];
 }
 
+interface QuestionDraft {
+    question: string;
+    questionType: string;
+    answerSelectionType: "single" | "multiple";
+    answers: string[];
+    correctAnswer: any;
+    explanation?: string;
+    point: number;
+}
+
+interface QuizDraft {
+    sectionIndex: number;
+    title: string;
+    description?: string;
+    questions: QuestionDraft[];
+}
+
 interface CourseDraft {
     title: string;
     matiere: string;
     niveau: string;
     description?: string;
     sections: SectionDraft[];
+    quizzes?: QuizDraft[];
     useWorkytV1?: boolean;
 }
 
@@ -79,13 +98,16 @@ export async function POST(req: NextRequest) {
             matiere: draft.matiere,
         });
 
-        // Créer les sections et leçons
+        // Créer les sections et leçons — on conserve les IDs pour lier les quiz
+        const createdSectionIds: any[] = [];
+
         for (const sectionDraft of draft.sections) {
             const section: any = await Section.create({
                 courseId: course._id,
                 title: sectionDraft.title,
                 order: sectionDraft.order,
             });
+            createdSectionIds.push(section._id);
 
             if (sectionDraft.lessons?.length) {
                 const lessonDocs = sectionDraft.lessons.map((lesson) => ({
@@ -100,10 +122,27 @@ export async function POST(req: NextRequest) {
             }
         }
 
+        // Créer les quiz générés par l'IA
+        if (draft.quizzes?.length) {
+            const quizDocs = draft.quizzes
+                .filter((q) => q.sectionIndex >= 0 && q.sectionIndex < createdSectionIds.length)
+                .map((q) => ({
+                    sectionId: createdSectionIds[q.sectionIndex],
+                    title: q.title,
+                    description: q.description,
+                    questions: q.questions,
+                }));
+
+            if (quizDocs.length > 0) {
+                await Quiz.insertMany(quizDocs);
+            }
+        }
+
         return NextResponse.json({
             success: true,
             message: "Cours créé avec succès !",
             courseId: course._id.toString(),
+            quizzesCreated: draft.quizzes?.length ?? 0,
         });
     } catch (error: any) {
         console.error("Erreur confirmation cours:", error.message);

@@ -10,7 +10,6 @@ import { hasPermission } from "@/lib/roles";
 const MAX_PDF_SIZE = 20 * 1024 * 1024; // 20MB
 const MAX_TEXT_LENGTH = 100_000;
 
-// Augmenter le timeout pour cette route (génération IA longue)
 export const maxDuration = 120;
 
 const SYSTEM_PROMPT = `Tu es un assistant pédagogique expert en structuration de cours. À partir du contenu textuel d'un PDF de cours, tu dois structurer le contenu en sections et leçons.
@@ -70,6 +69,47 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte, sans texte avant
     }
   ]
 }`;
+
+const QUIZ_SYSTEM_PROMPT = `Tu es un expert en création de quiz pédagogiques. À partir du contenu d'un cours, génère des quiz pertinents pour évaluer la compréhension des élèves.
+
+FORMATS EXACTS PAR TYPE DE QUESTION :
+
+1. QCM (une seule bonne réponse)
+{"question":"Énoncé ?","questionType":"QCM","answerSelectionType":"single","answers":["A","B","C","D"],"correctAnswer":0,"explanation":"Explication","point":2}
+correctAnswer = index 0-based de la bonne réponse dans answers
+
+2. QCM (plusieurs bonnes réponses)
+{"question":"Lesquelles ?","questionType":"QCM","answerSelectionType":"multiple","answers":["A","B","C","D"],"correctAnswer":[0,2],"explanation":"Explication","point":3}
+
+3. Vrai/Faux
+{"question":"Affirmation","questionType":"Vrai/Faux","answerSelectionType":"single","answers":[],"correctAnswer":"true","explanation":"Explication","point":1}
+correctAnswer = exactement "true" ou "false" (string, pas booléen)
+
+4. Réponse courte
+{"question":"Question ?","questionType":"Réponse courte","answerSelectionType":"single","answers":[],"correctAnswer":"réponse","explanation":"Explication","point":2}
+
+5. Texte à trous ({{blank}} marque chaque trou)
+{"question":"Complétez","questionType":"Texte à trous","answerSelectionType":"single","answers":["La {{blank}} est la capitale de {{blank}}."],"correctAnswer":["Paris","France"],"explanation":"Explication","point":2}
+Pour un seul trou : "correctAnswer": "mot"
+
+6. Classement (éléments déjà dans le bon ordre dans answers)
+{"question":"Remettez en ordre","questionType":"Classement","answerSelectionType":"single","answers":["Étape 1","Étape 2","Étape 3"],"correctAnswer":[0,1,2],"explanation":"Explication","point":3}
+answers = éléments dans le BON ordre. correctAnswer = [0,1,2,...] toujours croissant.
+
+7. Glisser-déposer (associations terme ↔ définition)
+{"question":"Associez","questionType":"Glisser-déposer","answerSelectionType":"single","answers":["Terme1","Terme2","Terme3","Déf1","Déf2","Déf3"],"correctAnswer":["Déf1","Déf2","Déf3"],"explanation":"Explication","point":4}
+answers = [termes..., définitions...]. correctAnswer = définitions dans l'ordre des termes.
+
+RÈGLES STRICTES :
+- Génère exactement 1 quiz par section listée dans le message utilisateur
+- Entre 5 et 8 questions par quiz, variées en type
+- Utilise UNIQUEMENT les types mentionnés dans "Types autorisés"
+- Questions testant les concepts clés, distracteurs plausibles
+- Toujours renseigner "explanation"
+- Points recommandés : Vrai/Faux=1, QCM single=2, Réponse courte=2, Texte à trous=2, Classement=3, Glisser-déposer=4
+
+Retourne UNIQUEMENT un JSON valide, sans texte avant ou après :
+{"quizzes":[{"sectionIndex":0,"title":"Quiz — [Titre section]","description":"Description courte","questions":[...]}]}`;
 
 export async function POST(req: NextRequest) {
     // --- Étape 1 : Authentification AVANT le stream SSE ---
@@ -137,6 +177,11 @@ export async function POST(req: NextRequest) {
     const title = formData.get("title") as string | null;
     const matiere = formData.get("matiere") as string | null;
     const niveau = formData.get("niveau") as string | null;
+    const generateQuizzes = formData.get("generateQuizzes") === "true";
+    const allowedTypesRaw = formData.get("allowedTypes") as string | null;
+    const allowedTypes: string[] = allowedTypesRaw
+        ? allowedTypesRaw.split(",").map((t) => t.trim()).filter(Boolean)
+        : ["QCM", "Vrai/Faux", "Réponse courte", "Texte à trous", "Classement", "Glisser-déposer"];
 
     if (!pdf || !title || !matiere || !niveau) {
         return NextResponse.json(
@@ -268,6 +313,65 @@ ${extractedText}
                     message: `${parsed.sections.length} section${parsed.sections.length > 1 ? "s" : ""} et ${totalLessons} leçon${totalLessons > 1 ? "s" : ""} générées !`,
                 });
 
+                // Étape 6 (optionnelle) : Génération des quiz
+                let generatedQuizzes: any[] = [];
+                if (generateQuizzes) {
+                    sendEvent("progress", { step: 6, message: "Génération des quiz par section..." });
+
+                    const sectionSummary = parsed.sections
+                        .map((s: any, i: number) => `Section ${i} : "${s.title}" — Leçons : ${(s.lessons || []).map((l: any) => l.title).join(", ")}`)
+                        .join("\n");
+
+                    const quizUserMessage = `Cours : "${title}" (matière : ${matiere}, niveau : ${niveau})
+
+Sections du cours :
+${sectionSummary}
+
+Types autorisés : ${allowedTypes.join(", ")}
+
+Contenu du cours (extrait) :
+---
+${extractedText.slice(0, 50000)}
+---
+
+Génère ${parsed.sections.length} quiz (un par section) en utilisant UNIQUEMENT les types autorisés listés ci-dessus.`;
+
+                    try {
+                        const quizResponse = await callOpenRouter(
+                            [
+                                { role: "system", content: QUIZ_SYSTEM_PROMPT },
+                                { role: "user", content: quizUserMessage },
+                            ],
+                            { temperature: 0.3, max_tokens: 14000 }
+                        );
+
+                        const quizJsonStr = extractJSON(quizResponse);
+                        let parsedQuizzes: { quizzes: any[] };
+                        try {
+                            parsedQuizzes = JSON.parse(quizJsonStr);
+                        } catch {
+                            const cleaned = quizJsonStr
+                                .replace(/,\s*([}\]])/g, "$1")
+                                .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, " ");
+                            parsedQuizzes = JSON.parse(cleaned);
+                        }
+
+                        if (Array.isArray(parsedQuizzes.quizzes)) {
+                            generatedQuizzes = parsedQuizzes.quizzes;
+                            sendEvent("progress", {
+                                step: 6,
+                                message: `${generatedQuizzes.length} quiz générés avec succès !`,
+                            });
+                        }
+                    } catch (quizErr: any) {
+                        console.error("Erreur génération quiz:", quizErr.message);
+                        sendEvent("progress", {
+                            step: 6,
+                            message: "Génération des quiz échouée — le cours sera sauvegardé sans quiz.",
+                        });
+                    }
+                }
+
                 // Résultat final
                 sendEvent("done", {
                     draft: {
@@ -275,6 +379,7 @@ ${extractedText}
                         matiere,
                         niveau,
                         sections: parsed.sections,
+                        quizzes: generatedQuizzes,
                     },
                     pdfInfo: {
                         pages: numPages,

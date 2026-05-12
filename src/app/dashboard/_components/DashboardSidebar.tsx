@@ -26,7 +26,9 @@ import {
   Sparkles,
   BarChart3,
   FileCheck,
+  HelpCircle,
 } from "lucide-react";
+import TutorialModal from "./TutorialModal";
 import "../styles/dashboard-theme.css";
 
 interface NavChild {
@@ -195,6 +197,7 @@ export default function DashboardSidebar() {
   const { data: session } = useSession();
   const [expandedItems, setExpandedItems] = useState<string[]>(["Cours"]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   const user = session?.user;
 
@@ -314,6 +317,17 @@ export default function DashboardSidebar() {
           })}
         </nav>
 
+        {/* Bouton guide */}
+        <div className="px-3 pb-2">
+          <button
+            onClick={() => setTutorialOpen(true)}
+            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[#6b6b6b] hover:bg-[#fff7ed] hover:text-[#f97316] transition-colors group"
+          >
+            <HelpCircle className="w-4 h-4 group-hover:text-[#f97316] transition-colors" />
+            <span>Guide de démarrage</span>
+          </button>
+        </div>
+
         {/* Footer avec utilisateur - ProfileAvatar */}
         <div className="dash-sidebar-footer">
           <div className="flex items-center gap-3">
@@ -336,6 +350,8 @@ export default function DashboardSidebar() {
           </div>
         </div>
       </aside>
+
+      <TutorialModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
     </>
   );
 }
