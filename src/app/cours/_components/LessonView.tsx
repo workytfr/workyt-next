@@ -438,9 +438,15 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
         processedHtml = content;
     }
 
+    const sanitizeForKatex = (formula: string): string =>
+        formula
+            .replace(/ /g, ' ')
+            .replace(/[‘’]/g, "'")
+            .replace(/[“”]/g, '"');
+
     const transformLatex = (html: string): string => {
         return html.replace(/\$\$(.*?)\$\$|\$(.*?)\$/gs, (match, displayMode, inlineMode) => {
-            const formula = displayMode || inlineMode;
+            const formula = sanitizeForKatex(displayMode || inlineMode);
             const isDisplayMode = !!displayMode;
             try {
                 return katex.renderToString(formula, {

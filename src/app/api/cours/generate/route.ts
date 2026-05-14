@@ -213,8 +213,21 @@ export async function POST(req: NextRequest) {
 
     const stream = new ReadableStream({
         async start(controller) {
+            let closed = false;
+
             const sendEvent = (event: string, data: any) => {
-                controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+                if (closed) return;
+                try {
+                    controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
+                } catch {
+                    closed = true;
+                }
+            };
+
+            const closeStream = () => {
+                if (closed) return;
+                closed = true;
+                try { controller.close(); } catch {}
             };
 
             try {
@@ -236,7 +249,7 @@ export async function POST(req: NextRequest) {
 
                 if (!extractedText || extractedText.trim().length < 50) {
                     sendEvent("error", { message: "Impossible d'extraire du texte du PDF. Vérifiez que le PDF contient du texte." });
-                    controller.close();
+                    closeStream();
                     return;
                 }
 
@@ -288,21 +301,21 @@ ${extractedText}
                         parsed = JSON.parse(cleaned);
                     } catch {
                         sendEvent("error", { message: "L'IA n'a pas retourné un JSON valide. Veuillez réessayer." });
-                        controller.close();
+                        closeStream();
                         return;
                     }
                 }
 
                 if (!parsed.sections || !Array.isArray(parsed.sections) || parsed.sections.length === 0) {
                     sendEvent("error", { message: "L'IA n'a pas généré de sections. Veuillez réessayer." });
-                    controller.close();
+                    closeStream();
                     return;
                 }
 
                 for (const section of parsed.sections) {
                     if (!section.title || !Array.isArray(section.lessons)) {
                         sendEvent("error", { message: "Structure de sections invalide. Veuillez réessayer." });
-                        controller.close();
+                        closeStream();
                         return;
                     }
                 }
@@ -387,11 +400,11 @@ Génère ${parsed.sections.length} quiz (un par section) en utilisant UNIQUEMENT
                     },
                 });
 
-                controller.close();
+                closeStream();
             } catch (error: any) {
                 console.error("Erreur génération cours:", error.message);
                 sendEvent("error", { message: error.message || "Erreur interne du serveur." });
-                controller.close();
+                closeStream();
             }
         },
     });

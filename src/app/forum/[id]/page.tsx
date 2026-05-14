@@ -187,10 +187,18 @@ export default async function QuestionPage({ params }: PageProps) {
     let initialAnswers: any[] = [];
     try {
         answerCount = await Answer.countDocuments({ question: id });
+        // Priorité 1 : meilleure réponse explicite
         bestAnswer = await Answer.findOne({
             question: id,
             status: 'Meilleure Réponse',
         }).populate('user', 'username').lean();
+        // Priorité 2 : réponse validée par le staff (équivaut à une acceptedAnswer)
+        if (!bestAnswer) {
+            bestAnswer = await Answer.findOne({
+                question: id,
+                status: 'Validée',
+            }).populate('user', 'username').lean();
+        }
         initialAnswers = await Answer.find({ question: id })
             .populate({ path: 'user', select: 'username points image' })
             .sort({ createdAt: 1 })
@@ -244,12 +252,12 @@ export default async function QuestionPage({ params }: PageProps) {
             "inLanguage": "fr",
         };
 
-        // Ajouter la meilleure réponse acceptée si disponible (booste les rich snippets)
+        // acceptedAnswer : meilleure réponse ou réponse validée par le staff
         if (bestAnswer) {
             qaSchema.mainEntity.acceptedAnswer = {
                 "@type": "Answer",
                 "text": bestAnswerText.slice(0, 1000),
-                "url": `${pageUrl}#meilleure-reponse`,
+                "url": `${pageUrl}#answer-${bestAnswer._id}`,
                 "dateCreated": bestAnswer.createdAt ? new Date(bestAnswer.createdAt).toISOString() : undefined,
                 "author": {
                     "@type": "Person",
@@ -257,6 +265,40 @@ export default async function QuestionPage({ params }: PageProps) {
                 },
                 "upvoteCount": bestAnswer.likes || 0,
             };
+        }
+
+        // suggestedAnswer : autres réponses (hors best) pour enrichir le schema
+        const otherAnswers = initialAnswers.filter(
+            (a: any) => bestAnswer && a._id.toString() !== bestAnswer._id.toString()
+        );
+        if (otherAnswers.length > 0) {
+            qaSchema.mainEntity.suggestedAnswer = otherAnswers.slice(0, 3).map((a: any) => ({
+                "@type": "Answer",
+                "text": stripHtmlText(a.content || '').slice(0, 500),
+                "url": `${pageUrl}#answer-${a._id}`,
+                "dateCreated": a.createdAt ? new Date(a.createdAt).toISOString() : undefined,
+                "author": {
+                    "@type": "Person",
+                    "name": a.user?.username || "Anonyme",
+                },
+                "upvoteCount": a.likes || 0,
+            }));
+        }
+
+        // Si aucune acceptedAnswer ET des réponses existent → au moins un suggestedAnswer
+        if (!bestAnswer && initialAnswers.length > 0) {
+            const top = initialAnswers[0] as any;
+            qaSchema.mainEntity.suggestedAnswer = [{
+                "@type": "Answer",
+                "text": stripHtmlText(top.content || '').slice(0, 500),
+                "url": `${pageUrl}#answer-${top._id}`,
+                "dateCreated": top.createdAt ? new Date(top.createdAt).toISOString() : undefined,
+                "author": {
+                    "@type": "Person",
+                    "name": top.user?.username || "Anonyme",
+                },
+                "upvoteCount": top.likes || 0,
+            }];
         }
 
         jsonLd.push(qaSchema);

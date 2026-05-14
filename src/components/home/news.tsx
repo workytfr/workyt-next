@@ -57,17 +57,17 @@ export function FeedCard() {
                     const category = item.getElementsByTagName("category")[0]?.textContent || "Article";
                     
                     // Extraction améliorée de l'image
-                    let img = "/blog-placeholder.jpg";
-                    
+                    let img = "/default-thumbnail.png";
+
                     // Essayer d'abord l'enclosure
                     const enclosure = item.getElementsByTagName("enclosure")[0];
                     if (enclosure) {
                         const enclosureUrl = enclosure.getAttribute("url");
                         if (enclosureUrl) img = enclosureUrl;
                     }
-                    
+
                     // Sinon essayer content:encoded
-                    if (img === "/blog-placeholder.jpg") {
+                    if (img === "/default-thumbnail.png") {
                         const imgContent = item.getElementsByTagName("content:encoded")[0]?.textContent || "";
                         // Regex améliorée pour capturer src avec guillemets simples ou doubles
                         const imgMatch = imgContent.match(/src=["']([^"']+)["']/i);
@@ -77,7 +77,7 @@ export function FeedCard() {
                     }
                     
                     // Essayer media:content
-                    if (img === "/blog-placeholder.jpg") {
+                    if (img === "/default-thumbnail.png") {
                         const mediaContent = item.getElementsByTagName("media:content")[0];
                         if (mediaContent) {
                             const mediaUrl = mediaContent.getAttribute("url");
@@ -217,7 +217,7 @@ function ArticleCard({ article }: { article: Article }) {
     const [imageLoaded, setImageLoaded] = useState(false);
 
     // Déterminer l'URL de l'image à afficher
-    const imageUrl = imageError || !article.img ? "/blog-placeholder.jpg" : article.img;
+    const imageUrl = imageError || !article.img ? "/default-thumbnail.png" : article.img;
 
     return (
         <article className="group relative bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition-all duration-500 border border-gray-100">

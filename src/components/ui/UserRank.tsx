@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Rank, getRankProgress } from '@/lib/rankSystem';
-import { Progress } from '@/components/ui/Progress';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/Tooltip';
+import React, { useState } from 'react';
+import { getRankProgress, getPrestigeInfo, RANKS } from '@/lib/rankSystem';
+import PrestigeGem from '@/components/ui/PrestigeGem';
 
 interface UserRankProps {
   points: number;
@@ -11,134 +10,186 @@ interface UserRankProps {
   showProgress?: boolean;
 }
 
+const WORLD_ICONS: Record<string, string> = {
+  'Monde des Mangas':               '🗾',
+  'Monde Français':                 '🇫🇷',
+  'Monde des Renards et Fées':      '🦊',
+  'Monde Québécois':                '🍁',
+  'Monde Égyptien':                 '🏺',
+  'Monde des Neiges et des Sables': '🏔️',
+  'Monde de l\'Imaginaire':         '💭',
+  'Monde Médiéval':                 '⚔️',
+  'Monde des Sciences':             '🔬',
+  'Monde des Anciens':              '✨',
+};
+
+const WORLDS = Array.from(
+  new Map(RANKS.map(r => [r.world, r.level])).entries()
+)
+  .sort((a, b) => a[1] - b[1])
+  .map(([world]) => world);
+
 export default function UserRank({ points, className = '', showProgress = true }: UserRankProps) {
-  const [rankInfo, setRankInfo] = useState(() => getRankProgress(points));
-  const [isAnimating, setIsAnimating] = useState(false);
+  const { currentRank, nextRank, progress, pointsNeeded } = getRankProgress(points);
+  const prestigeInfo = getPrestigeInfo(points);
+  const [mapOpen, setMapOpen] = useState(false);
 
-  useEffect(() => {
-    const newRankInfo = getRankProgress(points);
-    setRankInfo(newRankInfo);
-    
-    // Animation lors du changement de rank
-    if (newRankInfo.currentRank.level !== rankInfo.currentRank.level) {
-      setIsAnimating(true);
-      setTimeout(() => setIsAnimating(false), 2000);
-    }
-  }, [points]);
-
-  const { currentRank, nextRank, progress, pointsNeeded } = rankInfo;
+  const currentWorldIndex = WORLDS.indexOf(currentRank.world);
 
   return (
-    <TooltipProvider>
-      <div className={`space-y-4 ${className}`}>
-        {/* Rank actuel avec animation */}
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div className={`
-              relative group cursor-pointer p-4 rounded-xl border-2
-              bg-gradient-to-r ${currentRank.gradient}
-              ${isAnimating ? 'animate-pulse scale-105' : 'hover:scale-105'}
-              transition-all duration-300 transform
-              shadow-lg hover:shadow-xl overflow-hidden
-            `}>
-              <div className="flex items-center space-x-3">
-                <div className="text-3xl animate-bounce">
-                  {currentRank.badge}
-                </div>
-                <div className="flex-1">
-                  <div className="text-white font-bold text-lg">
-                    {currentRank.name}
-                  </div>
-                  <div className="text-white/80 text-sm">
-                    Niveau {currentRank.level} • Monde {Math.ceil(currentRank.level / 3)}
-                  </div>
-                  <div className="text-white/70 text-xs mt-1">
-                    {currentRank.world}
-                  </div>
-                  <div className="text-white/60 text-xs">
-                    Niveau {currentRank.worldLevel}/3 dans ce monde
-                  </div>
-                </div>
-                <div className="text-white/60 text-xs text-right">
-                  <div>{points} points</div>
-                  <div>XP</div>
-                </div>
-              </div>
-              
-              {/* Effet de brillance */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-12 transform -translate-x-full animate-shine" />
-            </div>
-          </TooltipTrigger>
-          <TooltipContent>
-            <div className="max-w-xs">
-              <div className="font-semibold">{currentRank.name}</div>
-              <div className="text-sm text-gray-600">{currentRank.description}</div>
-              <div className="text-xs text-gray-500 mt-1">
-                Monde {Math.ceil(currentRank.level / 3)} : {currentRank.world}
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Niveau {currentRank.worldLevel}/3 dans ce monde
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                {currentRank.worldDescription}
-              </div>
-              <div className="text-xs text-gray-500 mt-2">
-                {points} points d&apos;expérience
-              </div>
-            </div>
-          </TooltipContent>
-        </Tooltip>
+    <div className={`space-y-3 ${className}`}>
+      {/* Identité du rang */}
+      <div
+        className="rounded-2xl p-5 border"
+        style={{ backgroundColor: `${currentRank.color}12`, borderColor: `${currentRank.color}30` }}
+      >
+        <div className="flex items-center gap-4">
+          <div
+            className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
+            style={{ backgroundColor: `${currentRank.color}20` }}
+          >
+            {currentRank.badge}
+          </div>
 
-        {/* Progression vers le prochain rank */}
-        {showProgress && nextRank && (
-          <div className="bg-gray-50 p-4 rounded-lg border">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">
-                Prochain: {nextRank.world}
-              </span>
-              <span className="text-xs text-gray-500">
-                {pointsNeeded} points restants
-              </span>
-            </div>
-            <Progress value={progress} className="h-2 mb-2" />
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-gray-600">
-                {currentRank.name} → {nextRank.name}
-              </span>
-              <div className="flex-1" />
-              <span className="text-xs font-medium text-gray-700">
-                {Math.round(progress)}%
-              </span>
-            </div>
-            <div className="text-xs text-gray-500 mt-2">
-              Monde {Math.ceil(nextRank.level / 3)} • Niveau {nextRank.worldLevel}/3
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              {nextRank.worldDescription}
+          <div className="flex-1 min-w-0">
+            <div className="font-bold text-xl text-gray-900 leading-tight">{currentRank.name}</div>
+            <div className="text-sm text-gray-500 mt-0.5 truncate">{currentRank.world}</div>
+            <div className="text-xs text-gray-400 mt-1">
+              {points.toLocaleString('fr-FR')} pts · Niveau {currentRank.level}
             </div>
           </div>
-        )}
 
-        {/* Animation spéciale pour les ranks élevés */}
-        {currentRank.level >= 4 && (
-          <div className="text-center">
-            <div className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs font-medium">
-              <span className="animate-spin">⭐</span>
-              <span>Monde Premium</span>
+          {/* Dots position dans le monde */}
+          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
+            <span className="text-xs font-semibold text-gray-500">{currentRank.worldLevel}/3</span>
+            <div className="flex gap-1.5">
+              {[1, 2, 3].map(i => (
+                <div
+                  key={i}
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: i <= currentRank.worldLevel ? currentRank.color : '#E5E7EB' }}
+                />
+              ))}
             </div>
           </div>
-        )}
+        </div>
+      </div>
 
-        {/* Animation spéciale pour le niveau max */}
-        {currentRank.level >= 7 && (
-          <div className="text-center">
-            <div className="inline-flex items-center space-x-1 px-3 py-1 rounded-full bg-pink-100 text-pink-800 text-xs font-medium">
-              <span className="animate-pulse">🌟</span>
-              <span>Immortel - Monde Ultime</span>
+      {/* Barre de progression */}
+      {showProgress && (
+        nextRank ? (
+          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
+                <span>Prochain :</span>
+                <span>{nextRank.badge}</span>
+                <span className="font-semibold" style={{ color: nextRank.color }}>{nextRank.name}</span>
+              </div>
+              <span className="text-xs text-gray-500 tabular-nums">
+                {pointsNeeded.toLocaleString('fr-FR')} pts
+              </span>
             </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div
+                className="h-2 rounded-full transition-[width] duration-500 ease-out"
+                style={{
+                  width: `${Math.max(progress, 2)}%`,
+                  background: `linear-gradient(90deg, ${currentRank.color}, ${nextRank.color})`,
+                }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5 text-xs text-gray-400">
+              <span>{currentRank.name}</span>
+              <span className="font-semibold text-gray-600">{Math.round(progress)}%</span>
+              <span>{nextRank.name}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-center">
+            <div className="text-sm font-semibold text-amber-800">✨ Rang maximum atteint</div>
+            <div className="text-xs text-amber-600 mt-0.5">Tu as conquis tous les mondes</div>
+          </div>
+        )
+      )}
+
+      {/* Zone C : Prestige */}
+      {prestigeInfo.level > 0 && prestigeInfo.tier && (
+        <div
+          className="rounded-2xl p-4 border"
+          style={{ backgroundColor: `${prestigeInfo.color}10`, borderColor: `${prestigeInfo.color}35` }}
+        >
+          <div className="flex items-center gap-3">
+            {/* Gemme animée */}
+            <div className="flex-shrink-0">
+              <PrestigeGem
+                color={prestigeInfo.color}
+                intensity={prestigeInfo.rankInTier}
+                size={44}
+              />
+            </div>
+
+            <div className="flex-1 min-w-0">
+              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: prestigeInfo.color }}>
+                Prestige {prestigeInfo.level <= 100 ? prestigeInfo.level : '100+'}
+              </div>
+              <div className="font-bold text-base text-gray-900">{prestigeInfo.displayLevel}</div>
+            </div>
+
+            {prestigeInfo.level <= 100 && (
+              <div className="text-right flex-shrink-0">
+                <div className="text-xs text-gray-500 tabular-nums">
+                  {prestigeInfo.nextLevelPoints.toLocaleString('fr-FR')} pts
+                </div>
+                <div className="w-16 bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                  <div
+                    className="h-1.5 rounded-full transition-[width] duration-500"
+                    style={{ width: `${prestigeInfo.progressInLevel}%`, backgroundColor: prestigeInfo.color }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Carte des mondes (dépliable) */}
+      <div>
+        <button
+          onClick={() => setMapOpen(v => !v)}
+          className="w-full flex items-center justify-between text-xs text-gray-400 hover:text-gray-600 transition-colors py-1 px-1"
+        >
+          <span className="font-medium">
+            Carte des mondes · Monde {currentWorldIndex + 1}/{WORLDS.length}
+          </span>
+          <span>{mapOpen ? '▲' : '▼'}</span>
+        </button>
+
+        {mapOpen && (
+          <div className="mt-2 grid grid-cols-5 gap-2">
+            {WORLDS.map((world, idx) => {
+              const isDone = idx < currentWorldIndex;
+              const isCurrent = idx === currentWorldIndex;
+              return (
+                <div
+                  key={world}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl text-center ${
+                    isCurrent ? 'bg-white shadow-sm border-2' : isDone ? 'bg-gray-50' : 'opacity-40'
+                  }`}
+                  style={isCurrent ? { borderColor: currentRank.color } : {}}
+                  title={world}
+                >
+                  <span className="text-xl">{WORLD_ICONS[world] ?? '🌍'}</span>
+                  <span className="text-[9px] font-bold">
+                    {isDone ? <span className="text-emerald-600">✓</span>
+                      : isCurrent ? <span style={{ color: currentRank.color }}>●</span>
+                      : <span className="text-gray-300">○</span>}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         )}
       </div>
-    </TooltipProvider>
+    </div>
   );
-} 
+}

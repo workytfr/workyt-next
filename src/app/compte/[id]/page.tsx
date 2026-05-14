@@ -34,6 +34,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import { calculateUserRank } from "@/lib/rankSystem";
+import { useRankUp } from "@/hooks/useRankUp";
 import { FlameIcon, getFlameLevel, FLAME_CONFIGS } from "@/components/ui/StreakIndicator";
 import useSWR from "swr";
 import { buildIdSlug } from "@/utils/slugify";
@@ -143,6 +144,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     };
 
     const userRank = calculateUserRank(formData.points);
+    useRankUp(formData.points);
 
     // Resolve params promise
     useEffect(() => {
@@ -285,13 +287,21 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                         size="large"
                         userId={id}
                         role={user?.role}
+                        points={formData.points}
                     />
                 </div>
 
                 {/* Stats pills */}
                 <div className="flex items-center justify-center gap-3 flex-wrap mb-4">
-                        <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                            Nv {userRank.level}
+                        <span
+                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
+                            style={{
+                                backgroundColor: `${userRank.color}18`,
+                                color: userRank.color,
+                                border: `1px solid ${userRank.color}30`,
+                            }}
+                        >
+                            {userRank.badge} {userRank.name} · Nv {userRank.level}
                         </span>
                         <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                             <Image src="/badge/points.png" alt="Points" width={14} height={14} className="object-contain" />

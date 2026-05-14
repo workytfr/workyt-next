@@ -7,6 +7,8 @@ import { SessionProvider } from "next-auth/react";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/home/footer";
+import { Toaster } from "sonner";
+import YoutubeLivePill from "@/components/ui/YoutubeLivePill";
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -24,6 +26,8 @@ export default function ClientProviders({ children }: { children: React.ReactNod
           <main id="main-content">{children}</main>
         </TooltipProvider>
         {!isDashboard && !isCourseDetail && <Footer />}
+        <YoutubeLivePill />
+        <Toaster position="bottom-right" richColors />
       </ThemeProvider>
     </SessionProvider>
   );

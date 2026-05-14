@@ -3,6 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { Badge } from "./Badge";
 import { getRoleIconPath } from "@/lib/roleIcon";
+import { getPrestigeInfo } from "@/lib/rankSystem";
+import PrestigeGem from "@/components/ui/PrestigeGem";
 import { AvatarInterference } from "eigen-avatar-generator/react/interference";
 import { AvatarPlasma } from "eigen-avatar-generator/react/plasma";
 import { AvatarSmile } from "eigen-avatar-generator/react/smile";
@@ -106,7 +108,7 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     size = "medium",
     userId,
     customization: propCustomization,
-    role
+    role,
 }) => {
     const [customization, setCustomization] = useState<ProfileCustomization | null>(null);
     const [loading, setLoading] = useState(false);
@@ -326,6 +328,8 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         </div>
     );
 
+    const prestigeInfo = getPrestigeInfo(points);
+
     // Nom d'utilisateur (affiché en dehors du contour quand size=large)
     const usernameContent = size === "large" && (
         <div className="mt-3 text-center">
@@ -343,6 +347,18 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                         height={20}
                         className="rounded-full flex-shrink-0"
                     />
+                )}
+                {prestigeInfo.level > 0 && (
+                    <span
+                        className="flex-shrink-0 leading-none"
+                        title={`Prestige ${prestigeInfo.displayLevel}`}
+                    >
+                        <PrestigeGem
+                            color={prestigeInfo.color}
+                            intensity={prestigeInfo.rankInTier}
+                            size={22}
+                        />
+                    </span>
                 )}
             </div>
         </div>
