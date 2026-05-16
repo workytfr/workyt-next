@@ -3,7 +3,8 @@ import connectDB from "@/lib/mongodb";
 import LiveEvent from "@/models/LiveEvent";
 import type { IPlatform } from "@/lib/livePlatforms";
 
-// Pas de cache route-level : la DB est dynamique.
+export const dynamic = "force-dynamic";
+
 // Les fetch YouTube ont leur propre cache via { next: { revalidate: 900 } }.
 
 interface LiveStatus {
@@ -20,7 +21,7 @@ async function getManualFallback(): Promise<LiveStatus> {
     try {
         await connectDB();
         const now = new Date();
-        const in48h = new Date(now.getTime() + 48 * 3_600_000);
+        const in10d = new Date(now.getTime() + 10 * 24 * 3_600_000);
 
         // Priorité 1 : un live forcé manuellement ("Démarrer" cliqué)
         const forced = await LiveEvent.findOne({ isActive: true, forceLive: true })
@@ -40,11 +41,11 @@ async function getManualFallback(): Promise<LiveStatus> {
             };
         }
 
-        // Priorité 2 : un live programmé dans les 48h
+        // Priorité 2 : un live programmé dans les 10 prochains jours
         const event = await LiveEvent.findOne({
             isActive: true,
             forceLive: false,
-            scheduledAt: { $gte: now, $lte: in48h },
+            scheduledAt: { $gte: now, $lte: in10d },
         })
             .sort({ scheduledAt: 1 })
             .lean<{ videoId?: string; title: string; scheduledAt: Date; platforms?: IPlatform[] }>();
@@ -126,8 +127,8 @@ export async function GET(): Promise<NextResponse<LiveStatus>> {
                 const msUntil = new Date(scheduledAt).getTime() - Date.now();
                 const hoursUntil = msUntil / 3_600_000;
 
-                // Afficher seulement si le live est dans moins de 48h
-                if (hoursUntil > 0 && hoursUntil <= 48) {
+                // Afficher si le live est dans les 10 prochains jours
+                if (hoursUntil > 0 && hoursUntil <= 240) {
                     return NextResponse.json({
                         status: "upcoming",
                         videoId,
