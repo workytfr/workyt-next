@@ -1,15 +1,31 @@
 import mongoose, { Schema, Document, ObjectId } from "mongoose";
+import type { PlatformType, IPlatform } from "@/lib/livePlatforms";
+
+export type { PlatformType, IPlatform };
 
 export interface ILiveEvent extends Document {
     _id: ObjectId;
     title: string;
-    videoId: string;
+    videoId?: string;
+    platforms: IPlatform[];
     scheduledAt: Date;
     isActive: boolean;
-    forceLive: boolean; // admin a cliqué "Démarrer" → affiche EN DIRECT immédiatement
+    forceLive: boolean;
     createdBy: ObjectId;
     createdAt: Date;
 }
+
+const PlatformSchema = new Schema<IPlatform>(
+    {
+        type: {
+            type: String,
+            enum: ["youtube", "google_meet", "discord", "instagram", "twitch"],
+            required: true,
+        },
+        url: { type: String, required: true, trim: true },
+    },
+    { _id: false }
+);
 
 const LiveEventSchema = new Schema<ILiveEvent>({
     title: {
@@ -20,8 +36,11 @@ const LiveEventSchema = new Schema<ILiveEvent>({
     },
     videoId: {
         type: String,
-        required: [true, "L'ID de la vidéo YouTube est requis"],
         trim: true,
+    },
+    platforms: {
+        type: [PlatformSchema],
+        default: [],
     },
     scheduledAt: {
         type: Date,

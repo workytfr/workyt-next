@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { PLATFORM_CONFIG, type PlatformType, type IPlatform } from "@/lib/livePlatforms";
 
 interface LiveStatus {
     status: "live" | "upcoming" | "none";
@@ -8,6 +9,7 @@ interface LiveStatus {
     title?: string;
     thumbnail?: string;
     scheduledAt?: string;
+    platforms?: IPlatform[];
 }
 
 const POLL_INTERVAL_IDLE = 15 * 60 * 1000;  // 15 min — aucun live connu
@@ -31,6 +33,25 @@ function Countdown({ scheduledAt }: { scheduledAt: string }) {
     }, [scheduledAt]);
 
     return <span>{label}</span>;
+}
+
+function PlatformButton({ platform, isLive }: { platform: IPlatform; isLive: boolean }) {
+    const cfg = PLATFORM_CONFIG[platform.type as PlatformType] ?? {
+        label: platform.type,
+        buttonColor: "bg-gray-900 hover:bg-gray-800 text-white",
+        actionLabel: "Rejoindre",
+        actionLabelLive: "Rejoindre",
+    };
+    return (
+        <a
+            href={platform.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold transition-all active:scale-95 ${cfg.buttonColor}`}
+        >
+            {isLive ? cfg.actionLabelLive : cfg.actionLabel}
+        </a>
+    );
 }
 
 export default function YoutubeLivePill() {
@@ -58,7 +79,6 @@ export default function YoutubeLivePill() {
         return () => clearInterval(id);
     }, [fetchStatus, data.status]);
 
-    // Fermer la carte en cliquant en dehors
     useEffect(() => {
         if (!expanded) return;
         const handler = (e: MouseEvent) => {
@@ -81,7 +101,17 @@ export default function YoutubeLivePill() {
     if (data.status === "upcoming" && dismissed) return null;
 
     const isLive = data.status === "live";
-    const youtubeUrl = `https://www.youtube.com/watch?v=${data.videoId}`;
+    const platforms = data.platforms ?? [];
+
+    // Fallback pour les anciens events sans platforms
+    const displayPlatforms: IPlatform[] =
+        platforms.length > 0
+            ? platforms
+            : data.videoId
+                ? [{ type: "youtube", url: `https://www.youtube.com/watch?v=${data.videoId}` }]
+                : [];
+
+    const multiplePlatforms = displayPlatforms.length > 1;
 
     return (
         <div ref={cardRef} className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-2.5">
@@ -89,8 +119,8 @@ export default function YoutubeLivePill() {
             {/* Carte dépliée */}
             {expanded && (
                 <div className="w-72 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden">
-                    {/* Thumbnail */}
-                    {data.thumbnail && (
+                    {/* Thumbnail ou header gradient */}
+                    {data.thumbnail ? (
                         <div className="relative">
                             <img
                                 src={data.thumbnail}
@@ -107,6 +137,18 @@ export default function YoutubeLivePill() {
                                 <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 bg-black/70 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
                                     ⏰ À venir
                                 </span>
+                            )}
+                        </div>
+                    ) : (
+                        <div className={`relative h-16 flex items-center px-4 ${isLive ? "bg-gradient-to-r from-red-600 to-red-500" : "bg-gradient-to-r from-gray-800 to-gray-700"}`}>
+                            {isLive && (
+                                <span className="inline-flex items-center gap-1.5 text-white text-xs font-bold">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                                    EN DIRECT
+                                </span>
+                            )}
+                            {!isLive && (
+                                <span className="text-white text-xs font-semibold">⏰ À venir</span>
                             )}
                         </div>
                     )}
@@ -130,21 +172,17 @@ export default function YoutubeLivePill() {
                             </p>
                         )}
 
-                        <a
-                            href={youtubeUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className={`flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold text-white transition-all active:scale-95 ${
-                                isLive
-                                    ? "bg-red-600 hover:bg-red-700"
-                                    : "bg-gray-900 hover:bg-gray-800"
-                            }`}
-                        >
-                            <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M8 5v14l11-7z" />
-                            </svg>
-                            {isLive ? "Rejoindre le live" : "Voir la page du live"}
-                        </a>
+                        {/* Plateformes */}
+                        {multiplePlatforms && (
+                            <p className="text-xs text-gray-400 mb-2 font-medium">
+                                Disponible sur {displayPlatforms.length} plateformes :
+                            </p>
+                        )}
+                        <div className="flex flex-col gap-2">
+                            {displayPlatforms.map((p) => (
+                                <PlatformButton key={p.type} platform={p} isLive={isLive} />
+                            ))}
+                        </div>
                     </div>
                 </div>
             )}
@@ -172,7 +210,6 @@ export default function YoutubeLivePill() {
                     }`}
                 >
                     {isLive ? (
-                        /* Dot pulsant pour le live */
                         <span className="relative flex h-2.5 w-2.5 flex-shrink-0">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-60" />
                             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
@@ -189,7 +226,13 @@ export default function YoutubeLivePill() {
                         )}
                     </span>
 
-                    {/* Chevron */}
+                    {/* Badge nombre de plateformes si > 1 */}
+                    {displayPlatforms.length > 1 && (
+                        <span className="flex items-center justify-center w-4 h-4 rounded-full bg-white/25 text-xs font-bold leading-none">
+                            {displayPlatforms.length}
+                        </span>
+                    )}
+
                     <svg
                         className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${expanded ? "rotate-180" : ""}`}
                         fill="none"

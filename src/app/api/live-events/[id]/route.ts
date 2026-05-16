@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/authOptions";
 import connectDB from "@/lib/mongodb";
 import LiveEvent from "@/models/LiveEvent";
 import User from "@/models/User";
+import { extractYoutubeId, type IPlatform } from "@/lib/livePlatforms";
 
 async function requireAdmin(req: NextRequest) {
     const session = await getServerSession(authOptions);
@@ -20,11 +21,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     const { id } = await params;
     const body = await req.json();
-    const update: Record<string, any> = {};
+    const update: Record<string, unknown> = {};
+
     if (body.title !== undefined) update.title = body.title.trim();
-    if (body.videoId !== undefined) update.videoId = body.videoId.trim();
     if (body.scheduledAt !== undefined) update.scheduledAt = new Date(body.scheduledAt);
     if (body.isActive !== undefined) update.isActive = body.isActive;
+    if (body.forceLive !== undefined) update.forceLive = body.forceLive;
+
+    if (Array.isArray(body.platforms)) {
+        const normalizedPlatforms: IPlatform[] = body.platforms.map((p: IPlatform) => {
+            if (p.type === "youtube") {
+                const vid = extractYoutubeId(p.url);
+                return { type: "youtube", url: vid ? `https://www.youtube.com/watch?v=${vid}` : p.url };
+            }
+            return { type: p.type, url: p.url.trim() };
+        });
+        update.platforms = normalizedPlatforms;
+
+        const youtubePlatform = normalizedPlatforms.find((p) => p.type === "youtube");
+        update.videoId = youtubePlatform ? (extractYoutubeId(youtubePlatform.url) ?? undefined) : undefined;
+    }
 
     const event = await LiveEvent.findByIdAndUpdate(id, update, { new: true });
     if (!event) return NextResponse.json({ message: "Événement introuvable" }, { status: 404 });

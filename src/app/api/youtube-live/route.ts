@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import LiveEvent from "@/models/LiveEvent";
+import type { IPlatform } from "@/lib/livePlatforms";
 
 // Pas de cache route-level : la DB est dynamique.
 // Les fetch YouTube ont leur propre cache via { next: { revalidate: 900 } }.
@@ -12,6 +13,7 @@ interface LiveStatus {
     thumbnail?: string;
     scheduledAt?: string;
     source?: "youtube" | "manual";
+    platforms?: IPlatform[];
 }
 
 async function getManualFallback(): Promise<LiveStatus> {
@@ -22,16 +24,19 @@ async function getManualFallback(): Promise<LiveStatus> {
 
         // Priorité 1 : un live forcé manuellement ("Démarrer" cliqué)
         const forced = await LiveEvent.findOne({ isActive: true, forceLive: true })
-            .lean<{ videoId: string; title: string; scheduledAt: Date }>();
+            .lean<{ videoId?: string; title: string; scheduledAt: Date; platforms?: IPlatform[] }>();
 
         if (forced) {
             return {
                 status: "live",
                 videoId: forced.videoId,
                 title: forced.title,
-                thumbnail: `https://img.youtube.com/vi/${forced.videoId}/mqdefault.jpg`,
+                thumbnail: forced.videoId
+                    ? `https://img.youtube.com/vi/${forced.videoId}/mqdefault.jpg`
+                    : undefined,
                 scheduledAt: new Date(forced.scheduledAt).toISOString(),
                 source: "manual",
+                platforms: forced.platforms ?? [],
             };
         }
 
@@ -42,7 +47,7 @@ async function getManualFallback(): Promise<LiveStatus> {
             scheduledAt: { $gte: now, $lte: in48h },
         })
             .sort({ scheduledAt: 1 })
-            .lean<{ videoId: string; title: string; scheduledAt: Date }>();
+            .lean<{ videoId?: string; title: string; scheduledAt: Date; platforms?: IPlatform[] }>();
 
         if (!event) return { status: "none" };
 
@@ -53,9 +58,12 @@ async function getManualFallback(): Promise<LiveStatus> {
             status,
             videoId: event.videoId,
             title: event.title,
-            thumbnail: `https://img.youtube.com/vi/${event.videoId}/mqdefault.jpg`,
+            thumbnail: event.videoId
+                ? `https://img.youtube.com/vi/${event.videoId}/mqdefault.jpg`
+                : undefined,
             scheduledAt: new Date(event.scheduledAt).toISOString(),
             source: "manual",
+            platforms: event.platforms ?? [],
         };
     } catch {
         return { status: "none" };
@@ -80,15 +88,17 @@ export async function GET(): Promise<NextResponse<LiveStatus>> {
 
         if (liveData.items?.length > 0) {
             const item = liveData.items[0];
+            const videoId = item.id.videoId;
             const thumbnail =
                 item.snippet.thumbnails?.medium?.url ||
                 item.snippet.thumbnails?.default?.url;
             return NextResponse.json({
                 status: "live",
-                videoId: item.id.videoId,
+                videoId,
                 title: item.snippet.title,
                 thumbnail,
                 source: "youtube",
+                platforms: [{ type: "youtube", url: `https://www.youtube.com/watch?v=${videoId}` }],
             });
         }
 
@@ -127,6 +137,7 @@ export async function GET(): Promise<NextResponse<LiveStatus>> {
                             item.snippet.thumbnails?.default?.url,
                         scheduledAt,
                         source: "youtube",
+                        platforms: [{ type: "youtube", url: `https://www.youtube.com/watch?v=${videoId}` }],
                     });
                 }
             }
