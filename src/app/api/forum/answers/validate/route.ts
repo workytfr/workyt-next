@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import dbConnect from "@/lib/mongodb";
 import authMiddleware from "@/middlewares/authMiddleware";
 import Answer from "@/models/Answer";
@@ -7,6 +8,7 @@ import User from "@/models/User";
 import PointTransaction from "@/models/PointTransaction";
 import { BadgeService } from "@/lib/badgeService";
 import { hasPermission } from "@/lib/roles";
+import { buildIdSlug } from "@/utils/slugify";
 
 export async function POST(req: NextRequest) {
     try {
@@ -107,6 +109,8 @@ export async function POST(req: NextRequest) {
                 question.points
             );
 
+            revalidatePath(`/forum/${buildIdSlug(question._id.toString(), question.slug || question.title)}`);
+
             return NextResponse.json(
                 { success: true, message: "Réponse désignée comme Meilleure Réponse.", data: answer },
                 { status: 200 }
@@ -143,6 +147,8 @@ export async function POST(req: NextRequest) {
                 question.title,
                 question.points
             );
+
+            revalidatePath(`/forum/${buildIdSlug(question._id.toString(), question.slug || question.title)}`);
 
             return NextResponse.json(
                 { success: true, message: "Réponse validée par le staff.", data: answer },

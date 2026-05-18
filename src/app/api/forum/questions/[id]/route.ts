@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import dbConnect from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Answer from "@/models/Answer";
@@ -9,6 +10,7 @@ import Report from "@/models/Report";
 import { generateSignedUrl, extractFileKeyFromUrl, deleteFileFromStorage } from "@/lib/b2Utils";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { buildIdSlug } from "@/utils/slugify";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
     try {
@@ -246,7 +248,10 @@ export async function DELETE(
         
         // Supprimer la question
         await Question.findByIdAndDelete(id);
-        
+
+        revalidatePath(`/forum/${buildIdSlug(id, question.slug || question.title)}`);
+        revalidatePath('/forum');
+
         return NextResponse.json(
             { success: true, message: "Question et réponses associées supprimées avec succès." },
             { status: 200 }

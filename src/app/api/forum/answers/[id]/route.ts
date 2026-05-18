@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import dbConnect from "@/lib/mongodb";
 import Answer from "@/models/Answer";
 import Question from "@/models/Question";
@@ -7,6 +8,18 @@ import PointTransaction from "@/models/PointTransaction";
 import Report from "@/models/Report";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
+import { buildIdSlug } from "@/utils/slugify";
+
+async function revalidateQuestionPage(questionId: any) {
+    try {
+        const q = await Question.findById(questionId).select('_id slug title').lean<any>();
+        if (q) {
+            revalidatePath(`/forum/${buildIdSlug(q._id.toString(), q.slug || q.title)}`);
+        }
+    } catch {
+        // Non bloquant
+    }
+}
 
 /**
  * DELETE /api/forum/answers/[id] - Supprimer une réponse (modérateur/admin uniquement)
@@ -101,7 +114,9 @@ export async function DELETE(
         
         // Supprimer la réponse
         await Answer.findByIdAndDelete(id);
-        
+
+        await revalidateQuestionPage(answer.question);
+
         return NextResponse.json(
             { success: true, message: "Réponse supprimée avec succès." },
             { status: 200 }
@@ -181,7 +196,9 @@ export async function PUT(
         }
         
         await answer.save();
-        
+
+        await revalidateQuestionPage(answer.question);
+
         return NextResponse.json(
             { success: true, message: "Réponse mise à jour avec succès.", data: answer },
             { status: 200 }
