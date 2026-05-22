@@ -27,6 +27,12 @@ export interface Exercise {
         image?: string;
     };
     image?: string;
+    author?: {
+        _id: string;
+        username: string;
+        image?: string;
+    };
+    createdAt?: string;
 }
 
 export interface QuizQuestion {

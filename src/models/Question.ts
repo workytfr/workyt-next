@@ -1,8 +1,8 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import { slugify } from '@/utils/slugify';
 
 export interface IQuestion extends Document {
-    user: ObjectId;
+    user: Types.ObjectId;
     title: string;
     slug: string;
     classLevel: string;
@@ -17,10 +17,10 @@ export interface IQuestion extends Document {
     createdAt: Date;
     updatedAt: Date;
     contextType?: 'lesson' | 'exercise' | 'general';
-    contextId?: ObjectId;
+    contextId?: Types.ObjectId;
     contextTitle?: string;
-    courseId?: ObjectId;
-    sectionId?: ObjectId;
+    courseId?: Types.ObjectId;
+    sectionId?: Types.ObjectId;
 }
 
 const QuestionSchema: Schema = new Schema({

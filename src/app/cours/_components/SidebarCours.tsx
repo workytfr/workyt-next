@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useSession } from "next-auth/react";
 import { Accordion } from "@/components/ui/Accordion";
 import { Course, SelectedContent } from "./types";
 import { SectionAccordion } from "./SectionAccordion";
@@ -16,8 +17,14 @@ interface SidebarProps {
 }
 
 export function Sidebar({ course, onSelectContent, readLessons }: SidebarProps) {
+    const { data: session } = useSession();
+    const accessToken = (session as any)?.accessToken as string | undefined;
+
     const handleSearchResult = (sectionId: string, lessonId: string) => {
-        fetch(`/api/cours/${course._id}/sections/${sectionId}`)
+        const headers: Record<string, string> = accessToken
+            ? { Authorization: `Bearer ${accessToken}` }
+            : {};
+        fetch(`/api/cours/${course._id}/sections/${sectionId}`, { headers })
             .then(res => res.json())
             .then(data => {
                 if (data?.section) {

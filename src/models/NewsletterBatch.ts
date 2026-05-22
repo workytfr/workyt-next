@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface INewsletterBatch extends Document {
     weekStart: Date;
@@ -12,9 +12,9 @@ export interface INewsletterBatch extends Document {
     totalRecipients: number;
     sentCount: number;
     skippedCount: number;
-    sentUserIds: ObjectId[];
+    sentUserIds: Types.ObjectId[];
     errorCount: number;
-    sendErrors: Array<{ userId: ObjectId; error: string; timestamp: Date }>;
+    sendErrors: Array<{ userId: Types.ObjectId; error: string; timestamp: Date }>;
     createdAt: Date;
     completedAt?: Date;
 }

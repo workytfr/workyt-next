@@ -22,6 +22,7 @@ interface SectionAccordionProps {
 
 export function SectionAccordion({ courseId, sectionInitial, onSelectContent, readLessons }: SectionAccordionProps) {
     const { data: session } = useSession();
+    const accessToken = (session as any)?.accessToken as string | undefined;
     const [sectionDetail, setSectionDetail] = useState<Section | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const [isOpen, setIsOpen] = useState(false);
@@ -30,14 +31,18 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
         if (isOpen && !sectionDetail) {
             fetchSectionDetails();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isOpen]);
 
     const fetchSectionDetails = async () => {
         setIsLoading(true);
         try {
+            const headers: Record<string, string> = accessToken
+                ? { Authorization: `Bearer ${accessToken}` }
+                : {};
             const res = await fetch(
                 `/api/cours/${courseId}/sections/${sectionInitial._id}`,
-                { cache: "no-store" }
+                { cache: "no-store", headers }
             );
             const data = await res.json();
             if (data?.section) {

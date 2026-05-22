@@ -1,11 +1,10 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import crypto from 'crypto';
 
 /**
  * Interface représentant un utilisateur
  */
 export interface IUser extends Document {
-    _id: ObjectId;
     name: string;
     email: string;
     username: string;

@@ -1,10 +1,10 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose'
+import mongoose, { Schema, Document, Model, Types } from 'mongoose'
 
 /**
  * Interface représentant une section
  */
 export interface ISection extends Document {
-    courseId: ObjectId; // Référence au cours
+    courseId: Types.ObjectId; // Référence au cours
     title: string;
     order: number; // Position de la section
 }

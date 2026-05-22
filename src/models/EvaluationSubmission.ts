@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export interface ISubmissionAnswer {
     questionIndex: number;
@@ -12,11 +12,10 @@ export type SubmissionStatus = 'pending_review' | 'graded';
  * Liée 1:1 au tirage (drawId unique).
  */
 export interface IEvaluationSubmission extends Document {
-    _id: ObjectId;
-    drawId: ObjectId;
-    userId: ObjectId;
-    courseId: ObjectId;
-    evaluationId: ObjectId;
+    drawId: Types.ObjectId;
+    userId: Types.ObjectId;
+    courseId: Types.ObjectId;
+    evaluationId: Types.ObjectId;
     type: 'form' | 'pdf';
     answers?: ISubmissionAnswer[];      // si type=form
     submittedPdfUrl?: string;           // lien externe si type=pdf (legacy)

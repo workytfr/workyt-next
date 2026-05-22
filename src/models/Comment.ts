@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid'; // Bibliothèque pour générer un UUID
 import { IUser } from './User'; // Import de l'interface IUser
 
@@ -9,7 +9,7 @@ import { IUser } from './User'; // Import de l'interface IUser
 export interface IComment extends Document {
     commentId: string; // Identifiant unique du commentaire
     content: string; // Contenu du commentaire
-    author: ObjectId | IUser; // Le champ peut être un ObjectId ou un utilisateur peuplé
+    author: Types.ObjectId | IUser; // Le champ peut être un Types.ObjectId ou un utilisateur peuplé
     revision: mongoose.Types.ObjectId; // Référence à la fiche de révision associée (Revision)
     createdAt: Date; // Date de création du commentaire
 }

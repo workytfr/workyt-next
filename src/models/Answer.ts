@@ -1,8 +1,8 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IAnswer extends Document {
-    user: ObjectId;
-    question: ObjectId;
+    user: Types.ObjectId;
+    question: Types.ObjectId;
     content: string;
     likes: number;
     likedBy: string[];

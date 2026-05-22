@@ -698,10 +698,11 @@ export default function CourseManagementPage() {
                   <Link
                     href={`/cours/${course._id}`}
                     target="_blank"
+                    title={course.status === "publie" ? "Voir le cours en ligne" : "Prévisualiser (cours non publié)"}
                     className="dash-button dash-button-secondary dash-button-sm"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    Voir
+                    {course.status === "publie" ? "Voir" : "Prévisualiser"}
                   </Link>
                   <button
                     onClick={() => setEditingCourse(true)}

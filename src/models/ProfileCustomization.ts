@@ -1,8 +1,7 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IProfileCustomization extends Document {
-  _id: ObjectId;
-  user: ObjectId;
+  user: Types.ObjectId;
   usernameColor: {
     type: 'solid' | 'gradient' | 'rainbow' | 'custom';
     value: string; // Code couleur ou nom du thème

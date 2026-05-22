@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 /**
  * Types de coffres
@@ -14,7 +14,6 @@ export type ChestRewardType = 'points' | 'gems' | 'cosmetic' | 'mushrooms';
  * Interface représentant un coffre
  */
 export interface IChest extends Document {
-  _id: ObjectId;
   type: ChestType; // Type de coffre
   name: string; // Nom du coffre
   description: string; // Description

@@ -1,12 +1,11 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IPromoCode extends Document {
-  _id: ObjectId;
   code: string;
-  partnerId: ObjectId;
+  partnerId: Types.ObjectId;
   offerType: 'free' | 'premium';
   // Attribution
-  assignedTo?: ObjectId;
+  assignedTo?: Types.ObjectId;
   assignedAt?: Date;
   // Utilisation
   isUsed: boolean;

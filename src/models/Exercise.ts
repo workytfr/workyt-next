@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Types de niveaux de difficulté
@@ -13,8 +13,8 @@ export type DifficultyLevel =
  * Interface représentant un exercice
  */
 export interface IExercise extends Document {
-    sectionId: ObjectId; // Référence à la section
-    author: ObjectId; // Auteur de l'exercice
+    sectionId: Types.ObjectId; // Référence à la section
+    author: Types.ObjectId; // Auteur de l'exercice
     title: string;
     content: string;
     image?: string; // Image associée (optionnel)

@@ -415,7 +415,11 @@ export function SidebarWrapper({
 // Composant principal
 export default function CoursePage({ params, initialCours }: { params: { coursId: string }; initialCours?: Course | null }) {
     const searchParams = useSearchParams();
-    const { data: session } = useSession();
+    const { data: session, status: sessionStatus } = useSession();
+    const accessToken = (session as any)?.accessToken as string | undefined;
+    const authHeaders: Record<string, string> = accessToken
+        ? { Authorization: `Bearer ${accessToken}` }
+        : {};
     const [cours, setCours] = useState<Course | null>(initialCours ?? null);
     const [fullCourse, setFullCourse] = useState<Course | null>(null);
     const [isLoading, setIsLoading] = useState(!initialCours);
@@ -459,7 +463,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
             (item.kind === 'quizzes');
 
         if (needsFetch) {
-            fetch(`/api/cours/${params.coursId}/sections/${item.sectionId}`)
+            fetch(`/api/cours/${params.coursId}/sections/${item.sectionId}`, { headers: authHeaders })
                 .then(res => res.json())
                 .then(data => {
                     if (!data?.section) return;
@@ -505,9 +509,13 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
     useEffect(() => {
         // Si le cours a été pré-chargé côté serveur, on saute le fetch initial.
         if (initialCours) return;
+        // Attendre que la session soit résolue (loaded ou unauthenticated) avant de fetch
+        // pour éviter d'envoyer une requête sans le Bearer token quand on est admin.
+        if (sessionStatus === "loading") return;
+
         const fetchCourse = async () => {
             try {
-                const res = await fetch(`/api/cours/${params.coursId}`);
+                const res = await fetch(`/api/cours/${params.coursId}`, { headers: authHeaders });
                 if (!res.ok) throw new Error("Cours introuvable");
                 const data = await res.json();
                 setCours(data.cours);
@@ -518,14 +526,17 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
             }
         };
         fetchCourse();
-    }, [params.coursId, initialCours]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [params.coursId, initialCours, sessionStatus, accessToken]);
 
     useEffect(() => {
-        fetch(`/api/cours/${params.coursId}/full`)
+        if (sessionStatus === "loading") return;
+        fetch(`/api/cours/${params.coursId}/full`, { headers: authHeaders })
             .then(res => res.ok ? res.json() : null)
             .then(data => { if (data?.cours) setFullCourse(data.cours); })
             .catch(() => {});
-    }, [params.coursId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [params.coursId, sessionStatus, accessToken]);
 
     useEffect(() => {
         if (!cours) return;
@@ -534,7 +545,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
         const view = searchParams.get('view');
 
         if (sectionId) {
-            fetch(`/api/cours/${params.coursId}/sections/${sectionId}`)
+            fetch(`/api/cours/${params.coursId}/sections/${sectionId}`, { headers: authHeaders })
                 .then(res => res.json())
                 .then(data => {
                     if (!data?.section) return;
@@ -614,8 +625,30 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
     const breadcrumbContent = selectedContent?.kind === 'lesson' ? selectedContent.lesson.title : undefined;
     const breadcrumbKind = selectedContent?.kind;
 
+    const isUnpublished = (cours as any)?.status && (cours as any).status !== "publie";
+    const statusLabel: Record<string, string> = {
+        en_attente_verification: "À vérifier",
+        en_attente_publication: "En attente de publication",
+        annule: "Annulé",
+        brouillon: "Brouillon",
+    };
+    const currentStatusLabel = statusLabel[(cours as any)?.status] ?? "Non publié";
+
     return (
-        <div className="flex h-[calc(100dvh-48px)] bg-white overflow-hidden">
+        <div className="flex flex-col h-[calc(100dvh-48px)] bg-white overflow-hidden">
+            {/* Bannière prévisualisation pour les cours non publiés */}
+            {isUnpublished && (
+                <div className="flex-shrink-0 bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-sm">
+                    <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-amber-200 text-amber-900 font-bold text-xs">
+                        ⚠
+                    </span>
+                    <span className="text-amber-900">
+                        <b>Mode prévisualisation</b> — Ce cours n'est pas encore publié ({currentStatusLabel}). Les visiteurs ne le verront pas tant qu'il n'est pas publié.
+                    </span>
+                </div>
+            )}
+
+            <div className="flex flex-1 overflow-hidden">
             {/* Sidebar desktop */}
             <div className="hidden md:block w-72 flex-shrink-0 bg-[#f7f6f3] border-r border-[#e3e2e0]">
                 <SidebarWrapper
@@ -703,6 +736,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
                         </div>
                     </DrawerContent>
                 </Drawer>
+            </div>
             </div>
         </div>
     );

@@ -1,7 +1,6 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IBadge extends Document {
-  _id: ObjectId;
   slug: string; // identifiant unique, ex: "first_course"
   name: string; // ex: "Premier pas"
   description: string; // ex: "A terminé son premier cours."

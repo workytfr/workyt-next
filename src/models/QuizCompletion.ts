@@ -1,13 +1,13 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Interface représentant une completion de quiz
  */
 export interface IQuizCompletion extends Document {
-    userId: ObjectId;
-    quizId: ObjectId;
-    courseId: ObjectId;
-    sectionId: ObjectId;
+    userId: Types.ObjectId;
+    quizId: Types.ObjectId;
+    courseId: Types.ObjectId;
+    sectionId: Types.ObjectId;
     score: number; // Score obtenu (points gagnés)
     maxScore: number; // Score maximum possible
     answers: {

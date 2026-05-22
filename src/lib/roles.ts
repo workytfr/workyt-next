@@ -221,7 +221,7 @@ export async function getRolesMap(): Promise<Map<string, IRole>> {
     }
     await connectDB();
     const roles = await Role.find().lean();
-    rolesCache = new Map(roles.map((r) => [r.name, r as IRole]));
+    rolesCache = new Map(roles.map((r) => [r.name, r as unknown as IRole]));
     cacheTimestamp = Date.now();
     return rolesCache;
 }

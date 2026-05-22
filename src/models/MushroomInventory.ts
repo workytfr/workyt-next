@@ -1,8 +1,7 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IMushroomInventory extends Document {
-  _id: ObjectId;
-  user: ObjectId;
+  user: Types.ObjectId;
   balance: number;
   totalEarned: number;
   totalUsed: number;

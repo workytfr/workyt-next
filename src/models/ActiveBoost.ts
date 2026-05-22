@@ -1,9 +1,8 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import { BoostType } from './MushroomTransaction';
 
 export interface IActiveBoost extends Document {
-  _id: ObjectId;
-  user: ObjectId;
+  user: Types.ObjectId;
   boostType: BoostType;
   multiplier: number;
   expiresAt: Date;

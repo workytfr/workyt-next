@@ -1,7 +1,6 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IPartner extends Document {
-    _id: ObjectId;
     name: string;
     description: string;
     logo: string;
@@ -64,7 +63,7 @@ export interface IPartner extends Document {
     // Métadonnées
     createdAt: Date;
     updatedAt: Date;
-    createdBy: ObjectId;
+    createdBy: Types.ObjectId;
 }
 
 const PartnerSchema = new Schema<IPartner>({

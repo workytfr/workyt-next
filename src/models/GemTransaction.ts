@@ -1,14 +1,13 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IGemTransaction extends Document {
-  _id: ObjectId;
-  user: ObjectId;
+  user: Types.ObjectId;
   type: 'conversion' | 'purchase' | 'refund' | 'bonus' | 'partner_offer' | 'reward' | 'admin_grant' | 'admin_deduct';
   points?: number; // Pour les conversions points → gemmes
   gems: number; // Nombre de gemmes gagnées/perdues (positif = gagné, négatif = perdu)
   description: string;
   status: 'pending' | 'completed' | 'failed' | 'cancelled';
-  partnerId?: ObjectId; // Pour les offres de partenaires
+  partnerId?: Types.ObjectId; // Pour les offres de partenaires
   offerType?: 'free' | 'premium'; // Type d'offre partenaire
   metadata?: {
     itemType?: string; // 'profile_image', 'profile_border', 'username_color', 'partner_offer'
@@ -86,7 +85,7 @@ GemTransactionSchema.pre('save', function(next) {
 });
 
 // Méthode statique pour calculer le solde d'un utilisateur
-GemTransactionSchema.statics.calculateBalance = async function(userId: ObjectId) {
+GemTransactionSchema.statics.calculateBalance = async function(userId: Types.ObjectId) {
   const result = await this.aggregate([
     { $match: { user: userId, status: 'completed' } },
     { $group: { _id: null, totalGems: { $sum: '$gems' } } }
@@ -95,7 +94,7 @@ GemTransactionSchema.statics.calculateBalance = async function(userId: ObjectId)
 };
 
 // Méthode statique pour obtenir l'historique des transactions
-GemTransactionSchema.statics.getUserHistory = async function(userId: ObjectId, limit = 50, skip = 0) {
+GemTransactionSchema.statics.getUserHistory = async function(userId: Types.ObjectId, limit = 50, skip = 0) {
   return this.find({ user: userId })
     .sort({ createdAt: -1 })
     .limit(limit)

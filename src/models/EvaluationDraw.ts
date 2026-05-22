@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export type DrawStatus = 'drawn' | 'in_progress' | 'submitted' | 'timeout';
 
@@ -8,16 +8,15 @@ export type DrawStatus = 'drawn' | 'in_progress' | 'submitted' | 'timeout';
  * qu'un élève ne passe qu'une seule évaluation par trimestre par cours.
  */
 export interface IEvaluationDraw extends Document {
-    _id: ObjectId;
-    userId: ObjectId;
-    courseId: ObjectId;
-    evaluationId: ObjectId;
+    userId: Types.ObjectId;
+    courseId: Types.ObjectId;
+    evaluationId: Types.ObjectId;
     trimester: 'T1' | 'T2' | 'T3';
     schoolYear: string;                 // "2025-2026"
     drawnAt: Date;
     mustSubmitBefore: Date;             // deadline = drawnAt + evaluation.duration
     status: DrawStatus;
-    submissionId?: ObjectId;
+    submissionId?: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }

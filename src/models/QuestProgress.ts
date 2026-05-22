@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 /**
  * Statuts de progression d'une quête
@@ -9,9 +9,8 @@ export type QuestProgressStatus = 'in_progress' | 'completed' | 'claimed';
  * Interface représentant la progression d'un utilisateur sur une quête
  */
 export interface IQuestProgress extends Document {
-  _id: ObjectId;
-  user: ObjectId; // Référence à l'utilisateur
-  quest: ObjectId; // Référence à la quête
+  user: Types.ObjectId; // Référence à l'utilisateur
+  quest: Types.ObjectId; // Référence à la quête
   progress: number; // Progression actuelle (ex: 2/5)
   status: QuestProgressStatus; // Statut de la quête
   periodStart: Date; // Début de la période (jour/semaine/mois)

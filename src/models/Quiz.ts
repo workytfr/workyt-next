@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Types possibles pour une question
@@ -41,8 +41,8 @@ export interface ITimePenalty {
 }
 
 export interface IQuiz extends Document {
-    sectionId?: ObjectId; // Peut être rattaché à une section
-    lessonId?: ObjectId; // Peut être rattaché à une leçon
+    sectionId?: Types.ObjectId; // Peut être rattaché à une section
+    lessonId?: Types.ObjectId; // Peut être rattaché à une leçon
     title: string; // Titre du quiz
     description?: string; // Brève description du quiz
     questions: IQuestion[]; // Liste des questions

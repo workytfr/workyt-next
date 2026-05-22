@@ -1,12 +1,12 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 export interface ICourseProgress extends Document {
-    userId: ObjectId;
-    courseId: ObjectId;
-    lessonsRead: ObjectId[];
-    sectionsCompleted: ObjectId[];
-    lastLessonId?: ObjectId;
-    lastSectionId?: ObjectId;
+    userId: Types.ObjectId;
+    courseId: Types.ObjectId;
+    lessonsRead: Types.ObjectId[];
+    sectionsCompleted: Types.ObjectId[];
+    lastLessonId?: Types.ObjectId;
+    lastSectionId?: Types.ObjectId;
     lastAccessedAt: Date;
     createdAt: Date;
 }

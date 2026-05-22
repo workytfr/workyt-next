@@ -1,11 +1,10 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Interface représentant un noeud du programme scolaire officiel
  * Couvre : Cycle 3 (6ème), Cycle 4 (5ème-3ème), Lycée (2nde-Term), Supérieur
  */
 export interface ICurriculumNode extends Document {
-    _id: ObjectId;
     nodeId: string;                // Identifiant unique (ex: "C4-MATH-NC-CL-01")
     version: string;               // Année du programme ("2025-2026")
 
@@ -36,9 +35,9 @@ export interface ICurriculumNode extends Document {
 
     // Liens vers le contenu Workyt
     linkedContent: {
-        fiches: ObjectId[];
-        courses: ObjectId[];
-        quizzes: ObjectId[];
+        fiches: Types.ObjectId[];
+        courses: Types.ObjectId[];
+        quizzes: Types.ObjectId[];
     };
 
     // Taux de couverture calculé

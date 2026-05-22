@@ -1,8 +1,7 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IOwnedCosmetic extends Document {
-  _id: ObjectId;
-  user: ObjectId;
+  user: Types.ObjectId;
   cosmeticType: 'profile_image' | 'profile_border' | 'username_color';
   cosmeticId: string; // ex: 'FoxyPink.webp', 'gold', 'rainbow'
   source: 'purchase' | 'chest' | 'reward' | 'gift'; // comment il a été obtenu

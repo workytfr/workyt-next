@@ -1,12 +1,11 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Profil scolaire de l'élève
  * Stocke le niveau, la filière, les spécialités et les préférences d'étude
  */
 export interface IStudentAcademicProfile extends Document {
-    _id: ObjectId;
-    userId: ObjectId;
+    userId: Types.ObjectId;
 
     // Identité académique
     currentGrade: string;          // "6eme", "5eme", ..., "terminale", "bts1", "l1"...
@@ -35,7 +34,7 @@ export interface IStudentAcademicProfile extends Document {
         subject: string;
         date: Date;
         type: 'controle' | 'brevet' | 'bac' | 'partiel' | 'concours';
-        curriculumNodeIds: ObjectId[];
+        curriculumNodeIds: Types.ObjectId[];
     }[];
 
     createdAt: Date;

@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Progression d'un élève sur une compétence spécifique
@@ -15,13 +15,12 @@ export interface IAttempt {
     date: Date;
     score: number;                 // 0-100
     source: 'quiz' | 'exercise' | 'self_assessment' | 'evaluation';
-    sourceId?: ObjectId;
+    sourceId?: Types.ObjectId;
 }
 
 export interface ICompetencyProgress extends Document {
-    _id: ObjectId;
-    userId: ObjectId;
-    curriculumNodeId: ObjectId;
+    userId: Types.ObjectId;
+    curriculumNodeId: Types.ObjectId;
     skillId: string;               // "C4-MATH-NC-CL-01"
 
     status: CompetencyStatus;

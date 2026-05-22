@@ -1,12 +1,11 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 /**
  * Interface représentant une réclamation de récompense du calendrier
  */
 export interface ICalendarClaim extends Document {
-  _id: ObjectId;
-  user: ObjectId; // Référence à l'utilisateur
-  calendar: ObjectId; // Référence au jour du calendrier
+  user: Types.ObjectId; // Référence à l'utilisateur
+  calendar: Types.ObjectId; // Référence au jour du calendrier
   date: Date; // Date de la réclamation (sans heure)
   rewardType: 'points' | 'gems' | 'chest';
   rewardAmount?: number; // Optionnel pour les coffres car ils donnent des récompenses variables

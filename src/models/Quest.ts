@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 /**
  * Types de quêtes
@@ -27,7 +27,6 @@ export type RewardType = 'chest' | 'points' | 'gems' | 'mushrooms';
  * Interface représentant une quête
  */
 export interface IQuest extends Document {
-  _id: ObjectId;
   slug: string; // Identifiant unique
   name: string; // Nom de la quête
   description: string; // Description de la quête

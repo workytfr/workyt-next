@@ -154,7 +154,7 @@ export default function LessonsPage() {
                 return;
             }
             if (res.ok) {
-                setLessons((prev) => prev.filter((lesson) => lesson._id !== id));
+                setLessons((prev) => prev.filter((lesson) => String(lesson._id) !== id));
             } else {
                 console.error("Erreur lors de la suppression :", await res.text());
             }
@@ -193,7 +193,7 @@ export default function LessonsPage() {
             const { lesson: updatedLesson } = await res.json();
 
             setLessons((prev) =>
-                prev.map((l) => (l._id === lessonId ? { ...l, status: updatedLesson.status } as ILesson : l))
+                prev.map((l) => (String(l._id) === lessonId ? { ...l, status: updatedLesson.status } as ILesson : l))
             );
 
             showToast({ title: "Statut mis à jour avec succès" });
@@ -228,7 +228,7 @@ export default function LessonsPage() {
 
             const data = await res.json();
             setLessons((prev) =>
-                prev.map((l) => (l._id === lessonId ? { ...l, audioUrl: data.audioUrl } as ILesson : l))
+                prev.map((l) => (String(l._id) === lessonId ? { ...l, audioUrl: data.audioUrl } as ILesson : l))
             );
             showToast({ title: `Audio généré ! (${data.remaining} générations restantes aujourd'hui)` });
         } catch (err) {
@@ -261,7 +261,7 @@ export default function LessonsPage() {
             }
 
             setLessons((prev) =>
-                prev.map((l) => (l._id === lessonId ? { ...l, audioUrl: undefined } as ILesson : l))
+                prev.map((l) => (String(l._id) === lessonId ? { ...l, audioUrl: undefined } as ILesson : l))
             );
             showToast({ title: "Audio supprimé" });
         } catch (err) {
@@ -363,7 +363,7 @@ export default function LessonsPage() {
                                 onSuccess={(newLesson: ILesson) => {
                                     setLessons((prev) =>
                                         selectedLesson
-                                            ? prev.map((l) => (l._id === newLesson._id ? newLesson : l))
+                                            ? prev.map((l) => (String(l._id) === String(newLesson._id) ? newLesson : l))
                                             : [...prev, newLesson]
                                     );
                                     setIsFormDirty(false);
@@ -437,7 +437,7 @@ export default function LessonsPage() {
                             </TableRow>
                         ) : lessons.length > 0 ? (
                             lessons.map((lesson) => (
-                                <TableRow key={lesson._id as string}>
+                                <TableRow key={String(lesson._id)}>
                                     <TableCell>
                                         <div className="space-y-1">
                                             <div className="font-medium text-gray-900">{lesson.title}</div>
@@ -466,7 +466,7 @@ export default function LessonsPage() {
                                         {session?.user?.role === "Admin" || session?.user?.role === "Correcteur" ? (
                                             <Select
                                                 value={lesson.status}
-                                                onValueChange={(newValue) => handleStatusChange(lesson._id as string, newValue)}
+                                                onValueChange={(newValue) => handleStatusChange(String(lesson._id), newValue)}
                                                 disabled={loadingLessons}
                                             >
                                                 <SelectTrigger className="w-[180px]">
@@ -549,12 +549,12 @@ export default function LessonsPage() {
                                                             className={lesson.audioUrl ? "text-green-600 hover:text-red-500" : "text-gray-400 hover:text-blue-600"}
                                                             onClick={() =>
                                                                 lesson.audioUrl
-                                                                    ? handleDeleteTTS(lesson._id as string)
-                                                                    : handleGenerateTTS(lesson._id as string)
+                                                                    ? handleDeleteTTS(String(lesson._id))
+                                                                    : handleGenerateTTS(String(lesson._id))
                                                             }
-                                                            disabled={ttsLoading === (lesson._id as string)}
+                                                            disabled={ttsLoading === (String(lesson._id))}
                                                         >
-                                                            {ttsLoading === (lesson._id as string) ? (
+                                                            {ttsLoading === (String(lesson._id)) ? (
                                                                 <Loader2 className="w-4 h-4 animate-spin" />
                                                             ) : lesson.audioUrl ? (
                                                                 <Volume2 className="w-4 h-4" />
@@ -572,7 +572,7 @@ export default function LessonsPage() {
                                                 variant="ghost"
                                                 size="sm"
                                                 className="text-red-500 hover:text-red-700"
-                                                onClick={() => handleDelete(lesson._id as string)}
+                                                onClick={() => handleDelete(String(lesson._id))}
                                                 disabled={loadingLessons}
                                             >
                                                 <Trash2 className="w-4 h-4" />

@@ -1,12 +1,14 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
-import { Eye, EyeOff, FileText, CheckCircle, HelpCircle } from "lucide-react";
+import { Eye, EyeOff, FileText, CheckCircle, HelpCircle, User } from "lucide-react";
 import BookmarkButton from "@/components/BookmarkButton";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import "./styles/notion-theme.css";
 
 interface ExerciseProps {
@@ -17,6 +19,12 @@ interface ExerciseProps {
         difficulty: string;
         correction?: { text?: string; image?: string };
         image?: string;
+        author?: {
+            _id: string;
+            username: string;
+            image?: string;
+        };
+        createdAt?: string;
     };
     index: number;
     onAskQuestion?: () => void;
@@ -186,6 +194,35 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
                                 />
                             </div>
                         )}
+                    </div>
+                )}
+
+                {/* Auteur de l'exercice */}
+                {exercise.author && (
+                    <div className="mt-6 pt-4 border-t border-[#e3e2e0] flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                        {exercise.author.image ? (
+                            <img
+                                src={exercise.author.image}
+                                alt={exercise.author.username}
+                                className="w-5 h-5 rounded-full object-cover"
+                            />
+                        ) : (
+                            <span className="w-5 h-5 rounded-full bg-gray-200 flex items-center justify-center">
+                                <User className="w-3 h-3 text-gray-500" />
+                            </span>
+                        )}
+                        <span>Créé par</span>
+                        <Link
+                            href={`/compte/${exercise.author._id}`}
+                            className="hover:underline"
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            <UsernameDisplay
+                                username={exercise.author.username}
+                                userId={exercise.author._id}
+                                className="font-medium text-gray-700"
+                            />
+                        </Link>
                     </div>
                 )}
             </div>

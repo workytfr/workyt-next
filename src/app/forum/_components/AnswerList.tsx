@@ -5,11 +5,8 @@ import Link from "next/link";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import TimeAgo from "@/components/ui/TimeAgo";
-import { FaThumbsUp, FaCheckCircle, FaMedal, FaRegComment } from "react-icons/fa";
-import ReactMarkdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
-import remarkGfm from "remark-gfm";
+import { FaThumbsUp, FaCheckCircle, FaMedal, FaRegComment, FaQuoteRight } from "react-icons/fa";
+import MentionMarkdown from "./MentionMarkdown";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
@@ -19,9 +16,10 @@ import "katex/dist/katex.min.css";
 interface AnswerListProps {
     answers: any[];
     question: any;
+    onQuote?: (text: string, userId: string, username: string) => void;
 }
 
-const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
+const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) => {
     const { data: session } = useSession();
     const [updatedAnswers, setUpdatedAnswers] = useState(answers);
     const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
@@ -163,14 +161,14 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                     </div>
 
                                     {/* Contenu de la réponse avec style amélioré */}
-                                    <div className="mt-2 prose prose-indigo prose-sm max-w-none text-gray-800 overflow-x-auto">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkMath, remarkGfm]}
-                                            rehypePlugins={[rehypeKatex]}
-                                        >
-                                            {answer.content}
-                                        </ReactMarkdown>
-                                    </div>
+                                    <MentionMarkdown
+                                        content={answer.content}
+                                        knownUsers={[
+                                            question?.user,
+                                            ...updatedAnswers.map((a: any) => a.user),
+                                        ].filter(Boolean)}
+                                        className="mt-2 prose prose-indigo prose-sm max-w-none text-gray-800 overflow-x-auto"
+                                    />
 
                                     {/* Actions */}
                                     <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-4">
@@ -215,8 +213,26 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question }) => {
                                             </TooltipProvider>
                                         )}
 
-                                        <ReportButton 
-                                            contentId={answer._id} 
+                                        {onQuote && (
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    onQuote(
+                                                        answer.content || "",
+                                                        String(answer.user?._id ?? ""),
+                                                        answer.user?.username ?? "auteur",
+                                                    )
+                                                }
+                                                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
+                                                title="Citer cette réponse"
+                                            >
+                                                <FaQuoteRight size={12} />
+                                                <span className="sr-only sm:not-sr-only">Citer</span>
+                                            </button>
+                                        )}
+
+                                        <ReportButton
+                                            contentId={answer._id}
                                             contentType="forum_answer"
                                             questionId={question?._id}
                                             variant="dropdown"

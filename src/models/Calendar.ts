@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 /**
  * Types de récompenses du calendrier
@@ -24,7 +24,6 @@ export type CalendarTheme =
  * Interface représentant un jour du calendrier
  */
 export interface ICalendar extends Document {
-  _id: ObjectId;
   date: Date; // Date du jour (sans heure)
   reward: {
     type: CalendarRewardType;

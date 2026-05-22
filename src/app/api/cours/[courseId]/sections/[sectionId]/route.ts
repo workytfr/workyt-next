@@ -46,7 +46,11 @@ export async function GET(
         // Récupération de la section en s'assurant qu'elle appartient bien au cours
         const section = await Section.findOne({ _id: sectionId, courseId })
             .populate({ path: "lessons", options: { sort: { order: 1 } } })
-            .populate({ path: "exercises", options: { sort: { order: 1 } } })
+            .populate({
+                path: "exercises",
+                options: { sort: { order: 1 } },
+                populate: { path: "author", select: "username image" },
+            })
             .populate({ path: "quizzes", options: { sort: { order: 1 } } })
             .lean();
 

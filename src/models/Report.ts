@@ -1,21 +1,20 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Interface représentant un signalement
  */
 export interface IReport extends Document {
-    _id: ObjectId;
-    reporter: ObjectId; // Utilisateur qui fait le signalement
+    reporter: Types.ObjectId; // Utilisateur qui fait le signalement
     reportedContent: {
         type: 'revision' | 'course' | 'forum_answer' | 'forum_question';
-        id: ObjectId; // ID du contenu signalé
+        id: Types.ObjectId; // ID du contenu signalé
     };
     reason: 'erreur_contenu' | 'langage_inapproprie' | 'contenu_incomprehensible' | 'contenu_illisible' | 'spam' | 'harcelement' | 'contenu_offensant' | 'violation_droits' | 'autre';
     description: string; // Description détaillée du signalement
     status: 'en_attente' | 'en_cours' | 'resolu' | 'rejete';
-    moderator?: ObjectId; // Modérateur qui traite le signalement
+    moderator?: Types.ObjectId; // Modérateur qui traite le signalement
     moderatorNotes?: string; // Notes du modérateur
-    questionId?: ObjectId; // ID de la question parente (pour les réponses forum)
+    questionId?: Types.ObjectId; // ID de la question parente (pour les réponses forum)
     createdAt: Date;
     updatedAt: Date;
     resolvedAt?: Date;

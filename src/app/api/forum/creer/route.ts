@@ -80,9 +80,6 @@ export async function POST(req: NextRequest) {
         if (points < 1 || points > 15) {
             return NextResponse.json({ error: "Les points doivent être entre 1 et 15." }, { status: 400 });
         }
-        if (user.points < points) {
-            return NextResponse.json({ error: "Points insuffisants." }, { status: 400 });
-        }
 
         // Upload des fichiers avec validation
         const ALLOWED_MIME_TYPES = [
@@ -91,23 +88,55 @@ export async function POST(req: NextRequest) {
             'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         ];
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+        const MAX_IMAGES = 3;
         const MAX_FILES = 5;
 
-        const fileKeys: string[] = [];
+        const incomingFiles: File[] = [];
         for (const [_, value] of formData.entries()) {
-            if (value instanceof File && value.size > 0) {
-                if (fileKeys.length >= MAX_FILES) {
-                    return NextResponse.json({ error: `Maximum ${MAX_FILES} fichiers autorisés.` }, { status: 400 });
-                }
-                if (!ALLOWED_MIME_TYPES.includes(value.type)) {
-                    return NextResponse.json({ error: `Type de fichier non autorisé : ${value.type}` }, { status: 400 });
-                }
-                if (value.size > MAX_FILE_SIZE) {
-                    return NextResponse.json({ error: `Fichier trop volumineux (max 10 MB) : ${value.name}` }, { status: 400 });
-                }
-                const key = await uploadFileToR2(value);
-                fileKeys.push(key);
+            if (value instanceof File && value.size > 0) incomingFiles.push(value);
+        }
+
+        // Compte aussi les dessins inline (markdown `![dessin](url)`) — sur le forum, dessin = image
+        const DRAWING_RE = /!\[dessin\]\([^)]+\)/g;
+        const drawingCount =
+            ((whatIDid || "").match(DRAWING_RE)?.length ?? 0) +
+            ((whatINeed || "").match(DRAWING_RE)?.length ?? 0);
+        const photoCount = incomingFiles.filter((f) => f.type.startsWith("image/")).length;
+        const imageCount = photoCount + drawingCount;
+        if (imageCount > MAX_IMAGES) {
+            return NextResponse.json(
+                { error: `Maximum ${MAX_IMAGES} images (photos + dessins) par question. Tu en as ${imageCount}.` },
+                { status: 400 },
+            );
+        }
+        if (incomingFiles.length > MAX_FILES) {
+            return NextResponse.json({ error: `Maximum ${MAX_FILES} fichiers autorisés.` }, { status: 400 });
+        }
+
+        // Coût images : 1ʳᵉ image gratuite, +1 point à partir de la 2ᵉ (photo OU dessin)
+        const photoCost = Math.max(0, imageCount - 1);
+        const totalCost = points + photoCost;
+        if (user.points < totalCost) {
+            return NextResponse.json(
+                {
+                    error: `Points insuffisants. Coût total : ${totalCost} (mise ${points}${
+                        photoCost > 0 ? ` + ${photoCost} photo${photoCost > 1 ? "s" : ""}` : ""
+                    }). Solde : ${user.points}.`,
+                },
+                { status: 400 },
+            );
+        }
+
+        const fileKeys: string[] = [];
+        for (const value of incomingFiles) {
+            if (!ALLOWED_MIME_TYPES.includes(value.type)) {
+                return NextResponse.json({ error: `Type de fichier non autorisé : ${value.type}` }, { status: 400 });
             }
+            if (value.size > MAX_FILE_SIZE) {
+                return NextResponse.json({ error: `Fichier trop volumineux (max 10 MB) : ${value.name}` }, { status: 400 });
+            }
+            const key = await uploadFileToR2(value);
+            fileKeys.push(key);
         }
 
         // Création de la question en BDD (attachments = clés de fichiers: uploads/uuid-filename)
@@ -123,8 +152,8 @@ export async function POST(req: NextRequest) {
             createdAt: new Date(),
         });
 
-        // Mise à jour des points de l'utilisateur
-        await User.findByIdAndUpdate(user._id, { $inc: { points: -points } });
+        // Mise à jour des points de l'utilisateur (mise + malus photos)
+        await User.findByIdAndUpdate(user._id, { $inc: { points: -totalCost } });
         await PointTransaction.create({
             user: user._id,
             question: question._id,
@@ -133,6 +162,16 @@ export async function POST(req: NextRequest) {
             points,
             createdAt: new Date(),
         });
+        if (photoCost > 0) {
+            await PointTransaction.create({
+                user: user._id,
+                question: question._id,
+                action: 'createQuestionPhotoCost',
+                type: "perte",
+                points: photoCost,
+                createdAt: new Date(),
+            });
+        }
 
         // --- Envoi de la notification Discord via webhook ---
         const webhookUrl = process.env.DISCORD_WEBHOOK_URL!;

@@ -3,12 +3,11 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
-import AnswerPopup from "@/app/forum/_components/AnswerPopup";
+import AnswerForm from "@/app/forum/_components/AnswerForm";
 import QuestionDetail from "@/app/forum/_components/QuestionView";
 import AnswerList from "@/app/forum/_components/AnswerList";
 import { QuestionSkeleton, AnswerSkeleton } from "@/app/forum/_components/QuestionSkeleton";
 import {
-    FaPlus,
     FaSearch,
     FaArrowLeft,
     FaHome,
@@ -47,7 +46,36 @@ export default function QuestionDetailPage({
     const [revisions, setRevisions] = useState<any[]>([]);
     const [loading, setLoading] = useState(!initialQuestion);
     const [error, setError] = useState<string | null>(null);
-    const [showAnswerPopup, setShowAnswerPopup] = useState(false);
+    const [quoteTrigger, setQuoteTrigger] = useState<{ quotedMarkdown: string; key: number } | null>(null);
+
+    const formatQuote = (text: string, userId: string, fallbackName: string): string => {
+        const prefixed = text
+            .split("\n")
+            .map((l) => `> ${l}`)
+            .join("\n");
+        // Placeholder dynamique : sera résolu au rendu (pseudo + avatar actuels)
+        const ref = userId ? `@[user:${userId}]` : `@${fallbackName}`;
+        return `> ${ref} a écrit :\n>\n${prefixed}\n\n`;
+    };
+
+    const handleQuote = useCallback((text: string, userId: string, username: string) => {
+        setQuoteTrigger({
+            quotedMarkdown: formatQuote(text, userId, username),
+            key: Date.now(),
+        });
+    }, []);
+
+    const scrollToAnswerForm = useCallback(() => {
+        const el = document.getElementById("answer-form");
+        if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            // Auto-click pour déplier le formulaire si replié
+            setTimeout(() => {
+                const btn = el.querySelector<HTMLElement>("button");
+                if (btn && btn.getAttribute("type") === "button") btn.click();
+            }, 350);
+        }
+    }, []);
 
     const fetchQuestion = useCallback(async () => {
         if (!id) return;
@@ -179,11 +207,27 @@ export default function QuestionDetailPage({
                                 <QuestionDetail
                                     question={question}
                                     revisions={revisions}
-                                    setShowAnswerPopup={setShowAnswerPopup}
+                                    onAnswerClick={scrollToAnswerForm}
+                                    onQuote={handleQuote}
                                 />
                             )
                         )}
                     </div>
+
+                    {/* Formulaire de réponse inline (carte qui se déplie au clic) */}
+                    {!loading && question && (
+                        <div id="answer-form" className="w-full max-w-5xl mt-6 scroll-mt-24">
+                            <AnswerForm
+                                questionId={id as string}
+                                questionStatus={question.status}
+                                quoteTrigger={quoteTrigger}
+                                onSubmitted={(answer) => {
+                                    if (answer) setAnswers((prev) => [answer, ...prev]);
+                                    else fetchQuestion();
+                                }}
+                            />
+                        </div>
+                    )}
 
                     {/* Section des réponses */}
                     <div className="w-full max-w-5xl mt-6">
@@ -192,32 +236,11 @@ export default function QuestionDetailPage({
                                 <AnswerSkeleton />
                             </div>
                         ) : (
-                            <AnswerList answers={answers} question={question} />
+                            <AnswerList answers={answers} question={question} onQuote={handleQuote} />
                         )}
                     </div>
                 </div>
             </div>
-
-            {/* Popup pour répondre */}
-            {showAnswerPopup && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
-                    <AnswerPopup
-                        questionId={id as string}
-                        onClose={() => setShowAnswerPopup(false)}
-                    />
-                </div>
-            )}
-
-            {/* Bouton flottant pour répondre, visible uniquement si l'utilisateur est connecté et que la question n'est pas fermée */}
-            {session && !showAnswerPopup && question && question.status === "Non validée" && (
-                <button
-                    className="fixed bottom-16 right-8 bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-all transform hover:scale-105 hover:rotate-90 z-30"
-                    onClick={() => setShowAnswerPopup(true)}
-                    aria-label="Répondre à cette question"
-                >
-                    <FaPlus className="text-xl" />
-                </button>
-            )}
 
             {/* Animation pour les squelettes de chargement */}
             <style jsx global>{`

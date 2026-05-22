@@ -1,12 +1,11 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 /**
  * Interface représentant une récompense obtenue d'un coffre
  */
 export interface IChestReward extends Document {
-  _id: ObjectId;
-  user: ObjectId; // Utilisateur qui a obtenu la récompense
-  chest: ObjectId; // Référence au coffre ouvert
+  user: Types.ObjectId; // Utilisateur qui a obtenu la récompense
+  chest: Types.ObjectId; // Référence au coffre ouvert
   rewardType: 'points' | 'gems' | 'cosmetic' | 'mushrooms';
   amount?: number; // Pour points et gems
   cosmeticType?: 'profile_image' | 'profile_border' | 'username_color';

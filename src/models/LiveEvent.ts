@@ -1,17 +1,16 @@
-import mongoose, { Schema, Document, ObjectId } from "mongoose";
+import mongoose, { Schema, Document, Types } from "mongoose";
 import type { PlatformType, IPlatform } from "@/lib/livePlatforms";
 
 export type { PlatformType, IPlatform };
 
 export interface ILiveEvent extends Document {
-    _id: ObjectId;
     title: string;
     videoId?: string;
     platforms: IPlatform[];
     scheduledAt: Date;
     isActive: boolean;
     forceLive: boolean;
-    createdBy: ObjectId;
+    createdBy: Types.ObjectId;
     createdAt: Date;
 }
 

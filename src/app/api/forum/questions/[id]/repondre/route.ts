@@ -11,6 +11,7 @@ import PointTransaction from '@/models/PointTransaction';
 import { BadgeService } from "@/lib/badgeService";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { buildIdSlug } from "@/utils/slugify";
+import { parseMentions, type Participant } from "@/lib/mentionsParser";
 
 // Configuration S3/R2 (compatible S3_* et R2_*)
 const s3Client = new S3Client({
@@ -118,28 +119,94 @@ export async function POST(
             );
         }
 
-        // Téléversement des fichiers (si présents) - stockage des clés
-        const fileKeys: string[] = [];
+        // Récupération des fichiers + comptage des images (max 2 par réponse, 1ʳᵉ gratuite, malus +1 dès la 2ᵉ)
+        const incomingFiles: File[] = [];
         for (const [key, value] of formData.entries()) {
-            if (key === "file" && value instanceof File) {
-                const fileKey = await uploadFileToR2(value);
-                fileKeys.push(fileKey);
+            if (key === "file" && value instanceof File && value.size > 0) {
+                incomingFiles.push(value);
             }
         }
+        const MAX_ANSWER_IMAGES = 2;
+        // Sur le forum, les dessins inline (markdown `![dessin](url)`) comptent comme images
+        const DRAWING_RE = /!\[dessin\]\([^)]+\)/g;
+        const drawingCount = ((content || "").match(DRAWING_RE)?.length ?? 0);
+        const photoCount = incomingFiles.filter((f) => f.type.startsWith("image/")).length;
+        const imageCount = photoCount + drawingCount;
+        if (imageCount > MAX_ANSWER_IMAGES) {
+            return NextResponse.json(
+                { success: false, message: `Maximum ${MAX_ANSWER_IMAGES} images (photos + dessins) par réponse. Tu en as ${imageCount}.` },
+                { status: 400 },
+            );
+        }
+        // 1ʳᵉ image gratuite, +1 point à partir de la 2ᵉ
+        const photoCost = Math.max(0, imageCount - 1);
+        if (photoCost > 0 && user.points < photoCost) {
+            return NextResponse.json(
+                {
+                    success: false,
+                    message: `Points insuffisants pour les photos. Coût : ${photoCost}. Solde : ${user.points}.`,
+                },
+                { status: 400 },
+            );
+        }
+
+        // Téléversement des fichiers - stockage des clés
+        const fileKeys: string[] = [];
+        for (const value of incomingFiles) {
+            const fileKey = await uploadFileToR2(value);
+            fileKeys.push(fileKey);
+        }
+
+        // Parse les mentions @pseudo dans le contenu (auteur question + autres répondants)
+        const existingAnswers = await Answer.find({ question: question._id })
+            .populate({ path: "user", select: "username _id" })
+            .select("user")
+            .lean();
+        const participants: Participant[] = [];
+        const seen = new Set<string>();
+        const addParticipant = (u: any) => {
+            if (!u?._id || !u?.username) return;
+            const idStr = String(u._id);
+            if (seen.has(idStr) || idStr === String(user._id)) return; // pas soi-même
+            seen.add(idStr);
+            participants.push({ _id: idStr, username: u.username });
+        };
+        // Auteur de la question
+        const questionPopulated = await Question.findById(question._id)
+            .populate({ path: "user", select: "username _id" })
+            .select("user")
+            .lean();
+        addParticipant((questionPopulated as any)?.user);
+        for (const a of existingAnswers as any[]) addParticipant(a.user);
+
+        const { content: contentWithMentions, mentionedUserIds } = parseMentions(content, participants);
 
         // Création de la réponse
         const answerData = {
             user: user._id,
             question: question._id,
-            content,
+            content: contentWithMentions,
             likes: 0,
             status: "Proposée",
             attachments: fileKeys,
             createdAt: new Date(),
-            isOwner, // Flag pour identifier si l'auteur est le même que la question
+            isOwner,
         };
 
         const newAnswer = await Answer.create(answerData);
+
+        // Malus photos (si la 2ᵉ photo a été attachée)
+        if (photoCost > 0) {
+            await User.findByIdAndUpdate(user._id, { $inc: { points: -photoCost } });
+            await PointTransaction.create({
+                user: user._id,
+                question: question._id,
+                action: 'createAnswerPhotoCost',
+                type: "perte",
+                points: photoCost,
+                createdAt: new Date(),
+            });
+        }
 
         // Ajouter +2 points à l'utilisateur SI ce n'est PAS lui qui a posé la question
         if (!isOwner) {
@@ -157,6 +224,30 @@ export async function POST(
         // Notification de l'auteur de la question
         const { NotificationService } = await import('@/lib/notificationService');
         await NotificationService.notifyNewForumAnswer(question._id.toString(), user._id.toString());
+
+        // Notification des utilisateurs mentionnés (best-effort, non bloquant)
+        if (mentionedUserIds.length > 0) {
+            try {
+                const NotifSvc: any = NotificationService as any;
+                const notifyFn =
+                    NotifSvc.notifyForumMention ||
+                    NotifSvc.notifyMention ||
+                    NotifSvc.notify;
+                for (const uid of mentionedUserIds) {
+                    if (typeof notifyFn === "function") {
+                        await notifyFn.call(NotifSvc, {
+                            type: "forum_mention",
+                            recipientId: uid,
+                            senderId: user._id.toString(),
+                            questionId: question._id.toString(),
+                            answerId: newAnswer._id.toString(),
+                        });
+                    }
+                }
+            } catch (notifErr) {
+                console.warn("Notification mention échouée :", notifErr);
+            }
+        }
 
         const canonicalSlug = buildIdSlug(question._id.toString(), question.slug || question.title);
         revalidatePath(`/forum/${canonicalSlug}`);

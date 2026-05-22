@@ -24,7 +24,11 @@ export async function GET(
         const sections = await Section.find({ courseId })
             .sort({ order: 1 })
             .populate({ path: "lessons", options: { sort: { order: 1 } } })
-            .populate({ path: "exercises", options: { sort: { order: 1 } } })
+            .populate({
+                path: "exercises",
+                options: { sort: { order: 1 } },
+                populate: { path: "author", select: "username image" },
+            })
             .populate({ path: "quizzes", options: { sort: { order: 1 } } })
             .lean();
 

@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from "mongoose";
+import mongoose, { Schema, Document, Model, Types } from "mongoose";
 import { slugify } from "@/utils/slugify";
 
 /**
@@ -8,7 +8,7 @@ export interface ICourse extends Document {
     title: string;
     slug: string;
     description: string;
-    authors: ObjectId[]; // Liste des auteurs du cours
+    authors: Types.ObjectId[]; // Liste des auteurs du cours
     status: "en_attente_publication" | "en_attente_verification" | "publie" | "annule";
     niveau: string; // Collège, lycée, université...
     matiere: string; // Référence à la matière

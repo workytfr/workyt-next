@@ -3,7 +3,8 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import ReactMarkdown from "react-markdown";
-import rehypeSanitize from "rehype-sanitize";
+import { sharedRemarkPlugins, sharedRehypePlugins } from "@/lib/markdownPlugins";
+import "katex/dist/katex.min.css";
 import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -293,7 +294,12 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
                     <div className="p-5 md:p-8">
                         {fiche.content && (
                             <div className="prose max-w-none text-black">
-                                <ReactMarkdown rehypePlugins={[rehypeSanitize]}>{fiche.content}</ReactMarkdown>
+                                <ReactMarkdown
+                                    remarkPlugins={sharedRemarkPlugins}
+                                    rehypePlugins={sharedRehypePlugins as any}
+                                >
+                                    {fiche.content}
+                                </ReactMarkdown>
                             </div>
                         )}
 
@@ -346,25 +352,19 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
 
                 {/* Commentaires */}
                 <div className="mt-6 bg-white rounded-xl shadow-sm p-5 md:p-6 overflow-hidden">
-                    <h2 className="text-lg font-semibold mb-4 flex items-center text-black">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
-                        </svg>
-                        Commentaires
-                    </h2>
-                    {currentUser ? (
-                        <CommentForm revisionId={fiche._id} currentUser={currentUser} />
-                    ) : (
-                        <div className="bg-gray-50 rounded-lg p-4 text-center mb-6">
-                            <p className="text-gray-600 mb-3">Veuillez vous connecter pour poster un commentaire.</p>
+                    {!currentUser && (
+                        <div className="bg-gray-50 rounded-lg p-4 text-center mb-4">
+                            <p className="text-gray-600 mb-3 text-sm">Connecte-toi pour poster un commentaire.</p>
                             <Link href="/connexion">
-                                <Button className="bg-gradient-to-r from-orange-400 to-pink-500 hover:opacity-90 text-white">Se connecter</Button>
+                                <Button className="bg-black hover:bg-gray-800 text-white">Se connecter</Button>
                             </Link>
                         </div>
                     )}
-                    <div className="mt-6">
-                        <CommentsList revisionId={fiche._id} />
-                    </div>
+                    <CommentsList
+                        revisionId={fiche._id}
+                        ficheAuthorId={fiche.author?._id}
+                        currentUser={currentUser ? { username: (currentUser as any).username, id: (currentUser as any).id } : null}
+                    />
                 </div>
             </div>
 

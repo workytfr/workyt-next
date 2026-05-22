@@ -1,11 +1,11 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Interface représentant une leçon
  */
 export interface ILesson extends Document {
-    sectionId: ObjectId; // Référence à la section
-    author: ObjectId; // Référence à l'auteur de la leçon
+    sectionId: Types.ObjectId; // Référence à la section
+    author: Types.ObjectId; // Référence à l'auteur de la leçon
     title: string;
     content: string;
     media?: string[]; // Liste d'URL des fichiers multimédias

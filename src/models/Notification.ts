@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -7,13 +7,13 @@ import { v4 as uuidv4 } from 'uuid';
 export interface INotification extends Document {
     notificationId: string;
     type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout';
-    recipient: ObjectId; // Utilisateur qui reçoit la notification
-    sender: ObjectId; // Utilisateur qui déclenche la notification
+    recipient: Types.ObjectId; // Utilisateur qui reçoit la notification
+    sender: Types.ObjectId; // Utilisateur qui déclenche la notification
     title: string;
     message: string;
     relatedEntity?: {
         type: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation';
-        id: ObjectId;
+        id: Types.ObjectId;
     };
     isRead: boolean;
     isArchived: boolean;

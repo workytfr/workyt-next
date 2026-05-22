@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Question d'évaluation (sous-document pour type "form")
@@ -16,8 +16,7 @@ export interface IEvaluationQuestion {
  * Banque d'évaluations par cours (max 50 actives par cours)
  */
 export interface IEvaluation extends Document {
-    _id: ObjectId;
-    courseId: ObjectId;
+    courseId: Types.ObjectId;
     title: string;
     description: string;
     type: 'form' | 'pdf';
@@ -27,7 +26,7 @@ export interface IEvaluation extends Document {
     rewardPoints: number;                // points attribués à l'élève (0-500)
     linkedCompetencies: string[];       // skillIds (ex: "C4-MATH-NC-CL-01")
     isActive: boolean;
-    createdBy: ObjectId;
+    createdBy: Types.ObjectId;
     createdAt: Date;
     updatedAt: Date;
 }

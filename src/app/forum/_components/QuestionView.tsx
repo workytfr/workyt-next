@@ -17,10 +17,7 @@ import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { getSubjectColor, getLevelColor } from "@/data/educationData";
-import ReactMarkdown from "react-markdown";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
-import remarkGfm from "remark-gfm";
+import MentionMarkdown from "./MentionMarkdown";
 import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
 import { buildIdSlug } from "@/utils/slugify";
@@ -28,7 +25,7 @@ import ReportButton from "@/components/ReportButton";
 import BookmarkButton from "@/components/BookmarkButton";
 import "katex/dist/katex.min.css";
 
-const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question: any, revisions: any[], setShowAnswerPopup: (show: boolean) => void }) => {
+const QuestionDetail = ({ question, revisions, onAnswerClick, onQuote }: { question: any, revisions: any[], onAnswerClick: () => void, onQuote?: (text: string, userId: string, username: string) => void }) => {
     const router = useRouter();
 
     // Fonction pour extraire proprement l'extension du fichier
@@ -132,11 +129,11 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                             <Image src="/badge/Exercice.svg" alt="Exercice" width={28} height={28} className="opacity-90" />
                             <h3 className="text-blue-800 font-semibold">Ce que j&apos;ai fait</h3>
                         </div>
-                        <div className="text-gray-700 prose prose-blue prose-sm max-w-none overflow-x-auto">
-                            <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm]} rehypePlugins={[rehypeKatex]}>
-                                {question.description.whatIDid}
-                            </ReactMarkdown>
-                        </div>
+                        <MentionMarkdown
+                            content={question.description.whatIDid}
+                            knownUsers={[question.user].filter(Boolean)}
+                            className="text-gray-700 prose prose-blue prose-sm max-w-none overflow-x-auto"
+                        />
                     </div>
 
                     {/* Section: Ce dont j'ai besoin */}
@@ -145,11 +142,11 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                             <Image src="/badge/Exercice2.svg" alt="Besoin" width={28} height={28} className="opacity-90" />
                             <h3 className="text-rose-800 font-semibold">Ce dont j&apos;ai besoin</h3>
                         </div>
-                        <div className="text-gray-700 prose prose-rose prose-sm max-w-none overflow-x-auto">
-                            <ReactMarkdown remarkPlugins={[remarkMath, remarkGfm]} rehypePlugins={[rehypeKatex]}>
-                                {question.description.whatINeed}
-                            </ReactMarkdown>
-                        </div>
+                        <MentionMarkdown
+                            content={question.description.whatINeed}
+                            knownUsers={[question.user].filter(Boolean)}
+                            className="text-gray-700 prose prose-rose prose-sm max-w-none overflow-x-auto"
+                        />
                     </div>
                 </div>
 
@@ -256,11 +253,29 @@ const QuestionDetail = ({ question, revisions, setShowAnswerPopup }: { question:
                 {question.status === "Non validée" && (
                     <div className="mt-8 flex justify-center">
                         <Button
-                            onClick={() => setShowAnswerPopup(true)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
+                            onClick={onAnswerClick}
+                            className="bg-black hover:bg-gray-800 text-white font-medium py-2.5 px-6 rounded-full shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5"
                         >
                             Répondre à cette question
                         </Button>
+                        {onQuote && (
+                            <Button
+                                onClick={() => {
+                                    const body = [
+                                        question.description?.whatIDid && `**Ce qu'il/elle a fait :**\n${question.description.whatIDid}`,
+                                        question.description?.whatINeed && `**Ce qu'il/elle cherche :**\n${question.description.whatINeed}`,
+                                    ].filter(Boolean).join("\n\n");
+                                    onQuote(
+                                        body,
+                                        String(question.user?._id ?? ""),
+                                        question.user?.username ?? "auteur",
+                                    );
+                                }}
+                                className="ml-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2.5 px-4 rounded-full"
+                            >
+                                Citer la question
+                            </Button>
+                        )}
                     </div>
                 )}
 

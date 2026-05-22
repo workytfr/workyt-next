@@ -1,10 +1,10 @@
-import mongoose, { Schema, Document, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IPointTransaction extends Document {
-    user: ObjectId;
-    question?: ObjectId;   // réponse validée sur le forum
-    answer?: ObjectId;     // like / unlike de réponse
-    revision?: ObjectId;   // création ou like de fiche
+    user: Types.ObjectId;
+    question?: Types.ObjectId;   // réponse validée sur le forum
+    answer?: Types.ObjectId;     // like / unlike de réponse
+    revision?: Types.ObjectId;   // création ou like de fiche
     action:               // pour préciser le type exact d'événement
         | 'createRevision'
         | 'likeRevision'

@@ -436,9 +436,13 @@ export default function CoursesPage() {
                   <Link
                     href={`/cours/${course._id}`}
                     target="_blank"
+                    title={course.status === "publie" ? "Voir le cours" : "Prévisualiser (non publié)"}
                     className="dash-button dash-button-secondary dash-button-sm"
                   >
                     <ExternalLink className="w-4 h-4" />
+                    <span className="ml-1.5 hidden sm:inline">
+                      {course.status === "publie" ? "Voir" : "Preview"}
+                    </span>
                   </Link>
                   {session?.user?.role === "Admin" && (
                     <button
@@ -543,7 +547,7 @@ export default function CoursesPage() {
                         href={`/cours/${course._id}`}
                         target="_blank"
                         className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors"
-                        title="Voir"
+                        title={course.status === "publie" ? "Voir le cours" : "Prévisualiser (non publié)"}
                       >
                         <ExternalLink className="w-4 h-4 text-[#6b6b6b]" />
                       </Link>

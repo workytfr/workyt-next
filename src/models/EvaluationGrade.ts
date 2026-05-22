@@ -1,13 +1,12 @@
-import mongoose, { Schema, Document, Model, ObjectId } from 'mongoose';
+import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 
 /**
  * Correction d'une soumission d'évaluation.
  * Peut être manuelle (helper) ou automatique (timeout → 0/20).
  */
 export interface IEvaluationGrade extends Document {
-    _id: ObjectId;
-    submissionId: ObjectId;
-    evaluatorId?: ObjectId;             // null si correction auto (timeout)
+    submissionId: Types.ObjectId;
+    evaluatorId?: Types.ObjectId;             // null si correction auto (timeout)
     grade: number;                      // 0-20
     feedback: string;
     photoLinks: string[];               // liens externes (Imgur, Drive, etc.)
