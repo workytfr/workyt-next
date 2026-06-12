@@ -148,6 +148,7 @@ const Footer: React.FC = () => {
                                 {[
                                     { href: "/a-propos", label: "À propos de l'asso" },
                                     { href: "/partenaires", label: "Nos partenaires" },
+                                    { href: "/kit-media", label: "Kit média / presse" },
                                     { href: "/award", label: "Workyt Award" },
                                     { href: "https://www.helloasso.com/associations/workyt/formulaires/1", label: "Faire un don" },
                                     { href: "https://www.journal-officiel.gouv.fr/pages/associations-detail-annonce/?q.id=id:202200100800", label: "Détails de l'association" },
