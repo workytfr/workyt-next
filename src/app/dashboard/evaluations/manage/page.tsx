@@ -2,6 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { evalFileUrl } from "@/lib/evalFile";
+import EvaluationPdfBuilder from "../_components/EvaluationPdfBuilder";
 import {
     FileCheck,
     Loader2,
@@ -207,6 +209,7 @@ export default function ManageEvaluationsPage() {
     const [formRewardPoints, setFormRewardPoints] = useState(100);
     const [formCompetencies, setFormCompetencies] = useState("");
     const [formQuestions, setFormQuestions] = useState<Question[]>([{ ...EMPTY_QUESTION }]);
+    const [showComposer, setShowComposer] = useState(false);
 
     // Charger les évaluations
     const fetchEvaluations = useCallback(async () => {
@@ -295,7 +298,7 @@ export default function ManageEvaluationsPage() {
         window.scrollTo({ top: 0, behavior: "smooth" });
     };
 
-    // Upload PDF
+    // Upload PDF du sujet (dépôt manuel ou PDF généré via l'éditeur)
     const handlePdfUpload = async (file: File) => {
         if (!session?.accessToken || uploadingPdf) return;
         if (file.type !== "application/pdf") {
@@ -313,7 +316,7 @@ export default function ManageEvaluationsPage() {
         try {
             const formData = new FormData();
             formData.append("files", file);
-            const res = await fetch("/api/evaluations/upload?context=submission", {
+            const res = await fetch("/api/evaluations/upload?context=subject", {
                 method: "POST",
                 headers: { Authorization: `Bearer ${session.accessToken}` },
                 body: formData,
@@ -333,6 +336,12 @@ export default function ManageEvaluationsPage() {
         } finally {
             setUploadingPdf(false);
         }
+    };
+
+    // PDF généré depuis l'éditeur riche (texte, images, LaTeX, dessins) → upload R2
+    const handleComposerConfirm = async (pdf: File) => {
+        setShowComposer(false);
+        await handlePdfUpload(pdf);
     };
 
     // Drag & drop global
@@ -445,23 +454,37 @@ export default function ManageEvaluationsPage() {
             onDrop={handleDrop}
         >
             {/* Header */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
                 <div>
                     <h1 className="text-2xl font-bold text-[#37352f] flex items-center gap-2">
                         <FileCheck className="w-7 h-7 text-[#f97316]" />
-                        Banque d&apos;évaluations
+                        Banque d&apos;exercices d&apos;évaluation
                     </h1>
                     <p className="text-sm text-[#6b6b6b] mt-1">
-                        Glissez un PDF ici ou cliquez sur &quot;Ajouter&quot;
+                        Créez des exercices que les élèves tireront au sort pour s&apos;entraîner — puis que vous corrigerez.
                     </p>
                 </div>
                 {!showForm && (
                     <button onClick={openCreate} className="dash-button dash-button-primary flex items-center gap-2">
                         <Plus className="w-4 h-4" />
-                        Ajouter
+                        Créer un exercice
                     </button>
                 )}
             </div>
+
+            {/* Encart explicatif : à quoi ça sert + parcours élève */}
+            {!showForm && (
+                <div className="mb-6 rounded-xl border border-orange-100 bg-orange-50/60 p-4">
+                    <p className="text-sm font-semibold text-[#37352f] mb-2">Comment ça fonctionne&nbsp;?</p>
+                    <ol className="grid gap-2 text-xs text-[#6b6b6b] sm:grid-cols-5">
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">1.</span> Vous <strong>créez un exercice</strong> rattaché à un cours (PDF généré/déposé, ou formulaire).</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">2.</span> L&apos;élève <strong>tire au sort</strong> un exercice du cours.</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">3.</span> Il compose dans le <strong>temps imparti</strong> puis rend sa copie.</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">4.</span> Vous <strong>corrigez</strong> et notez (points + compétences).</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">5.</span> L&apos;élève reçoit sa <strong>note</strong> et sa correction.</li>
+                    </ol>
+                </div>
+            )}
 
             {/* Drop overlay */}
             {isDragging && (
@@ -488,7 +511,7 @@ export default function ManageEvaluationsPage() {
                 <div className="dash-card mb-6">
                     <div className="dash-card-header flex items-center justify-between">
                         <span className="font-semibold text-[#37352f]">
-                            {editing ? "Modifier l'évaluation" : "Nouvelle évaluation"}
+                            {editing ? "Modifier l'exercice" : "Créer un exercice d'évaluation"}
                         </span>
                         <button onClick={() => { setShowForm(false); resetForm(); }} className="text-[#6b6b6b] hover:text-[#37352f]">
                             <X className="w-5 h-5" />
@@ -513,7 +536,7 @@ export default function ManageEvaluationsPage() {
                                 />
                             </div>
                             <div className="col-span-1">
-                                <label className="dash-label mb-1 block text-xs">Type</label>
+                                <label className="dash-label mb-1 block text-xs">Format</label>
                                 <select
                                     value={formType}
                                     onChange={(e) => setFormType(e.target.value as "form" | "pdf")}
@@ -522,6 +545,7 @@ export default function ManageEvaluationsPage() {
                                     <option value="pdf">PDF</option>
                                     <option value="form">Formulaire</option>
                                 </select>
+                                <p className="mt-1 text-[10px] text-[#9b9b9b]">PDF = sujet · Formulaire = QCM</p>
                             </div>
                             <div className="col-span-3">
                                 <label className="dash-label mb-1 block text-xs">Durée</label>
@@ -541,6 +565,7 @@ export default function ManageEvaluationsPage() {
                                         </button>
                                     ))}
                                 </div>
+                                <p className="mt-1 text-[10px] text-[#9b9b9b]">Chrono affiché à l&apos;élève pendant l&apos;épreuve</p>
                             </div>
                             <div className="col-span-1">
                                 <label className="dash-label mb-1 block text-xs">Points</label>
@@ -552,6 +577,7 @@ export default function ManageEvaluationsPage() {
                                     onChange={(e) => setFormRewardPoints(Math.min(500, Math.max(0, parseInt(e.target.value) || 0)))}
                                     className="dash-input w-full"
                                 />
+                                <p className="mt-1 text-[10px] text-[#9b9b9b]">Gagnés si la copie est validée</p>
                             </div>
                         </div>
 
@@ -563,7 +589,7 @@ export default function ManageEvaluationsPage() {
                                         <FileText className="w-5 h-5 text-emerald-600 shrink-0" />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium text-emerald-700">PDF du sujet uploadé</p>
-                                            <a href={formPdfUrl} target="_blank" rel="noopener noreferrer"
+                                            <a href={evalFileUrl(formPdfUrl)} target="_blank" rel="noopener noreferrer"
                                                 className="text-xs text-emerald-600 hover:underline">
                                                 Voir le fichier
                                             </a>
@@ -573,35 +599,52 @@ export default function ManageEvaluationsPage() {
                                         </button>
                                     </div>
                                 ) : (
-                                    <div
-                                        onClick={() => pdfInputRef.current?.click()}
-                                        className="border-2 border-dashed border-gray-300 hover:border-[#f97316] rounded-xl p-8 text-center cursor-pointer transition-colors"
-                                    >
-                                        <input
-                                            ref={pdfInputRef}
-                                            type="file"
-                                            accept="application/pdf"
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) handlePdfUpload(file);
-                                                e.target.value = "";
-                                            }}
-                                            className="hidden"
-                                        />
-                                        {uploadingPdf ? (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
-                                                <p className="text-sm text-[#6b6b6b]">Upload en cours...</p>
-                                            </div>
-                                        ) : (
-                                            <div className="flex flex-col items-center gap-2">
-                                                <Upload className="w-10 h-10 text-gray-300" />
-                                                <p className="text-sm text-gray-600">
-                                                    <span className="font-medium text-[#f97316]">Cliquez</span> ou glissez le sujet PDF ici
-                                                </p>
-                                                <p className="text-xs text-gray-400">Le titre sera rempli automatiquement</p>
-                                            </div>
-                                        )}
+                                    <div className="space-y-3">
+                                        {/* Générer le sujet avec l'éditeur riche (texte, images, LaTeX, dessins) */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowComposer(true)}
+                                            disabled={uploadingPdf}
+                                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#f97316] bg-[#fff7ed] px-4 py-3 text-sm font-semibold text-[#f97316] transition-colors hover:bg-[#ffedd5] disabled:opacity-50"
+                                        >
+                                            <Pencil className="w-4 h-4" />
+                                            Composer les exercices → PDF (cards, lignes de réponse, LaTeX, dessins)
+                                        </button>
+
+                                        <div className="flex items-center gap-3 text-[10px] uppercase tracking-wide text-gray-400">
+                                            <span className="h-px flex-1 bg-gray-200" /> ou déposer un PDF existant <span className="h-px flex-1 bg-gray-200" />
+                                        </div>
+
+                                        <div
+                                            onClick={() => pdfInputRef.current?.click()}
+                                            className="border-2 border-dashed border-gray-300 hover:border-[#f97316] rounded-xl p-8 text-center cursor-pointer transition-colors"
+                                        >
+                                            <input
+                                                ref={pdfInputRef}
+                                                type="file"
+                                                accept="application/pdf"
+                                                onChange={(e) => {
+                                                    const file = e.target.files?.[0];
+                                                    if (file) handlePdfUpload(file);
+                                                    e.target.value = "";
+                                                }}
+                                                className="hidden"
+                                            />
+                                            {uploadingPdf ? (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+                                                    <p className="text-sm text-[#6b6b6b]">Upload en cours...</p>
+                                                </div>
+                                            ) : (
+                                                <div className="flex flex-col items-center gap-2">
+                                                    <Upload className="w-10 h-10 text-gray-300" />
+                                                    <p className="text-sm text-gray-600">
+                                                        <span className="font-medium text-[#f97316]">Cliquez</span> ou glissez le sujet PDF ici
+                                                    </p>
+                                                    <p className="text-xs text-gray-400">Le titre sera rempli automatiquement</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -823,6 +866,9 @@ export default function ManageEvaluationsPage() {
                                         <span className="text-xs text-[#6b6b6b] flex items-center gap-1">
                                             <Clock className="w-3 h-3" /> {ev.duration}m
                                         </span>
+                                        <span className="text-xs text-[#6b6b6b] flex items-center gap-1">
+                                            <Target className="w-3 h-3" /> {ev.rewardPoints} pts
+                                        </span>
                                         {ev.linkedCompetencies?.length > 0 && (
                                             <span className="text-xs text-[#6b6b6b] flex items-center gap-1">
                                                 <Target className="w-3 h-3" /> {ev.linkedCompetencies.length}
@@ -885,6 +931,16 @@ export default function ManageEvaluationsPage() {
                     )}
                 </div>
             )}
+
+            {/* Builder d'exercices → PDF (une card par exo, lignes de réponse, LaTeX/images/dessins) */}
+            <EvaluationPdfBuilder
+                open={showComposer}
+                onClose={() => setShowComposer(false)}
+                onConfirm={handleComposerConfirm}
+                defaultTitle={formTitle}
+                subject={formCourse?.title}
+                authorName={session?.user?.username}
+            />
         </div>
     );
 }

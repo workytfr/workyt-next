@@ -14,6 +14,7 @@ import {
     AlertTriangle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import Mascot from "@/components/ui/Mascot";
 
 interface CourseEvaluationProps {
     courseId: string;
@@ -214,14 +215,49 @@ export default function CourseEvaluation({ courseId }: CourseEvaluationProps) {
                     </CardTitle>
                 </CardHeader>
                 <CardContent className="p-6">
-                    <div className="text-center py-2">
+                    {/* Foxy explique avant de se lancer */}
+                    <Mascot
+                        name="foxy"
+                        emotion="joyeux"
+                        size="sm"
+                        className="mb-4"
+                        message="Tu as bossé ce cours 👏 L'évaluation te permet de valider tes acquis du trimestre et de gagner des points. Voici comment ça marche 👇"
+                    />
+
+                    {/* À quoi ça sert */}
+                    <div className="mb-4 rounded-xl bg-orange-50/60 border border-orange-100 p-4">
+                        <p className="text-sm font-semibold text-gray-800 mb-1">À quoi ça sert&nbsp;?</p>
+                        <p className="text-sm text-gray-600">
+                            Une évaluation notée par un correcteur de Workyt, pour mesurer ce que tu as
+                            appris ce trimestre, suivre tes compétences et gagner des points.
+                        </p>
+                    </div>
+
+                    {/* Comment ça marche : les étapes */}
+                    <p className="text-sm font-semibold text-gray-800 mb-2">Comment ça se passe&nbsp;?</p>
+                    <ol className="space-y-2 mb-4">
+                        {[
+                            { t: "Tire au sort un sujet", d: "Le chrono démarre immédiatement et ne se met pas en pause." },
+                            { t: "Compose dans le temps imparti", d: "Sur le sujet PDF (papier) ou directement dans le formulaire." },
+                            { t: "Rends ta copie", d: "Photographie/scanne tes feuilles et dépose-les avant la fin." },
+                            { t: "Reçois ta note", d: "Un correcteur te note sur 20, avec un retour et tes points." },
+                        ].map((s, i) => (
+                            <li key={i} className="flex gap-3">
+                                <span className="shrink-0 flex items-center justify-center w-6 h-6 rounded-full bg-orange-500 text-white text-xs font-bold">{i + 1}</span>
+                                <span className="text-sm text-gray-600">
+                                    <span className="font-medium text-gray-800">{s.t}.</span> {s.d}
+                                </span>
+                            </li>
+                        ))}
+                    </ol>
+
+                    {/* Infos trimestre */}
+                    <div className="text-center border-t border-gray-100 pt-4">
                         <p className="text-sm text-gray-600 mb-1">
                             Trimestre : <span className="font-medium">{status.currentTrimester?.name} {status.currentTrimester?.schoolYear}</span>
                         </p>
                         <p className="text-sm text-gray-500 mb-4">
-                            Vous avez droit à <span className="font-semibold">une seule</span> évaluation.
-                            <br />
-                            Elle sera tirée au sort parmi {status.evaluationCount} sujet(s).
+                            Tu as droit à <span className="font-semibold">une seule</span> évaluation, tirée au sort parmi {status.evaluationCount} sujet(s).
                         </p>
                         <button
                             onClick={() => router.push(`/evaluation/draw?courseId=${courseId}`)}
@@ -231,7 +267,7 @@ export default function CourseEvaluation({ courseId }: CourseEvaluationProps) {
                             Tirer mon évaluation
                         </button>
                         <p className="text-xs text-amber-600 mt-3">
-                            Une seule chance ce trimestre !
+                            ⚠️ Une seule chance ce trimestre — ne tire que si tu es prêt·e !
                         </p>
                     </div>
                 </CardContent>

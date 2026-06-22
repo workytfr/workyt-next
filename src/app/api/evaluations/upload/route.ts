@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
         if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         const context = new URL(req.url).searchParams.get('context') || 'submission';
-        if (!['submission', 'correction'].includes(context)) {
+        if (!['submission', 'correction', 'subject'].includes(context)) {
             return NextResponse.json({ error: 'Context invalide.' }, { status: 400 });
         }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import { evalFileUrl } from "@/lib/evalFile";
 import {
     CheckCircle2,
     XCircle,
@@ -140,7 +141,7 @@ export default function ResultPage() {
                         {grade.photoLinks.map((link: string, i: number) => (
                             <a
                                 key={i}
-                                href={link}
+                                href={evalFileUrl(link)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="block rounded-lg overflow-hidden border border-gray-200 hover:border-orange-300 transition-colors"
@@ -151,7 +152,7 @@ export default function ResultPage() {
                                         <span className="text-xs text-gray-500">PDF {i + 1}</span>
                                     </div>
                                 ) : (
-                                    <img src={link} alt={`Correction ${i + 1}`} className="w-full h-32 object-cover" />
+                                    <img src={evalFileUrl(link)} alt={`Correction ${i + 1}`} className="w-full h-32 object-cover" />
                                 )}
                                 <div className="text-xs text-center py-1 text-gray-500 bg-gray-50">
                                     Photo {i + 1}

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import WorkytLogo from '@/components/ui/WorkytLogo';
 import LegalMentionsModal from './LegalMentionsModal';
 import {
     InstagramLogoIcon,
@@ -88,7 +88,7 @@ const Footer: React.FC = () => {
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-10 md:gap-8">
                         {/* Colonne principale */}
                         <div className="md:col-span-5 space-y-5">
-                            <Image src="/workyt_fr.svg" alt="Workyt" width={110} height={40} />
+                            <WorkytLogo className="h-9" />
                             <p className="text-sm text-[#78716c] leading-relaxed max-w-sm">
                                 Association sous le régime de la loi du 1er juillet 1901. Les ressources d&apos;apprentissage gratuites sont au c&oelig;ur de notre mission sociale.
                             </p>
@@ -99,7 +99,7 @@ const Footer: React.FC = () => {
                             <div className="flex items-center gap-2.5 pt-1">
                                 {[
                                     { href: "https://discord.gg/workyt", icon: DiscordLogoIcon, label: "Discord" },
-                                    { href: "https://instagram.com/workyt.fr", icon: InstagramLogoIcon, label: "Instagram" },
+                                    { href: "https://instagram.com/workyt", icon: InstagramLogoIcon, label: "Instagram" },
                                     { href: "https://twitter.com/workyt_fr", icon: TwitterLogoIcon, label: "Twitter" },
                                     { href: "https://linkedin.com/company/workyt", icon: LinkedInLogoIcon, label: "LinkedIn" },
                                 ].map((social) => (

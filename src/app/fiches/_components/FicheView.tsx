@@ -38,16 +38,22 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
 
-    const fetchFiche = async () => {
+    // `silent` : rafraîchissement en arrière-plan (pas de skeleton ni d'erreur visible).
+    // Utilisé quand la fiche est déjà pré-rendue côté serveur : la page peut être
+    // mise en cache statiquement (generateStaticParams), donc on resynchronise les
+    // compteurs dynamiques (likes, commentaires) avec la valeur réelle en base.
+    const fetchFiche = async (silent = false) => {
         if (!id) {
             setError("Aucun ID de fiche trouvé.");
             setLoading(false);
             return;
         }
 
-        setLoading(true);
-        setError(null);
-        setIsRetrying(retryCount > 0);
+        if (!silent) {
+            setLoading(true);
+            setError(null);
+            setIsRetrying(retryCount > 0);
+        }
 
         try {
             const cacheBuster = new Date().getTime();
@@ -69,6 +75,7 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
             setFiche(data.data);
         } catch (err) {
             console.error("Erreur lors de la récupération de la fiche :", err);
+            if (silent) return; // en arrière-plan : on garde la donnée pré-rendue
             const errorMessage = err instanceof Error ? err.message : "Erreur de connexion au serveur";
 
             if (errorMessage.includes("buffering timed out") || errorMessage.includes("timed out after")) {
@@ -77,16 +84,21 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
                 setError(errorMessage);
             }
         } finally {
-            setLoading(false);
-            setIsRetrying(false);
+            if (!silent) {
+                setLoading(false);
+                setIsRetrying(false);
+            }
         }
     };
 
     useEffect(() => {
-        // Skip fetch initial si on a déjà la donnée pré-chargée côté serveur,
-        // mais on refetch sur retry (retryCount > 0) pour permettre la récupération
-        // après une erreur réseau.
-        if (initialFiche && retryCount === 0) return;
+        // Si la donnée est déjà pré-chargée côté serveur, on affiche instantanément
+        // (SEO + paint rapide) puis on rafraîchit silencieusement pour des compteurs
+        // likes/commentaires toujours à jour, même si la page est en cache statique.
+        if (initialFiche && retryCount === 0) {
+            fetchFiche(true);
+            return;
+        }
         fetchFiche();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [id, retryCount]);

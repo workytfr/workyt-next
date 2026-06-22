@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
@@ -23,6 +23,13 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
     const { data: session } = useSession();
     const [updatedAnswers, setUpdatedAnswers] = useState(answers);
     const [snackbarMessage, setSnackbarMessage] = useState<string | null>(null);
+
+    // La page parente rafraîchit les réponses en arrière-plan (la page peut être en
+    // cache statique). On resynchronise donc l'état local avec les props à jour pour
+    // que les compteurs de likes reflètent la valeur réelle en base, en temps réel.
+    useEffect(() => {
+        setUpdatedAnswers(answers);
+    }, [answers]);
 
     // Fonction pour afficher une notification
     const showSnackbar = (message: string) => {

@@ -18,6 +18,12 @@ const LikedByList: React.FC<LikedByProps> = ({ revisionId, likedBy, initialLikes
     const token = (session as any)?.accessToken || "";
     const [likes, setLikes] = useState(initialLikes);
     const [hasLiked, setHasLiked] = useState(false);
+
+    // Resynchronise le compteur si la fiche est rafraîchie (cache statique → valeur réelle),
+    // sans écraser un like qu'on vient d'ajouter optimistiquement.
+    useEffect(() => {
+        setLikes((prev) => (initialLikes > prev ? initialLikes : prev));
+    }, [initialLikes]);
     const [loading, setLoading] = useState(false);
     const [animate, setAnimate] = useState(false);
 

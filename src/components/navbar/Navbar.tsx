@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -40,6 +39,7 @@ import {
     Ticket,
     ArrowUpRight,
 } from "lucide-react";
+import WorkytLogo from "@/components/ui/WorkytLogo";
 import ProfileCard from "@/components/ui/ProfileCard";
 import SearchCommandPalette from "@/components/SearchCommandPalette";
 import StreakIndicator from "@/components/ui/StreakIndicator";
@@ -161,14 +161,8 @@ export default function Navbar() {
                 <div className="mx-auto max-w-[1400px]">
                     <nav className="flex items-center justify-between rounded-full border border-[rgba(26,21,18,0.1)] bg-white/75 px-3 py-2 backdrop-blur-md shadow-[0_6px_24px_rgba(26,21,18,0.06)] sm:px-4 sm:py-2.5">
                         {/* Logo */}
-                        <Link href="/" className="flex flex-shrink-0 items-center gap-2 pl-1">
-                            <Image
-                                src="/workyt_fr.svg"
-                                alt="Workyt"
-                                width={70}
-                                height={32}
-                                className="h-6 w-auto sm:h-7"
-                            />
+                        <Link href="/" aria-label="Workyt — accueil" className="group flex flex-shrink-0 items-center gap-2 pl-1">
+                            <WorkytLogo className="h-6 sm:h-7" />
                         </Link>
 
                         {/* Desktop nav */}
@@ -411,7 +405,7 @@ export default function Navbar() {
                 aria-label="Menu de navigation"
             >
                 <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-4 safe-area-top">
-                    <Image src="/workyt_fr.svg" alt="Workyt" width={60} height={28} className="h-6 w-auto" />
+                    <WorkytLogo className="h-6" />
                     <button
                         onClick={closeMobileMenu}
                         className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-500 transition-colors touch-manipulation hover:bg-gray-100 active:bg-gray-200"

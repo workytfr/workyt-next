@@ -682,6 +682,12 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
                                 next={next}
                                 onNavigate={handleNavigate}
                             />
+                            {/* Fin du cours : on propose l'évaluation là où l'élève termine */}
+                            {!next && (
+                                <div className="mt-10">
+                                    <CourseEvaluation courseId={cours._id} />
+                                </div>
+                            )}
                         </>
                     ) : (
                         <CourseOverview

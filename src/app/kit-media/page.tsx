@@ -24,7 +24,14 @@ import {
     BookOpen,
     Tag,
     CheckCircle2,
+    Rocket,
+    Lightbulb,
+    MessageSquare,
+    Megaphone,
+    Send,
 } from "lucide-react";
+import PartnershipForm from "./PartnershipForm";
+import { getInstagramFollowers, formatFollowers } from "@/lib/instagram";
 
 export const metadata: Metadata = {
     title: "Kit média Workyt — Partenariats & visibilité",
@@ -52,18 +59,17 @@ export const metadata: Metadata = {
     robots: { index: true, follow: true },
 };
 
-const stats = [
+const baseStats = [
     { icon: Eye, value: "11,1k", label: "Impressions / mois", sub: "Blog (Search Console)" },
     { icon: Globe, value: "1,1k", label: "Visites / mois", sub: "Cloudflare (30 j)" },
     { icon: Heart, value: "100+", label: "Bénévoles actifs", sub: "Association loi 1901" },
-    { icon: Instagram, value: "248", label: "Abonnés Instagram", sub: "@workyt.fr" },
 ];
 
 const channels = [
     { icon: BookOpen, name: "Blog — Nos Tests", formats: "Test détaillé, comparatif, tuto", link: "blog.workyt.fr" },
     { icon: Tag, name: "Blog — Le Bon Plan", formats: "Sélection produits, codes promo", link: "blog.workyt.fr" },
     { icon: Youtube, name: "YouTube", formats: "Tutos, formats courts, lives (chaîne en lancement)", link: "@workytfr" },
-    { icon: Instagram, name: "Instagram", formats: "Reels, stories, posts", link: "@workyt.fr" },
+    { icon: Instagram, name: "Instagram", formats: "Reels, stories, posts", link: "@workyt" },
     { icon: Music2, name: "TikTok", formats: "Démos courtes, avis", link: "À venir" },
     { icon: MessageCircle, name: "Discord", formats: "Relais communauté, retours", link: "700+ membres" },
 ];
@@ -115,6 +121,19 @@ const commitments = [
     { icon: BadgeCheck, title: "Image valorisante", text: "Une association éducative à l'image positive pour votre marque." },
 ];
 
+const launchPerks = [
+    { icon: Users, title: "Un panel de testeurs", text: "De vrais étudiants de notre communauté essaient votre produit ou service." },
+    { icon: MessageSquare, title: "Des retours concrets", text: "Vous récupérez des avis utiles pour ajuster votre offre avant ou pendant le lancement." },
+    { icon: Megaphone, title: "Un premier coup de projecteur", text: "Visibilité auprès d'une audience jeune, curieuse et prescriptrice." },
+];
+
+const steps = [
+    { icon: Send, title: "Vous nous écrivez", text: "Via le formulaire ci-dessous, en quelques minutes. Présentez votre produit et votre objectif." },
+    { icon: MessageCircle, title: "On échange", text: "On définit ensemble le format adapté (test, partenariat, codes promo) et les modalités." },
+    { icon: Package, title: "Vous envoyez", text: "Produit en prêt, dotation ou codes promo selon la formule choisie — aucun budget pub requis." },
+    { icon: Megaphone, title: "On publie & on relaie", text: "Contenu honnête + relais auprès de la communauté, dans un délai convenu à l'avance." },
+];
+
 const objectives = [
     { icon: Package, text: "Faire découvrir à notre communauté des produits et services utiles aux études et à la vie étudiante." },
     { icon: Tag, text: "Proposer des « bons plans » réels (codes promo, sélections) à notre communauté." },
@@ -122,7 +141,20 @@ const objectives = [
     { icon: Heart, text: "Financer indirectement notre mission associative grâce à des dotations et partenariats." },
 ];
 
-export default function KitMediaPage() {
+export default async function KitMediaPage() {
+    // Compteur d'abonnés Instagram en direct (API officielle, cache 24 h).
+    // Repli sur "250+" si l'API n'est pas configurée ou indisponible.
+    const igCount = await getInstagramFollowers();
+    const stats = [
+        ...baseStats,
+        {
+            icon: Instagram,
+            value: igCount !== null ? formatFollowers(igCount) : "250+",
+            label: "Abonnés Instagram",
+            sub: "@workyt",
+        },
+    ];
+
     const ld = {
         "@context": "https://schema.org",
         "@type": "WebPage",
@@ -138,7 +170,7 @@ export default function KitMediaPage() {
                 "Association loi 1901 d'entraide scolaire gratuite, 100 % bénévole, avec un blog culture générale et des rubriques de tests, bons plans et conseils.",
             sameAs: [
                 "https://twitter.com/workyt_fr",
-                "https://www.instagram.com/workyt.fr",
+                "https://www.instagram.com/workyt",
                 "https://www.linkedin.com/company/workyt",
                 "https://discord.gg/workyt",
             ],
@@ -352,6 +384,46 @@ export default function KitMediaPage() {
                         </div>
                     </section>
 
+                    {/* ===== VOUS LANCEZ UN PROJET ===== */}
+                    <section className="mb-20">
+                        <div className="relative overflow-hidden rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-amber-50/60 p-7 md:p-10">
+                            <div className="absolute top-0 right-0 w-56 h-56 bg-orange-200/20 rounded-full blur-3xl -translate-y-1/3 translate-x-1/4 pointer-events-none" />
+                            <div className="relative z-10">
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-orange-600 text-xs font-semibold mb-4 border border-orange-100">
+                                    <Rocket className="w-3.5 h-3.5" />
+                                    Startups &amp; projets en lancement
+                                </div>
+                                <h2 className="text-2xl sm:text-3xl font-bold text-[#37352f] mb-3">
+                                    Vous lancez un projet ?
+                                </h2>
+                                <p className="text-base text-[#6b6b6b] leading-relaxed max-w-2xl mb-8">
+                                    Application étudiante, service, marque qui démarre&nbsp;: faites tester
+                                    votre produit par de vrais étudiants et récoltez des retours concrets,
+                                    avant même d&apos;avoir un budget marketing. On adore donner un coup de
+                                    pouce aux projets qui aident les jeunes.
+                                </p>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                                    {launchPerks.map((p) => (
+                                        <div key={p.title} className="bg-white border border-orange-100 rounded-2xl p-5">
+                                            <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center mb-3">
+                                                <p.icon className="w-5 h-5 text-[#f97316]" />
+                                            </div>
+                                            <h3 className="text-sm font-semibold text-[#37352f] mb-1.5">{p.title}</h3>
+                                            <p className="text-xs text-[#6b6b6b] leading-relaxed">{p.text}</p>
+                                        </div>
+                                    ))}
+                                </div>
+                                <a
+                                    href="#contact"
+                                    className="inline-flex items-center gap-2 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-white rounded-full text-sm font-medium transition-colors"
+                                >
+                                    <Lightbulb className="w-4 h-4" />
+                                    Proposer mon projet
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+
                     {/* ===== WORKYT AWARD ===== */}
                     <section className="mb-20">
                         <SectionTitle
@@ -429,47 +501,76 @@ export default function KitMediaPage() {
                         </div>
                     </section>
 
-                    {/* ===== CONTACT CTA ===== */}
-                    <section>
-                        <div className="relative overflow-hidden bg-gradient-to-br from-[#37352f] to-[#2c2b27] rounded-2xl p-8 md:p-12 text-white">
-                            <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                            <div className="relative z-10 max-w-2xl">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-orange-300 text-xs font-medium mb-4">
-                                    <Sparkles className="w-3.5 h-3.5" />
-                                    Construisons ensemble
+                    {/* ===== COMMENT ÇA MARCHE ===== */}
+                    <section className="mb-20">
+                        <SectionTitle kicker="Simple et cadré" title="Comment ça marche" />
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            {steps.map((s, i) => (
+                                <div key={s.title} className="relative bg-white border border-[#e3e2e0] rounded-2xl p-5">
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+                                            <s.icon className="w-5 h-5 text-[#f97316]" />
+                                        </div>
+                                        <span className="text-2xl font-bold text-orange-200">{i + 1}</span>
+                                    </div>
+                                    <h3 className="text-sm font-semibold text-[#37352f] mb-1.5">{s.title}</h3>
+                                    <p className="text-xs text-[#6b6b6b] leading-relaxed">{s.text}</p>
                                 </div>
-                                <h2 className="text-2xl md:text-3xl font-bold mb-4">
-                                    Soutenir Workyt, c&apos;est investir dans une génération qui apprend
-                                </h2>
-                                <p className="text-white/70 mb-6 leading-relaxed">
-                                    Prêt presse, partenariat long terme ou activation communautaire :
-                                    parlons de la formule qui correspond à votre marque. Réponse rapide,
-                                    interlocuteur dédié.
-                                </p>
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                                        <Users className="w-5 h-5 text-orange-400 mb-2" />
-                                        <p className="text-sm font-medium">Audience jeune</p>
-                                        <p className="text-xs text-white/50 mt-1">11–25 ans, scolaire et engagée</p>
-                                    </div>
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                                        <ShieldCheck className="w-5 h-5 text-orange-400 mb-2" />
-                                        <p className="text-sm font-medium">Tests honnêtes</p>
-                                        <p className="text-xs text-white/50 mt-1">Indépendance éditoriale réelle</p>
-                                    </div>
-                                    <div className="bg-white/5 border border-white/10 rounded-xl p-4">
-                                        <Heart className="w-5 h-5 text-orange-400 mb-2" />
-                                        <p className="text-sm font-medium">Image associative</p>
-                                        <p className="text-xs text-white/50 mt-1">Une marque engagée pour l&apos;éducation</p>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* ===== CONTACT + FORMULAIRE ===== */}
+                    <section id="contact" className="scroll-mt-24">
+                        <SectionTitle kicker="Construisons ensemble" title="Démarrer un partenariat" />
+                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                            {/* Pitch */}
+                            <div className="lg:col-span-2">
+                                <div className="relative overflow-hidden bg-gradient-to-br from-[#37352f] to-[#2c2b27] rounded-2xl p-7 text-white h-full">
+                                    <div className="absolute top-0 right-0 w-56 h-56 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                                    <div className="relative z-10">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-orange-300 text-xs font-medium mb-4">
+                                            <Sparkles className="w-3.5 h-3.5" />
+                                            Réponse rapide
+                                        </div>
+                                        <h3 className="text-xl font-bold mb-3 leading-snug">
+                                            Soutenir Workyt, c&apos;est investir dans une génération qui apprend
+                                        </h3>
+                                        <p className="text-white/70 text-sm mb-6 leading-relaxed">
+                                            Prêt presse, partenariat long terme, codes promo ou test de votre
+                                            projet : dites-nous ce que vous cherchez, on revient vers vous avec
+                                            un interlocuteur dédié.
+                                        </p>
+                                        <ul className="space-y-3">
+                                            {[
+                                                { icon: Users, t: "Audience jeune", s: "11–25 ans, scolaire et engagée" },
+                                                { icon: ShieldCheck, t: "Contenus honnêtes", s: "Indépendance éditoriale réelle" },
+                                                { icon: Heart, t: "Image associative", s: "Un partenaire engagé pour l'éducation" },
+                                            ].map((v) => (
+                                                <li key={v.t} className="flex items-start gap-3">
+                                                    <v.icon className="w-4 h-4 text-orange-400 shrink-0 mt-0.5" />
+                                                    <div>
+                                                        <p className="text-sm font-medium leading-tight">{v.t}</p>
+                                                        <p className="text-xs text-white/50">{v.s}</p>
+                                                    </div>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <div className="mt-6 pt-5 border-t border-white/10">
+                                            <a
+                                                href="mailto:admin@workyt.fr"
+                                                className="inline-flex items-center gap-2 text-sm text-orange-300 hover:text-orange-200 transition-colors"
+                                            >
+                                                <Mail className="w-4 h-4" />
+                                                admin@workyt.fr
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
-                                <a
-                                    href="mailto:admin@workyt.fr?subject=Partenariat%20%E2%80%94%20Kit%20m%C3%A9dia%20Workyt"
-                                    className="inline-flex items-center gap-2 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-white rounded-full text-sm font-medium transition-colors"
-                                >
-                                    <Mail className="w-4 h-4" />
-                                    admin@workyt.fr
-                                </a>
+                            </div>
+                            {/* Formulaire */}
+                            <div className="lg:col-span-3">
+                                <PartnershipForm />
                             </div>
                         </div>
                     </section>

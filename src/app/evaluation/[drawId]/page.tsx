@@ -3,6 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
+import { evalFileUrl } from "@/lib/evalFile";
+import EvaluationIntro from "@/app/evaluation/_components/EvaluationIntro";
+import Mascot from "@/components/ui/Mascot";
 import {
     Clock,
     Send,
@@ -31,6 +34,22 @@ export default function EvaluationPage() {
     const [timeLeft, setTimeLeft] = useState(0);
     const [isExpired, setIsExpired] = useState(false);
     const [submitted, setSubmitted] = useState(false);
+    const [showIntro, setShowIntro] = useState(true);
+
+    // Ne pas réafficher l'intro après un rafraîchissement de page (le chrono, lui, continue).
+    useEffect(() => {
+        if (!drawId) return;
+        if (typeof window !== "undefined" && sessionStorage.getItem(`eval-intro-seen-${drawId}`)) {
+            setShowIntro(false);
+        }
+    }, [drawId]);
+
+    const dismissIntro = useCallback(() => {
+        if (typeof window !== "undefined" && drawId) {
+            sessionStorage.setItem(`eval-intro-seen-${drawId}`, "1");
+        }
+        setShowIntro(false);
+    }, [drawId]);
 
     // Form answers
     const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -238,29 +257,42 @@ export default function EvaluationPage() {
 
     if (submitted) {
         return (
-            <div className="text-center py-20">
-                <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+            <div className="flex flex-col items-center py-20">
+                <CheckCircle2 className="w-16 h-16 text-emerald-500 mb-4" />
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Évaluation soumise !</h2>
-                <p className="text-gray-500">Un correcteur la notera bientôt. Redirection...</p>
+                <p className="text-gray-500 mb-6">Un correcteur la notera bientôt. Redirection...</p>
+                <Mascot name="foxy" emotion="amoureux" message="Bravo, ta copie est bien envoyée ! Fier de toi 🎉" />
             </div>
         );
     }
 
     if (isExpired) {
         return (
-            <div className="text-center py-20">
-                <Clock className="w-16 h-16 text-red-400 mx-auto mb-4" />
+            <div className="flex flex-col items-center py-20">
+                <Clock className="w-16 h-16 text-red-400 mb-4" />
                 <h2 className="text-xl font-bold text-gray-900 mb-2">Temps écoulé</h2>
-                <p className="text-gray-500 mb-4">
+                <p className="text-gray-500 mb-6">
                     Le temps imparti est dépassé. Note automatique : 0/20.
                 </p>
+                <Mascot name="foxy" emotion="triste" message="Oh non, le temps est écoulé… On se rattrape au prochain tirage 💪" />
                 <button
                     onClick={() => router.push("/")}
-                    className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+                    className="mt-6 text-sm text-orange-600 hover:text-orange-700 font-medium"
                 >
                     Retour à l&apos;accueil
                 </button>
             </div>
+        );
+    }
+
+    // Écran d'introduction animé (process + timing) avant de composer
+    if (showIntro && evaluation) {
+        return (
+            <EvaluationIntro
+                evaluation={evaluation}
+                timeLeftMs={timeLeft || (deadlineRef.current ? deadlineRef.current - Date.now() : 0)}
+                onStart={dismissIntro}
+            />
         );
     }
 
@@ -282,6 +314,7 @@ export default function EvaluationPage() {
                     <h1 className="font-semibold text-gray-800 text-sm">{evaluation.title}</h1>
                     <p className="text-xs text-gray-500">
                         {evaluation.type === "form" ? "Formulaire" : "PDF"} &middot; {evaluation.duration} min
+                        {typeof evaluation.rewardPoints === "number" && <> &middot; {evaluation.rewardPoints} pts</>}
                     </p>
                 </div>
                 <div className={`flex items-center gap-2 font-mono text-lg font-bold ${
@@ -391,7 +424,7 @@ export default function EvaluationPage() {
 
                     {evaluation.pdfUrl && (
                         <a
-                            href={evaluation.pdfUrl}
+                            href={evalFileUrl(evaluation.pdfUrl)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="mt-3 inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-medium"

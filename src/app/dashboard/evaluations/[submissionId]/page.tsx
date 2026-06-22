@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import { evalFileUrl } from "@/lib/evalFile";
 import {
     ArrowLeft,
     Loader2,
@@ -260,7 +261,7 @@ export default function GradingPage() {
                                     {submission.submittedFiles.map((url: string, i: number) => (
                                         <a
                                             key={i}
-                                            href={url}
+                                            href={evalFileUrl(url)}
                                             target="_blank"
                                             rel="noopener noreferrer"
                                             className="block rounded-lg overflow-hidden border border-gray-200 hover:border-[#f97316] transition-colors"
@@ -272,7 +273,7 @@ export default function GradingPage() {
                                                 </div>
                                             ) : (
                                                 <img
-                                                    src={url}
+                                                    src={evalFileUrl(url)}
                                                     alt={`Copie ${i + 1}`}
                                                     className="w-full h-28 object-cover"
                                                 />
@@ -295,7 +296,7 @@ export default function GradingPage() {
                             </div>
                             <div className="dash-card-body">
                                 <a
-                                    href={submission.submittedPdfUrl}
+                                    href={evalFileUrl(submission.submittedPdfUrl)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm font-medium"
@@ -380,7 +381,7 @@ export default function GradingPage() {
                                                         <FileText className="w-5 h-5 text-gray-400" />
                                                     </div>
                                                 ) : (
-                                                    <img src={url} alt={`Correction ${i + 1}`} className="w-full h-20 object-cover" />
+                                                    <img src={evalFileUrl(url)} alt={`Correction ${i + 1}`} className="w-full h-20 object-cover" />
                                                 )}
                                                 {!isAlreadyGraded && (
                                                     <button

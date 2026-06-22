@@ -4,6 +4,21 @@ import Revision from "@/models/Revision";
 import Question from "@/models/Question";
 import { getFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils";
 
+// Dossiers R2 autorisés en accès direct via ?file= (clés à UUID non devinables)
+const ALLOWED_FILE_PREFIXES = ["audio-tts/", "evaluations/", "fiches/"];
+
+function contentTypeFor(key: string, fallback?: string): string {
+    const lower = key.toLowerCase();
+    if (lower.endsWith(".pdf")) return "application/pdf";
+    if (lower.endsWith(".png")) return "image/png";
+    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
+    if (lower.endsWith(".webp")) return "image/webp";
+    if (lower.endsWith(".gif")) return "image/gif";
+    if (lower.endsWith(".mp3")) return "audio/mpeg";
+    if (key.startsWith("audio-tts/")) return "audio/mpeg";
+    return fallback || "application/octet-stream";
+}
+
 connectDB();
 
 /**
@@ -31,14 +46,20 @@ export const GET = async (req: NextRequest) => {
     const bucketName = process.env.S3_BUCKET_NAME;
 
     try {
-        // Accès direct par clé R2 (pour audio TTS)
+        // Accès direct par clé ou URL R2 (audio TTS, PDF/photos d'évaluation).
+        // Accepte une clé brute (evaluations/...) ou l'URL complète stockée en base
+        // (qui pointe vers l'endpoint privé R2 et n'est pas lisible directement).
         if (fileParam) {
-            // Sécurité : n'autoriser que le dossier audio-tts/
-            if (!fileParam.startsWith("audio-tts/")) {
+            const key = (fileParam.startsWith("http://") || fileParam.startsWith("https://"))
+                ? extractFileKeyFromUrl(fileParam)
+                : fileParam.replace(/^\/+/, "");
+
+            // Sécurité : restreindre aux dossiers autorisés
+            if (!key || !ALLOWED_FILE_PREFIXES.some((p) => key.startsWith(p))) {
                 return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
             }
 
-            const response = await getFileFromStorage(bucketName, fileParam);
+            const response = await getFileFromStorage(bucketName, key);
             if (!response.Body) {
                 return NextResponse.json({ error: "Fichier vide" }, { status: 500 });
             }
@@ -47,7 +68,7 @@ export const GET = async (req: NextRequest) => {
             return new NextResponse(Buffer.from(bytes), {
                 status: 200,
                 headers: {
-                    "Content-Type": "audio/mpeg",
+                    "Content-Type": contentTypeFor(key, response.ContentType),
                     "Content-Disposition": "inline",
                     "Cache-Control": "public, max-age=604800",
                 },

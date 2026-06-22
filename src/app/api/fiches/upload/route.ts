@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { v4 as uuidv4 } from "uuid";
-import authMiddleware from "@/middlewares/authMiddleware";
+import { optionalAuthMiddleware } from "@/middlewares/authMiddleware";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import User from "@/models/User";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 const s3 = new S3Client({
@@ -31,7 +34,15 @@ function sanitize(name: string) {
 
 export async function POST(req: NextRequest) {
     try {
-        const user = await authMiddleware(req);
+        // Auth : Bearer token (header) OU cookie de session NextAuth (appels same-origin
+        // depuis l'éditeur, qui n'envoie pas de Bearer).
+        let user: any = await optionalAuthMiddleware(req);
+        if (!user) {
+            const session = await getServerSession(authOptions);
+            if (session?.user?.id) {
+                user = await User.findById(session.user.id).select("-password");
+            }
+        }
         if (!user || !user._id) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
