@@ -68,28 +68,36 @@ const newExo = (): Exo => ({
 const TEXTBOOK_CSS = `
 .eval-doc { width: ${DOC_WIDTH}px; position: relative; background: #fff; padding: 4px 2px; }
 .eval-doc * { box-sizing: border-box; }
-.eval-exo { padding: 0 4px 22px; break-inside: avoid; }
+.eval-exo {
+    margin: 0 2px 16px; break-inside: avoid;
+    border: 1.5px solid #efe9e3; border-radius: 13px; overflow: hidden; background: #fff;
+}
 .eval-exo-head {
     display: flex; align-items: center; justify-content: space-between;
-    border-bottom: 2.5px solid ${BRAND_ORANGE}; padding: 4px 0 7px; margin-bottom: 11px;
+    padding: 8px 13px; background: #faf7f3; border-bottom: 2px solid ${BRAND_ORANGE};
 }
 .eval-exo-num {
     font-family: var(--font-funnel-display), "Funnel Display", system-ui, sans-serif;
-    font-weight: 800; font-size: 17px; color: ${BRAND_DARK};
-    display: flex; align-items: center; gap: 9px;
+    font-weight: 800; font-size: 15px; color: ${BRAND_DARK};
+    display: flex; align-items: center; gap: 10px;
 }
-.eval-exo-num .bar { width: 5px; height: 21px; background: ${BRAND_ORANGE}; border-radius: 3px; }
+.eval-exo-numbadge {
+    width: 25px; height: 25px; border-radius: 50%; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; flex-shrink: 0;
+}
 .eval-exo-meta { display: flex; align-items: center; gap: 9px; }
 .eval-exo-badge { height: 30px; width: auto; display: block; }
 .eval-exo-diff { font-size: 11px; font-weight: 700; }
 .eval-exo-points {
-    font-weight: 800; color: ${BRAND_ORANGE}; font-size: 13px;
-    background: #fff3e9; border: 1px solid #ffd9bf; border-radius: 999px; padding: 2px 10px;
+    font-weight: 800; font-size: 13px; color: #fff;
+    border-radius: 999px; padding: 3px 11px;
 }
 .eval-content {
     font-family: var(--font-montserrat), Montserrat, system-ui, sans-serif;
-    font-size: 13px; line-height: 1.6; color: ${BRAND_DARK};
+    font-size: 13px; line-height: 1.6; color: ${BRAND_DARK}; padding: 12px 14px;
 }
+.eval-answer-label { font-size: 10.5px; font-weight: 700; color: #9a8f84; text-transform: uppercase; letter-spacing: .04em; margin: 10px 0 4px; }
 .eval-content p { margin: 0 0 8px; }
 .eval-content h2 { font-family: var(--font-funnel-display), "Funnel Display", sans-serif; font-size: 16px; font-weight: 700; margin: 12px 0 6px; color: ${BRAND_DARK}; }
 .eval-content h3 { font-size: 14px; font-weight: 700; margin: 10px 0 5px; color: ${BRAND_ORANGE}; }
@@ -117,6 +125,21 @@ const TEXTBOOK_CSS = `
 .foxy-msg { font-size: 12px; line-height: 1.45; color: #8a4d18; font-style: italic; }
 .foxy-msg b { color: ${BRAND_ORANGE}; font-style: normal; font-weight: 700; }
 `;
+
+// Attend que toutes les images du noeud soient chargées avant la capture html2canvas.
+async function waitForImages(node: HTMLElement): Promise<void> {
+    const imgs = Array.from(node.querySelectorAll("img"));
+    await Promise.all(
+        imgs.map((img) =>
+            img.complete && img.naturalWidth > 0
+                ? Promise.resolve()
+                : new Promise<void>((resolve) => {
+                      img.addEventListener("load", () => resolve(), { once: true });
+                      img.addEventListener("error", () => resolve(), { once: true });
+                  })
+        )
+    );
+}
 
 async function loadImageAsDataUrl(url: string): Promise<{ dataUrl: string; width: number; height: number } | null> {
     try {
@@ -156,6 +179,8 @@ export default function EvaluationPdfBuilder({
     const [badgeData, setBadgeData] = useState<Record<string, string>>({});
     const [evalComment, setEvalComment] = useState("");
     const [evalCommentEmotion, setEvalCommentEmotion] = useState<Emotion>("joyeux");
+    // Identifiant court de l'éval (encodé dans le QR + imprimé sur chaque page).
+    const [refCode] = useState(() => Math.random().toString(36).slice(2, 8).toUpperCase());
     const previewRef = useRef<HTMLDivElement>(null);
 
     // Préchargement des icônes de difficulté en data-URL (capture html2canvas fiable).
@@ -216,11 +241,20 @@ export default function EvaluationPdfBuilder({
         setError(null);
 
         try {
-            const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+            const [{ default: html2canvas }, { default: jsPDF }, QR] = await Promise.all([
                 import("html2canvas"),
                 import("jspdf"),
+                import("qrcode"),
             ]);
             const logo = await loadImageAsDataUrl(LOGO_URL);
+
+            // QR d'identification de l'évaluation
+            const qrPayload = `WORKYT-EVAL|${refCode}|${docTitle || "Évaluation"}${subject ? " | " + subject : ""}`;
+            const qrDataUrl = await QR.toDataURL(qrPayload, {
+                margin: 0,
+                width: 320,
+                color: { dark: "#1a1512", light: "#ffffff" },
+            }).catch(() => null);
 
             const pdf = new jsPDF({ unit: "pt", format: "a4", compress: true });
             const pageW = pdf.internal.pageSize.getWidth();
@@ -232,43 +266,90 @@ export default function EvaluationPdfBuilder({
             const contentBottom = pageH - footerH - 10;
             const contentW = pageW - marginX * 2;
 
-            /* — Page de garde — */
-            pdf.setFillColor(255, 247, 237);
+            /* — Page de garde (design poussé) — */
+            pdf.setFillColor(255, 251, 247);
             pdf.rect(0, 0, pageW, pageH, "F");
+            // Cercles décoratifs très clairs
+            pdf.setFillColor(255, 237, 213);
+            pdf.circle(pageW - 40, pageH - 60, 150, "F");
+            pdf.circle(60, pageH - 30, 90, "F");
+            // Bandeau orange + liseré
             pdf.setFillColor(255, 106, 26);
             pdf.rect(0, 0, pageW, 150, "F");
+            pdf.setFillColor(26, 21, 18);
+            pdf.rect(0, 150, pageW, 4, "F");
             if (logo) {
-                const h = 54;
+                const h = 50;
                 const w = (logo.width * h) / logo.height;
                 pdf.addImage(logo.dataUrl, "PNG", (pageW - w) / 2, 50, w, h);
             }
+
+            // Bloc titre (aligné à gauche, on laisse la place au QR à droite)
+            const titleX = marginX + 6;
             pdf.setFont("helvetica", "bold");
-            pdf.setFontSize(26);
+            pdf.setFontSize(25);
             pdf.setTextColor(BRAND_DARK);
-            pdf.text(docTitle || "Évaluation", pageW / 2, 250, { align: "center", maxWidth: contentW });
+            pdf.text(docTitle || "Évaluation", titleX, 232, { maxWidth: contentW - 160 });
+            pdf.setFillColor(255, 106, 26);
+            pdf.roundedRect(titleX, 246, 70, 5, 2.5, 2.5, "F");
             pdf.setFont("helvetica", "normal");
             pdf.setFontSize(13);
             pdf.setTextColor(107, 107, 107);
-            if (subject) pdf.text(subject, pageW / 2, 285, { align: "center" });
+            if (subject) pdf.text(subject, titleX, 276);
+
+            // Pills méta
+            const drawPill = (text: string, x: number, y: number) => {
+                pdf.setFont("helvetica", "bold");
+                pdf.setFontSize(10);
+                const tw = pdf.getTextWidth(text);
+                const w = tw + 22;
+                pdf.setFillColor(255, 237, 213);
+                pdf.roundedRect(x, y, w, 22, 11, 11, "F");
+                pdf.setTextColor(194, 74, 10);
+                pdf.text(text, x + 11, y + 15);
+                return w;
+            };
+            const pY = 296;
+            const w1 = drawPill(`${exos.length} exercice${exos.length > 1 ? "s" : ""}`, titleX, pY);
+            drawPill(`Total : ${totalPoints} points`, titleX + w1 + 8, pY);
+
+            // Carte QR à droite
+            if (qrDataUrl) {
+                const qSize = 96;
+                const cardW = qSize + 28;
+                const cardX = pageW - marginX - cardW;
+                const cardY = 190;
+                pdf.setFillColor(255, 255, 255);
+                pdf.setDrawColor(239, 233, 227);
+                pdf.setLineWidth(1);
+                pdf.roundedRect(cardX, cardY, cardW, qSize + 50, 10, 10, "FD");
+                pdf.addImage(qrDataUrl, "PNG", cardX + 14, cardY + 14, qSize, qSize);
+                pdf.setFont("helvetica", "bold");
+                pdf.setFontSize(11);
+                pdf.setTextColor(BRAND_DARK);
+                pdf.text(`Réf. ${refCode}`, cardX + cardW / 2, cardY + qSize + 30, { align: "center" });
+                pdf.setFont("helvetica", "normal");
+                pdf.setFontSize(7.5);
+                pdf.setTextColor(150, 150, 150);
+                pdf.text("Identifiant de l'évaluation", cardX + cardW / 2, cardY + qSize + 42, { align: "center" });
+            }
+
+            // Consigne (au lieu du cartouche nom/prénom)
+            pdf.setFont("helvetica", "italic");
+            pdf.setFontSize(11);
+            pdf.setTextColor(120, 113, 108);
             pdf.text(
-                `${exos.length} exercice${exos.length > 1 ? "s" : ""}  ·  Total : ${totalPoints} points`,
-                pageW / 2,
-                312,
-                { align: "center" }
+                "Réponds directement sur le sujet, dans les espaces prévus sous chaque exercice. Bonne chance !",
+                titleX,
+                pageH - 70,
+                { maxWidth: contentW }
             );
-            const boxY = 380;
-            pdf.setDrawColor(225, 225, 225);
-            pdf.setLineWidth(1);
-            pdf.roundedRect(marginX + 30, boxY, contentW - 60, 110, 8, 8, "S");
-            pdf.setFontSize(12);
-            pdf.setTextColor(BRAND_DARK);
-            pdf.text("Nom / Prénom : ____________________________________", marginX + 50, boxY + 38);
-            pdf.text("Classe : ______________      Date : ______________", marginX + 50, boxY + 74);
 
             /* — Capture du document complet — */
             const SCALE = 2;
             const node = previewRef.current;
-            await new Promise((r) => setTimeout(r, 60)); // laisse KaTeX/images se stabiliser
+            await waitForImages(node);
+            await new Promise((r) => setTimeout(r, 80)); // laisse KaTeX/layout se stabiliser
             const canvas = await html2canvas(node, {
                 scale: SCALE,
                 backgroundColor: "#ffffff",
@@ -331,6 +412,10 @@ export default function EvaluationPdfBuilder({
                         const w = (logo.width * h) / logo.height;
                         pdf.addImage(logo.dataUrl, "PNG", marginX, 18, w, h);
                     }
+                    // Petit QR d'identification à droite de chaque page
+                    if (qrDataUrl) {
+                        pdf.addImage(qrDataUrl, "PNG", pageW - marginX - 26, 12, 26, 26);
+                    }
                     pdf.setDrawColor(255, 106, 26);
                     pdf.setLineWidth(1);
                     pdf.line(marginX, headerH, pageW - marginX, headerH);
@@ -338,8 +423,8 @@ export default function EvaluationPdfBuilder({
                         pdf.setFont("helvetica", "bold");
                         pdf.setFontSize(10);
                         pdf.setTextColor(BRAND_DARK);
-                        const t = docTitle.length > 55 ? docTitle.slice(0, 52) + "…" : docTitle;
-                        pdf.text(t, pageW - marginX, 34, { align: "right" });
+                        const t = docTitle.length > 48 ? docTitle.slice(0, 45) + "…" : docTitle;
+                        pdf.text(t, pageW - marginX - 34, 30, { align: "right" });
                     }
                 }
                 pdf.setDrawColor(232, 232, 232);
@@ -348,7 +433,7 @@ export default function EvaluationPdfBuilder({
                 pdf.setFont("helvetica", "normal");
                 pdf.setFontSize(9);
                 pdf.setTextColor(150, 150, 150);
-                pdf.text("workyt.fr", marginX, pageH - 18);
+                pdf.text(`workyt.fr  ·  Réf. ${refCode}`, marginX, pageH - 18);
                 if (authorName) pdf.text(`Rédacteur : ${authorName}`, pageW / 2, pageH - 18, { align: "center" });
                 pdf.text(`Page ${p} / ${total}`, pageW - marginX, pageH - 18, { align: "right" });
             }
@@ -378,14 +463,23 @@ export default function EvaluationPdfBuilder({
                             placeholder="Titre de l'évaluation"
                             className="w-72 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold focus:border-[#f97316] focus:outline-none"
                         />
-                        <span className="text-xs text-gray-400">
-                            {exos.length} exo{exos.length > 1 ? "s" : ""} · {totalPoints} pts
+                        <span className={`text-xs font-semibold ${totalPoints === 20 ? "text-emerald-600" : "text-amber-600"}`}>
+                            {exos.length} exo{exos.length > 1 ? "s" : ""} · Barème : {totalPoints}/20{totalPoints !== 20 ? " ⚠️" : " ✓"}
                         </span>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-700">
                         <X className="h-5 w-5" />
                     </button>
                 </div>
+
+                {/* Alerte barème ≠ 20 */}
+                {totalPoints !== 20 && (
+                    <div className="border-b border-amber-200 bg-amber-50 px-5 py-2 text-xs text-amber-800">
+                        ⚠️ Le barème total fait <strong>{totalPoints} point{totalPoints > 1 ? "s" : ""}</strong>, pas 20.
+                        La note finale étant <strong>sur 20</strong>, ajuste les points des exercices pour qu&apos;ils
+                        somment à <strong>20</strong> (sinon le barème imprimé ne correspondra pas à la note).
+                    </div>
+                )}
 
                 <div className="grid flex-1 grid-cols-12 overflow-hidden">
                     {/* Colonne 1 : liste des exos */}
@@ -541,9 +635,9 @@ export default function EvaluationPdfBuilder({
                                 const badge = badgeData[e.difficulty];
                                 return (
                                     <section key={e.id} data-exo className="eval-exo">
-                                        <div className="eval-exo-head">
+                                        <div className="eval-exo-head" style={{ backgroundColor: cfg.bg, borderBottomColor: cfg.color }}>
                                             <span className="eval-exo-num">
-                                                <span className="bar" />
+                                                <span className="eval-exo-numbadge" style={{ backgroundColor: cfg.color }}>{i + 1}</span>
                                                 Exercice {i + 1}
                                             </span>
                                             <span className="eval-exo-meta">
@@ -552,7 +646,7 @@ export default function EvaluationPdfBuilder({
                                                     <img src={badge} alt={e.difficulty} className="eval-exo-badge" />
                                                 ) : null}
                                                 <span className="eval-exo-diff" style={{ color: cfg.color }}>{e.difficulty}</span>
-                                                <span className="eval-exo-points">/ {e.points} pts</span>
+                                                <span className="eval-exo-points" style={{ backgroundColor: cfg.color }}>{e.points} pts</span>
                                             </span>
                                         </div>
                                         <div className="eval-content">
@@ -573,11 +667,14 @@ export default function EvaluationPdfBuilder({
                                                 </div>
                                             )}
                                             {e.answerLines > 0 && (
-                                                <div className="eval-lines">
-                                                    {Array.from({ length: e.answerLines }).map((_, li) => (
-                                                        <div key={li} className="eval-line" />
-                                                    ))}
-                                                </div>
+                                                <>
+                                                    <p className="eval-answer-label">Réponse</p>
+                                                    <div className="eval-lines">
+                                                        {Array.from({ length: e.answerLines }).map((_, li) => (
+                                                            <div key={li} className="eval-line" />
+                                                        ))}
+                                                    </div>
+                                                </>
                                             )}
                                         </div>
                                     </section>

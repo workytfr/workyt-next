@@ -40,23 +40,28 @@ const item = {
 export default function EvaluationIntro({ evaluation, timeLeftMs, onStart }: EvaluationIntroProps) {
     const isPdf = evaluation.type === "pdf";
     const totalMin = Math.max(1, Math.round(timeLeftMs / 60000));
+    const depositMin: number = evaluation.depositMinutes ?? 0;
+    const composeMin = evaluation.duration ?? Math.max(1, totalMin - depositMin);
 
-    // Budget conseillé : ~15% impression, ~20% dépôt, le reste pour composer.
-    const printBudget = isPdf ? Math.max(2, Math.round(totalMin * 0.15)) : 0;
-    const scanBudget = Math.max(3, Math.round(totalMin * 0.2));
+    // Temps de dépôt : dédié (depositMin) s'il existe, sinon ~20% conseillés.
+    const printBudget = isPdf ? Math.max(2, Math.round(composeMin * 0.15)) : 0;
+    const scanBudget = depositMin > 0 ? depositMin : Math.max(3, Math.round(totalMin * 0.2));
+    const depositDesc = depositMin > 0
+        ? `Tu as ${depositMin} min dédiées en fin d'épreuve, rien que pour ça.`
+        : `Garde ~${scanBudget} min à la fin pour le faire avant 0:00.`;
 
     const steps: Step[] = isPdf
         ? [
               { icon: Printer, title: "Imprime ou ouvre le sujet", desc: `Prévois ~${printBudget} min pour imprimer (ou lis-le à l'écran).`, tint: "#6366f1" },
-              { icon: PencilLine, title: "Compose sur ta feuille", desc: "Rédige tes réponses au propre, dans le temps imparti.", tint: "#f97316" },
+              { icon: PencilLine, title: "Compose sur ta feuille", desc: `Rédige tes réponses au propre (~${composeMin} min de composition).`, tint: "#f97316" },
               { icon: Camera, title: "Scanne / photographie tes copies", desc: "Une photo nette par page (JPEG, PNG ou PDF).", tint: "#ec4899" },
-              { icon: UploadCloud, title: "Dépose tes copies ici", desc: `Garde ~${scanBudget} min à la fin pour scanner et déposer avant 0:00.`, tint: "#10b981" },
+              { icon: UploadCloud, title: "Dépose tes copies ici", desc: depositDesc, tint: "#10b981" },
           ]
         : [
               { icon: BookOpen, title: "Lis chaque question", desc: "Prends le temps de bien comprendre l'énoncé.", tint: "#6366f1" },
               { icon: ListChecks, title: "Réponds dans le formulaire", desc: "Remplis toutes les réponses directement sur le site.", tint: "#f97316" },
               { icon: Camera, title: "Ajoute tes brouillons (option)", desc: "Tu peux joindre des photos de tes calculs.", tint: "#ec4899" },
-              { icon: CheckCircle2, title: "Valide avant la fin du chrono", desc: `Garde ~${scanBudget} min pour relire et valider avant 0:00.`, tint: "#10b981" },
+              { icon: CheckCircle2, title: "Valide avant la fin du chrono", desc: depositDesc, tint: "#10b981" },
           ];
 
     return (
@@ -80,6 +85,11 @@ export default function EvaluationIntro({ evaluation, timeLeftMs, onStart }: Eva
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm">
                             <Clock className="w-4 h-4" /> {totalMin} min au total
                         </span>
+                        {depositMin > 0 && (
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm">
+                                {composeMin} min compo · {depositMin} min dépôt
+                            </span>
+                        )}
                         {typeof evaluation.rewardPoints === "number" && (
                             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 backdrop-blur-sm">
                                 ⭐ {evaluation.rewardPoints} pts

@@ -104,9 +104,10 @@ export async function POST(req: NextRequest) {
         // 5. Tirage aléatoire
         const selected = evaluations[Math.floor(Math.random() * evaluations.length)];
 
-        // 6. Créer le tirage
+        // 6. Créer le tirage — deadline = composition + temps de dépôt (scan/upload)
         const now = new Date();
-        const deadline = new Date(now.getTime() + selected.duration * 60 * 1000);
+        const depositMin = (selected as any).depositMinutes ?? 10;
+        const deadline = new Date(now.getTime() + (selected.duration + depositMin) * 60 * 1000);
 
         let draw;
         try {

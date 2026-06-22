@@ -40,6 +40,7 @@ import {
     ArrowUpRight,
 } from "lucide-react";
 import WorkytLogo from "@/components/ui/WorkytLogo";
+import ActiveEvalIndicator from "@/components/ActiveEvalIndicator";
 import ProfileCard from "@/components/ui/ProfileCard";
 import SearchCommandPalette from "@/components/SearchCommandPalette";
 import StreakIndicator from "@/components/ui/StreakIndicator";
@@ -231,6 +232,7 @@ export default function Navbar() {
 
                         {/* Desktop right side */}
                         <div className="hidden flex-shrink-0 items-center gap-2 lg:flex xl:gap-3">
+                            <ActiveEvalIndicator />
                             {/* Don */}
                             <Link
                                 href="https://www.helloasso.com/associations/workyt/formulaires/1"
@@ -365,6 +367,7 @@ export default function Navbar() {
 
                         {/* Mobile right side */}
                         <div className="ml-2 flex flex-1 items-center justify-end gap-1 lg:hidden sm:gap-2">
+                            <ActiveEvalIndicator />
                             <button
                                 onClick={() => setIsSearchOpen(true)}
                                 className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-gray-500 transition-colors touch-manipulation active:bg-[rgba(26,21,18,0.08)]"

@@ -60,6 +60,7 @@ export async function GET(
                 description: evaluation.description,
                 type: evaluation.type,
                 duration: evaluation.duration,
+                depositMinutes: (evaluation as any).depositMinutes ?? 10,
                 // Ne renvoyer les questions/pdfUrl que si le tirage est encore actif
                 questions: (draw.status === 'drawn' || draw.status === 'in_progress') && evaluation.type === 'form'
                     ? evaluation.questions?.map((q: any) => ({

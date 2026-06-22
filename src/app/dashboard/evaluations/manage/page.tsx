@@ -38,6 +38,7 @@ interface Evaluation {
     description: string;
     type: "form" | "pdf";
     duration: number;
+    depositMinutes?: number;
     pdfUrl?: string;
     questions?: Question[];
     rewardPoints: number;
@@ -205,6 +206,7 @@ export default function ManageEvaluationsPage() {
     const [formDescription, setFormDescription] = useState("");
     const [formType, setFormType] = useState<"form" | "pdf">("pdf");
     const [formDuration, setFormDuration] = useState(60);
+    const [formDeposit, setFormDeposit] = useState(10);
     const [formPdfUrl, setFormPdfUrl] = useState("");
     const [formRewardPoints, setFormRewardPoints] = useState(100);
     const [formCompetencies, setFormCompetencies] = useState("");
@@ -247,6 +249,7 @@ export default function ManageEvaluationsPage() {
         setFormDescription("");
         setFormType("pdf");
         setFormDuration(60);
+        setFormDeposit(10);
         setFormPdfUrl("");
         setFormRewardPoints(100);
         setFormCompetencies("");
@@ -267,6 +270,7 @@ export default function ManageEvaluationsPage() {
         setFormDescription(ev.description);
         setFormType(ev.type);
         setFormDuration(ev.duration);
+        setFormDeposit(ev.depositMinutes ?? 10);
         setFormPdfUrl(ev.pdfUrl || "");
         setFormRewardPoints(ev.rewardPoints ?? 100);
         setFormCompetencies((ev.linkedCompetencies || []).join(", "));
@@ -285,6 +289,7 @@ export default function ManageEvaluationsPage() {
         setFormDescription(ev.description);
         setFormType(ev.type);
         setFormDuration(ev.duration);
+        setFormDeposit(ev.depositMinutes ?? 10);
         setFormPdfUrl(ev.pdfUrl || "");
         setFormRewardPoints(ev.rewardPoints ?? 100);
         setFormCompetencies((ev.linkedCompetencies || []).join(", "));
@@ -370,6 +375,7 @@ export default function ManageEvaluationsPage() {
             description: formDescription,
             type: formType,
             duration: formDuration,
+            depositMinutes: formDeposit,
             rewardPoints: formRewardPoints,
             linkedCompetencies: formCompetencies.split(",").map((s) => s.trim()).filter(Boolean),
         };
@@ -565,10 +571,32 @@ export default function ManageEvaluationsPage() {
                                         </button>
                                     ))}
                                 </div>
-                                <p className="mt-1 text-[10px] text-[#9b9b9b]">Chrono affiché à l&apos;élève pendant l&apos;épreuve</p>
+                                <p className="mt-1 text-[10px] text-[#9b9b9b]">Temps de composition (rédaction)</p>
+                            </div>
+                            <div className="col-span-3">
+                                <label className="dash-label mb-1 block text-xs">Temps de dépôt</label>
+                                <div className="flex items-center gap-2">
+                                    {[0, 5, 10, 15, 20].map((d) => (
+                                        <button
+                                            key={d}
+                                            type="button"
+                                            onClick={() => setFormDeposit(d)}
+                                            className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
+                                                formDeposit === d
+                                                    ? "bg-[#f97316] text-white border-[#f97316]"
+                                                    : "bg-white text-[#6b6b6b] border-[#e3e2e0] hover:border-[#f97316]"
+                                            }`}
+                                        >
+                                            {d === 0 ? "0" : `${d}m`}
+                                        </button>
+                                    ))}
+                                </div>
+                                <p className="mt-1 text-[10px] text-[#9b9b9b]">Temps EN PLUS pour scanner + déposer (total : {formDuration + formDeposit} min)</p>
                             </div>
                             <div className="col-span-1">
-                                <label className="dash-label mb-1 block text-xs">Points</label>
+                                <label className="dash-label mb-1 block text-xs" title="Points de récompense Workyt, distribués au prorata de la note sur 20. Ce n'est PAS la note.">
+                                    Récompense
+                                </label>
                                 <input
                                     type="number"
                                     min={0}
@@ -577,7 +605,9 @@ export default function ManageEvaluationsPage() {
                                     onChange={(e) => setFormRewardPoints(Math.min(500, Math.max(0, parseInt(e.target.value) || 0)))}
                                     className="dash-input w-full"
                                 />
-                                <p className="mt-1 text-[10px] text-[#9b9b9b]">Gagnés si la copie est validée</p>
+                                <p className="mt-1 text-[10px] text-[#9b9b9b]">
+                                    Points Workyt <strong>max</strong> — au prorata de la note /20 (ex. 15/20 → {Math.round(formRewardPoints * 0.75)}). Ce n&apos;est pas la note.
+                                </p>
                             </div>
                         </div>
 

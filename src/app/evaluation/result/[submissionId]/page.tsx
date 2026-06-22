@@ -5,6 +5,68 @@ import { useSession } from "next-auth/react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { evalFileUrl } from "@/lib/evalFile";
+import Mascot from "@/components/ui/Mascot";
+import type { Emotion } from "@/data/mascots";
+
+// Pools de réactions de Foxy (tirées au hasard) selon la note.
+const FOXY_REACTIONS: Record<string, { emotion: Emotion; messages: string[] }> = {
+    excellent: {
+        emotion: "amoureux",
+        messages: [
+            "Waouh, excellent travail ! Je suis super fier de toi 🎉",
+            "Quelle performance ! Tu assures vraiment 🌟",
+            "Bravo champion·ne, c'est du grand art ! 🏆",
+            "Impressionnant ! Tu maîtrises ton sujet 💪",
+            "Top du top ! Continue comme ça et rien ne t'arrête 🚀",
+        ],
+    },
+    bravo: {
+        emotion: "joyeux",
+        messages: [
+            "Bravo, très bon résultat ! Continue comme ça 👏",
+            "Beau travail ! Tu peux être fier·e de toi 😊",
+            "Solide ! Encore un petit effort et c'est l'excellence ✨",
+            "Très bien joué, tes efforts paient 💛",
+            "Joli score ! Tu es sur la bonne voie 🦊",
+        ],
+    },
+    valide: {
+        emotion: "clin",
+        messages: [
+            "Bien joué, c'est validé ! Regarde la correction pour viser plus haut 😉",
+            "C'est dans la poche ! On peaufine quelques points et ça grimpe 📈",
+            "Pas mal du tout ! Quelques détails à revoir et c'est parfait 👍",
+            "Validé ! Repère tes erreurs, tu progresses vite 🙌",
+            "Bon boulot ! La prochaine fois on vise encore mieux 💪",
+        ],
+    },
+    rate: {
+        emotion: "triste",
+        messages: [
+            "On apprend de ses erreurs. Regarde bien la correction, on remonte la pente ensemble 💪",
+            "Pas de panique, chaque erreur t'aide à progresser. Courage ! 🤗",
+            "Ce n'est qu'un début ! Analyse la correction et reviens plus fort 🔥",
+            "Garde la tête haute, l'important c'est de comprendre et réessayer 🌱",
+            "On lâche rien ! Je suis là, on bosse les points faibles ensemble 🦊",
+        ],
+    },
+    timeout: {
+        emotion: "triste",
+        messages: [
+            "Le temps a manqué cette fois… Pas de panique, la prochaine est pour toi 💪",
+            "Aïe, le chrono a gagné cette fois ! On gère mieux le temps au prochain coup ⏱",
+            "Pas grave, ça arrive ! La prochaine fois, garde un œil sur le chrono 🦊",
+        ],
+    },
+};
+
+// Index déterministe à partir d'une graine (ex: id de la copie) → message stable
+// par résultat (pas de changement au rafraîchissement), mais varié d'une éval à l'autre.
+const seededIndex = (seed: string, len: number): number => {
+    let h = 0;
+    for (let i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+    return len > 0 ? h % len : 0;
+};
 import {
     CheckCircle2,
     XCircle,
@@ -106,6 +168,24 @@ export default function ResultPage() {
                     )}
                 </div>
             </div>
+
+            {/* Réaction de Foxy selon la note (tirée au hasard dans un pool) */}
+            {(isGraded || isTimeout) && gradeValue !== undefined && gradeValue !== null && (() => {
+                const key = isTimeout
+                    ? "timeout"
+                    : gradeValue >= 16 ? "excellent"
+                    : gradeValue >= 14 ? "bravo"
+                    : gradeValue >= 10 ? "valide"
+                    : "rate";
+                const pool = FOXY_REACTIONS[key];
+                const seed = String(submission?._id ?? gradeValue);
+                const message = pool.messages[seededIndex(seed, pool.messages.length)];
+                return (
+                    <div className="mb-4">
+                        <Mascot name="foxy" emotion={pool.emotion} message={message} />
+                    </div>
+                );
+            })()}
 
             {/* En attente */}
             {!isGraded && !isTimeout && (

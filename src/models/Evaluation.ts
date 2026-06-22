@@ -20,7 +20,8 @@ export interface IEvaluation extends Document {
     title: string;
     description: string;
     type: 'form' | 'pdf';
-    duration: number;                   // en minutes (5-180)
+    duration: number;                   // composition, en minutes (5-180)
+    depositMinutes: number;             // temps de dépôt (scan+upload) ajouté à duration
     pdfUrl?: string;                    // lien externe vers le PDF (si type=pdf)
     questions?: IEvaluationQuestion[];  // questions (si type=form)
     rewardPoints: number;                // points attribués à l'élève (0-500)
@@ -63,6 +64,12 @@ const EvaluationSchema: Schema = new Schema({
         required: true,
         min: 5,
         max: 180,
+    },
+    depositMinutes: {
+        type: Number,
+        default: 10,
+        min: 0,
+        max: 60,
     },
     pdfUrl: {
         type: String,

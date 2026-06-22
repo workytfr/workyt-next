@@ -18,6 +18,8 @@ import {
     X,
     Upload,
     ImageIcon,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
 
 export default function EvaluationPage() {
@@ -57,6 +59,7 @@ export default function EvaluationPage() {
     // Photos de copie (URLs R2 apres upload)
     const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const cameraInputRef = useRef<HTMLInputElement>(null);
     const dropZoneRef = useRef<HTMLDivElement>(null);
     const [isDragging, setIsDragging] = useState(false);
 
@@ -172,6 +175,17 @@ export default function EvaluationPage() {
 
     const removeFile = (index: number) => {
         setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+    };
+
+    // Réordonner les pages (l'ordre = ordre de la copie envoyée au correcteur).
+    const moveFile = (index: number, dir: -1 | 1) => {
+        setUploadedFiles((prev) => {
+            const j = index + dir;
+            if (j < 0 || j >= prev.length) return prev;
+            const next = [...prev];
+            [next[index], next[j]] = [next[j], next[index]];
+            return next;
+        });
     };
 
     // Drag & drop handlers
@@ -302,28 +316,51 @@ export default function EvaluationPage() {
     const isLow = timeLeft < 5 * 60 * 1000;
     const isCritical = timeLeft < 60 * 1000;
 
+    // Phase « dépôt » : les dernières depositMinutes sont réservées au scan + envoi.
+    const depositMin = evaluation?.depositMinutes ?? 10;
+    const compositionEndMs = deadlineRef.current - depositMin * 60_000;
+    const inDeposit = depositMin > 0 && Date.now() >= compositionEndMs && timeLeft > 0;
+
     return (
         <div>
             {/* Timer bar */}
             <div className={`sticky top-0 z-10 py-3 px-4 rounded-xl mb-6 flex items-center justify-between ${
                 isCritical ? "bg-red-100 border border-red-300" :
                 isLow ? "bg-amber-100 border border-amber-300" :
+                inDeposit ? "bg-indigo-50 border border-indigo-200" :
                 "bg-white border border-gray-200"
             }`}>
                 <div>
                     <h1 className="font-semibold text-gray-800 text-sm">{evaluation.title}</h1>
-                    <p className="text-xs text-gray-500">
-                        {evaluation.type === "form" ? "Formulaire" : "PDF"} &middot; {evaluation.duration} min
-                        {typeof evaluation.rewardPoints === "number" && <> &middot; {evaluation.rewardPoints} pts</>}
-                    </p>
+                    {inDeposit ? (
+                        <p className="text-xs font-medium text-indigo-600">
+                            ⏱ Phase de dépôt — scanne et envoie tes copies maintenant
+                        </p>
+                    ) : (
+                        <p className="text-xs text-gray-500">
+                            Composition &middot; {evaluation.duration} min
+                            {depositMin > 0 && <> · +{depositMin} min de dépôt</>}
+                        </p>
+                    )}
                 </div>
                 <div className={`flex items-center gap-2 font-mono text-lg font-bold ${
-                    isCritical ? "text-red-600" : isLow ? "text-amber-600" : "text-gray-700"
+                    isCritical ? "text-red-600" : isLow ? "text-amber-600" : inDeposit ? "text-indigo-600" : "text-gray-700"
                 }`}>
                     <Clock className="w-4 h-4" />
                     {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
                 </div>
             </div>
+
+            {/* Bannière phase dépôt + Foxy */}
+            {inDeposit && (
+                <div className="mb-6 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
+                    <Mascot
+                        name="foxy"
+                        emotion="surpris"
+                        message="C'est la phase de dépôt ! Prends tes copies en photo (une par page) et envoie-les avant la fin du chrono ⏱"
+                    />
+                </div>
+            )}
 
             {error && (
                 <div className="bg-red-50 border border-red-200 rounded-xl p-3 mb-4">
@@ -446,21 +483,18 @@ export default function EvaluationPage() {
                     </h3>
                 </div>
                 <p className="text-sm text-gray-500 mb-4">
-                    Prenez vos feuilles en photo et glissez-les ici{evaluation.type === "form" ? " (optionnel)" : ""}.
-                    Max 5 fichiers, 10 Mo chacun. Formats : JPEG, PNG, WebP, HEIC, PDF.
+                    Prends chaque feuille en photo (une photo par page){evaluation.type === "form" ? " — optionnel" : ""}.
+                    Max 5 pages, 10 Mo chacune. Formats : JPEG, PNG, WebP, HEIC, PDF.
                 </p>
 
-                {/* Zone de drop */}
+                {/* Zone de drop + boutons capture/fichiers */}
                 <div
                     ref={dropZoneRef}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
                     onDrop={handleDrop}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-colors ${
-                        isDragging
-                            ? "border-orange-400 bg-orange-50"
-                            : "border-gray-300 hover:border-orange-300 hover:bg-gray-50"
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-colors ${
+                        isDragging ? "border-orange-400 bg-orange-50" : "border-gray-300"
                     }`}
                 >
                     <input
@@ -471,52 +505,99 @@ export default function EvaluationPage() {
                         onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
                         className="hidden"
                     />
+                    {/* Entrée caméra dédiée (mobile : ouvre l'appareil photo) */}
+                    <input
+                        ref={cameraInputRef}
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        onChange={(e) => e.target.files && handleFileUpload(e.target.files)}
+                        className="hidden"
+                    />
                     {uploading ? (
-                        <div className="flex flex-col items-center gap-2">
+                        <div className="flex flex-col items-center gap-2 py-2">
                             <Loader2 className="w-8 h-8 animate-spin text-orange-500" />
                             <p className="text-sm text-gray-500">Upload en cours...</p>
                         </div>
                     ) : (
-                        <div className="flex flex-col items-center gap-2">
-                            <Upload className="w-8 h-8 text-gray-400" />
-                            <p className="text-sm text-gray-600">
-                                <span className="font-medium text-orange-600">Cliquez</span> ou glissez vos photos ici
-                            </p>
-                            <p className="text-xs text-gray-400">
-                                {uploadedFiles.length}/5 fichier(s)
-                            </p>
+                        <div className="flex flex-col items-center gap-3 py-2">
+                            <Upload className="w-8 h-8 text-gray-300" />
+                            <p className="hidden text-sm text-gray-600 sm:block">Glisse tes photos ici, ou :</p>
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => cameraInputRef.current?.click()}
+                                    disabled={uploadedFiles.length >= 5}
+                                    className="inline-flex items-center gap-2 rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50"
+                                >
+                                    <Camera className="h-4 w-4" /> Prendre une photo
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    disabled={uploadedFiles.length >= 5}
+                                    className="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 transition-colors hover:border-orange-300 disabled:opacity-50"
+                                >
+                                    <ImageIcon className="h-4 w-4" /> Choisir des fichiers
+                                </button>
+                            </div>
+                            <p className="text-xs text-gray-400">{uploadedFiles.length}/5 page(s)</p>
                         </div>
                     )}
                 </div>
 
-                {/* Previews */}
+                {/* Aperçu des pages (réordonnables) */}
                 {uploadedFiles.length > 0 && (
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        {uploadedFiles.map((url, i) => (
-                            <div key={i} className="relative group rounded-lg overflow-hidden border border-gray-200">
-                                {url.match(/\.(pdf)$/i) ? (
-                                    <div className="flex items-center justify-center h-32 bg-gray-50">
-                                        <FileText className="w-8 h-8 text-gray-400" />
-                                        <span className="text-xs text-gray-500 ml-2">PDF</span>
+                    <div className="mt-4">
+                        <p className="mb-2 text-xs text-gray-500">
+                            Vérifie l&apos;ordre des pages — c&apos;est l&apos;ordre envoyé au correcteur.
+                        </p>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                            {uploadedFiles.map((url, i) => {
+                                const isPdf = /\.pdf(\?|$)/i.test(url);
+                                return (
+                                    <div key={i} className="relative overflow-hidden rounded-lg border border-gray-200 bg-white">
+                                        {isPdf ? (
+                                            <div className="flex h-32 items-center justify-center bg-gray-50">
+                                                <FileText className="h-8 w-8 text-gray-400" />
+                                                <span className="ml-2 text-xs text-gray-500">PDF</span>
+                                            </div>
+                                        ) : (
+                                            // eslint-disable-next-line @next/next/no-img-element
+                                            <img src={evalFileUrl(url)} alt={`Page ${i + 1}`} className="h-32 w-full object-cover" />
+                                        )}
+                                        <span className="absolute left-1 top-1 rounded-md bg-black/60 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                                            Page {i + 1}/{uploadedFiles.length}
+                                        </span>
+                                        <button
+                                            onClick={() => removeFile(i)}
+                                            title="Supprimer cette page"
+                                            className="absolute right-1 top-1 rounded-full bg-red-500 p-1 text-white hover:bg-red-600"
+                                        >
+                                            <X className="h-3.5 w-3.5" />
+                                        </button>
+                                        <div className="absolute inset-x-1 bottom-1 flex items-center justify-between">
+                                            <button
+                                                onClick={() => moveFile(i, -1)}
+                                                disabled={i === 0}
+                                                title="Déplacer avant"
+                                                className="rounded-md bg-white/90 p-1 shadow-sm transition-opacity hover:bg-white disabled:opacity-30"
+                                            >
+                                                <ChevronLeft className="h-3.5 w-3.5 text-gray-700" />
+                                            </button>
+                                            <button
+                                                onClick={() => moveFile(i, 1)}
+                                                disabled={i === uploadedFiles.length - 1}
+                                                title="Déplacer après"
+                                                className="rounded-md bg-white/90 p-1 shadow-sm transition-opacity hover:bg-white disabled:opacity-30"
+                                            >
+                                                <ChevronRight className="h-3.5 w-3.5 text-gray-700" />
+                                            </button>
+                                        </div>
                                     </div>
-                                ) : (
-                                    <img
-                                        src={url}
-                                        alt={`Photo ${i + 1}`}
-                                        className="w-full h-32 object-cover"
-                                    />
-                                )}
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); removeFile(i); }}
-                                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                >
-                                    <X className="w-3.5 h-3.5" />
-                                </button>
-                                <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs px-2 py-1">
-                                    Photo {i + 1}
-                                </div>
-                            </div>
-                        ))}
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>
