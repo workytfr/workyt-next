@@ -63,7 +63,7 @@ export async function PUT(
         }
 
         const body = await req.json();
-        const allowedFields = ['title', 'description', 'type', 'duration', 'depositMinutes', 'pdfUrl', 'questions', 'rewardPoints', 'linkedCompetencies', 'isActive'];
+        const allowedFields = ['title', 'description', 'type', 'duration', 'depositMinutes', 'pdfUrl', 'pdfExercises', 'questions', 'rewardPoints', 'linkedCompetencies', 'isActive'];
 
         for (const key of allowedFields) {
             if (body[key] !== undefined) {

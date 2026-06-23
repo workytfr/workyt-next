@@ -23,6 +23,7 @@ export interface IEvaluation extends Document {
     duration: number;                   // composition, en minutes (5-180)
     depositMinutes: number;             // temps de dépôt (scan+upload) ajouté à duration
     pdfUrl?: string;                    // lien externe vers le PDF (si type=pdf)
+    pdfExercises?: { enonce: string; points: number; difficulty?: string }[]; // énoncés des exos du PDF → permet de répondre en ligne (hybride)
     questions?: IEvaluationQuestion[];  // questions (si type=form)
     rewardPoints: number;                // points attribués à l'élève (0-500)
     linkedCompetencies: string[];       // skillIds (ex: "C4-MATH-NC-CL-01")
@@ -79,6 +80,15 @@ const EvaluationSchema: Schema = new Schema({
             },
             message: 'pdfUrl est requis quand le type est pdf',
         },
+    },
+    pdfExercises: {
+        type: [{
+            enonce: { type: String, default: '' },
+            points: { type: Number, default: 0 },
+            difficulty: { type: String, default: 'Moyen 1' },
+            _id: false,
+        }],
+        default: undefined,
     },
     questions: {
         type: [EvaluationQuestionSchema],

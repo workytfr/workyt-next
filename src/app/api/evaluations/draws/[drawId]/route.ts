@@ -75,6 +75,10 @@ export async function GET(
                 pdfUrl: (draw.status === 'drawn' || draw.status === 'in_progress') && evaluation.type === 'pdf'
                     ? evaluation.pdfUrl
                     : undefined,
+                // Énoncés des exos → permet de répondre en ligne (hybride), uniquement si actif
+                pdfExercises: (draw.status === 'drawn' || draw.status === 'in_progress') && evaluation.type === 'pdf'
+                    ? (evaluation as any).pdfExercises
+                    : undefined,
                 linkedCompetencies: evaluation.linkedCompetencies,
             },
         });

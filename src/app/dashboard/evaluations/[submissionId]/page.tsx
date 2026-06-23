@@ -40,6 +40,7 @@ export default function GradingPage() {
     const [photoLinks, setPhotoLinks] = useState<string[]>([]);
     const [validated, setValidated] = useState<Set<string>>(new Set());
     const [invalidated, setInvalidated] = useState<Set<string>>(new Set());
+    const [compDetails, setCompDetails] = useState<Record<string, string>>({});
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -66,6 +67,24 @@ export default function GradingPage() {
             .catch(() => setError("Erreur de chargement."))
             .finally(() => setLoading(false));
     }, [session?.accessToken, submissionId]);
+
+    // Résout les codes de compétences en descriptions lisibles pour la correction.
+    useEffect(() => {
+        const skills: string[] = data?.submission?.evaluationId?.linkedCompetencies || [];
+        if (!skills.length || !session?.accessToken) return;
+        fetch(`/api/competencies/by-skills?skills=${encodeURIComponent(skills.join(","))}`, {
+            headers: { Authorization: `Bearer ${session.accessToken}` },
+        })
+            .then((r) => r.json())
+            .then((d) => {
+                const map: Record<string, string> = {};
+                (d.competencies || []).forEach((c: any) => {
+                    if (c?.skillId && c?.description) map[c.skillId] = c.description;
+                });
+                setCompDetails(map);
+            })
+            .catch(() => {});
+    }, [data, session?.accessToken]);
 
     const toggleCompetency = (skillId: string) => {
         const newVal = new Set(validated);
@@ -243,6 +262,38 @@ export default function GradingPage() {
                                         </div>
                                     );
                                 })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Réponses en ligne d'un PDF hybride */}
+                    {submission.type === "pdf" && submission.answers?.length > 0 && (
+                        <div className="dash-card">
+                            <div className="dash-card-header">
+                                <span className="font-semibold text-[#37352f] flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-[#f97316]" />
+                                    Réponses en ligne
+                                </span>
+                            </div>
+                            <div className="dash-card-body space-y-4">
+                                {[...submission.answers]
+                                    .sort((a: any, b: any) => (a.questionIndex || 0) - (b.questionIndex || 0))
+                                    .map((a: any, i: number) => {
+                                        const enonce = evaluation?.pdfExercises?.[a.questionIndex]?.enonce;
+                                        return (
+                                            <div key={i} className="border-b border-[#e3e2e0] pb-3 last:border-0">
+                                                <p className="text-sm font-medium text-[#37352f] mb-1">
+                                                    Exercice {a.questionIndex + 1}
+                                                </p>
+                                                {enonce && (
+                                                    <p className="text-xs text-gray-400 mb-1 whitespace-pre-wrap">{enonce}</p>
+                                                )}
+                                                <p className="text-sm text-[#6b6b6b] bg-[#f7f6f3] rounded-lg px-3 py-2 whitespace-pre-wrap">
+                                                    {a.answer || <span className="italic text-gray-400">Pas de réponse</span>}
+                                                </p>
+                                            </div>
+                                        );
+                                    })}
                             </div>
                         </div>
                     )}
@@ -436,8 +487,15 @@ export default function GradingPage() {
                                             ) : (
                                                 <div className="w-4 h-4 rounded-full border-2 border-gray-300 shrink-0" />
                                             )}
-                                            <span className="text-sm font-mono text-[#37352f]">{skillId}</span>
-                                            <span className={`text-xs ml-auto font-medium ${
+                                            <span className="flex-1 min-w-0">
+                                                <span className="block text-sm text-[#37352f] truncate">
+                                                    {compDetails[skillId] || skillId}
+                                                </span>
+                                                {compDetails[skillId] && (
+                                                    <span className="block text-[10px] font-mono text-gray-400">{skillId}</span>
+                                                )}
+                                            </span>
+                                            <span className={`text-xs shrink-0 font-medium ${
                                                 isVal ? "text-emerald-600" : isInval ? "text-red-500" : "text-gray-400"
                                             }`}>
                                                 {isVal ? "Acquise" : isInval ? "Non acquise" : "—"}

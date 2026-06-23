@@ -63,7 +63,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { courseId, title, description, type, duration, depositMinutes, pdfUrl, questions, linkedCompetencies, rewardPoints } = body;
+        const { courseId, title, description, type, duration, depositMinutes, pdfUrl, pdfExercises, questions, linkedCompetencies, rewardPoints } = body;
 
         // Validation de base
         if (!courseId || !title || !type || !duration) {
@@ -102,6 +102,9 @@ export async function POST(req: NextRequest) {
             duration,
             depositMinutes: typeof depositMinutes === 'number' ? Math.min(60, Math.max(0, depositMinutes)) : 10,
             pdfUrl: type === 'pdf' ? pdfUrl : undefined,
+            pdfExercises: type === 'pdf' && Array.isArray(pdfExercises)
+                ? pdfExercises.map((e: any) => ({ enonce: String(e?.enonce ?? ''), points: Number(e?.points) || 0, difficulty: String(e?.difficulty ?? 'Moyen 1') }))
+                : undefined,
             questions: type === 'form' ? questions : undefined,
             rewardPoints: typeof rewardPoints === 'number' ? Math.min(500, Math.max(0, rewardPoints)) : 100,
             linkedCompetencies: linkedCompetencies || [],

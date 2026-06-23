@@ -40,6 +40,7 @@ interface Evaluation {
     duration: number;
     depositMinutes?: number;
     pdfUrl?: string;
+    pdfExercises?: { enonce: string; points: number; difficulty: string }[];
     questions?: Question[];
     rewardPoints: number;
     linkedCompetencies: string[];
@@ -208,8 +209,11 @@ export default function ManageEvaluationsPage() {
     const [formDuration, setFormDuration] = useState(60);
     const [formDeposit, setFormDeposit] = useState(10);
     const [formPdfUrl, setFormPdfUrl] = useState("");
+    const [formPdfExercises, setFormPdfExercises] = useState<{ enonce: string; points: number; difficulty: string }[]>([]);
     const [formRewardPoints, setFormRewardPoints] = useState(100);
-    const [formCompetencies, setFormCompetencies] = useState("");
+    const [formCompetencyIds, setFormCompetencyIds] = useState<string[]>([]);
+    const [courseCompetencies, setCourseCompetencies] = useState<{ skillId: string; description: string }[]>([]);
+    const [manualComp, setManualComp] = useState("");
     const [formQuestions, setFormQuestions] = useState<Question[]>([{ ...EMPTY_QUESTION }]);
     const [showComposer, setShowComposer] = useState(false);
 
@@ -241,6 +245,31 @@ export default function ManageEvaluationsPage() {
 
     useEffect(() => { fetchEvaluations(); }, [fetchEvaluations]);
 
+    // Compétences disponibles pour le cours sélectionné (issues des quiz du cours).
+    useEffect(() => {
+        if (!formCourse?._id || !session?.accessToken) { setCourseCompetencies([]); return; }
+        let cancelled = false;
+        fetch(`/api/competencies/by-course?courseId=${formCourse._id}`, {
+            headers: { Authorization: `Bearer ${session.accessToken}` },
+        })
+            .then((r) => r.json())
+            .then((d) => {
+                if (cancelled) return;
+                setCourseCompetencies((d.competencies || []).map((c: any) => ({ skillId: c.skillId, description: c.description || "" })));
+            })
+            .catch(() => { if (!cancelled) setCourseCompetencies([]); });
+        return () => { cancelled = true; };
+    }, [formCourse?._id, session?.accessToken]);
+
+    const toggleCompetencyId = (id: string) =>
+        setFormCompetencyIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+    const addManualCompetencies = () => {
+        const ids = manualComp.split(",").map((s) => s.trim()).filter(Boolean);
+        if (ids.length) setFormCompetencyIds((prev) => Array.from(new Set([...prev, ...ids])));
+        setManualComp("");
+    };
+
     // Reset form
     const resetForm = () => {
         setEditing(null);
@@ -251,8 +280,10 @@ export default function ManageEvaluationsPage() {
         setFormDuration(60);
         setFormDeposit(10);
         setFormPdfUrl("");
+        setFormPdfExercises([]);
         setFormRewardPoints(100);
-        setFormCompetencies("");
+        setFormCompetencyIds([]);
+        setManualComp("");
         setFormQuestions([{ ...EMPTY_QUESTION }]);
         setShowAdvanced(false);
         setError(null);
@@ -272,8 +303,9 @@ export default function ManageEvaluationsPage() {
         setFormDuration(ev.duration);
         setFormDeposit(ev.depositMinutes ?? 10);
         setFormPdfUrl(ev.pdfUrl || "");
+        setFormPdfExercises(ev.pdfExercises || []);
         setFormRewardPoints(ev.rewardPoints ?? 100);
-        setFormCompetencies((ev.linkedCompetencies || []).join(", "));
+        setFormCompetencyIds(ev.linkedCompetencies || []);
         setFormQuestions(ev.questions?.length
             ? ev.questions.map((q, i) => ({ ...q, order: q.order ?? i }))
             : [{ ...EMPTY_QUESTION }]);
@@ -291,8 +323,9 @@ export default function ManageEvaluationsPage() {
         setFormDuration(ev.duration);
         setFormDeposit(ev.depositMinutes ?? 10);
         setFormPdfUrl(ev.pdfUrl || "");
+        setFormPdfExercises(ev.pdfExercises || []);
         setFormRewardPoints(ev.rewardPoints ?? 100);
-        setFormCompetencies((ev.linkedCompetencies || []).join(", "));
+        setFormCompetencyIds(ev.linkedCompetencies || []);
         setFormQuestions(ev.questions?.length
             ? ev.questions.map((q, i) => ({ ...q, order: q.order ?? i }))
             : [{ ...EMPTY_QUESTION }]);
@@ -344,8 +377,10 @@ export default function ManageEvaluationsPage() {
     };
 
     // PDF généré depuis l'éditeur riche (texte, images, LaTeX, dessins) → upload R2
-    const handleComposerConfirm = async (pdf: File) => {
+    // On garde aussi les énoncés pour permettre la réponse en ligne (mode hybride).
+    const handleComposerConfirm = async (pdf: File, exercises: { enonce: string; points: number; difficulty: string }[]) => {
         setShowComposer(false);
+        setFormPdfExercises(exercises);
         await handlePdfUpload(pdf);
     };
 
@@ -377,11 +412,12 @@ export default function ManageEvaluationsPage() {
             duration: formDuration,
             depositMinutes: formDeposit,
             rewardPoints: formRewardPoints,
-            linkedCompetencies: formCompetencies.split(",").map((s) => s.trim()).filter(Boolean),
+            linkedCompetencies: formCompetencyIds.filter(Boolean),
         };
 
         if (formType === "pdf") {
             body.pdfUrl = formPdfUrl;
+            body.pdfExercises = formPdfExercises;
         } else {
             body.questions = formQuestions.map((q, i) => ({
                 ...q,
@@ -715,15 +751,72 @@ export default function ManageEvaluationsPage() {
                                     />
                                 </div>
                                 <div>
-                                    <label className="dash-label mb-1 block text-xs">Compétences liées</label>
-                                    <input
-                                        type="text"
-                                        value={formCompetencies}
-                                        onChange={(e) => setFormCompetencies(e.target.value)}
-                                        className="dash-input w-full"
-                                        placeholder="C4-MATH-NC-CL-01, C4-MATH-NC-CL-02"
-                                    />
-                                    <p className="text-xs text-gray-400 mt-1">Séparées par des virgules</p>
+                                    <label className="dash-label mb-1 block text-xs">
+                                        Compétences évaluées {formCompetencyIds.length > 0 && <span className="text-[#f97316]">({formCompetencyIds.length})</span>}
+                                    </label>
+                                    <p className="text-[11px] text-gray-400 mb-2">
+                                        Coche les compétences du programme testées par cette éval (issues des quiz du cours).
+                                    </p>
+
+                                    {/* Liste des compétences du cours */}
+                                    {courseCompetencies.length > 0 ? (
+                                        <div className="max-h-44 overflow-y-auto rounded-lg border border-[#e3e2e0] divide-y divide-gray-100">
+                                            {courseCompetencies.map((c) => {
+                                                const checked = formCompetencyIds.includes(c.skillId);
+                                                return (
+                                                    <button
+                                                        type="button"
+                                                        key={c.skillId}
+                                                        onClick={() => toggleCompetencyId(c.skillId)}
+                                                        className={`flex w-full items-start gap-2 px-3 py-2 text-left transition-colors ${checked ? "bg-orange-50" : "hover:bg-gray-50"}`}
+                                                    >
+                                                        <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-[#f97316] bg-[#f97316] text-white" : "border-gray-300"}`}>
+                                                            {checked && <span className="text-[10px] leading-none">✓</span>}
+                                                        </span>
+                                                        <span className="min-w-0">
+                                                            <span className="block text-xs text-[#37352f]">{c.description || c.skillId}</span>
+                                                            <span className="block font-mono text-[10px] text-gray-400">{c.skillId}</span>
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    ) : (
+                                        <p className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-[11px] text-gray-400">
+                                            {formCourse ? "Aucune compétence trouvée pour ce cours (ajoute-en via les quiz, ou saisis des codes ci-dessous)." : "Choisis d'abord un cours."}
+                                        </p>
+                                    )}
+
+                                    {/* Compétences sélectionnées hors liste (ex. saisies manuellement) */}
+                                    {formCompetencyIds.filter((id) => !courseCompetencies.some((c) => c.skillId === id)).length > 0 && (
+                                        <div className="mt-2 flex flex-wrap gap-1.5">
+                                            {formCompetencyIds
+                                                .filter((id) => !courseCompetencies.some((c) => c.skillId === id))
+                                                .map((id) => (
+                                                    <span key={id} className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-600">
+                                                        {id}
+                                                        <button type="button" onClick={() => toggleCompetencyId(id)} className="text-gray-400 hover:text-red-500">
+                                                            <X className="h-3 w-3" />
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                        </div>
+                                    )}
+
+                                    {/* Ajout manuel de codes (avancé) */}
+                                    <div className="mt-2 flex items-center gap-2">
+                                        <input
+                                            type="text"
+                                            value={manualComp}
+                                            onChange={(e) => setManualComp(e.target.value)}
+                                            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addManualCompetencies(); } }}
+                                            className="dash-input flex-1 text-xs"
+                                            placeholder="Ajouter des codes : C4-MATH-NC-CL-01, …"
+                                        />
+                                        <button type="button" onClick={addManualCompetencies} className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs text-gray-600 hover:border-[#f97316]">
+                                            Ajouter
+                                        </button>
+                                    </div>
                                 </div>
                                 <div>
                                     <label className="dash-label mb-1 block text-xs">Durée personnalisée (min)</label>

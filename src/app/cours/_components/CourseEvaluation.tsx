@@ -238,8 +238,8 @@ export default function CourseEvaluation({ courseId }: CourseEvaluationProps) {
                     <ol className="space-y-2 mb-4">
                         {[
                             { t: "Tire au sort un sujet", d: "Le chrono démarre immédiatement et ne se met pas en pause." },
-                            { t: "Compose dans le temps imparti", d: "Sur le sujet PDF (papier) ou directement dans le formulaire." },
-                            { t: "Rends ta copie", d: "Photographie/scanne tes feuilles et dépose-les avant la fin." },
+                            { t: "Compose dans le temps imparti", d: "Sur le sujet imprimé, sur une feuille libre (lis le PDF à l'écran), ou en ligne." },
+                            { t: "Rends ta copie", d: "Photographie/scanne tes feuilles, ou réponds en ligne, avant la fin." },
                             { t: "Reçois ta note", d: "Un correcteur te note sur 20, avec un retour et tes points." },
                         ].map((s, i) => (
                             <li key={i} className="flex gap-3">

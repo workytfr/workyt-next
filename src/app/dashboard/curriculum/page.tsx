@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import "../styles/dashboard-theme.css";
 import ContentPicker from "@/components/ui/ContentPicker";
+import AddProgramModal from "./_components/AddProgramModal";
 
 interface Skill {
   skillId: string;
@@ -115,6 +116,7 @@ export default function CurriculumAdminPage() {
   const [levelsConfig, setLevelsConfig] = useState<LevelsConfig | null>(null);
   const [loading, setLoading] = useState(true);
   const [importing, setImporting] = useState(false);
+  const [showAdd, setShowAdd] = useState(false);
   const [importResult, setImportResult] = useState<{
     message: string;
     created: number;
@@ -369,18 +371,28 @@ export default function CurriculumAdminPage() {
             })()}
           </p>
         </div>
-        <button
-          onClick={handleImportJSON}
-          disabled={importing}
-          className="dash-button dash-button-primary flex items-center gap-2"
-        >
-          {importing ? (
-            <Loader2 className="w-4 h-4 animate-spin" />
-          ) : (
-            <Upload className="w-4 h-4" />
-          )}
-          Importer un JSON
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowAdd(true)}
+            className="dash-button dash-button-primary flex items-center gap-2"
+          >
+            <GraduationCap className="w-4 h-4" />
+            Créer un programme
+          </button>
+          <button
+            onClick={handleImportJSON}
+            disabled={importing}
+            className="dash-button dash-button-secondary flex items-center gap-2"
+            title="Importer un fichier .json"
+          >
+            {importing ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            Importer un fichier
+          </button>
+        </div>
       </div>
 
       {/* Import result */}
@@ -853,6 +865,18 @@ export default function CurriculumAdminPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Modal : créer un programme (builder visuel OU coller un JSON) */}
+      {showAdd && (
+        <AddProgramModal
+          token={session?.accessToken as string | undefined}
+          onClose={() => setShowAdd(false)}
+          onImported={(result) => {
+            setImportResult(result);
+            fetchNodes();
+          }}
+        />
       )}
     </div>
   );

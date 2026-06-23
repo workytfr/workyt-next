@@ -32,7 +32,7 @@ interface Exo {
 interface EvaluationPdfBuilderProps {
     open: boolean;
     onClose: () => void;
-    onConfirm: (pdf: File) => void;
+    onConfirm: (pdf: File, exercises: { enonce: string; points: number; difficulty: string }[]) => void;
     defaultTitle?: string;
     subject?: string;
     authorName?: string;
@@ -441,7 +441,9 @@ export default function EvaluationPdfBuilder({
             const blob = pdf.output("blob");
             const safe = (docTitle || "evaluation").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
             const file = new File([blob], `${safe}.pdf`, { type: "application/pdf" });
-            onConfirm(file);
+            // On renvoie aussi les énoncés pour permettre la réponse en ligne (mode hybride).
+            const exercises = exos.map((e) => ({ enonce: e.content, points: e.points, difficulty: e.difficulty }));
+            onConfirm(file, exercises);
         } catch (e) {
             console.error("[EvaluationPdfBuilder] génération échouée", e);
             setError("La génération du PDF a échoué. Réessaie.");

@@ -61,21 +61,26 @@ export async function POST(
             ? body.submittedFiles.filter((u: any) => typeof u === 'string' && u.startsWith('http')).slice(0, 10)
             : [];
 
+        // Réponses en ligne (formulaire, ou PDF hybride répondu en ligne)
+        const answers: any[] = Array.isArray(body.answers) ? body.answers.slice(0, 100) : [];
+        if (answers.length > 100) {
+            return NextResponse.json({ error: 'Trop de réponses.' }, { status: 400 });
+        }
+        for (const ans of answers) {
+            if (typeof ans.answer === 'string' && ans.answer.length > 10000) {
+                return NextResponse.json({ error: 'Réponse trop longue (max 10 000 caractères).' }, { status: 400 });
+            }
+        }
+        const hasOnlineAnswers = answers.some((a) => typeof a.answer === 'string' && a.answer.trim().length > 0);
+
         if (evaluation.type === 'form') {
-            if (!body.answers || !Array.isArray(body.answers) || body.answers.length === 0) {
+            if (!hasOnlineAnswers) {
                 return NextResponse.json({ error: 'Réponses requises.' }, { status: 400 });
             }
-            if (body.answers.length > 100) {
-                return NextResponse.json({ error: 'Trop de réponses.' }, { status: 400 });
-            }
-            for (const ans of body.answers) {
-                if (typeof ans.answer === 'string' && ans.answer.length > 10000) {
-                    return NextResponse.json({ error: 'Réponse trop longue (max 10 000 caractères).' }, { status: 400 });
-                }
-            }
         } else if (evaluation.type === 'pdf') {
-            if (submittedFiles.length === 0) {
-                return NextResponse.json({ error: 'Veuillez joindre au moins une photo de votre copie.' }, { status: 400 });
+            // Hybride : soit des photos de copie, soit des réponses tapées en ligne.
+            if (submittedFiles.length === 0 && !hasOnlineAnswers) {
+                return NextResponse.json({ error: 'Joins au moins une photo de ta copie, ou réponds en ligne.' }, { status: 400 });
             }
         }
 
@@ -91,7 +96,7 @@ export async function POST(
                 courseId: draw.courseId,
                 evaluationId: draw.evaluationId,
                 type: evaluation.type,
-                answers: evaluation.type === 'form' ? body.answers : undefined,
+                answers: hasOnlineAnswers ? answers : undefined,
                 submittedFiles: submittedFiles.length > 0 ? submittedFiles : undefined,
                 timeSpent,
                 submittedAt: new Date(),

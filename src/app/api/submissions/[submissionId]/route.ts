@@ -24,7 +24,7 @@ export async function GET(
         const submission = await EvaluationSubmission.findById(submissionId)
             .populate('userId', 'username image email')
             .populate('courseId', 'title')
-            .populate('evaluationId', 'title type duration questions pdfUrl linkedCompetencies')
+            .populate('evaluationId', 'title type duration questions pdfUrl pdfExercises linkedCompetencies')
             .lean();
 
         if (!submission) {

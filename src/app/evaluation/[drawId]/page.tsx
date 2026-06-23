@@ -6,6 +6,10 @@ import { useRouter, useParams } from "next/navigation";
 import { evalFileUrl } from "@/lib/evalFile";
 import EvaluationIntro from "@/app/evaluation/_components/EvaluationIntro";
 import Mascot from "@/components/ui/Mascot";
+import ReactMarkdown from "react-markdown";
+import { sharedRemarkPlugins, sharedRehypePlugins } from "@/lib/markdownPlugins";
+import { difficultyConfig, difficultyBadge } from "@/lib/difficulty";
+import "katex/dist/katex.min.css";
 import {
     Clock,
     Send,
@@ -53,8 +57,10 @@ export default function EvaluationPage() {
         setShowIntro(false);
     }, [drawId]);
 
-    // Form answers
+    // Form answers (formulaire OU PDF hybride répondu en ligne)
     const [answers, setAnswers] = useState<Record<number, string>>({});
+    // Mode de rendu pour un PDF hybride : réponse en ligne ou photos
+    const [answerMode, setAnswerMode] = useState<"online" | "photo">("photo");
 
     // Photos de copie (URLs R2 apres upload)
     const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
@@ -219,11 +225,12 @@ export default function EvaluationPage() {
         try {
             const body: any = { submittedFiles: uploadedFiles };
 
-            if (evaluation.type === "form") {
-                body.answers = Object.entries(answers).map(([idx, answer]) => ({
-                    questionIndex: parseInt(idx),
-                    answer,
-                }));
+            // Réponses tapées (formulaire OU PDF hybride répondu en ligne)
+            const typed = Object.entries(answers)
+                .filter(([, v]) => typeof v === "string" && v.trim().length > 0)
+                .map(([idx, answer]) => ({ questionIndex: parseInt(idx), answer }));
+            if (typed.length > 0) {
+                body.answers = typed;
             }
 
             const res = await fetch(`/api/evaluations/draws/${drawId}/submit`, {
@@ -315,6 +322,10 @@ export default function EvaluationPage() {
     const seconds = Math.floor((timeLeft % 60000) / 1000);
     const isLow = timeLeft < 5 * 60 * 1000;
     const isCritical = timeLeft < 60 * 1000;
+
+    // PDF hybride : l'élève peut répondre en ligne (champ par exo) ou joindre des photos.
+    const pdfExercises: { enonce: string; points: number; difficulty?: string }[] = evaluation?.pdfExercises ?? [];
+    const hasOnlineOption = evaluation?.type === "pdf" && pdfExercises.length > 0;
 
     // Phase « dépôt » : les dernières depositMinutes sont réservées au scan + envoi.
     const depositMin = evaluation?.depositMinutes ?? 10;
@@ -454,7 +465,7 @@ export default function EvaluationPage() {
                         <div>
                             <h3 className="font-semibold text-gray-800">Sujet de l&apos;évaluation</h3>
                             <p className="text-sm text-gray-500 mt-1">
-                                Téléchargez le sujet, complétez-le sur papier, puis prenez vos copies en photo.
+                                Ouvre le sujet, compose sur une feuille (ou imprime-le){hasOnlineOption ? ", ou réponds directement en ligne ci-dessous" : ""}.
                             </p>
                         </div>
                     </div>
@@ -473,7 +484,86 @@ export default function EvaluationPage() {
                 </div>
             )}
 
+            {/* PDF hybride : choix du mode de rendu */}
+            {hasOnlineOption && (
+                <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Comment veux-tu rendre ta copie&nbsp;?</p>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setAnswerMode("online")}
+                            className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${answerMode === "online" ? "border-orange-400 bg-orange-50 text-orange-700" : "border-gray-200 text-gray-600 hover:border-orange-200"}`}
+                        >
+                            ✍️ Répondre en ligne
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAnswerMode("photo")}
+                            className={`flex-1 rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${answerMode === "photo" ? "border-orange-400 bg-orange-50 text-orange-700" : "border-gray-200 text-gray-600 hover:border-orange-200"}`}
+                        >
+                            📷 Joindre mes copies
+                        </button>
+                    </div>
+                    <p className="mt-2 text-xs text-gray-400">
+                        Pas d&apos;imprimante ni de scanner&nbsp;? Réponds directement en ligne — parfait sur ordinateur.
+                    </p>
+                </div>
+            )}
+
+            {/* Réponses en ligne (PDF hybride) — même design que les exercices de cours */}
+            {hasOnlineOption && answerMode === "online" && (
+                <div className="space-y-5 mb-4">
+                    {pdfExercises.map((ex, idx) => {
+                        const diff = ex.difficulty || "Moyen 1";
+                        const cfg = difficultyConfig[diff] || difficultyConfig["Moyen 1"];
+                        return (
+                            <div key={idx} className="overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-sm">
+                                {/* Header dégradé par difficulté */}
+                                <div
+                                    className={`px-6 py-4 flex items-center justify-between bg-gradient-to-r ${cfg.gradient}`}
+                                    style={{ backgroundImage: "url('/noise.png')", backgroundBlendMode: "multiply" }}
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <div
+                                            className="w-10 h-10 rounded-2xl flex items-center justify-center text-sm font-bold text-white shadow-md"
+                                            style={{ backgroundColor: cfg.color }}
+                                        >
+                                            {idx + 1}
+                                        </div>
+                                        <h3 className="font-semibold text-gray-800">Exercice {idx + 1}</h3>
+                                    </div>
+                                    <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={difficultyBadge(diff)} alt={diff} className="h-5 w-5" />
+                                        <span className="text-sm font-medium" style={{ color: cfg.color }}>{diff}</span>
+                                        {ex.points > 0 && <span className="text-xs font-medium" style={{ color: cfg.color }}>· {ex.points} pts</span>}
+                                    </div>
+                                </div>
+                                {/* Contenu : énoncé + réponse */}
+                                <div className="p-6">
+                                    {ex.enonce && (
+                                        <div className="prose max-w-none text-[#37352f] leading-relaxed mb-3">
+                                            <ReactMarkdown remarkPlugins={sharedRemarkPlugins} rehypePlugins={sharedRehypePlugins as any}>
+                                                {ex.enonce}
+                                            </ReactMarkdown>
+                                        </div>
+                                    )}
+                                    <textarea
+                                        value={answers[idx] || ""}
+                                        onChange={(e) => setAnswers({ ...answers, [idx]: e.target.value })}
+                                        rows={4}
+                                        placeholder="Ta réponse…"
+                                        className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 resize-y"
+                                    />
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
             {/* Zone d'upload photos de copie */}
+            {(!hasOnlineOption || answerMode === "photo") && (
             <div className="bg-white rounded-xl border border-gray-200 p-6 mt-4">
                 <div className="flex items-center gap-2 mb-3">
                     <Camera className="w-5 h-5 text-orange-500" />
@@ -601,6 +691,7 @@ export default function EvaluationPage() {
                     </div>
                 )}
             </div>
+            )}
 
             {/* Submit */}
             <div className="mt-6 flex items-center justify-end gap-3">
