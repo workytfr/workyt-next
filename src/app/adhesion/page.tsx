@@ -181,7 +181,7 @@ export default function AdhesionPage() {
                     </Card>
                 )}
 
-                {!done && (
+                {!done && (!existing || existing.status === "suspendu") && (
                     <>
                         {/* Notice RGPD */}
                         <Card className="border border-gray-200 rounded-2xl">

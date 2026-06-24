@@ -370,7 +370,7 @@ export default function CardModal({
                     <div>
                         <Label>Description</Label>
                         <div className="mt-1">
-                            <RichTextEditorClientWrapper content={description} onChange={setDescription} />
+                            <RichTextEditorClientWrapper content={description} onChange={setDescription} hideImage />
                         </div>
                     </div>
 

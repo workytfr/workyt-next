@@ -25,7 +25,7 @@ import { Toggle } from "./Toggle";
 import { Editor } from "@tiptap/react";
 import { UploadButton } from "@/utils/uploadthing";
 
-export default function MenuBarEditor({ editor }: { editor: Editor | null }) {
+export default function MenuBarEditor({ editor, hideImage = false }: { editor: Editor | null; hideImage?: boolean }) {
     if (!editor) return null;
 
     // Boutons de mise en forme de base (titres, gras, alignements, etc.)
@@ -167,18 +167,20 @@ export default function MenuBarEditor({ editor }: { editor: Editor | null }) {
             ))}
 
             {/* Bouton UploadThing pour l'insertion d'image */}
-            <UploadButton
-                endpoint="imageUploader"
-                onClientUploadComplete={(res) => {
-                    if (res && res.length > 0) {
-                        const imageUrl = res[0].url;
-                        editor.chain().focus().setImage({ src: imageUrl, alt: "Image uploadée via UploadThing" }).run();
-                    }
-                }}
-                onUploadError={(error: Error) => {
-                    console.error("Erreur lors de l'upload:", error.message);
-                }}
-            />
+            {!hideImage && (
+                <UploadButton
+                    endpoint="imageUploader"
+                    onClientUploadComplete={(res) => {
+                        if (res && res.length > 0) {
+                            const imageUrl = res[0].url;
+                            editor.chain().focus().setImage({ src: imageUrl, alt: "Image uploadée via UploadThing" }).run();
+                        }
+                    }}
+                    onUploadError={(error: Error) => {
+                        console.error("Erreur lors de l'upload:", error.message);
+                    }}
+                />
+            )}
         </div>
     );
 }

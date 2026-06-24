@@ -98,7 +98,8 @@ const KanbanCardSchema = new Schema<IKanbanCard>({
     description: {
         type: String,
         trim: true,
-        maxlength: [5000, 'La description ne peut pas dépasser 5000 caractères'],
+        // HTML riche (TipTap) SANS images (retirées à l'enregistrement).
+        maxlength: [20000, 'La description est trop longue.'],
     },
     priority: {
         type: String,

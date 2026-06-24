@@ -23,6 +23,11 @@ function buildLabels(raw: any) {
     return raw.filter((l: any) => typeof l === 'string').slice(0, 10);
 }
 
+function stripImages(html: any): string {
+    if (typeof html !== 'string') return '';
+    return html.replace(/<img\b[^>]*>/gi, '').trim();
+}
+
 function buildLink(raw: any) {
     if (!raw || !LINK_TYPES.includes(raw.type) || raw.type === 'none') {
         return { type: 'none' as const };
@@ -105,7 +110,7 @@ export async function PATCH(
             if (!t) return NextResponse.json({ error: 'Le titre est requis' }, { status: 400 });
             card.title = t;
         }
-        if (typeof body.description === 'string') card.description = body.description;
+        if (typeof body.description === 'string') card.description = stripImages(body.description);
         if (PRIORITIES.includes(body.priority)) card.priority = body.priority;
         if (typeof body.column === 'string' && isValidColumn(body.column) && body.column !== card.column) {
             const label = COLUMNS.find((c) => c.id === body.column)?.label || body.column;

@@ -85,8 +85,14 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Compte introuvable.' }, { status: 404 });
         }
 
-        // Une adhésion par compte : on met à jour si elle existe déjà
+        // Une adhésion par compte : déjà adhérent actif → on bloque la re-soumission
         let membership = await Membership.findOne({ userId: user._id });
+        if (membership && membership.status === 'actif') {
+            return NextResponse.json(
+                { error: 'Vous êtes déjà adhérent·e.', memberNumber: membership.memberNumber },
+                { status: 409 }
+            );
+        }
         const isRenewal = !!membership;
         if (membership) {
             membership.type = type as MembershipType;

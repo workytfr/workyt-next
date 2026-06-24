@@ -25,6 +25,7 @@ interface RichTextEditorProps {
     content: string;
     onChange: (content: string) => void;
     fullHeight?: boolean;
+    hideImage?: boolean;
 }
 
 const lowlightInstance = createLowlight(all);
@@ -35,7 +36,7 @@ function defaultShouldRender(state: any, pos: number, node: any) {
     return node.type.name === 'text' && $pos.parent.type.name !== 'codeBlock';
 }
 
-export default function RichTextEditor({ content, onChange, fullHeight = false }: RichTextEditorProps) {
+export default function RichTextEditor({ content, onChange, fullHeight = false, hideImage = false }: RichTextEditorProps) {
     // Le hook useEditor doit être appelé directement dans le composant, sans condition.
     const editor = useEditor({
         extensions: [
@@ -270,7 +271,7 @@ export default function RichTextEditor({ content, onChange, fullHeight = false }
             {fullHeight ? (
                 <div className="flex flex-col h-full min-h-0">
                     <div className="sticky top-0 z-10 bg-white border-b shrink-0">
-                        <MenuBar editor={editor} />
+                        <MenuBar editor={editor} hideImage={hideImage} />
                     </div>
                     <div className="flex-1 min-h-0 overflow-y-auto">
                         <EditorContent editor={editor} className="h-full" />
@@ -278,7 +279,7 @@ export default function RichTextEditor({ content, onChange, fullHeight = false }
                 </div>
             ) : (
                 <div>
-                    <MenuBar editor={editor} />
+                    <MenuBar editor={editor} hideImage={hideImage} />
                     <EditorContent editor={editor} />
                 </div>
             )}

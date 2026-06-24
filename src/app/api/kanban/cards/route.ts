@@ -17,6 +17,12 @@ import {
 const PRIORITIES = ['low', 'medium', 'high'];
 const LINK_TYPES = ['none', 'course', 'forum', 'evaluation'];
 
+// Retire les images (balises <img>, dont base64) de la description.
+function stripImages(html: any): string {
+    if (typeof html !== 'string') return '';
+    return html.replace(/<img\b[^>]*>/gi, '').trim();
+}
+
 // Normalise les sous-tâches (checklist)
 function buildChecklist(raw: any) {
     if (!Array.isArray(raw)) return [];
@@ -123,7 +129,7 @@ export async function POST(req: NextRequest) {
             column,
             order,
             title,
-            description: typeof body.description === 'string' ? body.description : '',
+            description: stripImages(body.description),
             priority: PRIORITIES.includes(body.priority) ? body.priority : 'medium',
             labels: buildLabels(body.labels),
             checklist: buildChecklist(body.checklist),
