@@ -38,7 +38,11 @@ import {
     Search,
     Ticket,
     ArrowUpRight,
+    LayoutDashboard,
 } from "lucide-react";
+
+// Rôles ayant accès au tableau de bord (cf. dashboard/layout.tsx)
+const STAFF_ROLES = ["Admin", "Rédacteur", "Correcteur", "Modérateur", "Helpeur"];
 import WorkytLogo from "@/components/ui/WorkytLogo";
 import ActiveEvalIndicator from "@/components/ActiveEvalIndicator";
 import ProfileCard from "@/components/ui/ProfileCard";
@@ -74,6 +78,7 @@ export default function Navbar() {
     const blogRef = useRef<HTMLDivElement>(null);
     const { data: session } = useSession();
     const pathname = usePathname();
+    const isStaff = !!session && STAFF_ROLES.includes((session.user as any)?.role);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -275,6 +280,15 @@ export default function Navbar() {
                                                 <div className="border-b border-gray-100 px-4 py-2.5">
                                                     <p className="truncate text-xs text-gray-400">{session.user?.email}</p>
                                                 </div>
+
+                                                {isStaff && (
+                                                    <div className="py-1">
+                                                        <Link href="/dashboard" className="mx-2 flex items-center gap-3 rounded-xl bg-orange-50 px-3 py-2.5 text-sm font-medium text-orange-700 transition-colors hover:bg-orange-100" onClick={() => setIsProfileOpen(false)}>
+                                                            <LayoutDashboard className="h-4 w-4" />
+                                                            Tableau de bord
+                                                        </Link>
+                                                    </div>
+                                                )}
 
                                                 <div className="py-1">
                                                     <Link href={`/compte/${session.user.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
@@ -495,6 +509,15 @@ export default function Navbar() {
                                     role={session.user.role}
                                 />
                             </div>
+
+                            {isStaff && (
+                                <div className="py-1">
+                                    <Link href="/dashboard" className="mx-4 flex min-h-[44px] items-center gap-3 rounded-xl bg-orange-50 px-4 py-3 text-sm font-medium text-orange-700 transition-colors active:bg-orange-100" onClick={closeMobileMenu}>
+                                        <LayoutDashboard className="h-4 w-4 shrink-0" />
+                                        Tableau de bord
+                                    </Link>
+                                </div>
+                            )}
 
                             <div className="py-1">
                                 <Link href={`/compte/${session.user.id}`} className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>

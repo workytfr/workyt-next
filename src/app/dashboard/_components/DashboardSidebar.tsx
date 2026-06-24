@@ -29,6 +29,7 @@ import {
   HelpCircle,
   Radio,
   KanbanSquare,
+  IdCard,
 } from "lucide-react";
 import TutorialModal from "./TutorialModal";
 import "../styles/dashboard-theme.css";
@@ -82,6 +83,7 @@ const navItems: NavItem[] = [
   { name: "Programmes", href: "/dashboard/curriculum", icon: GraduationCap, adminOnly: true },
   { name: "Partenaires", href: "/dashboard/partners", icon: Store, adminOnly: true },
   { name: "Lives", href: "/dashboard/lives", icon: Radio, adminOnly: true },
+  { name: "Adhérents", href: "/dashboard/adherents", icon: IdCard, adminOnly: true },
   { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
   { name: "Modération", href: "/dashboard/moderation", icon: Shield, moderatorOnly: true },
   { name: "Rôles", href: "/dashboard/roles", icon: Shield, adminOnly: true },
@@ -101,7 +103,7 @@ const navGroups = [
   },
   {
     title: "Administration",
-    items: ["Certificats", "Programmes", "Partenaires", "Lives", "Utilisateurs", "Modération", "Rôles", "Bénévoles"],
+    items: ["Certificats", "Programmes", "Partenaires", "Lives", "Adhérents", "Utilisateurs", "Modération", "Rôles", "Bénévoles"],
   },
   {
     title: "Configuration",

@@ -147,6 +147,7 @@ const Footer: React.FC = () => {
                             <ul className="space-y-2.5">
                                 {[
                                     { href: "/a-propos", label: "À propos de l'asso" },
+                                    { href: "/adhesion", label: "Adhérer à l'association" },
                                     { href: "/partenaires", label: "Nos partenaires" },
                                     { href: "/kit-media", label: "Kit média / presse" },
                                     { href: "/award", label: "Workyt Award" },
