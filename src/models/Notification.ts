@@ -6,13 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export interface INotification extends Document {
     notificationId: string;
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout' | 'kanban_assigned' | 'kanban_comment';
     recipient: Types.ObjectId; // Utilisateur qui reçoit la notification
     sender: Types.ObjectId; // Utilisateur qui déclenche la notification
     title: string;
     message: string;
     relatedEntity?: {
-        type: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation';
+        type: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation' | 'kanban_card';
         id: Types.ObjectId;
     };
     isRead: boolean;
@@ -33,7 +33,7 @@ const NotificationSchema: Schema<INotification> = new Schema({
     },
     type: {
         type: String,
-        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated', 'quest_completed', 'evaluation_submitted', 'evaluation_graded', 'evaluation_timeout'],
+        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated', 'quest_completed', 'evaluation_submitted', 'evaluation_graded', 'evaluation_timeout', 'kanban_assigned', 'kanban_comment'],
         required: true
     },
     recipient: {
@@ -57,7 +57,7 @@ const NotificationSchema: Schema<INotification> = new Schema({
     relatedEntity: {
         type: {
             type: String,
-            enum: ['question', 'answer', 'fiche', 'comment', 'quest', 'evaluation']
+            enum: ['question', 'answer', 'fiche', 'comment', 'quest', 'evaluation', 'kanban_card']
         },
         id: {
             type: mongoose.Schema.Types.ObjectId

@@ -5,6 +5,39 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import { hasPermission } from "@/lib/roles";
 
 /**
+ * 🚀 GET - Récupérer une leçon complète (titre + contenu) pour l'édition
+ */
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        await dbConnect();
+        const user = await authMiddleware(req);
+
+        if (!user || !user._id) {
+            return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+        }
+
+        if (!(await hasPermission(user.role, 'lesson.edit'))) {
+            return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
+        }
+
+        const resolvedParams = await params;
+        const lesson = await Lesson.findById(resolvedParams.id);
+
+        if (!lesson) {
+            return NextResponse.json({ error: "Leçon non trouvée." }, { status: 404 });
+        }
+
+        return NextResponse.json(lesson, { status: 200 });
+    } catch (error: any) {
+        console.error("Erreur lors de la récupération de la leçon :", error.message);
+        return NextResponse.json(
+            { error: "Impossible de récupérer la leçon." },
+            { status: 500 }
+        );
+    }
+}
+
+/**
  * 🚀 PUT - Mettre à jour une leçon (Réservé aux Rédacteurs pour leurs propres leçons, aux Correcteurs et Admins)
  */
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {

@@ -12,6 +12,8 @@ export interface ILesson extends Document {
     audioUrl?: string; // URL de l'audio TTS généré (stocké sur R2)
     order: number; // Position de la leçon dans la section
     status: 'En attente de correction' | 'Validée'; // Statut de la leçon
+    validatedBy?: Types.ObjectId; // Correcteur ayant validé la leçon
+    validatedAt?: Date; // Date de validation
     createdAt: Date;
 }
 
@@ -31,6 +33,8 @@ const LessonSchema: Schema = new Schema({
         enum: ['En attente de correction', 'Validée'],
         default: 'En attente de correction'
     },
+    validatedBy: { type: Schema.Types.ObjectId, ref: 'User', default: null }, // Correcteur ayant validé
+    validatedAt: { type: Date, default: null },
     createdAt: { type: Date, default: Date.now }
 });
 

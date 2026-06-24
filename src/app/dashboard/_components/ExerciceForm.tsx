@@ -25,18 +25,31 @@ interface ICourse {
     sections: { _id: string; title: string }[];
 }
 
+/** Extrait un id depuis une valeur qui peut être une string ou un objet peuplé {_id}. */
+const extractId = (value: any): string => {
+    if (!value) return "";
+    if (typeof value === "object") return String(value._id || "");
+    return String(value);
+};
+
 interface ExerciseFormProps {
     exercise?: any;
     onSuccess: (exercise: any) => void;
+    /**
+     * Quand on édite depuis une section connue (structure du cours), on verrouille
+     * la section : on n'affiche pas le sélecteur cours/section, comme pour QuizForm.
+     */
+    lockedSectionId?: string;
+    lockedSectionLabel?: string;
 }
 
-export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps) {
+export default function ExerciseForm({ exercise, onSuccess, lockedSectionId, lockedSectionLabel }: ExerciseFormProps) {
     const { data: session } = useSession();
     const [courses, setCourses] = useState<ICourse[]>([]);
     const [filteredCourses, setFilteredCourses] = useState<ICourse[]>([]);
     const [courseSearch, setCourseSearch] = useState<string>("");
     const [courseId, setCourseId] = useState<string>("");
-    const [sectionId, setSectionId] = useState<string>(exercise?.sectionId || "");
+    const [sectionId, setSectionId] = useState<string>(lockedSectionId || extractId(exercise?.sectionId));
     const [formData, setFormData] = useState({
         title: exercise?.title || "",
         content: exercise?.content || "",
@@ -59,14 +72,15 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
                 correctionText: exercise.correction?.text || "",
                 difficulty: exercise.difficulty || "",
             });
-            setSectionId(exercise.sectionId || "");
+            setSectionId(extractId(exercise.sectionId));
             setImagePreview(exercise.image || "");
             setCorrectionImagePreview(exercise.correction?.image || "");
         }
     }, [exercise]);
 
-    // Charger les cours une seule fois
+    // Charger les cours une seule fois (inutile si la section est verrouillée)
     useEffect(() => {
+        if (lockedSectionId) return;
         async function fetchCourses() {
             setLoadingCourses(true);
             try {
@@ -85,7 +99,7 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
             }
         }
         fetchCourses();
-    }, []);
+    }, [lockedSectionId]);
 
     // Recherche dynamique des cours
     useEffect(() => {
@@ -102,8 +116,9 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
     // Déterminer le cours associé à l'exercice (si existant)
     useEffect(() => {
         if (exercise && courses.length > 0) {
+            const sid = extractId(exercise.sectionId);
             const courseFound = courses.find(course =>
-                course.sections.some(section => section._id === exercise.sectionId)
+                course.sections.some(section => section._id === sid)
             );
             if (courseFound) {
                 setCourseId(courseFound._id);
@@ -168,44 +183,54 @@ export default function ExerciseForm({ exercise, onSuccess }: ExerciseFormProps)
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 max-h-[80vh] overflow-y-auto p-4">
-            {/* 🔍 Recherche de cours */}
-            <label className="block text-sm font-medium text-gray-700">Rechercher un cours</label>
-            <Input
-                placeholder="Tapez le nom d'un cours..."
-                value={courseSearch}
-                onChange={(e) => setCourseSearch(e.target.value)}
-            />
+            {lockedSectionId ? (
+                lockedSectionLabel && (
+                    <p className="text-sm text-gray-500">
+                        Section : <span className="font-medium text-gray-700">{lockedSectionLabel}</span>
+                    </p>
+                )
+            ) : (
+                <>
+                    {/* 🔍 Recherche de cours */}
+                    <label className="block text-sm font-medium text-gray-700">Rechercher un cours</label>
+                    <Input
+                        placeholder="Tapez le nom d'un cours..."
+                        value={courseSearch}
+                        onChange={(e) => setCourseSearch(e.target.value)}
+                    />
 
-            <label className="block text-sm font-medium text-gray-700">Sélectionner un cours</label>
-            <Select onValueChange={setCourseId} disabled={loadingCourses}>
-                <SelectTrigger>
-                    <SelectValue placeholder="Choisissez un cours" />
-                </SelectTrigger>
-                <SelectContent>
-                    {filteredCourses.map((course) => (
-                        <SelectItem key={course._id} value={course._id}>
-                            {course.title}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+                    <label className="block text-sm font-medium text-gray-700">Sélectionner un cours</label>
+                    <Select value={courseId} onValueChange={setCourseId} disabled={loadingCourses}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Choisissez un cours" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {filteredCourses.map((course) => (
+                                <SelectItem key={course._id} value={course._id}>
+                                    {course.title}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
 
-            {/* 📌 Sélection de la section */}
-            <label className="block text-sm font-medium text-gray-700">Sélectionner une section</label>
-            <Select onValueChange={setSectionId} value={sectionId} disabled={!courseId}>
-                <SelectTrigger>
-                    <SelectValue placeholder="Choisissez une section" />
-                </SelectTrigger>
-                <SelectContent>
-                    {filteredCourses
-                        .find((course) => course._id === courseId)
-                        ?.sections.map((section) => (
-                            <SelectItem key={section._id} value={section._id}>
-                                {section.title}
-                            </SelectItem>
-                        ))}
-                </SelectContent>
-            </Select>
+                    {/* 📌 Sélection de la section */}
+                    <label className="block text-sm font-medium text-gray-700">Sélectionner une section</label>
+                    <Select onValueChange={setSectionId} value={sectionId} disabled={!courseId}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Choisissez une section" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {filteredCourses
+                                .find((course) => course._id === courseId)
+                                ?.sections.map((section) => (
+                                    <SelectItem key={section._id} value={section._id}>
+                                        {section.title}
+                                    </SelectItem>
+                                ))}
+                        </SelectContent>
+                    </Select>
+                </>
+            )}
 
             {/* 📌 Titre de l'exercice */}
             <Input

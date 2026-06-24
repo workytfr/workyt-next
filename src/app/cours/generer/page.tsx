@@ -14,6 +14,7 @@ import {
     Trophy, ChevronRight, ListChecks, AlertCircle
 } from "lucide-react";
 import { educationData } from "@/data/educationData";
+import MascotLoader from "@/components/ui/MascotLoader";
 import Link from "next/link";
 import "katex/dist/katex.min.css";
 
@@ -458,9 +459,7 @@ export default function GenerateCoursePage() {
             <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
                 <div className="w-full max-w-lg p-8 bg-white rounded-2xl shadow-sm">
                     <div className="text-center mb-8">
-                        <div className="w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                            <Sparkles className="w-16 h-16 text-purple-500 animate-pulse" />
-                        </div>
+                        <MascotLoader message="MaitreRenardAI prépare votre cours…" size="lg" />
                         <h2 className="text-xl font-semibold text-gray-800">Génération en cours</h2>
                         <p className="text-sm text-gray-400 mt-1">Cela peut prendre quelques instants…</p>
                     </div>

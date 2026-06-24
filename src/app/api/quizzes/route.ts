@@ -239,7 +239,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        const quiz = new Quiz(body);
+        const quiz = new Quiz({ ...body, author: session.user.id });
         await quiz.save();
 
         return NextResponse.json(quiz, { status: 201 });

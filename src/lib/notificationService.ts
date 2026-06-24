@@ -6,10 +6,10 @@ import User from '@/models/User';
 import mongoose from 'mongoose';
 
 export interface CreateNotificationData {
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout' | 'kanban_assigned' | 'kanban_comment';
     recipientId: string;
     senderId: string;
-    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation';
+    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation' | 'kanban_card';
     relatedEntityId: string;
     title: string;
     message: string;
@@ -458,6 +458,62 @@ export class NotificationService {
             });
         } catch (error) {
             console.error('Erreur notification évaluation corrigée:', error);
+        }
+    }
+
+    /**
+     * Notifie un membre qu'une carte Kanban lui a été assignée.
+     */
+    static async notifyKanbanAssigned(
+        recipientId: string,
+        senderId: string,
+        cardId: string,
+        cardTitle: string
+    ): Promise<void> {
+        try {
+            if (recipientId === senderId) return; // pas d'auto-notification
+            const sender = await User.findById(senderId, 'username');
+            await this.createNotification({
+                type: 'kanban_assigned',
+                recipientId,
+                senderId,
+                relatedEntityType: 'kanban_card',
+                relatedEntityId: cardId,
+                title: 'Nouvelle tâche assignée',
+                message: `${sender?.username || 'Un membre'} vous a assigné la tâche « ${cardTitle} ».`,
+            });
+        } catch (error) {
+            console.error('Erreur notification assignation Kanban:', error);
+        }
+    }
+
+    /**
+     * Notifie les personnes concernées par une carte (assignés + créateur)
+     * qu'un commentaire a été ajouté.
+     */
+    static async notifyKanbanComment(
+        recipientIds: string[],
+        senderId: string,
+        cardId: string,
+        cardTitle: string
+    ): Promise<void> {
+        try {
+            const unique = Array.from(new Set(recipientIds)).filter((id) => id && id !== senderId);
+            if (unique.length === 0) return;
+            const sender = await User.findById(senderId, 'username');
+            for (const recipientId of unique) {
+                await this.createNotification({
+                    type: 'kanban_comment',
+                    recipientId,
+                    senderId,
+                    relatedEntityType: 'kanban_card',
+                    relatedEntityId: cardId,
+                    title: 'Nouveau commentaire',
+                    message: `${sender?.username || 'Un membre'} a commenté la tâche « ${cardTitle} ».`,
+                });
+            }
+        } catch (error) {
+            console.error('Erreur notification commentaire Kanban:', error);
         }
     }
 

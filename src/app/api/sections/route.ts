@@ -63,8 +63,8 @@ export async function GET(request: NextRequest) {
         const sections = await Section.find(query)
             .populate('courseId', 'title niveau matiere')
             .populate('lessons', 'title')
-            .populate('exercises', 'title')
-            .populate('quizzes', 'title')
+            .populate('exercises', 'title author')
+            .populate('quizzes', 'title questions')
             .sort(sort)
             .skip(skip)
             .limit(limit);

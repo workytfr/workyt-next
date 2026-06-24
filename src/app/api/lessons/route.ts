@@ -178,13 +178,24 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Statut invalide." }, { status: 400 });
         }
 
-        // 🔄 Mise à jour de la leçon
+        // 🔄 Construction de la mise à jour
+        const update: any = {
+            status: newStatus,
+            updatedAt: new Date(), // on met à jour la date de modification
+        };
+
+        // Tracer qui a validé la leçon (et l'effacer si on retire la validation)
+        if (newStatus === "Validée") {
+            update.validatedBy = user._id;
+            update.validatedAt = new Date();
+        } else {
+            update.validatedBy = null;
+            update.validatedAt = null;
+        }
+
         const updatedLesson = await Lesson.findByIdAndUpdate(
             lessonId,
-            {
-                status: newStatus,
-                updatedAt: new Date(), // on met à jour la date de modification
-            },
+            update,
             { new: true } // Renvoie le document après mise à jour
         ).populate("author", "name")
          .populate({

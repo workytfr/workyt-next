@@ -21,13 +21,26 @@ interface ICourse {
     sections: { _id: string; title: string }[];
 }
 
+/** Extrait un id depuis une valeur qui peut être une string ou un objet peuplé {_id}. */
+const extractId = (value: any): string => {
+    if (!value) return "";
+    if (typeof value === "object") return String(value._id || "");
+    return String(value);
+};
+
 interface LessonFormProps {
     lesson?: ILesson; // En édition, cette prop est définie
     onSuccess: (lesson: ILesson) => void;
     onDirtyChange?: (isDirty: boolean) => void;
+    /**
+     * Quand on édite depuis une section connue (structure du cours), on verrouille
+     * la section : on n'affiche pas le sélecteur cours/section, comme pour QuizForm.
+     */
+    lockedSectionId?: string;
+    lockedSectionLabel?: string;
 }
 
-export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonFormProps) {
+export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSectionId, lockedSectionLabel }: LessonFormProps) {
     // TOUS les autres hooks doivent être appelés ici AVANT la condition
     const { data: session, update } = useSession();
     const [courses, setCourses] = useState<ICourse[]>([]);
@@ -35,7 +48,9 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
     // On garde la sélection du cours uniquement pour filtrer les sections
     const [selectedCourseId, setSelectedCourseId] = useState<string>("");
     // Le champ qui sera envoyé est uniquement sectionId
-    const [sectionId, setSectionId] = useState<string>(lesson?.sectionId.toString() || "");
+    const [sectionId, setSectionId] = useState<string>(
+        lockedSectionId || extractId(lesson?.sectionId)
+    );
     const [title, setTitle] = useState<string>(lesson?.title || "");
     const [content, setContent] = useState<string>(lesson?.content || "");
     const [files, setFiles] = useState<File[]>([]);
@@ -90,13 +105,21 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
     // Lorsqu'une leçon est passée en mode édition, on met à jour les états
     useEffect(() => {
         if (lesson) {
-            setSectionId(lesson.sectionId.toString());
+            setSectionId(extractId(lesson.sectionId));
             setTitle(lesson.title || "");
             // Transformer le HTML pour TipTap
             const transformedContent = transformHtmlForTipTap(lesson.content || "");
             setContent(transformedContent);
         }
     }, [lesson]);
+
+    // Pré-sélectionner le cours correspondant à la section de la leçon (mode édition)
+    useEffect(() => {
+        if (lockedSectionId || !lesson || courses.length === 0) return;
+        const sid = extractId(lesson.sectionId);
+        const found = courses.find((c) => c.sections.some((s) => s._id === sid));
+        if (found) setSelectedCourseId(found._id);
+    }, [lesson, courses, lockedSectionId]);
 
     // Forcer le thème clair
     useEffect(() => {
@@ -105,8 +128,9 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
         document.body.style.color = "black";
     }, []);
 
-    // Charger tous les cours une seule fois au montage
+    // Charger tous les cours une seule fois au montage (inutile si la section est verrouillée)
     useEffect(() => {
+        if (lockedSectionId) return;
         async function fetchCourses() {
             setLoadingCourses(true);
             try {
@@ -121,7 +145,7 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
             }
         }
         fetchCourses();
-    }, []);
+    }, [lockedSectionId]);
 
     // Filtrage local des cours par recherche
     const filteredCourses = searchQuery.trim()
@@ -212,13 +236,29 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
         >
             {/* Barre métadonnées compacte */}
             <div className="px-6 py-3 border-b bg-gray-50/50 shrink-0">
+                {lockedSectionId ? (
+                    // Section verrouillée : on n'affiche que le titre (la section est déjà connue)
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                        {lockedSectionLabel && (
+                            <span className="text-sm text-gray-500 whitespace-nowrap">
+                                Section : <span className="font-medium text-gray-700">{lockedSectionLabel}</span>
+                            </span>
+                        )}
+                        <Input
+                            placeholder="Titre de la leçon"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            className="flex-1"
+                        />
+                    </div>
+                ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
                     <Input
                         placeholder="Rechercher un cours..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <Select onValueChange={setSelectedCourseId} disabled={loadingCourses}>
+                    <Select value={selectedCourseId} onValueChange={setSelectedCourseId} disabled={loadingCourses}>
                         <SelectTrigger>
                             <SelectValue placeholder="Choisissez un cours" />
                         </SelectTrigger>
@@ -262,6 +302,7 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange }: LessonF
                         onChange={(e) => setTitle(e.target.value)}
                     />
                 </div>
+                )}
             </div>
 
             {/* Éditeur qui remplit tout l'espace disponible */}

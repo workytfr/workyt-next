@@ -28,6 +28,7 @@ import {
   FileCheck,
   HelpCircle,
   Radio,
+  KanbanSquare,
 } from "lucide-react";
 import TutorialModal from "./TutorialModal";
 import "../styles/dashboard-theme.css";
@@ -52,6 +53,7 @@ interface NavItem {
 // Navigation items avec leurs permissions
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
+  { name: "Kanban", href: "/dashboard/kanban", icon: KanbanSquare },
   {
     name: "Cours",
     href: "/dashboard/cours",
@@ -91,7 +93,7 @@ const navItems: NavItem[] = [
 const navGroups = [
   {
     title: "Général",
-    items: ["Dashboard"],
+    items: ["Dashboard", "Kanban"],
   },
   {
     title: "Contenu",

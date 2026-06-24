@@ -43,6 +43,7 @@ export interface ITimePenalty {
 export interface IQuiz extends Document {
     sectionId?: Types.ObjectId; // Peut être rattaché à une section
     lessonId?: Types.ObjectId; // Peut être rattaché à une leçon
+    author?: Types.ObjectId; // Auteur du quiz (créateur)
     title: string; // Titre du quiz
     description?: string; // Brève description du quiz
     questions: IQuestion[]; // Liste des questions
@@ -59,6 +60,7 @@ export interface IQuiz extends Document {
 const QuizSchema: Schema = new Schema({
     sectionId: { type: Schema.Types.ObjectId, ref: 'Section', required: false },
     lessonId: { type: Schema.Types.ObjectId, ref: 'Lesson', required: false },
+    author: { type: Schema.Types.ObjectId, ref: 'User', required: false },
     title: { type: String, required: true },
     description: { type: String },
     competencies: [{ type: String }], // Skill IDs from CurriculumNode

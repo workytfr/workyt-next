@@ -108,3 +108,43 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         );
     }
 }
+
+/**
+ * 🚀 DELETE - Supprimer un exercice (Réservé aux Rédacteurs pour leurs propres exercices, Correcteurs et Admins)
+ */
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+    try {
+        await dbConnect();
+        const user = await authMiddleware(req);
+
+        if (!user || !user._id) {
+            return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
+        }
+
+        if (!(await hasPermission(user.role, 'course.edit'))) {
+            return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
+        }
+
+        const { id } = await params;
+        const existingExercise = await Exercise.findById(id);
+
+        if (!existingExercise) {
+            return NextResponse.json({ error: "Exercice non trouvé." }, { status: 404 });
+        }
+
+        // Un Rédacteur ne peut supprimer que ses propres exercices
+        if (user.role === "Rédacteur" && String(existingExercise.author) !== String(user._id)) {
+            return NextResponse.json({ error: "Vous ne pouvez supprimer que vos propres exercices." }, { status: 403 });
+        }
+
+        await Exercise.findByIdAndDelete(id);
+
+        return NextResponse.json({ message: "Exercice supprimé avec succès." }, { status: 200 });
+    } catch (error: any) {
+        console.error("Erreur lors de la suppression de l'exercice :", error.message);
+        return NextResponse.json(
+            { error: "Impossible de supprimer l'exercice." },
+            { status: 500 }
+        );
+    }
+}

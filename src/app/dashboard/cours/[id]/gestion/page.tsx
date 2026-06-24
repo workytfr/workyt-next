@@ -22,6 +22,10 @@ import {
   ExternalLink,
   Save,
   X,
+  Trophy,
+  Dumbbell,
+  HelpCircle,
+  Users,
 } from "lucide-react";
 import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -46,6 +50,19 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { UploadButton } from "@/utils/uploadthing";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import LessonForm from "@/app/dashboard/_components/LessonForm";
+import QuizForm from "@/app/dashboard/_components/QuizForm";
+import ExerciseForm from "@/app/dashboard/_components/ExerciceForm";
+import type { ILesson } from "@/models/Lesson";
+import ProfileAvatar from "@/components/ui/profile";
+import MascotLoader from "@/components/ui/MascotLoader";
+import { getRoleIconPath } from "@/lib/roleIcon";
 import "../../../styles/dashboard-theme.css";
 
 // Types
@@ -60,14 +77,36 @@ interface Course {
   authors?: Array<{ _id: string; name: string }>;
 }
 
+interface SectionResource {
+  _id: string;
+  title: string;
+}
+
+interface SectionQuiz extends SectionResource {
+  questions?: { _id?: string }[];
+}
+
+interface SectionExercise extends SectionResource {
+  author?: string;
+}
+
 interface Section {
   _id: string;
   title: string;
   order: number;
   courseId: string;
   lessons?: Lesson[];
-  exercises?: any[];
-  quizzes?: any[];
+  exercises?: SectionExercise[];
+  quizzes?: SectionQuiz[];
+}
+
+interface Contributor {
+  _id: string;
+  name: string;
+  username: string;
+  role: string;
+  points: number;
+  contributions?: { lessons: number; exercises: number; quizzes: number };
 }
 
 interface Lesson {
@@ -134,9 +173,20 @@ function SortableSection({
           </span>
           <div className="flex-1">
             <h3 className="font-semibold text-[#37352f]">{section.title}</h3>
-            <p className="text-sm text-[#9ca3af]">
-              {lessons.length} leçon{lessons.length > 1 ? "s" : ""}
-            </p>
+            <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#eff6ff] text-[#2563eb]">
+                <FileText className="w-3 h-3" />
+                {lessons.length}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#fffbeb] text-[#d97706]">
+                <Trophy className="w-3 h-3" />
+                {(section.quizzes || []).length}
+              </span>
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#ecfdf5] text-[#059669]">
+                <Dumbbell className="w-3 h-3" />
+                {(section.exercises || []).length}
+              </span>
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -171,11 +221,15 @@ function SortableSection({
 function SortableLesson({
   lesson,
   index,
+  onEdit,
   onDelete,
+  canDelete,
 }: {
   lesson: Lesson;
   index: number;
+  onEdit: () => void;
   onDelete: () => void;
+  canDelete: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: lesson._id });
@@ -205,20 +259,22 @@ function SortableLesson({
       <FileText className="w-4 h-4 text-[#6b6b6b]" />
       <span className="flex-1 text-[#37352f]">{lesson.title}</span>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <Link
-          href={`/dashboard/lessons/editor/${lesson._id}`}
+        <button
+          onClick={onEdit}
           className="p-1.5 hover:bg-[#f7f6f3] rounded"
           title="Éditer"
         >
           <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
-        </Link>
-        <button
-          onClick={onDelete}
-          className="p-1.5 hover:bg-red-50 rounded"
-          title="Supprimer"
-        >
-          <Trash2 className="w-4 h-4 text-red-500" />
         </button>
+        {canDelete && (
+          <button
+            onClick={onDelete}
+            className="p-1.5 hover:bg-red-50 rounded"
+            title="Supprimer"
+          >
+            <Trash2 className="w-4 h-4 text-red-500" />
+          </button>
+        )}
       </div>
     </div>
   );
@@ -246,6 +302,30 @@ export default function CourseManagementPage() {
   const [addingLessonSection, setAddingLessonSection] = useState<string | null>(null);
   const [addingLessonTitle, setAddingLessonTitle] = useState("");
   const [operationLoading, setOperationLoading] = useState<string | null>(null);
+
+  // État pour l'édition d'une leçon (Dialog + LessonForm, même logique que les quizz)
+  const [editingLesson, setEditingLesson] = useState<ILesson | null>(null);
+  const [editingLessonSectionId, setEditingLessonSectionId] = useState<string | null>(null);
+  const [lessonDialogOpen, setLessonDialogOpen] = useState(false);
+  const [loadingLesson, setLoadingLesson] = useState(false);
+
+  // État pour l'édition d'un quiz
+  const [quizDialogOpen, setQuizDialogOpen] = useState(false);
+  const [editingQuiz, setEditingQuiz] = useState<any | null>(null);
+  const [quizSectionId, setQuizSectionId] = useState<string | null>(null);
+  const [loadingQuiz, setLoadingQuiz] = useState(false);
+
+  // État pour l'édition d'un exercice
+  const [exerciseDialogOpen, setExerciseDialogOpen] = useState(false);
+  const [editingExercise, setEditingExercise] = useState<any | null>(null);
+  const [exerciseSectionId, setExerciseSectionId] = useState<string | null>(null);
+  const [loadingExercise, setLoadingExercise] = useState(false);
+
+  // Auteurs & contributeurs (onglet Paramètres)
+  const [authors, setAuthors] = useState<Contributor[]>([]);
+  const [correctors, setCorrectors] = useState<Contributor[]>([]);
+  const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [loadingContributors, setLoadingContributors] = useState(false);
 
   // Capteurs pour le drag and drop
   const sensors = useSensors(
@@ -287,6 +367,34 @@ export default function CourseManagementPage() {
       fetchCourseData();
     }
   }, [id]);
+
+  // Charger auteurs & contributeurs à l'ouverture de l'onglet Paramètres
+  useEffect(() => {
+    if (activeTab !== "settings" || !id || !session?.accessToken) return;
+    if (authors.length > 0 || correctors.length > 0 || contributors.length > 0 || loadingContributors)
+      return;
+
+    const fetchContributors = async () => {
+      setLoadingContributors(true);
+      try {
+        const res = await fetch(`/api/courses/${id}/contributors`, {
+          headers: { Authorization: `Bearer ${session.accessToken}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setAuthors(data.authors || []);
+          setCorrectors(data.correctors || []);
+          setContributors(data.contributors || []);
+        }
+      } catch {
+        // silencieux : la section auteurs reste vide
+      } finally {
+        setLoadingContributors(false);
+      }
+    };
+
+    fetchContributors();
+  }, [activeTab, id, session?.accessToken]);
 
   // Sauvegarder les modifications du cours
   const saveCourse = async () => {
@@ -475,6 +583,233 @@ export default function CourseManagementPage() {
     }
   };
 
+  // Ouvrir l'éditeur de leçon : charger le contenu complet puis ouvrir le Dialog
+  const openLessonEditor = async (lessonId: string, sectionId: string) => {
+    setEditingLessonSectionId(sectionId);
+    setLessonDialogOpen(true);
+    setLoadingLesson(true);
+    setEditingLesson(null);
+    try {
+      const res = await fetch(`/api/lessons/${lessonId}`, {
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Impossible de charger la leçon");
+      }
+      const lesson = await res.json();
+      setEditingLesson(lesson);
+    } catch (err: any) {
+      setError(err.message);
+      setLessonDialogOpen(false);
+    } finally {
+      setLoadingLesson(false);
+    }
+  };
+
+  // Après sauvegarde d'une leçon : mettre à jour le titre dans la structure
+  const handleLessonSaved = (updated: ILesson) => {
+    const updatedId = String(updated._id);
+    setSections((prev) =>
+      prev.map((s) =>
+        s._id === editingLessonSectionId
+          ? {
+              ...s,
+              lessons: (s.lessons || []).map((l) =>
+                l._id === updatedId ? { ...l, title: updated.title } : l
+              ),
+            }
+          : s
+      )
+    );
+    setLessonDialogOpen(false);
+    setEditingLesson(null);
+    setEditingLessonSectionId(null);
+    showSuccess("Leçon mise à jour");
+  };
+
+  // --- QUIZ ---
+  const openQuizCreator = (sectionId: string) => {
+    setQuizSectionId(sectionId);
+    setEditingQuiz(null);
+    setQuizDialogOpen(true);
+  };
+
+  const openQuizEditor = async (quizId: string, sectionId: string) => {
+    setQuizSectionId(sectionId);
+    setEditingQuiz(null);
+    setQuizDialogOpen(true);
+    setLoadingQuiz(true);
+    try {
+      const res = await fetch(`/api/quizzes/${quizId}`, {
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Impossible de charger le quiz");
+      }
+      const data = await res.json();
+      setEditingQuiz(data.quiz || data);
+    } catch (err: any) {
+      setError(err.message);
+      setQuizDialogOpen(false);
+    } finally {
+      setLoadingQuiz(false);
+    }
+  };
+
+  const handleSaveQuiz = async (quizData: any) => {
+    try {
+      const isEdit = !!editingQuiz?._id;
+      const res = await fetch(
+        isEdit ? `/api/quizzes/${editingQuiz._id}` : "/api/quizzes",
+        {
+          method: isEdit ? "PATCH" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session?.accessToken}`,
+          },
+          body: JSON.stringify(quizData),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erreur lors de la sauvegarde du quiz");
+      }
+      const data = await res.json();
+      const saved = data.quiz || data;
+      setSections((prev) =>
+        prev.map((s) =>
+          s._id === quizSectionId
+            ? {
+                ...s,
+                quizzes: isEdit
+                  ? (s.quizzes || []).map((q) =>
+                      q._id === saved._id ? { ...q, title: saved.title } : q
+                    )
+                  : [...(s.quizzes || []), { _id: saved._id, title: saved.title }],
+              }
+            : s
+        )
+      );
+      setQuizDialogOpen(false);
+      setEditingQuiz(null);
+      setQuizSectionId(null);
+      showSuccess(isEdit ? "Quiz mis à jour" : "Quiz créé");
+    } catch (err: any) {
+      setError(err.message);
+    }
+  };
+
+  const deleteQuiz = async (quizId: string, sectionId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer ce quiz ?")) return;
+    setOperationLoading(`deleteQuiz-${quizId}`);
+    try {
+      const res = await fetch(`/api/quizzes/${quizId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erreur lors de la suppression");
+      }
+      setSections((prev) =>
+        prev.map((s) =>
+          s._id === sectionId
+            ? { ...s, quizzes: (s.quizzes || []).filter((q) => q._id !== quizId) }
+            : s
+        )
+      );
+      showSuccess("Quiz supprimé");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setOperationLoading(null);
+    }
+  };
+
+  // --- EXERCICE ---
+  const openExerciseCreator = (sectionId: string) => {
+    setExerciseSectionId(sectionId);
+    setEditingExercise(null);
+    setExerciseDialogOpen(true);
+  };
+
+  const openExerciseEditor = async (exerciseId: string, sectionId: string) => {
+    setExerciseSectionId(sectionId);
+    setEditingExercise(null);
+    setExerciseDialogOpen(true);
+    setLoadingExercise(true);
+    try {
+      const res = await fetch(`/api/exercises/${exerciseId}`, {
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Impossible de charger l'exercice");
+      }
+      const exercise = await res.json();
+      setEditingExercise(exercise);
+    } catch (err: any) {
+      setError(err.message);
+      setExerciseDialogOpen(false);
+    } finally {
+      setLoadingExercise(false);
+    }
+  };
+
+  const handleExerciseSuccess = (saved: any) => {
+    const isEdit = !!editingExercise?._id;
+    setSections((prev) =>
+      prev.map((s) =>
+        s._id === exerciseSectionId
+          ? {
+              ...s,
+              exercises: isEdit
+                ? (s.exercises || []).map((ex) =>
+                    ex._id === saved._id ? { ...ex, title: saved.title } : ex
+                  )
+                : [
+                    ...(s.exercises || []),
+                    { _id: saved._id, title: saved.title, author: String(saved.author || userId) },
+                  ],
+            }
+          : s
+      )
+    );
+    setExerciseDialogOpen(false);
+    setEditingExercise(null);
+    setExerciseSectionId(null);
+    showSuccess(isEdit ? "Exercice mis à jour" : "Exercice créé");
+  };
+
+  const deleteExercise = async (exerciseId: string, sectionId: string) => {
+    if (!confirm("Êtes-vous sûr de vouloir supprimer cet exercice ?")) return;
+    setOperationLoading(`deleteExercise-${exerciseId}`);
+    try {
+      const res = await fetch(`/api/exercises/${exerciseId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${session?.accessToken}` },
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Erreur lors de la suppression");
+      }
+      setSections((prev) =>
+        prev.map((s) =>
+          s._id === sectionId
+            ? { ...s, exercises: (s.exercises || []).filter((ex) => ex._id !== exerciseId) }
+            : s
+        )
+      );
+      showSuccess("Exercice supprimé");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setOperationLoading(null);
+    }
+  };
+
   // Drag & Drop : réorganiser les sections
   const handleSectionDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -607,6 +942,51 @@ export default function CourseManagementPage() {
   }
 
   if (!course) return null;
+
+  // Statistiques globales du cours (pour les cartes colorées)
+  const totalLessons = sections.reduce((acc, s) => acc + (s.lessons?.length || 0), 0);
+  const totalQuizzes = sections.reduce((acc, s) => acc + (s.quizzes?.length || 0), 0);
+  const totalQuestions = sections.reduce(
+    (acc, s) => acc + (s.quizzes || []).reduce((qAcc, q) => qAcc + (q.questions?.length || 0), 0),
+    0
+  );
+  const totalExercises = sections.reduce((acc, s) => acc + (s.exercises?.length || 0), 0);
+
+  const statCards = [
+    { label: "Sections", value: sections.length, icon: Layers, color: "#f97316", bg: "#fff7ed" },
+    { label: "Leçons", value: totalLessons, icon: FileText, color: "#2563eb", bg: "#eff6ff" },
+    { label: "Quiz", value: totalQuizzes, icon: Trophy, color: "#d97706", bg: "#fffbeb" },
+    { label: "Questions", value: totalQuestions, icon: HelpCircle, color: "#7c3aed", bg: "#f5f3ff" },
+    { label: "Exercices", value: totalExercises, icon: Dumbbell, color: "#059669", bg: "#ecfdf5" },
+  ];
+
+  // Permissions de suppression (alignées sur l'API) — on masque les boutons sinon
+  const userRole = session?.user?.role;
+  const userId = session?.user?.id;
+  const isAdmin = userRole === "Admin";
+  const canDeleteLesson = isAdmin; // API leçon : Admin uniquement
+  const canDeleteQuiz = isAdmin; // API quiz : Admin uniquement
+  const canDeleteExercise = (exercise: SectionExercise) =>
+    isAdmin ||
+    userRole === "Correcteur" ||
+    (userRole === "Rédacteur" && String(exercise.author) === String(userId));
+
+  const roleBadgeClass = (role: string) => {
+    switch (role) {
+      case "Admin":
+        return "bg-red-50 text-red-600 border-red-200";
+      case "Correcteur":
+        return "bg-purple-50 text-purple-600 border-purple-200";
+      case "Rédacteur":
+        return "bg-blue-50 text-blue-600 border-blue-200";
+      case "Helpeur":
+        return "bg-green-50 text-green-600 border-green-200";
+      case "Modérateur":
+        return "bg-orange-50 text-orange-600 border-orange-200";
+      default:
+        return "bg-gray-50 text-gray-500 border-gray-200";
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -854,6 +1234,33 @@ export default function CourseManagementPage() {
       {/* Onglet Structure */}
       {activeTab === "structure" && (
         <div className="space-y-4">
+          {/* Cartes de statistiques colorées */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            {statCards.map((stat) => (
+              <div
+                key={stat.label}
+                className="group dash-card p-4 flex items-center gap-3 cursor-default transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+                style={{ borderTop: `3px solid ${stat.color}` }}
+              >
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
+                  style={{ backgroundColor: stat.bg, color: stat.color }}
+                >
+                  <stat.icon className="w-5 h-5" />
+                </div>
+                <div className="min-w-0">
+                  <p
+                    className="text-2xl font-bold leading-none tabular-nums"
+                    style={{ color: stat.color }}
+                  >
+                    {stat.value}
+                  </p>
+                  <p className="text-xs text-[#9ca3af] mt-1 truncate">{stat.label}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-[#37352f]">
               Structure du cours
@@ -947,6 +1354,12 @@ export default function CourseManagementPage() {
                         }}
                         onDelete={() => deleteSection(section._id)}
                       >
+                        <div className="space-y-6">
+                        <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="w-4 h-4 text-[#6b6b6b]" />
+                          <h4 className="text-sm font-semibold text-[#37352f]">Leçons</h4>
+                        </div>
                         {lessons.length === 0 && addingLessonSection !== section._id ? (
                           <div className="text-center py-6">
                             <p className="text-sm text-[#9ca3af] mb-3">
@@ -981,9 +1394,13 @@ export default function CourseManagementPage() {
                                     key={lesson._id}
                                     lesson={lesson}
                                     index={lessonIndex}
+                                    onEdit={() =>
+                                      openLessonEditor(lesson._id, section._id)
+                                    }
                                     onDelete={() =>
                                       deleteLesson(lesson._id, section._id)
                                     }
+                                    canDelete={canDeleteLesson}
                                   />
                                 ))}
 
@@ -1052,6 +1469,116 @@ export default function CourseManagementPage() {
                             </SortableContext>
                           </DndContext>
                         )}
+                        </div>
+
+                        {/* Quiz de la section */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Trophy className="w-4 h-4 text-[#6b6b6b]" />
+                              <h4 className="text-sm font-semibold text-[#37352f]">Quiz</h4>
+                            </div>
+                            <button
+                              onClick={() => openQuizCreator(section._id)}
+                              className="dash-button dash-button-secondary dash-button-sm"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Ajouter un quiz
+                            </button>
+                          </div>
+                          {(section.quizzes || []).length === 0 ? (
+                            <p className="text-sm text-[#9ca3af] py-2">
+                              Aucun quiz dans cette section
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {(section.quizzes || []).map((quiz) => (
+                                <div
+                                  key={quiz._id}
+                                  className="flex items-center gap-3 p-3 border border-[#e3e2e0] rounded-lg group hover:border-[#d97706] transition-colors"
+                                >
+                                  <Trophy className="w-4 h-4 text-[#d97706]" />
+                                  <span className="flex-1 text-[#37352f]">{quiz.title}</span>
+                                  <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#f5f3ff] text-[#7c3aed]">
+                                    <HelpCircle className="w-3 h-3" />
+                                    {quiz.questions?.length || 0}
+                                  </span>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => openQuizEditor(quiz._id, section._id)}
+                                      className="p-1.5 hover:bg-[#f7f6f3] rounded"
+                                      title="Éditer"
+                                    >
+                                      <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
+                                    </button>
+                                    {canDeleteQuiz && (
+                                      <button
+                                        onClick={() => deleteQuiz(quiz._id, section._id)}
+                                        className="p-1.5 hover:bg-red-50 rounded"
+                                        title="Supprimer"
+                                      >
+                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Exercices de la section */}
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Dumbbell className="w-4 h-4 text-[#6b6b6b]" />
+                              <h4 className="text-sm font-semibold text-[#37352f]">Exercices</h4>
+                            </div>
+                            <button
+                              onClick={() => openExerciseCreator(section._id)}
+                              className="dash-button dash-button-secondary dash-button-sm"
+                            >
+                              <Plus className="w-4 h-4" />
+                              Ajouter un exercice
+                            </button>
+                          </div>
+                          {(section.exercises || []).length === 0 ? (
+                            <p className="text-sm text-[#9ca3af] py-2">
+                              Aucun exercice dans cette section
+                            </p>
+                          ) : (
+                            <div className="space-y-2">
+                              {(section.exercises || []).map((exercise) => (
+                                <div
+                                  key={exercise._id}
+                                  className="flex items-center gap-3 p-3 border border-[#e3e2e0] rounded-lg group hover:border-[#059669] transition-colors"
+                                >
+                                  <Dumbbell className="w-4 h-4 text-[#059669]" />
+                                  <span className="flex-1 text-[#37352f]">{exercise.title}</span>
+                                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button
+                                      onClick={() => openExerciseEditor(exercise._id, section._id)}
+                                      className="p-1.5 hover:bg-[#f7f6f3] rounded"
+                                      title="Éditer"
+                                    >
+                                      <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
+                                    </button>
+                                    {canDeleteExercise(exercise) && (
+                                      <button
+                                        onClick={() => deleteExercise(exercise._id, section._id)}
+                                        className="p-1.5 hover:bg-red-50 rounded"
+                                        title="Supprimer"
+                                      >
+                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        </div>
                       </SortableSection>
                     );
                   })}
@@ -1084,23 +1611,190 @@ export default function CourseManagementPage() {
       )}
 
       {activeTab === "settings" && (
-        <div className="dash-card">
-          <div className="dash-card-header">
-            <h3 className="dash-card-title">Paramètres du cours</h3>
-          </div>
-          <div className="dash-card-body space-y-4">
-            <div>
-              <label className="dash-label">Auteurs</label>
-              <div className="flex items-center gap-2">
-                {course.authors?.map((author) => (
-                  <span key={author._id} className="dash-badge">
-                    {author.name}
-                  </span>
-                ))}
-              </div>
+        <div className="space-y-4">
+          {/* Auteurs & contributeurs */}
+          <div className="dash-card">
+            <div className="dash-card-header flex items-center gap-2">
+              <Users className="w-4 h-4 text-[#f97316]" />
+              <h3 className="dash-card-title">Auteurs &amp; contributeurs</h3>
             </div>
-            <div>
-              <label className="dash-label">Statut actuel</label>
+            <div className="dash-card-body space-y-6">
+              {loadingContributors ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="w-6 h-6 animate-spin text-[#f97316]" />
+                </div>
+              ) : (
+                <>
+                  {/* Auteurs principaux */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#37352f] mb-3">
+                      Auteurs principaux
+                    </h4>
+                    {authors.length === 0 ? (
+                      <p className="text-sm text-[#9ca3af]">Aucun auteur renseigné.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {authors.map((author) => (
+                          <div
+                            key={author._id}
+                            className="flex items-center gap-3 p-3 border border-[#e3e2e0] rounded-xl hover:border-[#f97316] transition-colors"
+                          >
+                            <ProfileAvatar
+                              username={author.username}
+                              userId={author._id}
+                              size="medium"
+                              showPoints={false}
+                            />
+                            <div className="min-w-0">
+                              <p className="font-medium text-[#37352f] truncate">
+                                {author.name || author.username}
+                              </p>
+                              <span
+                                className={`inline-flex items-center gap-1 mt-0.5 text-[11px] font-medium px-1.5 py-0.5 rounded border ${roleBadgeClass(
+                                  author.role
+                                )}`}
+                              >
+                                {getRoleIconPath(author.role) && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={getRoleIconPath(author.role)!}
+                                    alt={author.role}
+                                    className="w-3.5 h-3.5 rounded-full"
+                                  />
+                                )}
+                                {author.role}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Correcteurs ayant validé des leçons */}
+                  {correctors.length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-[#37352f] mb-1">
+                        Correcteurs
+                      </h4>
+                      <p className="text-xs text-[#9ca3af] mb-3">
+                        Ont validé au moins une leçon de ce cours.
+                      </p>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {correctors.map((c) => (
+                          <div
+                            key={c._id}
+                            className="flex items-center gap-2 p-2 border border-[#e3e2e0] rounded-lg hover:border-purple-300 transition-colors"
+                          >
+                            <ProfileAvatar
+                              username={c.username}
+                              userId={c._id}
+                              size="small"
+                              showPoints={false}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-[#37352f] truncate">
+                                {c.name || c.username}
+                              </p>
+                              <span
+                                className={`inline-flex items-center gap-1 text-[10px] font-medium px-1 py-0.5 rounded border ${roleBadgeClass(
+                                  c.role
+                                )}`}
+                              >
+                                {getRoleIconPath(c.role) && (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={getRoleIconPath(c.role)!}
+                                    alt={c.role}
+                                    className="w-3 h-3 rounded-full"
+                                  />
+                                )}
+                                {c.role}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Contributeurs (leçons / exercices / quiz) */}
+                  <div>
+                    <h4 className="text-sm font-semibold text-[#37352f] mb-1">
+                      Contributeurs
+                    </h4>
+                    <p className="text-xs text-[#9ca3af] mb-3">
+                      Rédacteurs, helpeurs et correcteurs ayant créé des leçons, exercices ou quiz de ce cours.
+                    </p>
+                    {contributors.length === 0 ? (
+                      <p className="text-sm text-[#9ca3af]">Aucun autre contributeur.</p>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        {contributors.map((c) => (
+                          <div
+                            key={c._id}
+                            className="flex items-center gap-2 p-2 border border-[#e3e2e0] rounded-lg hover:border-[#f97316] transition-colors"
+                          >
+                            <ProfileAvatar
+                              username={c.username}
+                              userId={c._id}
+                              size="small"
+                              showPoints={false}
+                            />
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1.5">
+                                <p className="text-sm font-medium text-[#37352f] truncate">
+                                  {c.name || c.username}
+                                </p>
+                                <span
+                                  className={`inline-flex items-center gap-1 text-[10px] font-medium px-1 py-0.5 rounded border ${roleBadgeClass(
+                                    c.role
+                                  )}`}
+                                >
+                                  {getRoleIconPath(c.role) && (
+                                    // eslint-disable-next-line @next/next/no-img-element
+                                    <img
+                                      src={getRoleIconPath(c.role)!}
+                                      alt={c.role}
+                                      className="w-3 h-3 rounded-full"
+                                    />
+                                  )}
+                                  {c.role}
+                                </span>
+                              </div>
+                              <p className="text-[11px] text-[#9ca3af] truncate">
+                                {[
+                                  (c.contributions?.lessons || 0) > 0 &&
+                                    `${c.contributions?.lessons} leçon${
+                                      (c.contributions?.lessons || 0) > 1 ? "s" : ""
+                                    }`,
+                                  (c.contributions?.exercises || 0) > 0 &&
+                                    `${c.contributions?.exercises} exercice${
+                                      (c.contributions?.exercises || 0) > 1 ? "s" : ""
+                                    }`,
+                                  (c.contributions?.quizzes || 0) > 0 &&
+                                    `${c.contributions?.quizzes} quiz`,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ")}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Statut */}
+          <div className="dash-card">
+            <div className="dash-card-header">
+              <h3 className="dash-card-title">Statut du cours</h3>
+            </div>
+            <div className="dash-card-body">
               <p className="text-sm text-[#6b6b6b]">
                 {course.status === "publie"
                   ? "Ce cours est publié et visible par les élèves."
@@ -1112,6 +1806,102 @@ export default function CourseManagementPage() {
           </div>
         </div>
       )}
+
+      {/* Dialog d'édition d'une leçon (même logique que les quizz) */}
+      <Dialog
+        open={lessonDialogOpen}
+        onOpenChange={(open) => {
+          setLessonDialogOpen(open);
+          if (!open) {
+            setEditingLesson(null);
+            setEditingLessonSectionId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 flex flex-col gap-0 overflow-hidden">
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
+            <DialogTitle>Modifier la leçon</DialogTitle>
+          </DialogHeader>
+          {loadingLesson || !editingLesson ? (
+            <div className="flex items-center justify-center flex-1">
+              <MascotLoader message="Chargement de la leçon…" />
+            </div>
+          ) : (
+            <LessonForm
+              lesson={editingLesson}
+              lockedSectionId={editingLessonSectionId || undefined}
+              lockedSectionLabel={
+                sections.find((s) => s._id === editingLessonSectionId)?.title
+              }
+              onSuccess={handleLessonSaved}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'édition / création d'un quiz */}
+      <Dialog
+        open={quizDialogOpen}
+        onOpenChange={(open) => {
+          setQuizDialogOpen(open);
+          if (!open) {
+            setEditingQuiz(null);
+            setQuizSectionId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingQuiz ? "Modifier le quiz" : "Ajouter un quiz"}</DialogTitle>
+          </DialogHeader>
+          {loadingQuiz ? (
+            <MascotLoader message="Chargement du quiz…" />
+          ) : (
+            <QuizForm
+              sectionId={quizSectionId || undefined}
+              initialData={editingQuiz}
+              onSave={handleSaveQuiz}
+              onCancel={() => {
+                setQuizDialogOpen(false);
+                setEditingQuiz(null);
+                setQuizSectionId(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog d'édition / création d'un exercice */}
+      <Dialog
+        open={exerciseDialogOpen}
+        onOpenChange={(open) => {
+          setExerciseDialogOpen(open);
+          if (!open) {
+            setEditingExercise(null);
+            setExerciseSectionId(null);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingExercise ? "Modifier l'exercice" : "Ajouter un exercice"}
+            </DialogTitle>
+          </DialogHeader>
+          {loadingExercise ? (
+            <MascotLoader message="Chargement de l'exercice…" />
+          ) : (
+            <ExerciseForm
+              exercise={editingExercise}
+              lockedSectionId={exerciseSectionId || undefined}
+              lockedSectionLabel={
+                sections.find((s) => s._id === exerciseSectionId)?.title
+              }
+              onSuccess={handleExerciseSuccess}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
