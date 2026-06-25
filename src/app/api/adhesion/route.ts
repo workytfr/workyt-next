@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
         const {
             firstName = '',
             lastName = '',
+            dateOfBirth = '',
+            discord = '',
             address = '',
             type = '',
             motivation = '',
@@ -65,8 +67,8 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ message: 'ok' }, { status: 200 });
         }
 
-        if (!firstName.trim() || !lastName.trim() || !address.trim()) {
-            return NextResponse.json({ error: 'Merci de remplir nom, prénom et adresse postale.' }, { status: 400 });
+        if (!firstName.trim() || !lastName.trim() || !dateOfBirth || !address.trim()) {
+            return NextResponse.json({ error: 'Merci de remplir nom, prénom, date de naissance et adresse postale.' }, { status: 400 });
         }
         if (!isValidMembershipType(type)) {
             return NextResponse.json({ error: 'Statut invalide.' }, { status: 400 });
@@ -152,6 +154,8 @@ export async function POST(req: NextRequest) {
                             <hr style="border:none; border-top:1px solid #eee; margin:12px 0" />
                             <p style="margin:0 0 4px"><strong>Prénom :</strong> ${escapeHtml(firstName.trim())}</p>
                             <p style="margin:0 0 4px"><strong>Nom :</strong> ${escapeHtml(lastName.trim())}</p>
+                            <p style="margin:0 0 4px"><strong>Date de naissance :</strong> ${escapeHtml(new Date(dateOfBirth).toLocaleDateString('fr-FR'))}</p>
+                            ${discord.trim() ? `<p style="margin:0 0 4px"><strong>Discord :</strong> ${escapeHtml(discord.trim())}</p>` : ''}
                             <p style="margin:0 0 4px"><strong>Adresse postale :</strong><br/>${escapeHtml(address.trim()).replace(/\n/g, '<br/>')}</p>
                             <p style="margin:0 0 4px"><strong>Compte Workyt :</strong> ${escapeHtml(user.username)} — <a href="mailto:${user.email}" style="color:#ff6a1a">${user.email}</a></p>
                             ${motivation.trim() ? `<p style="margin:12px 0 4px"><strong>Motivation :</strong></p><p style="white-space:pre-wrap; margin:0">${escapeHtml(motivation.trim())}</p>` : ''}

@@ -39,6 +39,8 @@ export default function AdhesionPage() {
 
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
+    const [dateOfBirth, setDateOfBirth] = useState("");
+    const [discord, setDiscord] = useState("");
     const [address, setAddress] = useState("");
     const [type, setType] = useState("utilisateur");
     const [motivation, setMotivation] = useState("");
@@ -63,8 +65,8 @@ export default function AdhesionPage() {
     }, [status]);
 
     const handleSubmit = async () => {
-        if (!firstName.trim() || !lastName.trim() || !address.trim()) {
-            setError("Merci de remplir prénom, nom et adresse postale.");
+        if (!firstName.trim() || !lastName.trim() || !dateOfBirth || !address.trim()) {
+            setError("Merci de remplir prénom, nom, date de naissance et adresse postale.");
             return;
         }
         if (!consent) {
@@ -77,7 +79,7 @@ export default function AdhesionPage() {
             const res = await fetch("/api/adhesion", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ firstName, lastName, address, type, motivation, consent, company_website }),
+                body: JSON.stringify({ firstName, lastName, dateOfBirth, discord, address, type, motivation, consent, company_website }),
             });
             const data = await res.json();
             if (!res.ok) {
@@ -211,7 +213,9 @@ export default function AdhesionPage() {
                                             <Mail className="w-4 h-4" /> Envoyé au bureau, jamais stocké ici
                                         </p>
                                         <ul className="text-xs text-gray-600 space-y-1 list-disc list-inside">
+                                            <li>Votre date de naissance</li>
                                             <li>Votre adresse postale</li>
+                                            <li>Votre pseudo Discord (si fourni)</li>
                                             <li>Votre message de motivation</li>
                                         </ul>
                                         <p className="text-[11px] text-gray-400 mt-1.5">
@@ -257,6 +261,17 @@ export default function AdhesionPage() {
                                     <div>
                                         <Label htmlFor="lastName">Nom</Label>
                                         <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Dupont" />
+                                    </div>
+                                </div>
+
+                                <div className="grid sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <Label htmlFor="dob">Date de naissance</Label>
+                                        <Input id="dob" type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="discord">Pseudo Discord <span className="text-gray-400 font-normal">(optionnel)</span></Label>
+                                        <Input id="discord" value={discord} onChange={(e) => setDiscord(e.target.value)} placeholder="ex. camille#0001" />
                                     </div>
                                 </div>
 
