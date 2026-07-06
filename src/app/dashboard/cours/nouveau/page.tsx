@@ -27,6 +27,7 @@ import "katex/dist/katex.min.css";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import RichTextEditor from "@/components/ui/RichTextEditorClientWrapper";
+import RequiredMark from "@/components/ui/RequiredMark";
 import "../../styles/dashboard-theme.css";
 
 // Types
@@ -94,6 +95,10 @@ export default function CreateCoursePage() {
         }
         if (!courseData.matiere) {
           setError("La matière est requise");
+          return false;
+        }
+        if (!courseData.description.trim()) {
+          setError("La description est requise");
           return false;
         }
         return true;
@@ -316,7 +321,7 @@ export default function CreateCoursePage() {
           <div className="space-y-6">
             <div className="dash-form-group">
               <label className="dash-label">
-                Titre du cours <span className="text-red-500">*</span>
+                Titre du cours <RequiredMark />
               </label>
               <input
                 type="text"
@@ -332,7 +337,7 @@ export default function CreateCoursePage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="dash-form-group">
                 <label className="dash-label">
-                  Niveau scolaire <span className="text-red-500">*</span>
+                  Niveau scolaire <RequiredMark />
                 </label>
                 <select
                   className="dash-input"
@@ -352,7 +357,7 @@ export default function CreateCoursePage() {
 
               <div className="dash-form-group">
                 <label className="dash-label">
-                  Matière <span className="text-red-500">*</span>
+                  Matière <RequiredMark />
                 </label>
                 <select
                   className="dash-input"
@@ -372,14 +377,14 @@ export default function CreateCoursePage() {
             </div>
 
             <div className="dash-form-group">
-              <label className="dash-label">Description</label>
+              <label className="dash-label">Description <RequiredMark /></label>
               <div className="border border-[#e3e2e0] rounded-lg overflow-hidden" data-color-mode="light">
                 <MDEditor
                   value={courseData.description}
                   onChange={(value) =>
                     setCourseData({ ...courseData, description: value || "" })
                   }
-                  height={200}
+                  height={320}
                   previewOptions={{
                     remarkPlugins: [remarkMath],
                     rehypePlugins: [rehypeKatex],
@@ -620,7 +625,7 @@ export default function CreateCoursePage() {
                                 {/* Éditeur de contenu */}
                                 <div className="p-3">
                                   <label className="dash-label mb-2 flex items-center gap-1">
-                                    Contenu <span className="text-red-500">*</span>
+                                    Contenu <RequiredMark />
                                   </label>
                                   <RichTextEditor
                                     content={lesson.content || ""}
@@ -747,7 +752,7 @@ export default function CreateCoursePage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       {/* En-tête */}
       <div className="mb-8">
         <h1 className="dash-main-title">Créer un nouveau cours</h1>

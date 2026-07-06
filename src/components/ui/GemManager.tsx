@@ -924,7 +924,7 @@ const GemManager: React.FC = () => {
           variant="outline"
           className="w-full mb-4 rounded-xl"
         >
-          {showHistory ? 'Masquer l&apos;historique' : 'Afficher l&apos;historique'}
+          {showHistory ? "Masquer l'historique" : "Afficher l'historique"}
         </Button>
 
         {showHistory && (

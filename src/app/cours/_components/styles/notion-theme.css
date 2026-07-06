@@ -471,6 +471,15 @@
   margin-bottom: 0.5rem;
 }
 
+/* Indentation renforcée des listes imbriquées (sous-parties) */
+.notion-lesson-content ul ul,
+.notion-lesson-content ol ol,
+.notion-lesson-content ul ol,
+.notion-lesson-content ol ul {
+  margin: 0.5rem 0;
+  padding-left: 2rem;
+}
+
 .notion-lesson-content blockquote {
   margin: 1.5rem 0;
   padding: 1rem 1.25rem;

@@ -904,7 +904,7 @@
   .lesson-content li { margin-bottom: 0.5rem; padding-left: 0.5rem; line-height: 1.8; }
   .lesson-content li:last-child { margin-bottom: 0; }
   .lesson-content ul ul, .lesson-content ol ol, .lesson-content ul ol, .lesson-content ol ul {
-    margin-top: 0.5rem; margin-bottom: 0.5rem; margin-left: 1.25rem;
+    margin-top: 0.5rem; margin-bottom: 0.5rem; margin-left: 2rem; padding-left: 0.5rem;
   }
 
   /* Tableaux */

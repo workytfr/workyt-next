@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -61,6 +61,7 @@ import QuizForm from "@/app/dashboard/_components/QuizForm";
 import ExerciseForm from "@/app/dashboard/_components/ExerciceForm";
 import type { ILesson } from "@/models/Lesson";
 import ProfileAvatar from "@/components/ui/profile";
+import AuthorReassign from "@/components/ui/AuthorReassign";
 import MascotLoader from "@/components/ui/MascotLoader";
 import { getRoleIconPath } from "@/lib/roleIcon";
 import "../../../styles/dashboard-theme.css";
@@ -224,12 +225,14 @@ function SortableLesson({
   onEdit,
   onDelete,
   canDelete,
+  adminSlot,
 }: {
   lesson: Lesson;
   index: number;
   onEdit: () => void;
   onDelete: () => void;
   canDelete: boolean;
+  adminSlot?: ReactNode;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: lesson._id });
@@ -259,6 +262,7 @@ function SortableLesson({
       <FileText className="w-4 h-4 text-[#6b6b6b]" />
       <span className="flex-1 text-[#37352f]">{lesson.title}</span>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {adminSlot}
         <button
           onClick={onEdit}
           className="p-1.5 hover:bg-[#f7f6f3] rounded"
@@ -395,6 +399,27 @@ export default function CourseManagementPage() {
 
     fetchContributors();
   }, [activeTab, id, session?.accessToken]);
+
+  // Recharge auteurs & contributeurs (ex: après réassignation d'auteur par un admin)
+  const reloadContributors = async () => {
+    if (!id || !session?.accessToken) return;
+    setLoadingContributors(true);
+    try {
+      const res = await fetch(`/api/courses/${id}/contributors`, {
+        headers: { Authorization: `Bearer ${session.accessToken}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAuthors(data.authors || []);
+        setCorrectors(data.correctors || []);
+        setContributors(data.contributors || []);
+      }
+    } catch {
+      // silencieux
+    } finally {
+      setLoadingContributors(false);
+    }
+  };
 
   // Sauvegarder les modifications du cours
   const saveCourse = async () => {
@@ -1401,6 +1426,15 @@ export default function CourseManagementPage() {
                                       deleteLesson(lesson._id, section._id)
                                     }
                                     canDelete={canDeleteLesson}
+                                    adminSlot={
+                                      isAdmin ? (
+                                        <AuthorReassign
+                                          type="lesson"
+                                          id={lesson._id}
+                                          accessToken={session?.accessToken}
+                                        />
+                                      ) : undefined
+                                    }
                                   />
                                 ))}
 
@@ -1504,6 +1538,13 @@ export default function CourseManagementPage() {
                                     {quiz.questions?.length || 0}
                                   </span>
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {isAdmin && (
+                                      <AuthorReassign
+                                        type="quiz"
+                                        id={quiz._id}
+                                        accessToken={session?.accessToken}
+                                      />
+                                    )}
                                     <button
                                       onClick={() => openQuizEditor(quiz._id, section._id)}
                                       className="p-1.5 hover:bg-[#f7f6f3] rounded"
@@ -1556,6 +1597,13 @@ export default function CourseManagementPage() {
                                   <Dumbbell className="w-4 h-4 text-[#059669]" />
                                   <span className="flex-1 text-[#37352f]">{exercise.title}</span>
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    {isAdmin && (
+                                      <AuthorReassign
+                                        type="exercise"
+                                        id={exercise._id}
+                                        accessToken={session?.accessToken}
+                                      />
+                                    )}
                                     <button
                                       onClick={() => openExerciseEditor(exercise._id, section._id)}
                                       className="p-1.5 hover:bg-[#f7f6f3] rounded"
@@ -1627,9 +1675,22 @@ export default function CourseManagementPage() {
                 <>
                   {/* Auteurs principaux */}
                   <div>
-                    <h4 className="text-sm font-semibold text-[#37352f] mb-3">
-                      Auteurs principaux
-                    </h4>
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-sm font-semibold text-[#37352f]">
+                        Auteurs principaux
+                      </h4>
+                      {isAdmin && (
+                        <AuthorReassign
+                          type="course"
+                          id={String(id)}
+                          accessToken={session?.accessToken}
+                          currentAuthorName={authors
+                            .map((a) => a.name || a.username)
+                            .join(", ")}
+                          onChanged={reloadContributors}
+                        />
+                      )}
+                    </div>
                     {authors.length === 0 ? (
                       <p className="text-sm text-[#9ca3af]">Aucun auteur renseigné.</p>
                     ) : (

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { evalFileUrl } from "@/lib/evalFile";
 import EvaluationPdfBuilder from "../_components/EvaluationPdfBuilder";
+import AuthorReassign from "@/components/ui/AuthorReassign";
 import {
     FileCheck,
     Loader2,
@@ -1019,6 +1020,14 @@ export default function ManageEvaluationsPage() {
                                     >
                                         <Pencil className="w-4 h-4 text-[#6b6b6b]" />
                                     </button>
+                                    {session?.user?.role === "Admin" && (
+                                        <AuthorReassign
+                                            type="evaluation"
+                                            id={ev._id}
+                                            accessToken={session?.accessToken}
+                                            currentAuthorName={ev.createdBy?.username}
+                                        />
+                                    )}
                                     {session?.user?.role === "Admin" && (
                                         <button
                                             onClick={() => handleDelete(ev._id)}

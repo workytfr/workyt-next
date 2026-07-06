@@ -34,15 +34,9 @@ export const InfiniteMovingCards = ({
 
     function addAnimation() {
         if (containerRef.current && scrollerRef.current) {
-            const scrollerContent = Array.from(scrollerRef.current.children);
-
-            scrollerContent.forEach((item) => {
-                const duplicatedItem = item.cloneNode(true);
-                if (scrollerRef.current) {
-                    scrollerRef.current.appendChild(duplicatedItem);
-                }
-            });
-
+            // NB : on ne clone PAS le DOM (cloneNode) car les avatars sont rendus
+            // sur des <canvas>, qui apparaissent vides une fois clonés (profils blancs).
+            // La duplication est faite côté React ci-dessous ([...items, ...items]).
             getDirection();
             getSpeed();
             setStart(true);
@@ -105,7 +99,7 @@ export const InfiniteMovingCards = ({
                     pauseOnHover && "hover:[animation-play-state:paused]"
                 )}
             >
-                {items.map((item, idx) => (
+                {[...items, ...items].map((item, idx) => (
                     <li
                         className={cn(
                             "w-[350px] h-[280px] max-w-full relative rounded-2xl flex-shrink-0 overflow-hidden",

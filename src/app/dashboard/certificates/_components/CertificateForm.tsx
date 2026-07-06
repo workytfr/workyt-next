@@ -65,7 +65,7 @@ export default function CertificateForm({ certificate, onSubmit, onCancel }: Cer
     }
 
     if (!formData.issuedBy.trim()) {
-      newErrors.issuedBy = 'Le nom de l&apos;émetteur est requis';
+      newErrors.issuedBy = "Le nom de l'émetteur est requis";
     }
 
     if (formData.missions.length === 0 || formData.missions.every(m => !m.trim())) {
