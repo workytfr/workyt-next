@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/Textarea";
 import { useSession } from "next-auth/react";
@@ -19,13 +19,33 @@ interface CommentFormProps {
         userId: string;
         createdAt: string;
     }) => void;
+    /** Temps réel : signaler la frappe (avec le nb de mots). */
+    onTypingStart?: (wordCount: number) => void;
+    /** Temps réel : signaler l'arrêt de la frappe. */
+    onTypingStop?: () => void;
 }
 
-export default function CommentForm({ revisionId, currentUser, onPosted }: CommentFormProps) {
+export default function CommentForm({ revisionId, currentUser, onPosted, onTypingStart, onTypingStop }: CommentFormProps) {
     const { data: session } = useSession();
     const [content, setContent] = useState("");
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
+
+    // Temps réel : émettre la frappe + le nombre de mots (auto-stop après 2,5 s)
+    useEffect(() => {
+        if (!onTypingStart || content.trim().length === 0) return;
+        const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+        onTypingStart(wordCount);
+        const t = setTimeout(() => onTypingStop?.(), 2500);
+        return () => clearTimeout(t);
+    }, [content, onTypingStart, onTypingStop]);
+
+    // Stopper la frappe au démontage
+    useEffect(() => {
+        return () => {
+            onTypingStop?.();
+        };
+    }, [onTypingStop]);
 
     const trimmed = content.trim();
     const charCount = content.length;
@@ -64,6 +84,7 @@ export default function CommentForm({ revisionId, currentUser, onPosted }: Comme
                 createdAt: newComment.createdAt || new Date().toISOString(),
             });
             setContent("");
+            onTypingStop?.();
         } catch (err: any) {
             setError(err.message);
         } finally {

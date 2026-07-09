@@ -14,6 +14,7 @@ import { useSession, signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { ILesson } from "@/models/Lesson";
 import RichTextEditor from "@/components/ui/RichTextEditorClientWrapper";
+import EditingPresenceBanner from "@/components/ui/EditingPresenceBanner";
 
 interface ICourse {
     _id: string;
@@ -56,6 +57,9 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
     const [files, setFiles] = useState<File[]>([]);
     const [loading, setLoading] = useState(false);
     const [loadingCourses, setLoadingCourses] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    // Version (__v) pour le verrou optimiste
+    const [version, setVersion] = useState<number | undefined>((lesson as any)?.__v);
 
     // Tracker si le formulaire a été modifié
     const initialValues = useRef({ title: lesson?.title || "", content: lesson?.content || "" });
@@ -110,6 +114,7 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
             // Transformer le HTML pour TipTap
             const transformedContent = transformHtmlForTipTap(lesson.content || "");
             setContent(transformedContent);
+            setVersion((lesson as any).__v);
         }
     }, [lesson]);
 
@@ -172,6 +177,7 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
         }
 
         setLoading(true);
+        setError(null);
         try {
             let res;
             if (lesson) {
@@ -181,6 +187,7 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
                     title,
                     content,
                     authorId: session.user.id,
+                    version, // verrou optimiste
                 };
                 res = await fetch(`/api/lessons/${lesson._id}`, {
                     method: "PUT",
@@ -209,8 +216,17 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
                 await update();
                 return;
             }
+            if (res.status === 409) {
+                const data = await res.json().catch(() => ({}));
+                setError(
+                    data.message ||
+                        "Cette leçon vient d'être modifiée par quelqu'un d'autre. Rechargez avant de sauvegarder."
+                );
+                return;
+            }
             if (!res.ok) throw new Error(await res.text());
             const updatedLesson: ILesson = await res.json();
+            setVersion((updatedLesson as any).__v); // rafraîchit la version pour une re-sauvegarde éventuelle
             onSuccess(updatedLesson);
 
             // Réinitialiser le formulaire en mode création
@@ -234,6 +250,20 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
             onSubmit={handleSubmit}
             className="flex flex-col flex-1 min-h-0 overflow-hidden"
         >
+            {/* Bandeau de conflit (verrou optimiste) */}
+            {error && (
+                <div className="px-6 py-2 bg-red-50 border-b border-red-200 text-sm text-red-700 shrink-0">
+                    {error}
+                </div>
+            )}
+
+            {/* Phase 2 : présence d'édition (autres personnes sur cette leçon) */}
+            {lesson?._id && (
+                <div className="px-6 pt-3 shrink-0">
+                    <EditingPresenceBanner room={`edit:lesson:${lesson._id}`} label="cette leçon" />
+                </div>
+            )}
+
             {/* Barre métadonnées compacte */}
             <div className="px-6 py-3 border-b bg-gray-50/50 shrink-0">
                 {lockedSectionId ? (

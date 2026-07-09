@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import EditingPresenceBanner from "@/components/ui/EditingPresenceBanner";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1036,6 +1037,10 @@ export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, i
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl">
+            {/* Phase 2 : présence d'édition (autres personnes sur ce quiz) */}
+            {initialData?._id && (
+                <EditingPresenceBanner room={`edit:quiz:${initialData._id}`} label="ce quiz" />
+            )}
             {/* Quiz info card */}
             <Card className="border-2">
                 <CardHeader className="pb-3">

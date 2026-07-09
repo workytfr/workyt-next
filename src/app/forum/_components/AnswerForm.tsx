@@ -43,9 +43,13 @@ interface AnswerFormProps {
     questionStatus?: string;
     /** Trigger externe pour insérer une citation dans le formulaire. */
     quoteTrigger?: QuoteTrigger | null;
+    /** Temps réel : signaler que l'utilisateur est en train d'écrire (avec le nb de mots). */
+    onTypingStart?: (wordCount: number) => void;
+    /** Temps réel : signaler l'arrêt de la frappe. */
+    onTypingStop?: () => void;
 }
 
-export default function AnswerForm({ questionId, onSubmitted, questionStatus, quoteTrigger }: AnswerFormProps) {
+export default function AnswerForm({ questionId, onSubmitted, questionStatus, quoteTrigger, onTypingStart, onTypingStop }: AnswerFormProps) {
     const { data: session, status: sessionStatus } = useSession();
     const draftKey = `forum-answer-draft-${questionId}`;
 
@@ -200,6 +204,22 @@ export default function AnswerForm({ questionId, onSubmitted, questionStatus, qu
 
     const removeFile = (idx: number) => setFiles((prev) => prev.filter((_, i) => i !== idx));
 
+    // Temps réel : émettre l'état de frappe + le nombre de mots (auto-stop après 2,5 s d'inactivité)
+    useEffect(() => {
+        if (!onTypingStart || !expanded || content.trim().length === 0) return;
+        const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+        onTypingStart(wordCount);
+        const t = setTimeout(() => onTypingStop?.(), 2500);
+        return () => clearTimeout(t);
+    }, [content, expanded, onTypingStart, onTypingStop]);
+
+    // Stopper la frappe au démontage du formulaire
+    useEffect(() => {
+        return () => {
+            onTypingStop?.();
+        };
+    }, [onTypingStop]);
+
     const handleSubmit = async () => {
         if (!content.trim()) return;
         if (content.trim().length < 30) {
@@ -238,6 +258,7 @@ export default function AnswerForm({ questionId, onSubmitted, questionStatus, qu
             setContent("");
             setFiles([]);
             setExpanded(false);
+            onTypingStop?.();
             onSubmitted?.(json.data);
         } catch (error: any) {
             console.error("Erreur:", error);

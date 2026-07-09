@@ -53,6 +53,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         const resolvedParams = await params;
 
         const body = await req.json();
+        // `version` (__v chargé par le client) → verrou optimiste
+        const { version, ...updateData } = body;
         const existingLesson = await Lesson.findById(resolvedParams.id);
 
         if (!existingLesson) {
@@ -68,8 +70,28 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
-        // Mise à jour de la leçon
-        const updatedLesson = await Lesson.findByIdAndUpdate(resolvedParams.id, body, { new: true });
+        // 🔒 Verrou optimiste : refuse l'écriture si la leçon a changé depuis son ouverture
+        // (évite l'écrasement silencieux du travail d'un autre rédacteur/correcteur).
+        let updatedLesson;
+        if (typeof version === "number") {
+            updatedLesson = await Lesson.findOneAndUpdate(
+                { _id: resolvedParams.id, __v: version },
+                { $set: updateData, $inc: { __v: 1 } },
+                { new: true }
+            );
+            if (!updatedLesson) {
+                return NextResponse.json(
+                    {
+                        error: "conflict",
+                        message:
+                            "Cette leçon a été modifiée par quelqu'un d'autre depuis son ouverture. Rechargez pour récupérer la dernière version avant de sauvegarder (sinon vous écraseriez son travail).",
+                    },
+                    { status: 409 }
+                );
+            }
+        } else {
+            updatedLesson = await Lesson.findByIdAndUpdate(resolvedParams.id, updateData, { new: true });
+        }
 
         return NextResponse.json(updatedLesson, { status: 200 });
     } catch (error: any) {

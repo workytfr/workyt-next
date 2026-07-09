@@ -7,6 +7,9 @@ import AnswerForm from "@/app/forum/_components/AnswerForm";
 import QuestionDetail from "@/app/forum/_components/QuestionView";
 import AnswerList from "@/app/forum/_components/AnswerList";
 import { QuestionSkeleton, AnswerSkeleton } from "@/app/forum/_components/QuestionSkeleton";
+import ForumPresenceBar from "@/app/forum/_components/ForumPresenceBar";
+import TypingSkeleton from "@/app/forum/_components/TypingSkeleton";
+import { useForumRealtime } from "@/hooks/useForumRealtime";
 import {
     FaSearch,
     FaArrowLeft,
@@ -39,7 +42,8 @@ export default function QuestionDetailPage({
     const { data: session } = useSession();
     const params = useParams();
     // Utilisez l'ID passé en prop s'il existe, sinon récupérez-le depuis l'URL
-    const id = propId || params?.id;
+    const rawId = propId || params?.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
 
     const [question, setQuestion] = useState<any>(initialQuestion ?? null);
     const [answers, setAnswers] = useState<any[]>(initialAnswers ?? []);
@@ -112,6 +116,9 @@ export default function QuestionDetailPage({
         fetchQuestion();
     }, [fetchQuestion]);
 
+    // Temps réel : réponses en direct + indicateur de frappe + présence
+    const { typingUsers, startTyping, stopTyping, presentMembers } = useForumRealtime(id, fetchQuestion);
+
     return (
         <div className="min-h-screen bg-gray-50">
             {/* Header avec dégradé */}
@@ -178,6 +185,13 @@ export default function QuestionDetailPage({
             {/* Contenu principal */}
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <div className="flex flex-col items-center">
+                    {/* Présence temps réel : membres actuellement sur la question */}
+                    {presentMembers.length > 0 && (
+                        <div className="w-full max-w-5xl mb-4 flex items-center justify-end">
+                            <ForumPresenceBar members={presentMembers} />
+                        </div>
+                    )}
+
                     {/* Section de la question */}
                     <div className="w-full max-w-5xl">
                         {loading ? (
@@ -221,11 +235,28 @@ export default function QuestionDetailPage({
                                 questionId={id as string}
                                 questionStatus={question.status}
                                 quoteTrigger={quoteTrigger}
+                                onTypingStart={startTyping}
+                                onTypingStop={stopTyping}
                                 onSubmitted={(answer) => {
                                     if (answer) setAnswers((prev) => [answer, ...prev]);
                                     else fetchQuestion();
                                 }}
                             />
+                        </div>
+                    )}
+
+                    {/* Indicateur temps réel : réponses en cours de rédaction (squelette + compteur de mots) */}
+                    {!loading && question && typingUsers.length > 0 && (
+                        <div className="w-full max-w-5xl mt-4 space-y-3">
+                            {typingUsers.slice(0, 3).map((u) => (
+                                <TypingSkeleton key={u.userId} user={u} />
+                            ))}
+                            {typingUsers.length > 3 && (
+                                <p className="text-sm text-gray-400 pl-1">
+                                    + {typingUsers.length - 3} autre
+                                    {typingUsers.length - 3 > 1 ? "s" : ""} en train d&apos;écrire…
+                                </p>
+                            )}
                         </div>
                     )}
 

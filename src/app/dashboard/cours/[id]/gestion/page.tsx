@@ -62,6 +62,7 @@ import ExerciseForm from "@/app/dashboard/_components/ExerciceForm";
 import type { ILesson } from "@/models/Lesson";
 import ProfileAvatar from "@/components/ui/profile";
 import AuthorReassign from "@/components/ui/AuthorReassign";
+import EditingPresenceBanner from "@/components/ui/EditingPresenceBanner";
 import MascotLoader from "@/components/ui/MascotLoader";
 import { getRoleIconPath } from "@/lib/roleIcon";
 import { educationData } from "@/data/educationData";
@@ -77,6 +78,7 @@ interface Course {
   status: string;
   image?: string;
   authors?: Array<{ _id: string; name: string }>;
+  __v?: number; // version (verrou optimiste)
 }
 
 interface SectionResource {
@@ -440,6 +442,7 @@ export default function CourseManagementPage() {
           niveau: editedCourse.niveau,
           matiere: editedCourse.matiere,
           image: editedCourse.image,
+          version: editedCourse.__v, // verrou optimiste
         }),
       });
 
@@ -447,8 +450,15 @@ export default function CourseManagementPage() {
         const data = await res.json();
         const updatedCourse = data.course || data;
         setCourse(updatedCourse);
+        setEditedCourse(updatedCourse); // rafraîchit la version (__v) pour la prochaine sauvegarde
         setEditingCourse(false);
         showSuccess("Cours mis à jour avec succès");
+      } else if (res.status === 409) {
+        const data = await res.json();
+        setError(
+          data.message ||
+            "Ce cours vient d'être modifié par quelqu'un d'autre. Rechargez la page avant de sauvegarder."
+        );
       } else {
         const data = await res.json();
         throw new Error(data.error || "Erreur lors de la sauvegarde");
@@ -695,9 +705,19 @@ export default function CourseManagementPage() {
             "Content-Type": "application/json",
             Authorization: `Bearer ${session?.accessToken}`,
           },
-          body: JSON.stringify(quizData),
+          body: JSON.stringify(
+            isEdit ? { ...quizData, version: editingQuiz.__v } : quizData
+          ),
         }
       );
+      if (res.status === 409) {
+        const data = await res.json().catch(() => ({}));
+        setError(
+          data.message ||
+            "Ce quiz vient d'être modifié par quelqu'un d'autre. Rechargez avant de sauvegarder."
+        );
+        return;
+      }
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Erreur lors de la sauvegarde du quiz");
@@ -1124,6 +1144,7 @@ export default function CourseManagementPage() {
 
           {editingCourse && editedCourse && (
             <div className="mt-4 space-y-4 border-t border-[#e3e2e0] pt-4">
+              <EditingPresenceBanner room={`edit:course:${id}`} label="ce cours" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="dash-label">Matière</label>

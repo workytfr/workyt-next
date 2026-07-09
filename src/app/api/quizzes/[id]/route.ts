@@ -261,6 +261,7 @@ export async function PATCH(
         }
 
         const updates = await req.json();
+        const version = updates.version; // __v chargé par le client → verrou optimiste
 
         // Only allow certain fields to be updated
         const allowedFields = ["title", "description", "questions", "sectionId", "lessonId", "competencies", "timeBonus", "timePenalty"];
@@ -276,14 +277,38 @@ export async function PATCH(
             return NextResponse.json({ error: "Aucune mise à jour valide" }, { status: 400 });
         }
 
-        const quiz = await Quiz.findByIdAndUpdate(
-            id,
-            { $set: filteredUpdates },
-            { new: true, runValidators: true }
-        ).lean();
-
-        if (!quiz) {
-            return NextResponse.json({ error: "Quiz non trouvé" }, { status: 404 });
+        // 🔒 Verrou optimiste : refuse l'écriture si le quiz a changé depuis son ouverture
+        let quiz;
+        if (typeof version === "number") {
+            quiz = await Quiz.findOneAndUpdate(
+                { _id: id, __v: version },
+                { $set: filteredUpdates, $inc: { __v: 1 } },
+                { new: true, runValidators: true }
+            ).lean();
+            if (!quiz) {
+                // Distinguer "n'existe plus" (404) d'un conflit de version (409)
+                const exists = await Quiz.exists({ _id: id });
+                if (exists) {
+                    return NextResponse.json(
+                        {
+                            error: "conflict",
+                            message:
+                                "Ce quiz a été modifié par quelqu'un d'autre depuis son ouverture. Rechargez pour récupérer la dernière version avant de sauvegarder (sinon vous écraseriez son travail).",
+                        },
+                        { status: 409 }
+                    );
+                }
+                return NextResponse.json({ error: "Quiz non trouvé" }, { status: 404 });
+            }
+        } else {
+            quiz = await Quiz.findByIdAndUpdate(
+                id,
+                { $set: filteredUpdates },
+                { new: true, runValidators: true }
+            ).lean();
+            if (!quiz) {
+                return NextResponse.json({ error: "Quiz non trouvé" }, { status: 404 });
+            }
         }
 
         return NextResponse.json({ quiz }, { status: 200 });

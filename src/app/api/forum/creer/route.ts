@@ -9,6 +9,7 @@ import dbConnect from "@/lib/mongodb";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { notifySeo } from '@/lib/seoNotify';
 import { buildIdSlug } from '@/utils/slugify';
+import { emitForumEvent } from '@/lib/realtime/emit';
 
 // Exécuter ce route handler en runtime Node.js
 export const runtime = "nodejs";
@@ -207,6 +208,13 @@ export async function POST(req: NextRequest) {
         } catch (seoErr) {
             console.error("notifySeo error (non blocking):", seoErr);
         }
+
+        // Temps réel : notifier la liste du forum d'une nouvelle question
+        emitForumEvent("question:new", {
+            questionId: question._id.toString(),
+            subject,
+            classLevel,
+        });
 
         return NextResponse.json(question, { status: 201 });
     } catch (err: any) {

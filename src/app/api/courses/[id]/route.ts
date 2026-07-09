@@ -44,6 +44,8 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const body = await req.json();
+        // `version` = numéro de version (__v) chargé par le client → verrou optimiste
+        const { version, ...updateData } = body;
         const { id } = await params;
         const existingCourse = await Course.findById(id);
 
@@ -60,7 +62,30 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
-        const updatedCourse = await Course.findByIdAndUpdate(id, body, { new: true });
+        // 🔒 Verrou optimiste : si le client envoie la version chargée, on refuse
+        // l'écriture quand le cours a changé entre-temps (évite l'écrasement silencieux
+        // du travail d'un autre rédacteur/correcteur).
+        let updatedCourse;
+        if (typeof version === "number") {
+            updatedCourse = await Course.findOneAndUpdate(
+                { _id: id, __v: version },
+                { $set: updateData, $inc: { __v: 1 } },
+                { new: true }
+            );
+            if (!updatedCourse) {
+                return NextResponse.json(
+                    {
+                        error: "conflict",
+                        message:
+                            "Ce cours a été modifié par quelqu'un d'autre depuis son ouverture. Rechargez pour récupérer la dernière version avant de sauvegarder (sinon vous écraseriez son travail).",
+                    },
+                    { status: 409 }
+                );
+            }
+        } else {
+            // Rétrocompatibilité : pas de version envoyée → comportement historique
+            updatedCourse = await Course.findByIdAndUpdate(id, updateData, { new: true });
+        }
 
         // La page /cours/[coursId] est générée statiquement (SSG) : sans revalidation,
         // les champs édités (matière, niveau, titre…) restent figés sur l'ancienne valeur.

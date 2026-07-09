@@ -6,6 +6,9 @@ import CommentItem from "./CommentItem";
 import CommentForm from "./CommentForm";
 import { Button } from "@/components/ui/button";
 import { MessageSquare, MessageSquarePlus, Loader2 } from "lucide-react";
+import { useThreadRealtime } from "@/hooks/useThreadRealtime";
+import TypingSkeleton from "@/app/forum/_components/TypingSkeleton";
+import ForumPresenceBar from "@/app/forum/_components/ForumPresenceBar";
 
 interface Comment {
     id: string;
@@ -63,6 +66,32 @@ export default function CommentsList({ revisionId, ficheAuthorId, currentUser }:
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [page]);
 
+    // Temps réel : recharge la 1ʳᵉ page et préfixe les nouveaux commentaires (dédup)
+    const refreshLatest = useCallback(async () => {
+        try {
+            const response = await fetch(
+                `/api/comment?revisionId=${revisionId}&page=1&limit=5`
+            );
+            if (!response.ok) return;
+            const data = await response.json();
+            setComments((prev) => {
+                const newOnes = (data.comments as Comment[]).filter(
+                    (c) => !prev.some((p) => p.id === c.id)
+                );
+                return newOnes.length ? [...newOnes, ...prev] : prev;
+            });
+            setTotal(data.pagination?.totalComments ?? 0);
+        } catch {
+            /* silencieux */
+        }
+    }, [revisionId]);
+
+    // Temps réel du fil de commentaires (présence + frappe + commentaires en direct)
+    const { typingUsers, startTyping, stopTyping, presentMembers } = useThreadRealtime(
+        revisionId ? `fiche:${revisionId}` : undefined,
+        refreshLatest
+    );
+
     const handlePosted = (newComment: Comment) => {
         setComments((prev) => [newComment, ...prev]);
         setTotal((t) => t + 1);
@@ -86,6 +115,8 @@ export default function CommentsList({ revisionId, ficheAuthorId, currentUser }:
                         </span>
                     )}
                 </h3>
+                {/* Présence temps réel : membres actuellement sur la fiche */}
+                <ForumPresenceBar members={presentMembers} />
             </div>
 
             {/* Formulaire (si connecté) */}
@@ -94,7 +125,24 @@ export default function CommentsList({ revisionId, ficheAuthorId, currentUser }:
                     revisionId={revisionId}
                     currentUser={currentUser}
                     onPosted={handlePosted}
+                    onTypingStart={startTyping}
+                    onTypingStop={stopTyping}
                 />
+            )}
+
+            {/* Indicateur temps réel : commentaires en cours de rédaction (squelette + compteur) */}
+            {typingUsers.length > 0 && (
+                <div className="space-y-3">
+                    {typingUsers.slice(0, 3).map((u) => (
+                        <TypingSkeleton key={u.userId} user={u} />
+                    ))}
+                    {typingUsers.length > 3 && (
+                        <p className="text-sm text-gray-400">
+                            + {typingUsers.length - 3} autre
+                            {typingUsers.length - 3 > 1 ? "s" : ""} en train d&apos;écrire…
+                        </p>
+                    )}
+                </div>
             )}
 
             {/* Liste des commentaires */}

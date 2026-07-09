@@ -12,6 +12,7 @@ import { BadgeService } from "@/lib/badgeService";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { buildIdSlug } from "@/utils/slugify";
 import { parseMentions, type Participant } from "@/lib/mentionsParser";
+import { emitAnswerChanged } from "@/lib/realtime/emit";
 
 // Configuration S3/R2 (compatible S3_* et R2_*)
 const s3Client = new S3Client({
@@ -251,6 +252,9 @@ export async function POST(
 
         const canonicalSlug = buildIdSlug(question._id.toString(), question.slug || question.title);
         revalidatePath(`/forum/${canonicalSlug}`);
+
+        // Temps réel : prévenir les clients présents sur la question
+        emitAnswerChanged(question._id.toString(), { answerId: newAnswer._id.toString() });
 
         return NextResponse.json(
             { success: true, message: "Réponse ajoutée avec succès.", data: newAnswer },

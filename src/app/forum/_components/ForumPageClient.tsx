@@ -32,9 +32,11 @@ import {
     Zap,
     BookOpen,
     Dumbbell,
+    Sparkles,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
+import { useForumListRealtime } from "@/hooks/useForumListRealtime";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { Badge } from "@/components/ui/Badge";
 import { getSubjectColor, getLevelColor, educationData } from "@/data/educationData";
@@ -100,6 +102,10 @@ export default function ForumPageClient() {
     const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
     const [contextFilter, setContextFilter] = useState<string>(searchParams.get("contextType") || "");
     const [contextIdFilter, setContextIdFilter] = useState<string>(searchParams.get("contextId") || "");
+    const [refreshKey, setRefreshKey] = useState<number>(0);
+
+    // Temps réel : nombre de nouvelles questions postées pendant la consultation
+    const { newCount, reset } = useForumListRealtime();
 
     useEffect(() => {
         async function fetchQuestions() {
@@ -123,7 +129,7 @@ export default function ForumPageClient() {
             }
         }
         fetchQuestions();
-    }, [page, search, subject, classLevel, status, contextFilter, contextIdFilter]);
+    }, [page, search, subject, classLevel, status, contextFilter, contextIdFilter, refreshKey]);
 
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -318,6 +324,25 @@ export default function ForumPageClient() {
                         </motion.div>
                     )}
                 </div>
+
+                {/* Bandeau temps réel : nouvelles questions postées en direct */}
+                {newCount > 0 && (
+                    <button
+                        onClick={() => {
+                            reset();
+                            setPage(1);
+                            setRefreshKey((k) => k + 1);
+                            window.scrollTo({ top: 0, behavior: "smooth" });
+                        }}
+                        className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors shadow-sm"
+                    >
+                        <Sparkles className="w-4 h-4" />
+                        {newCount === 1
+                            ? "1 nouvelle question"
+                            : `${newCount} nouvelles questions`}{" "}
+                        — Afficher
+                    </button>
+                )}
 
                 {/* Question list */}
                 {loading ? (

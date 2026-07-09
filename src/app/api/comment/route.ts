@@ -6,6 +6,7 @@ import User from "@/models/User";
 import authMiddleware from "@/middlewares/authMiddleware";
 import mongoose from "mongoose";
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { emitThreadItemNew } from '@/lib/realtime/emit';
 
 connectDB();
 
@@ -66,6 +67,9 @@ export async function POST(req: NextRequest) {
         // Notification de l'auteur de la fiche
         const { NotificationService } = await import('@/lib/notificationService');
         await NotificationService.notifyNewFicheComment(revisionId, user._id.toString());
+
+        // Temps réel : prévenir les membres présents sur la fiche
+        emitThreadItemNew(`fiche:${revisionId}`, { commentId: newComment._id.toString() });
 
         return NextResponse.json(
             { success: true, data: newComment },
