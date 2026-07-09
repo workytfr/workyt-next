@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
@@ -34,27 +34,26 @@ export default function AdvancedSearch({ onFiltersChange, isLoading = false, tot
         maxPoints: 999999
     });
 
-    const [debouncedQuery, setDebouncedQuery] = useState("");
+    // Réf pour lire les filtres à jour sans re-déclencher les effets à chaque frappe
+    const filtersRef = useRef(filters);
+    filtersRef.current = filters;
 
-    // Debounce pour la recherche
+    // Les filtres avancés (rôle, tri, badges, points) s'appliquent immédiatement.
+    // La recherche texte, elle, ne se déclenche QU'À la validation (Entrée / bouton),
+    // pas en temps réel → plus de rechargement à chaque caractère ni de perte de focus.
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedQuery(filters.query);
-        }, 300);
+        onFiltersChange({ ...filtersRef.current });
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [filters.role, filters.sortBy, filters.sortOrder, filters.hasBadges, filters.minPoints, filters.maxPoints]);
 
-        return () => clearTimeout(timer);
-    }, [filters.query]);
-
-    useEffect(() => {
-        onFiltersChange({ ...filters, query: debouncedQuery });
-    }, [debouncedQuery, filters.role, filters.sortBy, filters.sortOrder, filters.hasBadges, filters.minPoints, filters.maxPoints]);
+    const submitSearch = () => onFiltersChange({ ...filtersRef.current });
 
     const handleFilterChange = (key: keyof SearchFilters, value: any) => {
         setFilters(prev => ({ ...prev, [key]: value }));
     };
 
     const clearFilters = () => {
-        setFilters({
+        const cleared: SearchFilters = {
             query: "",
             role: "all",
             sortBy: "createdAt",
@@ -62,7 +61,9 @@ export default function AdvancedSearch({ onFiltersChange, isLoading = false, tot
             hasBadges: false,
             minPoints: 0,
             maxPoints: 999999
-        });
+        };
+        setFilters(cleared);
+        onFiltersChange(cleared);
     };
 
     const hasActiveFilters = filters.query || (filters.role && filters.role !== "all") || filters.hasBadges || filters.minPoints > 0 || filters.maxPoints < 999999;
@@ -74,13 +75,22 @@ export default function AdvancedSearch({ onFiltersChange, isLoading = false, tot
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                     <Input
-                        placeholder="Rechercher par nom, email, username..."
+                        placeholder="Rechercher par nom, email, username… (Entrée pour valider)"
                         value={filters.query}
                         onChange={(e) => handleFilterChange("query", e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                submitSearch();
+                            }
+                        }}
                         className="pl-10"
-                        disabled={isLoading}
                     />
                 </div>
+                <Button onClick={submitSearch} disabled={isLoading}>
+                    <Search className="h-4 w-4 mr-2" />
+                    Rechercher
+                </Button>
                 <Button
                     variant="outline"
                     onClick={() => setIsExpanded(!isExpanded)}
@@ -245,9 +255,12 @@ export default function AdvancedSearch({ onFiltersChange, isLoading = false, tot
                     {filters.query && (
                         <Badge variant="secondary" className="flex items-center gap-1">
                             Recherche: {filters.query}
-                            <X 
-                                className="h-3 w-3 cursor-pointer" 
-                                onClick={() => handleFilterChange("query", "")}
+                            <X
+                                className="h-3 w-3 cursor-pointer"
+                                onClick={() => {
+                                    setFilters(prev => ({ ...prev, query: "" }));
+                                    onFiltersChange({ ...filtersRef.current, query: "" });
+                                }}
                             />
                         </Badge>
                     )}
