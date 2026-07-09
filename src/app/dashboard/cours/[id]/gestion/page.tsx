@@ -64,6 +64,7 @@ import ProfileAvatar from "@/components/ui/profile";
 import AuthorReassign from "@/components/ui/AuthorReassign";
 import MascotLoader from "@/components/ui/MascotLoader";
 import { getRoleIconPath } from "@/lib/roleIcon";
+import { educationData } from "@/data/educationData";
 import "../../../styles/dashboard-theme.css";
 
 // Types
@@ -1126,25 +1127,47 @@ export default function CourseManagementPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="dash-label">Matière</label>
-                  <input
-                    type="text"
+                  <select
                     className="dash-input"
                     value={editedCourse.matiere}
                     onChange={(e) =>
                       setEditedCourse({ ...editedCourse, matiere: e.target.value })
                     }
-                  />
+                  >
+                    {editedCourse.matiere &&
+                      !educationData.subjects.includes(editedCourse.matiere) && (
+                        <option value={editedCourse.matiere}>
+                          {editedCourse.matiere} (valeur actuelle)
+                        </option>
+                      )}
+                    {educationData.subjects.map((subject) => (
+                      <option key={subject} value={subject}>
+                        {subject}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="dash-label">Niveau</label>
-                  <input
-                    type="text"
+                  <select
                     className="dash-input"
                     value={editedCourse.niveau}
                     onChange={(e) =>
                       setEditedCourse({ ...editedCourse, niveau: e.target.value })
                     }
-                  />
+                  >
+                    {editedCourse.niveau &&
+                      !educationData.levels.includes(editedCourse.niveau) && (
+                        <option value={editedCourse.niveau}>
+                          {editedCourse.niveau} (valeur actuelle)
+                        </option>
+                      )}
+                    {educationData.levels.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
               <div>

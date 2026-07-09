@@ -532,11 +532,27 @@
   overflow-x: auto;
 }
 
+/*
+ * En display:block, il faut forcer les rangées à occuper 100% de la largeur,
+ * sinon le contenu (fonds zébrés + séparateurs) s'arrête à la largeur du texte
+ * et laisse un grand vide à droite du tableau.
+ */
+.notion-lesson-content thead,
+.notion-lesson-content tbody,
+.notion-lesson-content tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+
 .notion-lesson-content th,
 .notion-lesson-content td {
   padding: 0.75rem 1rem;
   text-align: left;
   border-bottom: 1px solid var(--notion-border);
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .notion-lesson-content th {

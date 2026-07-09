@@ -18,7 +18,7 @@ import {
 import { PiFireSimpleFill } from "react-icons/pi";
 import { MdSearch, MdInsertComment, MdInfoOutline } from "react-icons/md";
 import { FiPlusCircle, FiBookmark } from "react-icons/fi";
-import { SlidersHorizontal, ArrowUpDown, X, ChevronLeft, ChevronRight, FileText, Sparkles } from "lucide-react";
+import { SlidersHorizontal, ArrowUpDown, X, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import SubjectIcon from "@/components/fiches/SubjectIcon";
 import InfoDrawer from "@/app/fiches/_components/InfoDrawer";
@@ -189,21 +189,39 @@ export default function FichesPageClient() {
     return (
         <div className="min-h-screen bg-white">
             {/* Hero */}
-            <header className="border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-10 sm:pt-16 sm:pb-14">
-                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-6">
-                        <div className="max-w-xl">
-                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-pink-50 text-pink-600 text-xs font-medium mb-4">
-                                <FileText className="w-3.5 h-3.5" />
-                                Ressources communautaires
+            {/* Barre d'action : recherche + dépôt.
+                Le titre/description (H1 SEO) sont déjà affichés dans le hero serveur (page.tsx)
+                — on évite ainsi le doublon d'en-tête et le double <h1>. */}
+            <section className="border-b border-gray-100">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        {/* Search bar */}
+                        <div className="relative flex items-center flex-1 max-w-2xl">
+                            <MdSearch size={20} className="absolute left-3.5 text-gray-400" />
+                            <input
+                                type="text"
+                                placeholder="Rechercher une fiche..."
+                                className="w-full pl-10 pr-28 py-3 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
+                                value={filters.query}
+                                onChange={(e) => handleFilterChange("query", e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+                            />
+                            <div className="absolute right-2 flex items-center gap-1.5">
+                                <button
+                                    className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-orange-100 text-orange-500' : 'hover:bg-gray-100 text-gray-400'}`}
+                                    onClick={() => setShowFilters(!showFilters)}
+                                >
+                                    <SlidersHorizontal size={16} />
+                                </button>
+                                <button
+                                    className="px-4 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
+                                    onClick={handleSearch}
+                                >
+                                    Rechercher
+                                </button>
                             </div>
-                            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-3">
-                                Fiches de révision
-                            </h1>
-                            <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
-                                Découvrez et partagez des fiches de qualité pour réviser efficacement.
-                            </p>
                         </div>
+                        {/* Déposer une fiche */}
                         <Link href="/fiches/creer" className="shrink-0">
                             <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors">
                                 <FiPlusCircle size={16} />
@@ -211,35 +229,8 @@ export default function FichesPageClient() {
                             </button>
                         </Link>
                     </div>
-
-                    {/* Search bar */}
-                    <div className="relative flex items-center max-w-2xl mt-8">
-                        <MdSearch size={20} className="absolute left-3.5 text-gray-400" />
-                        <input
-                            type="text"
-                            placeholder="Rechercher une fiche..."
-                            className="w-full pl-10 pr-28 py-3 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
-                            value={filters.query}
-                            onChange={(e) => handleFilterChange("query", e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                        />
-                        <div className="absolute right-2 flex items-center gap-1.5">
-                            <button
-                                className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-orange-100 text-orange-500' : 'hover:bg-gray-100 text-gray-400'}`}
-                                onClick={() => setShowFilters(!showFilters)}
-                            >
-                                <SlidersHorizontal size={16} />
-                            </button>
-                            <button
-                                className="px-4 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
-                                onClick={handleSearch}
-                            >
-                                Rechercher
-                            </button>
-                        </div>
-                    </div>
                 </div>
-            </header>
+            </section>
 
             {/* Subject chips */}
             <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100">

@@ -9,6 +9,10 @@ interface PageProps {
     params: Promise<{ coursId: string }>;
 }
 
+// Filet de sécurité : régénère la page au plus toutes les 5 min même si une modification
+// n'a pas déclenché de revalidation à la source (voir revalidatePath dans PUT /api/courses/[id]).
+export const revalidate = 300;
+
 /**
  * Trouve un cours par ID (composite id-slug) ou par slug pur.
  */

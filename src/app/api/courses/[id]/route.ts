@@ -7,6 +7,8 @@ import Exercise from "@/models/Exercise";
 import Quiz from "@/models/Quiz";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { hasPermission } from "@/lib/roles";
+import { revalidatePath } from "next/cache";
+import { buildIdSlug } from "@/utils/slugify";
 
 /**
  * 🚀 GET - Récupérer un cours spécifique (Accès public)
@@ -59,6 +61,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         const updatedCourse = await Course.findByIdAndUpdate(id, body, { new: true });
+
+        // La page /cours/[coursId] est générée statiquement (SSG) : sans revalidation,
+        // les champs édités (matière, niveau, titre…) restent figés sur l'ancienne valeur.
+        try {
+            const slug = (updatedCourse as any)?.slug || "";
+            revalidatePath(`/cours/${buildIdSlug(id, slug)}`);
+            revalidatePath("/cours");
+        } catch (e) {
+            console.error("Revalidation du cours échouée :", (e as any)?.message);
+        }
 
         return NextResponse.json(updatedCourse, { status: 200 });
     } catch (error: any) {
