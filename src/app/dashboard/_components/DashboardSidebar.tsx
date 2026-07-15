@@ -30,6 +30,7 @@ import {
   Radio,
   KanbanSquare,
   IdCard,
+  CalendarClock,
 } from "lucide-react";
 import TutorialModal from "./TutorialModal";
 import "../styles/dashboard-theme.css";
@@ -68,6 +69,12 @@ const navItems: NavItem[] = [
   { name: "Sections", href: "/dashboard/sections", icon: Layers },
   { name: "Leçons", href: "/dashboard/lessons", icon: FileText },
   { name: "Quiz", href: "/dashboard/quizzes", icon: CircleDot },
+  {
+    name: "Quiz du jour",
+    href: "/dashboard/daily-quiz",
+    icon: CalendarClock,
+    roles: ["Admin", "Rédacteur", "Correcteur", "Helpeur"],
+  },
   { name: "Exercices", href: "/dashboard/exercises", icon: Library },
   {
     name: "Évaluations",
@@ -99,7 +106,7 @@ const navGroups = [
   },
   {
     title: "Contenu",
-    items: ["Cours", "Sections", "Leçons", "Quiz", "Exercices", "Évaluations"],
+    items: ["Cours", "Sections", "Leçons", "Quiz", "Quiz du jour", "Exercices", "Évaluations"],
   },
   {
     title: "Administration",

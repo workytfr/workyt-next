@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/Label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import CalendarComponent from '@/components/Calendar';
+import DailyQuizCard from '@/components/DailyQuizCard';
 import NoSSR from '@/components/NoSSR';
 import Image from 'next/image';
 
@@ -39,6 +40,8 @@ export default function RewardsListPage() {
     const [endDate, setEndDate] = useState('');
     const [statusFilter, setStatusFilter] = useState<'active' | 'upcoming' | 'ended'>('active');
     const [animate, setAnimate] = useState(false);
+    // Incrémenté à la résolution du quiz du jour pour remonter le calendrier
+    const [calendarKey, setCalendarKey] = useState(0);
 
     const fetchRewards = useCallback(async () => {
         try {
@@ -459,9 +462,14 @@ export default function RewardsListPage() {
                                     </div>
                                 </div>
 
-                                {/* Calendrier */}
+                                {/* Quiz du jour : sa résolution débloque le claim du calendrier */}
                                 <NoSSR>
-                                    <CalendarComponent />
+                                    <DailyQuizCard onSolved={() => setCalendarKey((k) => k + 1)} />
+                                </NoSSR>
+
+                                {/* Calendrier — remonté après résolution du quiz pour rafraîchir le claim */}
+                                <NoSSR>
+                                    <CalendarComponent key={calendarKey} />
                                 </NoSSR>
                             </CardContent>
                         </Card>

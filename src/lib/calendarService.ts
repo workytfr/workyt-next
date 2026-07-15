@@ -407,6 +407,22 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     };
   }
 
+  // Le quiz du jour conditionne la récompense : il faut avoir trouvé la bonne réponse.
+  // Si aucun quiz n'est publié pour la date, on n'exige rien — un oubli de dépôt
+  // ne doit pas bloquer les récompenses de toute la journée.
+  const { getDailyQuizForDate, hasSolvedDailyQuiz } = await import('@/lib/dailyQuizService');
+  const dailyQuiz = await getDailyQuizForDate(normalizedDate);
+
+  if (dailyQuiz) {
+    const solved = await hasSolvedDailyQuiz(userId, normalizedDate);
+    if (!solved) {
+      return {
+        success: false,
+        message: 'Répondez correctement au quiz du jour pour débloquer votre récompense'
+      };
+    }
+  }
+
   // Récupérer le calendrier pour ce jour
   const calendarDay = await Calendar.findOne({ date: normalizedDate });
 
