@@ -19,6 +19,13 @@ export interface IDailyQuizAttempt extends Document {
     attemptCount: number;
     firstAttemptAt: Date;
     solvedAt?: Date;
+    /**
+     * Instant où la question a été affichée au joueur (posé au GET).
+     * Sert au chrono anti-triche : le temps est mesuré côté serveur, jamais
+     * transmis par le client. Réécrit à chaque GET tant qu'aucune réponse n'a
+     * été donnée, pour ne pas pénaliser celui qui revient plus tard.
+     */
+    startedAt?: Date;
 }
 
 const DailyQuizAttemptSchema = new Schema<IDailyQuizAttempt>({
@@ -38,9 +45,12 @@ const DailyQuizAttemptSchema = new Schema<IDailyQuizAttempt>({
     },
     answerIndex: {
         type: Number,
-        required: true,
+        required: false, // la ligne peut exister avant toute réponse (chrono démarré au GET)
         min: 0,
         max: 3
+    },
+    startedAt: {
+        type: Date
     },
     isCorrect: {
         type: Boolean,
@@ -49,12 +59,11 @@ const DailyQuizAttemptSchema = new Schema<IDailyQuizAttempt>({
     },
     attemptCount: {
         type: Number,
-        default: 1,
-        min: 1
+        default: 0,
+        min: 0
     },
     firstAttemptAt: {
-        type: Date,
-        default: Date.now
+        type: Date
     },
     solvedAt: {
         type: Date

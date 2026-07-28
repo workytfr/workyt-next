@@ -6,6 +6,11 @@ import { useSession } from "next-auth/react";
 import { FiBookmark } from "react-icons/fi";
 import { FaBookmark } from "react-icons/fa";
 import { FolderPlus, Check } from "lucide-react";
+import {
+    fetchBookmarkState,
+    invalidateBookmark,
+    type BookmarkContentType,
+} from "@/lib/bookmarkClient";
 
 const NAVBAR_HEIGHT = 70;
 
@@ -92,28 +97,31 @@ export default function BookmarkButton({
             window.removeEventListener("resize", updatePosition);
         };
     }, [showPopover, creatingNew, collections.length]);
-    const checkParam = getCheckParam({ revisionId, questionId, courseId, exerciseId });
 
     const iconSize = size === "sm" ? 16 : size === "lg" ? 24 : 20;
 
+    // Type de contenu déduit de la prop fournie — clé du regroupement
+    const contentType: BookmarkContentType = revisionId
+        ? 'fiche'
+        : questionId
+            ? 'forum'
+            : courseId
+                ? 'cours'
+                : 'exercise';
+
     useEffect(() => {
         if (!session?.accessToken || !refId) return;
-        const checkBookmark = async () => {
-            try {
-                const res = await fetch(`/api/bookmarks/check?${checkParam}`, {
-                    headers: { Authorization: `Bearer ${session.accessToken}` },
-                });
-                const data = await res.json();
-                if (data.success) {
-                    setBookmarked(data.bookmarked);
-                    if (data.collection) setSelectedCollection(data.collection);
-                }
-            } catch {
-                // Silencieux
-            }
-        };
-        checkBookmark();
-    }, [refId, session?.accessToken, checkParam]);
+        let cancelled = false;
+        // Regroupé avec les autres boutons de la liste (voir bookmarkClient)
+        fetchBookmarkState(contentType, refId, session.accessToken)
+            .then((state) => {
+                if (cancelled) return;
+                setBookmarked(state.bookmarked);
+                if (state.collection) setSelectedCollection(state.collection);
+            })
+            .catch(() => { /* silencieux */ });
+        return () => { cancelled = true; };
+    }, [refId, session?.accessToken, contentType]);
 
     // Fermer le popover au clic extérieur
     useEffect(() => {
@@ -171,6 +179,7 @@ export default function BookmarkButton({
                 });
                 const data = await res.json();
                 if (!data.success) setBookmarked(previousState);
+                else invalidateBookmark(contentType, refId); // le cache groupé est périmé
             } catch {
                 setBookmarked(previousState);
             } finally {
@@ -216,6 +225,7 @@ export default function BookmarkButton({
             if (data.success) {
                 setBookmarked(true);
                 setSelectedCollection(collectionName);
+                invalidateBookmark(contentType, refId); // le cache groupé est périmé
             }
         } catch {
             // Silencieux

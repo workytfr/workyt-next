@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { fetchCustomization } from "@/lib/customizationClient";
 
 /**
  * Avatar réel d'un membre pour le Kanban : utilise la photo de profil
@@ -23,15 +24,13 @@ function resolveAvatar(userId: string): Promise<Resolved> {
     const p = (async () => {
         const fallback = `/api/avatar/${userId}?size=64`;
         try {
-            const res = await fetch(`/api/users/${userId}/customization`);
-            if (res.ok) {
-                const data = await res.json();
-                const pi = data?.data?.customization?.profileImage;
-                if (data?.success && pi?.isActive && pi?.filename) {
-                    const url = `/profile/${pi.filename}`;
-                    cache.set(userId, url);
-                    return url;
-                }
+            // Regroupé avec les autres avatars du tableau
+            const data = await fetchCustomization(userId);
+            const pi = data?.customization?.profileImage;
+            if (pi?.isActive && pi?.filename) {
+                const url = `/profile/${pi.filename}`;
+                cache.set(userId, url);
+                return url;
             }
         } catch {
             /* ignore — on retombe sur l'avatar génératif */

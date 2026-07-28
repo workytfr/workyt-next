@@ -59,7 +59,8 @@ const RoleSchema = new Schema<IRole>({
     updatedAt: { type: Date, default: Date.now },
 });
 
-RoleSchema.index({ name: 1 }, { unique: true });
+// `name` porte déjà `unique: true` dans le schéma, qui crée l'index.
+// Le redéclarer ici provoquait le warning « Duplicate schema index on {name:1} ».
 RoleSchema.index({ isDefault: 1 });
 
 RoleSchema.pre('save', function (next) {

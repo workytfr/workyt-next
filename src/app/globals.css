@@ -1832,3 +1832,148 @@ html, body {
   background-color: #ffffff !important;
   color: #24292f !important;
 }
+/* ===== Plateau de l'Aventure ===== */
+
+/* Lueur pulsante de la case du jour */
+@keyframes adventure-glow {
+  0%, 100% { box-shadow: 0 0 12px rgba(251, 191, 36, 0.35); }
+  50% { box-shadow: 0 0 24px rgba(251, 191, 36, 0.65); }
+}
+.adventure-glow {
+  animation: adventure-glow 2s ease-in-out infinite;
+}
+
+/* Flamme des cases du streak */
+@keyframes adventure-flame {
+  0%, 100% { transform: scale(1) rotate(-3deg); opacity: 1; }
+  50% { transform: scale(1.15) rotate(3deg); opacity: 0.85; }
+}
+.adventure-flame {
+  animation: adventure-flame 0.9s ease-in-out infinite;
+  transform-origin: bottom center;
+}
+
+/* Particules ambiantes des thèmes saisonniers */
+@keyframes adventure-float {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-14px) rotate(6deg); }
+}
+.adventure-particle {
+  animation: adventure-float 5s ease-in-out infinite;
+}
+
+/* Accessibilité : pas d'animations si l'utilisateur préfère un mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  .adventure-glow,
+  .adventure-flame,
+  .adventure-particle {
+    animation: none !important;
+  }
+}
+
+/* ===== RPG Workyt Quest ===== */
+
+/* Flottement des monstres */
+@keyframes adventure-monster-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.adventure-monster-float {
+  animation: adventure-monster-float 2.2s ease-in-out infinite;
+}
+
+/* Aura rouge pulsante des boss */
+@keyframes adventure-boss-aura {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.6)); transform: scale(1); }
+  50% { filter: drop-shadow(0 0 14px rgba(239, 68, 68, 0.9)); transform: scale(1.06); }
+}
+.adventure-boss-aura {
+  animation: adventure-boss-aura 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adventure-monster-float,
+  .adventure-boss-aura {
+    animation: none !important;
+  }
+}
+
+/* Balancement des fleurs du chemin */
+@keyframes adventure-sway {
+  0%, 100% { transform: rotate(-10deg) translateY(0); }
+  50% { transform: rotate(10deg) translateY(-3px); }
+}
+.adventure-sway {
+  animation: adventure-sway 3s ease-in-out infinite;
+  transform-origin: bottom center;
+  display: inline-block;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adventure-sway {
+    animation: none !important;
+  }
+}
+
+/* ===== Décor vivant du plateau (façon Pokémon) ===== */
+
+/* Neige/feuilles qui tombent */
+@keyframes adventure-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+  8% { opacity: 0.6; }
+  92% { opacity: 0.6; }
+  100% { transform: translateY(520px) rotate(220deg); opacity: 0; }
+}
+.adventure-fall {
+  animation: adventure-fall linear infinite;
+}
+
+/* Pétales/étincelles qui dérivent de gauche à droite */
+@keyframes adventure-drift-x {
+  0% { transform: translateX(-8vw) translateY(0) rotate(0deg); opacity: 0; }
+  10% { opacity: 0.6; }
+  50% { transform: translateX(40vw) translateY(-14px) rotate(180deg); }
+  90% { opacity: 0.6; }
+  100% { transform: translateX(90vw) translateY(6px) rotate(360deg); opacity: 0; }
+}
+.adventure-drift-x {
+  animation: adventure-drift-x linear infinite;
+}
+
+/* Foxy qui traverse le plateau : passage rapide puis longue pause */
+@keyframes adventure-run {
+  0% { left: -12%; }
+  45% { left: 108%; }
+  100% { left: 108%; }
+}
+.adventure-run {
+  animation: adventure-run 24s linear infinite;
+}
+
+/* Rebond de course */
+@keyframes adventure-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+.adventure-bob {
+  animation: adventure-bob 0.45s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adventure-fall,
+  .adventure-drift-x,
+  .adventure-run,
+  .adventure-bob {
+    animation: none !important;
+  }
+  .adventure-run { display: none; }
+}
+
+/* Barre de défilement masquée — rangée de filtres des notifications */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}

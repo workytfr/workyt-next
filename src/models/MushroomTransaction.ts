@@ -1,7 +1,7 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export type MushroomTransactionType = 'earn' | 'use';
-export type MushroomSource = 'quest' | 'chest' | 'streak' | 'event' | 'calendar' | 'admin';
+export type MushroomSource = 'quest' | 'chest' | 'streak' | 'event' | 'calendar' | 'admin' | 'hero';
 export type BoostType = 'double_points' | 'quest_extra' | 'lucky_chest';
 
 export interface IMushroomTransaction extends Document {
@@ -31,7 +31,7 @@ const MushroomTransactionSchema = new Schema<IMushroomTransaction>({
   },
   source: {
     type: String,
-    enum: ['quest', 'chest', 'streak', 'event', 'calendar', 'admin'],
+    enum: ['quest', 'chest', 'streak', 'event', 'calendar', 'admin', 'hero'],
     required: true
   },
   boostType: {

@@ -8,6 +8,7 @@ import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import {
     getDailyQuizForDate,
     normalizeDate,
+    startDailyQuizTimer,
     submitDailyQuizAnswer
 } from '@/lib/dailyQuizService';
 
@@ -40,6 +41,16 @@ export async function GET() {
 
         const attempt = await DailyQuizAttempt.findOne({ user: user._id, date: today });
         const solved = attempt?.isCorrect === true;
+
+        // Démarre le chrono anti-triche au moment où la question est affichée.
+        // Ne doit jamais empêcher l'affichage du quiz.
+        if (!solved) {
+            try {
+                await startDailyQuizTimer(user._id.toString(), today);
+            } catch (err) {
+                console.error('Erreur startDailyQuizTimer:', err);
+            }
+        }
 
         return NextResponse.json({
             available: true,
@@ -96,7 +107,33 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: result.message }, { status: 400 });
         }
 
-        return NextResponse.json(result);
+        // RPG « Workyt Quest » : le quiz est un combat (ne doit jamais bloquer le quiz)
+        let battle: any = null;
+        try {
+            if (!result.alreadySolved) {
+                const { recordVictory, recordDefeat, getHeroCombatState } = await import('@/lib/heroService');
+                const { getTodayMonster } = await import('@/lib/dailyMonster');
+
+                if (result.isCorrect) {
+                    const victory = await recordVictory(user._id.toString(), {
+                        firstTry: result.attemptCount === 1,
+                        isBoss: new Date().getDate() === 15,
+                        elapsedMs: result.elapsedMs // chrono serveur, anti-triche
+                    });
+                    battle = { outcome: 'victory', ...victory };
+                } else {
+                    // Même monstre que celui affiché dans l'arène (thème du mois)
+                    const heroState = await getHeroCombatState(user._id.toString());
+                    const monster = await getTodayMonster(heroState.level);
+                    const defeat = await recordDefeat(user._id.toString(), monster.attack, { power: monster.power });
+                    battle = { outcome: 'defeat', ...defeat };
+                }
+            }
+        } catch (err) {
+            console.error('Erreur battle RPG:', err);
+        }
+
+        return NextResponse.json({ ...result, battle });
     } catch (error) {
         console.error('Erreur POST /api/daily-quiz/play:', error);
         return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });

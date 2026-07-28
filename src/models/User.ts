@@ -23,6 +23,8 @@ export interface IUser extends Document {
         classique: boolean;
     };
     unsubscribeToken: string;
+    /** Dernière activité — base du statut « en ligne » dans la liste d'amis */
+    lastSeenAt?: Date;
     createdAt: Date;
     resetPasswordToken?: string;
     resetPasswordExpiry?: Date;
@@ -159,6 +161,9 @@ const UserSchema = new Schema<IUser>({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    lastSeenAt: {
+        type: Date,
     },
     resetPasswordToken: {
         type: String,

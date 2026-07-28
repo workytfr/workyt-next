@@ -28,6 +28,7 @@ import BadgeProgress from "@/components/ui/BadgeProgress";
 import BadgeDisplay from "@/components/ui/BadgeDisplay";
 import ContributionGraph from "@/components/ui/ContributionGraph";
 import FicheCard from "@/components/fiches/FicheCard";
+import ProfileFriends from "@/components/friends/ProfileFriends";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Toast } from "@/components/ui/UseToast";
 import { useRouter } from "next/navigation";
@@ -318,6 +319,9 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                         <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
                             🏆 {formData.badges?.length || 0} badges
                         </span>
+                        {id && formData.username && (
+                            <ProfileFriends userId={id} username={formData.username} variant="pill" />
+                        )}
                 </div>
 
                 {/* Bio */}
@@ -327,6 +331,11 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
 
                 {/* Content */}
                 <div className="space-y-6 pb-8">
+                    {/* Amis : compteur, bouton d'ajout et aperçu de la liste */}
+                    {id && formData.username && (
+                        <ProfileFriends userId={id} username={formData.username} />
+                    )}
+
                     {/* Rank Section */}
                     <Card className="border border-gray-200 rounded-2xl shadow-sm">
                         <CardHeader className="bg-white border-b border-gray-100">

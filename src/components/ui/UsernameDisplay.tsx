@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { getRoleIconPath } from "@/lib/roleIcon";
 import Image from "next/image";
+import { fetchCustomization } from "@/lib/customizationClient";
 
 // Interface pour les personnalisations
 interface ProfileCustomization {
@@ -47,14 +48,12 @@ const UsernameDisplay: React.FC<UsernameDisplayProps> = ({
         if (!userId) return;
         
         try {
-            const response = await fetch(`/api/users/${userId}/customization`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    setCustomization(data.data.customization);
-                    if (data.data.selectedBadgeIcon) {
-                        setBadgeIcon(data.data.selectedBadgeIcon);
-                    }
+            // Regroupé avec les autres pseudos de la page (voir customizationClient)
+            const data = await fetchCustomization(userId);
+            if (data) {
+                setCustomization(data.customization as any);
+                if (data.selectedBadgeIcon) {
+                    setBadgeIcon(data.selectedBadgeIcon);
                 }
             }
         } catch (error) {

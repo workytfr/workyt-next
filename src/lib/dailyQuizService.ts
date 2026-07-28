@@ -31,6 +31,60 @@ export async function getDailyQuizForDate(date: Date) {
 }
 
 /**
+ * Démarre (ou redémarre) le chrono anti-triche du joueur.
+ * Appelé quand la question lui est affichée — GET /api/daily-quiz/play.
+ *
+ * Tant qu'aucune réponse n'a été donnée, chaque affichage réécrit `startedAt` :
+ * quelqu'un qui ouvre le matin, referme, et revient le soir ne doit pas être
+ * considéré comme ayant mis 12 heures à répondre.
+ */
+export async function startDailyQuizTimer(userId: string, date: Date): Promise<void> {
+    await dbConnect();
+
+    const normalizedDate = normalizeDate(date);
+    const quiz = await DailyQuiz.findOne({ date: normalizedDate }).select('_id').lean<{ _id: any }>();
+    if (!quiz) return;
+
+    await DailyQuizAttempt.updateOne(
+        { user: userId, date: normalizedDate, isCorrect: { $ne: true } },
+        {
+            $set: { startedAt: new Date() },
+            // user/date viennent déjà du filtre : les répéter ici créerait un conflit
+            $setOnInsert: {
+                dailyQuiz: quiz._id,
+                isCorrect: false,
+                attemptCount: 0
+            }
+        },
+        { upsert: true }
+    ).catch((err: any) => {
+        // 11000 : une ligne résolue existe déjà, le filtre isCorrect l'a exclue.
+        // Rien à faire, le chrono ne sert plus.
+        if (err?.code !== 11000) throw err;
+    });
+}
+
+/**
+ * Multiplicateur d'XP selon le temps de réponse — c'est l'anti-triche.
+ *
+ * Chercher la réponse sur internet coûte du temps : on ne sanctionne jamais en
+ * PV (ça punirait l'élève lent qui relit son cours), on sanctionne la
+ * récompense. Le seuil se resserre avec le niveau : au niveau 20+, il reste
+ * 10 secondes, on ne google pas une question en 10 secondes.
+ */
+export function xpTimeMultiplier(elapsedMs: number | null, heroLevel: number): number {
+    if (elapsedMs === null) return 1; // pas de chrono (ancienne ligne) : neutre
+
+    const targetTime = Math.max(10, 30 - heroLevel); // secondes
+    const elapsed = elapsedMs / 1000;
+
+    if (elapsed < targetTime / 2) return 1.5; // il savait
+    if (elapsed < targetTime) return 1.0;     // il a réfléchi
+    if (elapsed < targetTime * 4) return 0.6; // il a cherché
+    return 0.3;                                // il a trouvé ailleurs
+}
+
+/**
  * Vrai si l'utilisateur a trouvé la bonne réponse du jour sur le site.
  * C'est la condition qui ouvre la réclamation de la récompense.
  */
@@ -61,6 +115,7 @@ export async function submitDailyQuizAnswer(
     explanation?: string;
     alreadySolved?: boolean;
     attemptCount?: number;
+    elapsedMs?: number | null;
     message?: string;
 }> {
     await dbConnect();
@@ -96,12 +151,20 @@ export async function submitDailyQuizAnswer(
     }
 
     const isCorrect = answerIndex === quiz.correctAnswer;
+    const now = new Date();
+
+    // Chrono anti-triche : mesuré côté serveur depuis l'affichage de la question.
+    // Le client n'envoie rien, il n'y a donc rien à falsifier.
+    const elapsedMs = existing?.startedAt
+        ? now.getTime() - new Date(existing.startedAt).getTime()
+        : null;
 
     if (existing) {
         existing.answerIndex = answerIndex;
         existing.isCorrect = isCorrect;
         existing.attemptCount += 1;
-        if (isCorrect) existing.solvedAt = new Date();
+        if (!existing.firstAttemptAt) existing.firstAttemptAt = now;
+        if (isCorrect) existing.solvedAt = now;
         await existing.save();
     } else {
         await DailyQuizAttempt.create({
@@ -111,8 +174,8 @@ export async function submitDailyQuizAnswer(
             answerIndex,
             isCorrect,
             attemptCount: 1,
-            firstAttemptAt: new Date(),
-            solvedAt: isCorrect ? new Date() : undefined
+            firstAttemptAt: now,
+            solvedAt: isCorrect ? now : undefined
         });
     }
 
@@ -121,6 +184,7 @@ export async function submitDailyQuizAnswer(
         isCorrect,
         alreadySolved: false,
         attemptCount: (existing?.attemptCount ?? 0) + 1,
+        elapsedMs,
         // La bonne réponse et l'explication ne sortent qu'une fois trouvée,
         // sinon il suffirait d'un mauvais essai pour la lire.
         correctAnswer: isCorrect ? quiz.correctAnswer : undefined,

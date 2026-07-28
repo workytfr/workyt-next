@@ -122,32 +122,52 @@ export class QuestService {
       quests = shuffled.slice(0, Math.min(questCount, shuffled.length));
     }
 
-    const progresses: IQuestProgress[] = [];
+    // Une seule lecture pour toutes les quêtes, puis une seule écriture groupée.
+    // Avant : un findOne + un save PAR quête, en série — soit ~8 allers-retours
+    // réseau par type de quête, × 3 types.
+    const existing = await QuestProgress.find({
+      user: userId,
+      quest: { $in: quests.map((q: any) => q._id) },
+      periodStart: start,
+      periodEnd: end
+    });
 
-    for (const quest of quests) {
-      // Vérifier si une progression existe déjà pour cette période
-      const existingProgress = await QuestProgress.findOne({
-        user: userId,
-        quest: quest._id,
-        periodStart: start,
-        periodEnd: end
-      });
+    const byQuest = new Map<string, IQuestProgress>(
+      existing.map((p: any) => [p.quest.toString(), p])
+    );
 
-      if (!existingProgress) {
-        const progress = new QuestProgress({
+    const missing = quests.filter((q: any) => !byQuest.has(q._id.toString()));
+    if (missing.length > 0) {
+      try {
+        const created = await QuestProgress.insertMany(
+          missing.map((q: any) => ({
+            user: userId,
+            quest: q._id,
+            progress: 0,
+            status: 'in_progress',
+            periodStart: start,
+            periodEnd: end
+          })),
+          { ordered: false }
+        );
+        for (const p of created as any[]) byQuest.set(p.quest.toString(), p);
+      } catch (err: any) {
+        // 11000 : une requête concurrente a créé les mêmes progressions.
+        // On relit ce qui manque plutôt que d'échouer.
+        if (err?.code !== 11000 && !err?.writeErrors) throw err;
+        const refetched = await QuestProgress.find({
           user: userId,
-          quest: quest._id,
-          progress: 0,
-          status: 'in_progress',
+          quest: { $in: missing.map((q: any) => q._id) },
           periodStart: start,
           periodEnd: end
         });
-        await progress.save();
-        progresses.push(progress);
-      } else {
-        progresses.push(existingProgress);
+        for (const p of refetched as any[]) byQuest.set(p.quest.toString(), p);
       }
     }
+
+    const progresses: IQuestProgress[] = quests
+      .map((q: any) => byQuest.get(q._id.toString()))
+      .filter(Boolean) as IQuestProgress[];
 
     return progresses;
   }
@@ -247,6 +267,14 @@ export class QuestService {
             quest._id.toString(),
             quest.name
           );
+
+          // RPG « Workyt Quest » : les quêtes donnent de l'XP au héros
+          try {
+            const { recordQuestCompleted } = await import('./heroService');
+            await recordQuestCompleted(userId, quest.type);
+          } catch (err) {
+            console.error('Erreur recordQuestCompleted:', err);
+          }
         }
       }
 
@@ -265,44 +293,56 @@ export class QuestService {
     type?: 'daily' | 'weekly' | 'monthly'
   ): Promise<any[]> {
     const types: ('daily' | 'weekly' | 'monthly')[] = type ? [type] : ['daily', 'weekly', 'monthly'];
-    const results: any[] = [];
 
-    for (const questType of types) {
-      const { start, end } = this.getPeriodDates(questType);
+    // Les trois types sont indépendants (périodes disjointes) : en série on
+    // payait trois fois la latence réseau complète.
+    const perType = await Promise.all(
+      types.map(async (questType) => {
+        const { start, end } = this.getPeriodDates(questType);
 
-      // Initialiser les quêtes si nécessaire
-      await this.initializeQuestsForUser(userId, questType);
+        await this.initializeQuestsForUser(userId, questType);
 
-      const progresses = await QuestProgress.find({
-        user: userId,
-        periodStart: start,
-        periodEnd: end
-      }).populate('quest');
+        const progresses = await QuestProgress.find({
+          user: userId,
+          periodStart: start,
+          periodEnd: end
+        }).populate('quest');
 
-      for (const progress of progresses) {
-        const quest = progress.quest as IQuest;
-        if (!quest) {
-          // Quête supprimée, nettoyer la progression orpheline
-          await QuestProgress.findByIdAndDelete(progress._id);
-          continue;
+        const orphans: any[] = [];
+        const rows = progresses.reduce((acc: any[], progress: any) => {
+          const quest = progress.quest as IQuest;
+          if (!quest) {
+            orphans.push(progress._id); // quête supprimée : nettoyage groupé
+            return acc;
+          }
+          acc.push({
+            id: quest._id,
+            slug: quest.slug,
+            name: quest.name,
+            description: quest.description,
+            type: quest.type,
+            progress: progress.progress,
+            target: quest.condition.target,
+            status: progress.status,
+            rewards: quest.rewards,
+            periodStart: progress.periodStart,
+            periodEnd: progress.periodEnd
+          });
+          return acc;
+        }, []);
+
+        // Un deleteMany au lieu d'un findByIdAndDelete par orpheline
+        if (orphans.length > 0) {
+          QuestProgress.deleteMany({ _id: { $in: orphans } }).catch((err) =>
+            console.error('Erreur nettoyage progressions orphelines:', err)
+          );
         }
-        results.push({
-          id: quest._id,
-          slug: quest.slug,
-          name: quest.name,
-          description: quest.description,
-          type: quest.type,
-          progress: progress.progress,
-          target: quest.condition.target,
-          status: progress.status,
-          rewards: quest.rewards,
-          periodStart: progress.periodStart,
-          periodEnd: progress.periodEnd
-        });
-      }
-    }
 
-    return results;
+        return rows;
+      })
+    );
+
+    return perType.flat();
   }
 
   /**

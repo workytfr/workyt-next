@@ -30,9 +30,26 @@ export async function GET(req: NextRequest) {
     // Initialiser le calendrier pour la période si nécessaire
     await initializeCalendarPeriod(startDate, endDate);
 
-    const calendarData = await getCalendarData(user._id.toString(), startDate, endDate);
+    const userId = user._id.toString();
 
-    return NextResponse.json(calendarData);
+    // Les deux sont indépendants : en série on payait deux allers-retours réseau.
+    const { getCollection, getMonthKey } = await import('@/lib/adventureService');
+    const fallback: import('@/lib/adventureService').CollectionInfo = {
+      cards: [],
+      totalWeeks: 5,
+      setCompleted: false
+    };
+
+    const [calendarData, collection] = await Promise.all([
+      getCalendarData(userId, startDate, endDate),
+      // La collection ne doit jamais bloquer l'affichage du calendrier
+      getCollection(userId, getMonthKey(startDate)).catch((err) => {
+        console.error('Erreur getCollection:', err);
+        return fallback;
+      })
+    ]);
+
+    return NextResponse.json({ ...calendarData, collection });
   } catch (error: any) {
     console.error('Erreur lors de la récupération du calendrier:', error);
     return NextResponse.json(

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import authMiddleware from '@/middlewares/authMiddleware';
 import { NotificationService } from '@/lib/notificationService';
 import connectDB from '@/lib/mongodb';
+import { touchPresence } from '@/lib/presence';
 
 /**
  * GET /api/notifications
@@ -20,6 +21,10 @@ export async function GET(req: NextRequest) {
                 { status: 401 }
             );
         }
+
+        // Présence « en ligne » : on se greffe sur le sondage de la cloche
+        // plutôt que d'ajouter un ping dédié (throttlé à 5 min en interne).
+        void touchPresence(user._id.toString());
 
         // Paramètres de pagination
         const { searchParams } = new URL(req.url);

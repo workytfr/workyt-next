@@ -12,6 +12,10 @@ interface MushroomIndicatorProps {
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
+// Anneau de progression du boost, tracé dans un viewBox 28×28
+const RING_RADIUS = 12.5;
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS;
+
 const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [usingBoost, setUsingBoost] = useState<string | null>(null);
@@ -45,10 +49,51 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
+  // Horloge de l'anneau de boost. Ne tourne QUE s'il y a un boost chronométré
+  // en cours, et se coupe si l'onglet passe en arrière-plan : un indicateur de
+  // navbar est monté sur toutes les pages, il ne doit rien coûter au repos.
+  const hasTimedBoost = (mushroomData?.data?.activeBoosts || []).some(
+    (b: any) => b.durationMs > 0 && new Date(b.expiresAt).getTime() > Date.now()
+  );
+
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!hasTimedBoost) return;
+    let interval: ReturnType<typeof setInterval> | null = null;
+    const start = () => {
+      if (interval) return;
+      setNow(Date.now());
+      interval = setInterval(() => setNow(Date.now()), 1000);
+    };
+    const stop = () => {
+      if (!interval) return;
+      clearInterval(interval);
+      interval = null;
+    };
+    const onVisibility = () => (document.hidden ? stop() : start());
+
+    if (!document.hidden) start();
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      stop();
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [hasTimedBoost]);
+
   if (!mushroomData?.success) return null;
 
   const balance = mushroomData.data.balance;
-  const activeBoosts = mushroomData.data.activeBoosts || [];
+  const activeBoosts: any[] = mushroomData.data.activeBoosts || [];
+
+  // Boost chronométré le plus proche de l'expiration : c'est lui que l'anneau suit.
+  // (lucky_chest a durationMs = 0 — usage unique, rien à décompter)
+  const timedBoost = activeBoosts
+    .filter(b => b.durationMs > 0 && new Date(b.expiresAt).getTime() > now)
+    .sort((a, b) => new Date(a.expiresAt).getTime() - new Date(b.expiresAt).getTime())[0];
+
+  const remainingMs = timedBoost ? new Date(timedBoost.expiresAt).getTime() - now : 0;
+  const ratio = timedBoost ? Math.max(0, Math.min(1, remainingMs / timedBoost.durationMs)) : 0;
 
   const handleToggle = () => {
     if (!isOpen && btnRef.current) {
@@ -72,6 +117,9 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
       if (res.ok) {
         mutateBalance();
         mutateBoosts();
+        // Le boost soigne aussi le héros : le panneau RPG doit se rafraîchir
+        const { invalidateHero } = await import('@/lib/heroClient');
+        invalidateHero();
       }
     } catch (err) {
       console.error('Erreur utilisation boost:', err);
@@ -81,12 +129,14 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
   };
 
   const formatTimeRemaining = (expiresAt: string) => {
-    const remaining = new Date(expiresAt).getTime() - Date.now();
-    if (remaining <= 0) return 'Expire';
-    const minutes = Math.floor(remaining / 60000);
+    const remaining = new Date(expiresAt).getTime() - now;
+    if (remaining <= 0) return 'Expiré';
+    const seconds = Math.floor(remaining / 1000);
+    const minutes = Math.floor(seconds / 60);
     const hours = Math.floor(minutes / 60);
-    if (hours > 0) return `${hours}h${minutes % 60}m`;
-    return `${minutes}m`;
+    if (hours > 0) return `${hours}h${String(minutes % 60).padStart(2, '0')}`;
+    if (minutes > 0) return `${minutes}m`;
+    return `${seconds}s`; // dernière minute : on descend à la seconde
   };
 
   return (
@@ -95,16 +145,49 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
         ref={btnRef}
         onClick={handleToggle}
         className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-50 transition-colors"
-        title={`${balance} champignon${balance > 1 ? 's' : ''}`}
+        title={
+          timedBoost
+            ? `${timedBoost.name} actif — ${formatTimeRemaining(timedBoost.expiresAt)} restant`
+            : `${balance} champignon${balance > 1 ? 's' : ''}`
+        }
       >
-        <Image
-          src="/badge/champiworkyt.webp"
-          alt="Champignon"
-          width={20}
-          height={20}
-          className="w-5 h-5"
-        />
+        {/* Le contour du champignon sert de compteur au boost actif */}
+        <span className="relative inline-flex items-center justify-center w-7 h-7 shrink-0">
+          {timedBoost && (
+            <svg
+              className="absolute inset-0 w-full h-full -rotate-90 pointer-events-none"
+              viewBox="0 0 28 28"
+              aria-hidden="true"
+            >
+              <circle
+                cx="14" cy="14" r={RING_RADIUS}
+                fill="none" strokeWidth="2"
+                className="stroke-orange-200"
+              />
+              <circle
+                cx="14" cy="14" r={RING_RADIUS}
+                fill="none" strokeWidth="2" strokeLinecap="round"
+                className={ratio > 0.2 ? 'stroke-emerald-500' : 'stroke-red-500 animate-pulse'}
+                strokeDasharray={RING_CIRCUMFERENCE}
+                strokeDashoffset={RING_CIRCUMFERENCE * (1 - ratio)}
+                style={{ transition: 'stroke-dashoffset 1s linear' }}
+              />
+            </svg>
+          )}
+          <Image
+            src="/badge/champiworkyt.webp"
+            alt="Champignon"
+            width={20}
+            height={20}
+            className="w-5 h-5"
+          />
+        </span>
         <span className="text-sm font-medium text-orange-600">{balance}</span>
+        {timedBoost && (
+          <span className="sr-only">
+            Boost {timedBoost.name} actif, {formatTimeRemaining(timedBoost.expiresAt)} restant
+          </span>
+        )}
       </button>
 
       {/* Dropdown - fixed to viewport */}
@@ -125,7 +208,7 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
             />
             <div>
               <p className="text-lg font-bold text-gray-900">{balance} Champignon{balance > 1 ? 's' : ''}</p>
-              <p className="text-xs text-gray-500">Utilise-les pour activer des boosts</p>
+              <p className="text-xs text-gray-500">Chaque boost soigne aussi ton héros 💚</p>
             </div>
           </div>
 
@@ -156,7 +239,7 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
                 key={boost.type}
                 className={`p-3 rounded-lg border ${
                   boost.isActive
-                    ? 'bg-gray-50 border-gray-200 opacity-60'
+                    ? 'bg-emerald-50 border-emerald-200'
                     : boost.canAfford
                       ? 'bg-white border-gray-200 hover:border-orange-200'
                       : 'bg-gray-50 border-gray-100 opacity-60'
@@ -169,7 +252,8 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
                   </div>
                   <button
                     onClick={() => handleUseBoost(boost.type)}
-                    disabled={!boost.canAfford || boost.isActive || usingBoost === boost.type}
+                    disabled={!boost.canAfford || usingBoost === boost.type}
+                    title={boost.isActive ? 'Prolonger ce boost (et soigner ton héros)' : undefined}
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ml-2"
                   >
                     <Image

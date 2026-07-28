@@ -6,6 +6,7 @@ import { AvatarPlasma } from "eigen-avatar-generator/react/plasma";
 import { AvatarSmile } from "eigen-avatar-generator/react/smile";
 import { AvatarPixels } from "eigen-avatar-generator/react/pixels";
 import { COLOR_SETS, PIXELS_GRADIENT, hashString } from "@/lib/eigenAvatarShared";
+import { fetchCustomization } from "@/lib/customizationClient";
 
 interface AvatarDisplayProps {
     name: string;
@@ -82,19 +83,16 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
         
         try {
             setLoading(true);
-            const response = await fetch(`/api/users/${userId}/customization`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success && data.data?.customization) {
-                    const custom = data.data.customization;
-                    
-                    if (custom.profileImage?.isActive && custom.profileImage?.filename) {
-                        setProfileImage(`/profile/${custom.profileImage.filename}`);
-                    }
-                    
-                    if (custom.profileBorder?.isActive && custom.profileBorder?.filename) {
-                        setProfileBorder(`/profile/contour/${custom.profileBorder.filename}`);
-                    }
+            // Regroupé avec les autres avatars de la page (voir customizationClient)
+            const data = await fetchCustomization(userId);
+            const custom = data?.customization;
+            if (custom) {
+                if (custom.profileImage?.isActive && custom.profileImage?.filename) {
+                    setProfileImage(`/profile/${custom.profileImage.filename}`);
+                }
+
+                if (custom.profileBorder?.isActive && custom.profileBorder?.filename) {
+                    setProfileBorder(`/profile/contour/${custom.profileBorder.filename}`);
                 }
             }
         } catch (error) {

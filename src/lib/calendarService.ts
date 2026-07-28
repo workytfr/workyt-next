@@ -423,6 +423,20 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     }
   }
 
+  // RPG : un héros évanoui ne peut pas réclamer sa récompense (soin : 1 champignon)
+  try {
+    const { getHeroCombatState } = await import('@/lib/heroService');
+    const hero = await getHeroCombatState(userId);
+    if (hero.fainted) {
+      return {
+        success: false,
+        message: 'Ton héros est évanoui 💫 Soigne-le avec un champignon 🍄 pour réclamer ta récompense'
+      };
+    }
+  } catch (err) {
+    console.error('Erreur hero fainted check:', err); // ne jamais bloquer le claim si le RPG est en panne
+  }
+
   // Récupérer le calendrier pour ce jour
   const calendarDay = await Calendar.findOne({ date: normalizedDate });
 
@@ -574,16 +588,18 @@ export async function getCalendarData(
   const end = new Date(endDate);
   end.setHours(23, 59, 59, 999);
 
-  // Récupérer les jours du calendrier
-  const calendarDays = await Calendar.find({
-    date: { $gte: start, $lte: end }
-  }).sort({ date: 1 });
-
-  // Récupérer les réclamations de l'utilisateur
-  const claims = await CalendarClaim.find({
-    user: userId,
-    date: { $gte: start, $lte: end }
-  });
+  // Les deux lectures sont indépendantes : en série elles coûtaient deux
+  // allers-retours réseau complets (~300 ms chacun sur une base distante).
+  // .lean() évite d'hydrater 31 documents Mongoose pour rien.
+  const [calendarDays, claims] = await Promise.all([
+    Calendar.find({ date: { $gte: start, $lte: end } })
+      .select('date reward theme isSpecial specialName description')
+      .sort({ date: 1 })
+      .lean(),
+    CalendarClaim.find({ user: userId, date: { $gte: start, $lte: end } })
+      .select('date')
+      .lean()
+  ]);
 
   // Fonction helper pour formater une date en local (sans UTC)
   const formatDateLocal = (date: Date) => {
@@ -594,11 +610,11 @@ export async function getCalendarData(
   };
 
   const claimsMap = new Map(
-    claims.map(c => [formatDateLocal(c.date), true])
+    (claims as any[]).map(c => [formatDateLocal(c.date), true])
   );
 
   // Construire la réponse
-  const days = calendarDays.map(day => ({
+  const days = (calendarDays as any[]).map(day => ({
     date: day.date,
     reward: {
       type: day.reward.type,

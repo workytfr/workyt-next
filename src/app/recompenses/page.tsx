@@ -11,8 +11,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/Label';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
-import CalendarComponent from '@/components/Calendar';
-import DailyQuizCard from '@/components/DailyQuizCard';
+import AdventureBoard from '@/components/adventure/AdventureBoard';
+import BattleModal from '@/components/adventure/rpg/BattleModal';
+import GuildQuests from '@/components/adventure/rpg/GuildQuests';
 import NoSSR from '@/components/NoSSR';
 import Image from 'next/image';
 
@@ -158,12 +159,37 @@ export default function RewardsListPage() {
     if (loading) {
         return (
             <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-                <div className="max-w-6xl mx-auto space-y-6">
-                    <Skeleton className="h-24 w-full rounded-2xl" />
+                <div className="max-w-6xl mx-auto space-y-8">
+                    {/* Header (pilule titre) */}
+                    <div className="flex flex-col items-center gap-3">
+                        <Skeleton className="h-12 w-80 rounded-full" />
+                        <Skeleton className="h-4 w-96 rounded-full" />
+                    </div>
+
+                    {/* Cartes événements */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {[...Array(6)].map((_, i) => (
+                        {[...Array(3)].map((_, i) => (
                             <Skeleton key={i} className="h-72 w-full rounded-2xl" />
                         ))}
+                    </div>
+
+                    {/* Section Plateau de l'Aventure */}
+                    <div className="rounded-3xl border border-white/30 bg-white/60 backdrop-blur-xl p-6 space-y-4 shadow-xl">
+                        <Skeleton className="h-8 w-72 rounded-lg" />
+                        {/* Règles du jeu */}
+                        <Skeleton className="h-14 w-full rounded-2xl" />
+                        {/* Panneau héros */}
+                        <Skeleton className="h-28 w-full rounded-2xl" />
+                        {/* Arène de combat */}
+                        <Skeleton className="h-40 w-full rounded-2xl bg-slate-300/70" />
+                        {/* Chemin RPG */}
+                        <Skeleton className="h-96 w-full rounded-2xl" />
+                        {/* Cartes de collection */}
+                        <div className="flex gap-3">
+                            {[...Array(5)].map((_, i) => (
+                                <Skeleton key={i} className="h-20 w-16 rounded-xl" />
+                            ))}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -303,11 +329,14 @@ export default function RewardsListPage() {
                                 <div className="relative">
                                     {reward.imageUrl ? (
                                         <div className="h-48 overflow-hidden relative">
-                                            <Image
+                                            {/* <img> et non next/image : l'URL est saisie librement
+                                                en admin, un hôte non whitelisté ferait planter la page */}
+                                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                                            <img
                                                 src={reward.imageUrl}
                                                 alt={reward.title}
-                                                fill
-                                                className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                                loading="lazy"
+                                                className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                                             />
                                             <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
                                         </div>
@@ -399,10 +428,10 @@ export default function RewardsListPage() {
                             <CardHeader>
                                 <div className="flex items-center gap-2">
                                     <Calendar className="w-5 h-5 text-blue-600" />
-                                    <CardTitle className="text-xl">Calendrier Mensuel</CardTitle>
+                                    <CardTitle className="text-xl">Plateau de l&apos;Aventure</CardTitle>
                                 </div>
                                 <CardDescription>
-                                    Réclamez votre récompense quotidienne le jour même ! Connectez-vous chaque jour pour ne rien manquer.
+                                    Réclamez votre récompense quotidienne le jour même ! Résolvez le quiz du jour pour lancer le dé et faire avancer votre pion sur le plateau.
                                 </CardDescription>
                             </CardHeader>
                             <CardContent className="space-y-6">
@@ -462,14 +491,19 @@ export default function RewardsListPage() {
                                     </div>
                                 </div>
 
-                                {/* Quiz du jour : sa résolution débloque le claim du calendrier */}
+                                {/* Arène de combat : le quiz du jour présenté comme un duel RPG */}
                                 <NoSSR>
-                                    <DailyQuizCard onSolved={() => setCalendarKey((k) => k + 1)} />
+                                    <BattleModal onSolved={() => setCalendarKey((k) => k + 1)} />
                                 </NoSSR>
 
-                                {/* Calendrier — remonté après résolution du quiz pour rafraîchir le claim */}
+                                {/* Plateau de l'Aventure — remonté après résolution du quiz pour rafraîchir le claim */}
                                 <NoSSR>
-                                    <CalendarComponent key={calendarKey} />
+                                    <AdventureBoard key={calendarKey} />
+                                </NoSSR>
+
+                                {/* Missions de Guilde : les quêtes donnent aussi de l'XP au héros */}
+                                <NoSSR>
+                                    <GuildQuests />
                                 </NoSSR>
                             </CardContent>
                         </Card>

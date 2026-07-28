@@ -85,11 +85,85 @@ export class MushroomService {
   }
 
   /**
+   * Débite des champignons de façon ATOMIQUE.
+   *
+   * Un findOne + save() classique perd une écriture quand deux requêtes
+   * arrivent en même temps (les deux lisent le même solde). Ici la condition
+   * `balance >= amount` fait partie de l'écriture : Mongo n'en laisse passer
+   * qu'une seule.
+   *
+   * @returns le nouveau solde, ou null si les fonds étaient insuffisants
+   */
+  static async spendMushrooms(
+    userId: string,
+    amount: number,
+    source: MushroomSource,
+    boostType?: BoostType
+  ): Promise<number | null> {
+    await dbConnect();
+
+    const inventory = await MushroomInventory.findOneAndUpdate(
+      { user: userId, balance: { $gte: amount } },
+      { $inc: { balance: -amount, totalUsed: amount } },
+      { new: true }
+    );
+    if (!inventory) return null;
+
+    await new MushroomTransaction({
+      user: userId,
+      type: 'use',
+      amount,
+      source,
+      boostType
+    }).save();
+
+    return inventory.balance;
+  }
+
+  /**
+   * Active un boost, ou PROLONGE celui déjà en cours au lieu de le refuser.
+   * Le champignon n'est jamais gaspillé. Plafond : 2× la durée de base.
+   */
+  static async grantBoost(userId: string, boostType: BoostType): Promise<Date | null> {
+    await dbConnect();
+
+    const config = BOOST_CONFIG[boostType];
+    if (!config) return null;
+
+    // Usage unique (lucky_chest) : on empile simplement une charge de 24h
+    if (config.durationMs === 0) {
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+      await new ActiveBoost({ user: userId, boostType, multiplier: config.multiplier, expiresAt }).save();
+      return expiresAt;
+    }
+
+    const existing = await ActiveBoost.findOne({
+      user: userId,
+      boostType,
+      expiresAt: { $gt: new Date() }
+    });
+
+    if (existing) {
+      const maxEnd = Date.now() + config.durationMs * 2;
+      const extended = Math.min(new Date(existing.expiresAt).getTime() + config.durationMs, maxEnd);
+      existing.expiresAt = new Date(extended);
+      await existing.save();
+      return existing.expiresAt;
+    }
+
+    const expiresAt = new Date(Date.now() + config.durationMs);
+    await new ActiveBoost({ user: userId, boostType, multiplier: config.multiplier, expiresAt }).save();
+    return expiresAt;
+  }
+
+  /**
    * Utilise un champignon pour activer un boost
    */
   static async useBoost(userId: string, boostType: BoostType): Promise<{
     success: boolean;
     boost?: { name: string; expiresAt: Date | null };
+    healed?: { hp: number; hpMax: number };
+    mushroomsLeft?: number;
     message?: string;
   }> {
     await dbConnect();
@@ -99,65 +173,31 @@ export class MushroomService {
       return { success: false, message: 'Type de boost invalide' };
     }
 
-    // Verifier le solde
-    const inventory = await MushroomInventory.findOne({ user: userId });
-    if (!inventory || inventory.balance < config.cost) {
+    // Débit atomique — protège du double-clic
+    const mushroomsLeft = await this.spendMushrooms(userId, config.cost, 'quest', boostType);
+    if (mushroomsLeft === null) {
       return { success: false, message: 'Pas assez de champignons' };
     }
 
-    // Verifier si un boost du meme type est deja actif (pour les boosts a duree)
-    if (config.durationMs > 0) {
-      const existingBoost = await ActiveBoost.findOne({
-        user: userId,
-        boostType,
-        expiresAt: { $gt: new Date() }
-      });
-      if (existingBoost) {
-        return { success: false, message: 'Un boost de ce type est deja actif' };
-      }
-    }
+    // Un boost déjà actif est prolongé, jamais refusé : le champignon est débité,
+    // il doit toujours rendre quelque chose.
+    const expiresAt = await this.grantBoost(userId, boostType);
 
-    // Deduire les champignons
-    inventory.balance -= config.cost;
-    inventory.totalUsed += config.cost;
-    await inventory.save();
-
-    // Enregistrer la transaction
-    const tx = new MushroomTransaction({
-      user: userId,
-      type: 'use',
-      amount: config.cost,
-      source: 'quest', // source generique pour usage
-      boostType
-    });
-    await tx.save();
-
-    // Creer le boost actif
-    let expiresAt: Date | null = null;
-    if (config.durationMs > 0) {
-      expiresAt = new Date(Date.now() + config.durationMs);
-      const boost = new ActiveBoost({
-        user: userId,
-        boostType,
-        multiplier: config.multiplier,
-        expiresAt
-      });
-      await boost.save();
-    } else {
-      // Boost a usage unique : expire dans 24h max (sera consomme a l'usage)
-      expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-      const boost = new ActiveBoost({
-        user: userId,
-        boostType,
-        multiplier: config.multiplier,
-        expiresAt
-      });
-      await boost.save();
+    // Le champignon soigne AUSSI le héros : une seule dépense, les deux effets.
+    // Ne doit jamais faire échouer le boost si le RPG est en panne.
+    let healed: { hp: number; hpMax: number } | undefined;
+    try {
+      const { restoreHeroToFull } = await import('@/lib/heroService');
+      healed = await restoreHeroToFull(userId);
+    } catch (err) {
+      console.error('Erreur soin héros via boost:', err);
     }
 
     return {
       success: true,
-      boost: { name: config.name, expiresAt }
+      boost: { name: config.name, expiresAt },
+      healed,
+      mushroomsLeft
     };
   }
 
@@ -170,6 +210,7 @@ export class MushroomService {
     description: string;
     multiplier: number;
     expiresAt: Date;
+    durationMs: number; // permet à l'UI d'afficher un anneau de progression
   }>> {
     await dbConnect();
 
@@ -185,7 +226,8 @@ export class MushroomService {
         name: config.name,
         description: config.description,
         multiplier: b.multiplier,
-        expiresAt: b.expiresAt
+        expiresAt: b.expiresAt,
+        durationMs: config.durationMs
       };
     });
   }

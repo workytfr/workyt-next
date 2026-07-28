@@ -6,10 +6,11 @@ import User from '@/models/User';
 import mongoose from 'mongoose';
 
 export interface CreateNotificationData {
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout' | 'kanban_assigned' | 'kanban_comment';
+    /** Doit rester aligné avec l'enum de src/models/Notification.ts (union TS + tableau enum) */
+    type: INotification['type'];
     recipientId: string;
     senderId: string;
-    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation' | 'kanban_card';
+    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation' | 'kanban_card' | 'user' | 'challenge';
     relatedEntityId: string;
     title: string;
     message: string;
@@ -147,7 +148,9 @@ export class NotificationService {
                 recipientId: answerAuthorId,
                 senderId: validatorId,
                 relatedEntityType: 'answer',
-                relatedEntityId: answerId,
+                // On stocke l'id de la QUESTION, pas de la réponse : il n'existe
+                // pas de route /forum/<answerId>, le clic renverrait un 404.
+                relatedEntityId: answer.question?.toString() || answerId,
                 title: 'Votre réponse a été validée !',
                 message: `${validator.username} a validé votre réponse sur "${questionTitle}". Vous avez gagné ${points} points !`
             });
@@ -397,11 +400,118 @@ export class NotificationService {
                 senderId: userId, // L'utilisateur lui-même
                 relatedEntityType: 'quest',
                 relatedEntityId: questId,
-                title: 'Quête complétée ! 🎉',
+                // Pas d'emoji dans le titre : la pastille d'icône (voir
+                // src/lib/notificationTypes.ts) porte déjà le signal visuel.
+                title: 'Quête complétée !',
                 message: `Félicitations ! Vous avez complété la quête "${questName}". Réclamez vos récompenses maintenant !`
             });
         } catch (error) {
             console.error('Erreur lors de la notification de quête complétée:', error);
+        }
+    }
+
+    /**
+     * Notifie un utilisateur qu'il a reçu une demande d'ami.
+     * relatedEntity pointe sur l'EXPÉDITEUR : le clic ouvre la page /amis.
+     */
+    static async notifyFriendRequest(
+        recipientId: string,
+        senderId: string,
+        senderUsername: string
+    ): Promise<void> {
+        try {
+            await this.createNotification({
+                type: 'friend_request',
+                recipientId,
+                senderId,
+                relatedEntityType: 'user',
+                relatedEntityId: senderId,
+                title: 'Nouvelle demande d\'ami',
+                message: `${senderUsername} souhaite devenir ton ami. Accepte pour pouvoir le défier !`
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification de demande d\'ami:', error);
+        }
+    }
+
+    /**
+     * Notifie l'expéditeur que sa demande d'ami a été acceptée.
+     */
+    static async notifyFriendAccepted(
+        recipientId: string,
+        senderId: string,
+        senderUsername: string
+    ): Promise<void> {
+        try {
+            await this.createNotification({
+                type: 'friend_accepted',
+                recipientId,
+                senderId,
+                relatedEntityType: 'user',
+                relatedEntityId: senderId,
+                title: 'Demande d\'ami acceptée !',
+                message: `${senderUsername} a accepté ta demande. Vous êtes maintenant amis !`
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification d\'ami accepté:', error);
+        }
+    }
+
+    /**
+     * Notifie un utilisateur qu'il a été défié au quiz.
+     */
+    static async notifyChallengeReceived(
+        recipientId: string,
+        senderId: string,
+        senderUsername: string,
+        challengeId: string
+    ): Promise<void> {
+        try {
+            await this.createNotification({
+                type: 'challenge_received',
+                recipientId,
+                senderId,
+                relatedEntityType: 'challenge',
+                relatedEntityId: challengeId,
+                title: 'Tu as été défié !',
+                message: `${senderUsername} te défie au quiz. Accepte le duel pour gagner de l'XP !`
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification de défi:', error);
+        }
+    }
+
+    /**
+     * Notifie le résultat d'un défi terminé.
+     */
+    static async notifyChallengeResult(
+        recipientId: string,
+        senderId: string,
+        challengeId: string,
+        outcome: 'win' | 'loss' | 'draw',
+        opponentUsername: string
+    ): Promise<void> {
+        try {
+            const title =
+                outcome === 'win' ? 'Duel remporté !'
+                : outcome === 'loss' ? 'Duel perdu'
+                : 'Duel : égalité !';
+            const message =
+                outcome === 'win' ? `Tu as battu ${opponentUsername} au quiz. Bien joué !`
+                : outcome === 'loss' ? `${opponentUsername} l'emporte cette fois. Prends ta revanche !`
+                : `Match nul avec ${opponentUsername}. Il va falloir départager ça !`;
+
+            await this.createNotification({
+                type: 'challenge_result',
+                recipientId,
+                senderId,
+                relatedEntityType: 'challenge',
+                relatedEntityId: challengeId,
+                title,
+                message
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification de résultat de défi:', error);
         }
     }
 

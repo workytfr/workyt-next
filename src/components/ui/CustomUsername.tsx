@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getRoleIconPath } from "@/lib/roleIcon";
+import { fetchCustomization } from "@/lib/customizationClient";
 
 interface CustomUsernameProps {
     username: string;
@@ -41,13 +42,10 @@ const CustomUsername: React.FC<CustomUsernameProps> = ({ username, userId, class
                     setCustomization(data.data.customization);
                 }
             }
-            // Charger le badge selectionne
-            const custRes = await fetch(`/api/users/${userId}/customization`);
-            if (custRes.ok) {
-                const custData = await custRes.json();
-                if (custData.success && custData.data.selectedBadgeIcon) {
-                    setBadgeIcon(custData.data.selectedBadgeIcon);
-                }
+            // Badge sélectionné — regroupé avec les autres pseudos de la page
+            const custData = await fetchCustomization(userId);
+            if (custData?.selectedBadgeIcon) {
+                setBadgeIcon(custData.selectedBadgeIcon);
             }
         } catch (error) {
             console.error('Erreur lors du chargement de la personnalisation:', error);
