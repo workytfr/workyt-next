@@ -347,10 +347,11 @@ const CHALLENGE_POINTS = { win: 5, loss: 1, draw: 3 };
  * Quota journalier de points tirés des défis, par joueur.
  *
  * Deux amis peuvent enchaîner les défis toute la soirée : sans ce plafond, la
- * monnaie du site se fabrique à deux. Au-delà, les défis restent jouables et
- * comptent au classement, ils ne rapportent simplement plus.
+ * monnaie du site se fabrique à deux. 5 points, c'est une victoire par jour —
+ * les défis suivants restent jouables et comptent au classement, ils ne
+ * rapportent simplement plus de points.
  */
-const MAX_CHALLENGE_POINTS_PER_DAY = 15;
+const MAX_CHALLENGE_POINTS_PER_DAY = 5;
 
 /**
  * XP et points de fin de défi.
