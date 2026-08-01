@@ -69,3 +69,6 @@ backups/
 # idea
 .vscode
 .idea
+
+# design handoff / reference bundles (not code)
+.design-ref/
