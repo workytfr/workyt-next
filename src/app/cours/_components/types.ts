@@ -113,6 +113,8 @@ export interface Course {
     sections: Section[];
     status: "en_attente_publication" | "en_attente_verification" | "publie" | "annule";
     authors?: CourseAuthor[];
+    verifiedBy?: CourseAuthor | null;
+    verifiedAt?: string;
     createdAt?: string;
     updatedAt?: string;
 }
@@ -156,4 +158,5 @@ export interface QuizCompletionResult {
     answers?: QuizDetailedAnswer[];
     timeModifier?: number;
     timeModifierLabel?: string;
+    pointsAwarded?: number;
 }

@@ -18,6 +18,10 @@ export interface IHeroProfile extends Document {
     amulet?: string;
   };
   dungeonKills: number; // Total de monstres vaincus
+  /** XP déjà tirée des défis entre amis aujourd'hui — voir MAX_CHALLENGE_XP_PER_DAY */
+  challengeXpToday: number;
+  /** Jour auquel se rapporte challengeXpToday */
+  challengeXpDay: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -61,6 +65,15 @@ const HeroProfileSchema = new Schema<IHeroProfile>({
     type: Number,
     default: 0,
     min: 0
+  },
+  challengeXpToday: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  challengeXpDay: {
+    type: Date,
+    default: Date.now
   },
   createdAt: {
     type: Date,

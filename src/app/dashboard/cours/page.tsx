@@ -17,6 +17,7 @@ import {
   FileText,
   Sparkles,
   Loader2,
+  BadgeCheck,
 } from "lucide-react";
 import Image from "next/image";
 import { educationData } from "@/data/educationData";
@@ -32,6 +33,8 @@ interface Course {
   image?: string;
   sections?: Array<{ _id: string; title: string }>;
   authors?: Array<{ _id: string; name: string }>;
+  verifiedBy?: { _id: string; name: string; username?: string } | null;
+  verifiedAt?: string;
   createdAt: string;
 }
 
@@ -125,13 +128,71 @@ export default function CoursesPage() {
       if (res.ok) {
         setCourses(
           courses.map((c) =>
-            c._id === courseId ? { ...c, status: newStatus } : c
+            c._id === courseId
+              ? {
+                  ...c,
+                  status: newStatus,
+                  // Retour "à vérifier" = vérification annulée côté serveur
+                  ...(newStatus === "en_attente_verification"
+                    ? { verifiedBy: null, verifiedAt: undefined }
+                    : {}),
+                }
+              : c
           )
         );
       }
     } catch (error) {
       console.error("Erreur lors du changement de statut:", error);
     }
+  };
+
+  // Vérifier un cours (Correcteur / Admin)
+  const verifyCourse = async (courseId: string) => {
+    try {
+      const res = await fetch(`/api/courses/${courseId}/verify`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session?.accessToken}`,
+        },
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setCourses(
+          courses.map((c) =>
+            c._id === courseId
+              ? {
+                  ...c,
+                  status: "en_attente_publication",
+                  verifiedBy: {
+                    _id: session?.user?.id || "",
+                    name: session?.user?.name || "Vous",
+                  },
+                  verifiedAt: new Date().toISOString(),
+                }
+              : c
+          )
+        );
+        if (data.pointsAwarded > 0) {
+          alert(`Cours vérifié ! +${data.pointsAwarded} points 🎉`);
+        }
+      } else {
+        alert(data.error || "Impossible de vérifier ce cours.");
+      }
+    } catch (error) {
+      console.error("Erreur lors de la vérification:", error);
+    }
+  };
+
+  // Peut vérifier : Correcteur/Admin, cours à vérifier, et pas auteur du cours
+  const canVerify = (course: Course) => {
+    const role = session?.user?.role;
+    if (role !== "Correcteur" && role !== "Admin") return false;
+    if (course.status !== "en_attente_verification") return false;
+    const userId = session?.user?.id;
+    if (userId && course.authors?.some((a) => a._id === userId)) return false;
+    return true;
   };
 
   // Supprimer un cours
@@ -410,6 +471,23 @@ export default function CoursesPage() {
 
               {/* Actions */}
               <div className="p-4 border-t border-[#e3e2e0] space-y-2">
+                {/* Correcteur ayant vérifié le cours */}
+                {course.verifiedBy && (
+                  <div className="flex items-center gap-1.5 text-sm text-[#6b6b6b]">
+                    <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                    Vérifié par {course.verifiedBy.name || course.verifiedBy.username}
+                  </div>
+                )}
+                {/* Bouton Vérifié (correcteurs, hors auteurs du cours) */}
+                {canVerify(course) && (
+                  <button
+                    onClick={() => verifyCourse(course._id)}
+                    className="dash-button dash-button-primary dash-button-sm w-full"
+                  >
+                    <BadgeCheck className="w-4 h-4" />
+                    Marquer comme vérifié (+13 pts)
+                  </button>
+                )}
                 {/* Changement de statut */}
                 {session?.user?.role === "Admin" && (
                   <select
@@ -533,9 +611,24 @@ export default function CoursesPage() {
                         {getStatusLabel(course.status)}
                       </span>
                     )}
+                    {course.verifiedBy && (
+                      <div className="flex items-center gap-1 text-xs text-[#6b6b6b] mt-1">
+                        <BadgeCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        {course.verifiedBy.name || course.verifiedBy.username}
+                      </div>
+                    )}
                   </td>
                   <td>
                     <div className="flex items-center gap-1">
+                      {canVerify(course) && (
+                        <button
+                          onClick={() => verifyCourse(course._id)}
+                          className="p-2 hover:bg-emerald-50 rounded-lg transition-colors"
+                          title="Marquer comme vérifié (+13 pts)"
+                        >
+                          <BadgeCheck className="w-4 h-4 text-emerald-500" />
+                        </button>
+                      )}
                       <Link
                         href={`/dashboard/cours/${course._id}/gestion`}
                         className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors"

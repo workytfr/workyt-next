@@ -242,6 +242,18 @@ export async function POST(request: NextRequest) {
         const quiz = new Quiz({ ...body, author: session.user.id });
         await quiz.save();
 
+        // 🏆 +5 points si le quiz contient plus de 5 questions (une seule fois par quiz)
+        if (body.questions.length > 5) {
+            try {
+                const { awardPointsOnce } = await import('@/lib/pointsService');
+                await awardPointsOnce(session.user.id, 5, 'createQuiz', {
+                    quiz: quiz._id.toString(),
+                });
+            } catch (e) {
+                console.error('Erreur attribution points quiz:', (e as any)?.message);
+            }
+        }
+
         return NextResponse.json(quiz, { status: 201 });
     } catch (error) {
         console.error('Erreur lors de la création du quiz:', error);

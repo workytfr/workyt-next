@@ -334,7 +334,26 @@ function resolveWinner(c: IChallenge) {
 }
 
 /**
- * XP de fin de défi.
+ * Points Workyt d'un défi terminé.
+ *
+ * Volontairement modeste : un défi se joue en deux minutes, il ne doit pas
+ * peser autant qu'une fiche de révision (10 points). Le perdant touche quand
+ * même quelque chose — refuser un défi ne doit jamais être la stratégie
+ * rentable.
+ */
+const CHALLENGE_POINTS = { win: 5, loss: 1, draw: 3 };
+
+/**
+ * Quota journalier de points tirés des défis, par joueur.
+ *
+ * Deux amis peuvent enchaîner les défis toute la soirée : sans ce plafond, la
+ * monnaie du site se fabrique à deux. Au-delà, les défis restent jouables et
+ * comptent au classement, ils ne rapportent simplement plus.
+ */
+const MAX_CHALLENGE_POINTS_PER_DAY = 15;
+
+/**
+ * XP et points de fin de défi.
  *
  * Aucun dégât en PvP : un ami ne doit pas pouvoir vider tes PV et te bloquer
  * ta case de calendrier. Le PvE reste la seule source de dégâts.
@@ -344,22 +363,36 @@ async function awardXp(c: IChallenge) {
 
   try {
     const { grantChallengeXp } = await import('@/lib/heroService');
+    const { awardPointsCapped } = await import('@/lib/pointsService');
     const winXp = 40 + 5 * c.level;
+    const challengeId = (c as any)._id.toString();
+
+    /** XP + points d'un joueur, chacun avec son propre quota du jour. */
+    const reward = async (userId: string, xp: number, points: number) => {
+      await grantChallengeXp(userId, xp);
+      await awardPointsCapped(
+        userId,
+        points,
+        'winChallenge',
+        MAX_CHALLENGE_POINTS_PER_DAY,
+        { challenge: challengeId }
+      );
+    };
 
     if (c.winner) {
       const loserId =
         c.winner.toString() === c.challenger.toString() ? c.opponent : c.challenger;
-      await grantChallengeXp(c.winner.toString(), winXp);
-      await grantChallengeXp(loserId.toString(), 15);
+      await reward(c.winner.toString(), winXp, CHALLENGE_POINTS.win);
+      await reward(loserId.toString(), 15, CHALLENGE_POINTS.loss);
     } else {
-      await grantChallengeXp(c.challenger.toString(), 25);
-      await grantChallengeXp(c.opponent.toString(), 25);
+      await reward(c.challenger.toString(), 25, CHALLENGE_POINTS.draw);
+      await reward(c.opponent.toString(), 25, CHALLENGE_POINTS.draw);
     }
 
     c.xpAwarded = true;
     await c.save();
   } catch (err) {
-    console.error('Erreur attribution XP de défi:', err);
+    console.error('Erreur attribution des gains de défi:', err);
   }
 
   // Prévenir les deux joueurs du résultat — ne doit jamais bloquer l'XP

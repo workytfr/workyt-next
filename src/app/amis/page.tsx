@@ -18,6 +18,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import AvatarDisplay from '@/components/ui/AvatarDisplay';
 
 interface Friend {
     friendshipId: string;
@@ -39,26 +40,6 @@ interface SearchResult {
 }
 
 type Tab = 'friends' | 'requests' | 'add';
-
-/** Pastille d'avatar : photo du profil, sinon initiale colorée */
-function Avatar({ user }: { user: { username: string; avatar: string | null } }) {
-    if (user.avatar) {
-        // <img> et non next/image : le fichier vient d'un upload utilisateur
-        // eslint-disable-next-line @next/next/no-img-element
-        return (
-            <img
-                src={user.avatar}
-                alt={user.username}
-                className="h-11 w-11 rounded-full object-cover border-2 border-white shadow-sm"
-            />
-        );
-    }
-    return (
-        <div className="flex h-11 w-11 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-sm">
-            {user.username.charAt(0).toUpperCase()}
-        </div>
-    );
-}
 
 export default function FriendsPage() {
     const { data: session, status } = useSession();
@@ -233,14 +214,27 @@ export default function FriendsPage() {
     ];
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-            <div className="mx-auto max-w-3xl space-y-6 py-8">
-                <header className="text-center">
-                    <h1 className="text-3xl font-extrabold text-gray-900">Mes amis</h1>
-                    <p className="mt-1 text-sm text-gray-500">
-                        Ajoute tes camarades pour suivre leur progression et les défier.
-                    </p>
-                </header>
+        <div className="min-h-screen bg-white">
+            {/* En-tête, au format des pages /cours, /fiches et /forum */}
+            <header className="border-b border-gray-100 bg-gradient-to-b from-orange-50/30 to-white">
+                <div className="mx-auto max-w-[1400px] px-6 pt-10 pb-8 sm:pt-14 sm:pb-10">
+                    <div className="max-w-2xl">
+                        <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-orange-50 px-3 py-1.5 text-xs font-medium text-orange-600">
+                            <Users className="h-3.5 w-3.5" />
+                            Communauté
+                        </div>
+                        <h1 className="mb-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+                            Mes amis
+                        </h1>
+                        <p className="text-base leading-relaxed text-gray-500">
+                            Ajoute tes camarades pour suivre leur progression, les défier au quiz
+                            et vous entraider.
+                        </p>
+                    </div>
+                </div>
+            </header>
+
+            <div className="mx-auto max-w-[1400px] space-y-6 px-6 py-8">
 
                 {/* Onglets */}
                 <div className="flex gap-2 rounded-2xl border border-white/60 bg-white/70 p-1.5 shadow-sm backdrop-blur">
@@ -280,7 +274,7 @@ export default function FriendsPage() {
                         ))}
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                         {/* ---- Mes amis ---- */}
                         {tab === 'friends' &&
                             (friends.length === 0 ? (
@@ -339,7 +333,7 @@ export default function FriendsPage() {
                                 )}
 
                                 {received.length > 0 && (
-                                    <p className="px-1 text-xs font-bold uppercase tracking-wide text-gray-400">
+                                    <p className="col-span-full px-1 text-xs font-bold uppercase tracking-wide text-gray-400">
                                         Reçues
                                     </p>
                                 )}
@@ -371,7 +365,7 @@ export default function FriendsPage() {
                                 ))}
 
                                 {sent.length > 0 && (
-                                    <p className="px-1 pt-3 text-xs font-bold uppercase tracking-wide text-gray-400">
+                                    <p className="col-span-full px-1 pt-3 text-xs font-bold uppercase tracking-wide text-gray-400">
                                         Envoyées
                                     </p>
                                 )}
@@ -396,7 +390,7 @@ export default function FriendsPage() {
                         {/* ---- Ajouter ---- */}
                         {tab === 'add' && (
                             <>
-                                <div className="relative">
+                                <div className="relative col-span-full">
                                     <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                                     <Input
                                         value={query}
@@ -447,13 +441,28 @@ function Row({
     user,
     children
 }: {
-    user: { username: string; points: number; avatar: string | null; isOnline?: boolean };
+    user: {
+        userId: string;
+        username: string;
+        points: number;
+        avatar: string | null;
+        isOnline?: boolean;
+    };
     children: React.ReactNode;
 }) {
     return (
         <div className="flex items-center gap-3 rounded-2xl border border-white/60 bg-white/80 p-3 shadow-sm backdrop-blur transition-shadow hover:shadow-md">
             <div className="relative shrink-0">
-                <Avatar user={user} />
+                {/* Même avatar que partout ailleurs sur le site : photo de profil,
+                    contour acheté en gemmes, et à défaut l'avatar généré — jamais
+                    une simple initiale. `avatar` sert de valeur de repli le temps
+                    que la personnalisation soit chargée. */}
+                <AvatarDisplay
+                    name={user.username}
+                    userId={user.userId}
+                    size="lg"
+                    fallbackImage={user.avatar ?? undefined}
+                />
                 {user.isOnline && (
                     <span
                         className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white"
@@ -480,7 +489,7 @@ function EmptyState({
     text: string;
 }) {
     return (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white/50 p-8 text-center">
+        <div className="col-span-full rounded-2xl border border-dashed border-gray-300 bg-white/50 p-8 text-center">
             <Icon className="mx-auto h-8 w-8 text-gray-300" />
             <p className="mt-3 font-semibold text-gray-700">{title}</p>
             <p className="mt-1 text-sm text-gray-500">{text}</p>

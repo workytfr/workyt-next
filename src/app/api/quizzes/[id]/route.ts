@@ -30,6 +30,20 @@ export async function GET(
             return NextResponse.json({ error: "Quiz non trouvé" }, { status: 404 });
         }
 
+        // 🏆 Si le quiz franchit le seuil des 5 questions après modification
+        // (et que la récompense n'a jamais été versée), l'auteur reçoit ses 5 points.
+        const updatedQuestions = (quiz as any).questions;
+        if (Array.isArray(updatedQuestions) && updatedQuestions.length > 5 && (quiz as any).author) {
+            try {
+                const { awardPointsOnce } = await import('@/lib/pointsService');
+                await awardPointsOnce((quiz as any).author.toString(), 5, 'createQuiz', {
+                    quiz: id,
+                });
+            } catch (e) {
+                console.error('Erreur attribution points quiz (modif):', (e as any)?.message);
+            }
+        }
+
         return NextResponse.json({ quiz }, { status: 200 });
     } catch (error: any) {
         console.error("[GET /api/quizzes/[id]] Error:", error);
@@ -188,6 +202,27 @@ export async function POST(
         const adjustedScore = Math.max(0, Math.round(score * (1 + timeModifier)));
         const percentage = maxScore > 0 ? Math.round((adjustedScore / maxScore) * 100) : 0;
 
+        // 🏆 Les points des questions sont crédités sur le compte UNIQUEMENT
+        // à la première complétion du quiz. Une retentative ne rapporte rien.
+        let pointsAwarded = 0;
+        const alreadyCompleted = await QuizCompletion.exists({
+            userId: session.user.id,
+            quizId: id,
+        });
+        if (!alreadyCompleted && adjustedScore > 0) {
+            try {
+                const { awardPointsOnce } = await import('@/lib/pointsService');
+                pointsAwarded = await awardPointsOnce(
+                    session.user.id,
+                    adjustedScore,
+                    'completeQuiz',
+                    { quiz: id }
+                );
+            } catch (e) {
+                console.error('[POST /api/quizzes/[id]] Award points error:', (e as any)?.message);
+            }
+        }
+
         // Save completion (upsert)
         try {
             await QuizCompletion.findOneAndUpdate(
@@ -221,6 +256,7 @@ export async function POST(
             answers: detailedAnswers,
             timeModifier,
             timeModifierLabel: timeModifierLabel || undefined,
+            pointsAwarded,
         });
     } catch (error: any) {
         console.error("[POST /api/quizzes/[id]] Error:", error);

@@ -152,6 +152,31 @@ export async function POST(req: NextRequest) {
             createdAt: new Date(),
         });
 
+        // 🏆 Récompense par paquet : +6 points tous les 5 exercices créés.
+        // On compare le nombre de paquets mérités (exercices / 5) au nombre de
+        // paquets déjà versés : robuste même en cas de suppression/re-création.
+        try {
+            const totalExercises = await Exercise.countDocuments({ author: user._id });
+            const expectedPacks = Math.floor(totalExercises / 5);
+            if (expectedPacks > 0) {
+                const { default: PointTransaction } = await import("@/models/PointTransaction");
+                const awardedPacks = await PointTransaction.countDocuments({
+                    user: user._id,
+                    action: "createExercisePack",
+                    type: "gain",
+                });
+                const newPacks = expectedPacks - awardedPacks;
+                if (newPacks > 0) {
+                    const { addPointsWithBoost } = await import("@/lib/pointsService");
+                    for (let i = 0; i < newPacks; i++) {
+                        await addPointsWithBoost(user._id.toString(), 6, "createExercisePack");
+                    }
+                }
+            }
+        } catch (e) {
+            console.error("Erreur attribution points exercices:", (e as any)?.message);
+        }
+
         return NextResponse.json(newExercise, { status: 201 });
     } catch (error: any) {
         console.error("Erreur lors de la création de l'exercice :", error.message);

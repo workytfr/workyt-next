@@ -37,7 +37,8 @@ async function findCourse(idSlug: string) {
  */
 async function findCourseWithSections(id: string) {
     const cours: any = await Course.findOne({ _id: id, status: 'publie' })
-        .populate('authors', 'username')
+        .populate('authors', 'username image')
+        .populate('verifiedBy', 'username image')
         .populate({
             path: 'sections',
             select: 'title order',

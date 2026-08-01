@@ -44,6 +44,7 @@ interface DetailedResults {
     answers: QuizDetailedAnswer[];
     timeModifier?: number;
     timeModifierLabel?: string;
+    pointsAwarded?: number;
 }
 
 function formatTime(seconds: number): string {
@@ -762,6 +763,17 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                     <p className="text-[#6b6b6b] text-sm sm:text-base">
                         {results.score}/{results.maxScore} points
                     </p>
+                    {(results.pointsAwarded || 0) > 0 && (
+                        <motion.div
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            transition={{ delay: 0.3 }}
+                            className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full bg-amber-100 text-amber-700 text-sm font-semibold"
+                        >
+                            <Trophy className="w-4 h-4" />
+                            +{results.pointsAwarded} points gagnés !
+                        </motion.div>
+                    )}
                     <div className="flex items-center justify-center gap-2 mt-3 text-sm text-[#9ca3af]">
                         <Clock className="w-4 h-4" />
                         {formatTime(timeSpent)}

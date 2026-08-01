@@ -5,6 +5,9 @@ import Course from "@/models/Course";
 import Section from "@/models/Section";
 import connectDB from "@/lib/mongodb";
 import { escapeRegex } from "@/utils/escapeRegex";
+import { awardPointsOnce, revokePointsOnce } from "@/lib/pointsService";
+
+const COURSE_AUTHOR_POINTS = 20; // Points gagnés par chaque auteur à la publication du cours
 
 /**
  * 🚀 GET - Récupérer les cours avec pagination et recherche avancée (Réservé au staff)
@@ -57,7 +60,8 @@ export async function GET(req: NextRequest) {
 
         // 📌 Récupération des cours avec pagination et leurs sections
         const courses = await Course.find(filters)
-            .populate("authors", "name")
+            .populate("authors", "name username")
+            .populate("verifiedBy", "name username")
             .lean()
             .sort(sortConfig)
             .skip(skip)
@@ -283,18 +287,60 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Statut invalide." }, { status: 400 });
         }
 
+        // 🔍 État actuel du cours (nécessaire pour détecter une annulation de vérification)
+        const previousCourse = await Course.findById(courseId).lean();
+        if (!previousCourse) {
+            return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
+        }
+
+        // 🔻 Annulation d'une vérification : retour à "en_attente_verification"
+        // alors qu'un correcteur avait vérifié → on efface sa trace et on retire ses points.
+        const unverify =
+            newStatus === "en_attente_verification" && previousCourse.verifiedBy;
+
+        const updateQuery: any = {
+            $set: { status: newStatus, updatedAt: new Date() },
+        };
+        if (unverify) {
+            updateQuery.$unset = { verifiedBy: 1, verifiedAt: 1 };
+        }
+
         // 🔄 Mise à jour du cours
         const updatedCourse = await Course.findByIdAndUpdate(
             courseId,
-            {
-                status: newStatus,
-                updatedAt: new Date(), // on met à jour la date de modification
-            },
+            updateQuery,
             { new: true } // Renvoie le document après mise à jour
         );
 
         if (!updatedCourse) {
             return NextResponse.json({ error: "Cours introuvable." }, { status: 404 });
+        }
+
+        // Retrait des points du correcteur dont la vérification est annulée
+        if (unverify) {
+            try {
+                await revokePointsOnce(
+                    (previousCourse.verifiedBy as any).toString(),
+                    "verifyCourse",
+                    { course: courseId }
+                );
+            } catch (e) {
+                console.error("Erreur retrait points correcteur:", (e as any)?.message);
+            }
+        }
+
+        // 🏆 À la publication, chaque auteur reçoit ses points (une seule fois par cours).
+        // Les points vont aux auteurs renseignés sur le cours, pas à la personne qui publie.
+        if (newStatus === "publie") {
+            for (const authorId of updatedCourse.authors) {
+                try {
+                    await awardPointsOnce(authorId.toString(), COURSE_AUTHOR_POINTS, "createCourse", {
+                        course: updatedCourse._id.toString(),
+                    });
+                } catch (e) {
+                    console.error("Erreur attribution points auteur:", (e as any)?.message);
+                }
+            }
         }
 
         return NextResponse.json(

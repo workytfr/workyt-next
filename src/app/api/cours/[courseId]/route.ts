@@ -44,6 +44,8 @@ export async function GET(
 
         // Fetch course with populated sections
         const cours = await Course.findOne(query)
+            .populate("authors", "username image")
+            .populate("verifiedBy", "username image")
             .populate({
                 path: "sections",
                 select: "title order",

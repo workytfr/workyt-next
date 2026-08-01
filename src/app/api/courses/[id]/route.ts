@@ -7,8 +7,11 @@ import Exercise from "@/models/Exercise";
 import Quiz from "@/models/Quiz";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { hasPermission } from "@/lib/roles";
+import { awardPointsOnce, revokePointsOnce } from "@/lib/pointsService";
 import { revalidatePath } from "next/cache";
 import { buildIdSlug } from "@/utils/slugify";
+
+const COURSE_AUTHOR_POINTS = 20; // Points gagnés par chaque auteur (cohérent avec /api/courses PATCH)
 
 /**
  * 🚀 GET - Récupérer un cours spécifique (Accès public)
@@ -85,6 +88,46 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         } else {
             // Rétrocompatibilité : pas de version envoyée → comportement historique
             updatedCourse = await Course.findByIdAndUpdate(id, updateData, { new: true });
+        }
+
+        // 🏆 Si le cours est déjà publié et que de nouveaux auteurs sont ajoutés
+        // (ex: mise en ligne par un tiers puis ajout des vrais rédacteurs),
+        // chaque nouvel auteur reçoit ses points (une seule fois par cours).
+        if (
+            (updatedCourse as any)?.status === "publie" &&
+            Array.isArray(updateData.authors)
+        ) {
+            const previousAuthorIds = new Set(
+                existingCourse.authors.map((a: any) => a.toString())
+            );
+            const newAuthorIds: string[] = updateData.authors
+                .map((a: any) => a?.toString())
+                .filter((a: any): a is string => Boolean(a));
+
+            for (const authorId of newAuthorIds) {
+                if (previousAuthorIds.has(authorId)) continue;
+                try {
+                    await awardPointsOnce(authorId, COURSE_AUTHOR_POINTS, "createCourse", {
+                        course: id,
+                    });
+                } catch (e) {
+                    console.error("Erreur attribution points nouvel auteur:", (e as any)?.message);
+                }
+            }
+
+            // 🔻 Auteurs retirés d'un cours publié : on leur retire les points
+            // du cours (la transaction est supprimée : un re-ajout légitime
+            // pourra être récompensé à nouveau).
+            const removedAuthorIds = [...previousAuthorIds].filter(
+                (a) => !newAuthorIds.includes(a)
+            );
+            for (const authorId of removedAuthorIds) {
+                try {
+                    await revokePointsOnce(authorId, "createCourse", { course: id });
+                } catch (e) {
+                    console.error("Erreur retrait points auteur:", (e as any)?.message);
+                }
+            }
         }
 
         // La page /cours/[coursId] est générée statiquement (SSG) : sans revalidation,

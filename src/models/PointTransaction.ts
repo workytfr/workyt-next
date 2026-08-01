@@ -5,6 +5,9 @@ export interface IPointTransaction extends Document {
     question?: Types.ObjectId;   // réponse validée sur le forum
     answer?: Types.ObjectId;     // like / unlike de réponse
     revision?: Types.ObjectId;   // création ou like de fiche
+    course?: Types.ObjectId;     // publication / vérification de cours
+    quiz?: Types.ObjectId;       // création de quiz
+    challenge?: Types.ObjectId;  // défi au quiz entre amis
     action:               // pour préciser le type exact d'événement
         | 'createRevision'
         | 'likeRevision'
@@ -14,7 +17,12 @@ export interface IPointTransaction extends Document {
         | 'unlikeAnswer'
         | 'validateAnswer'
         | 'completeQuiz'
-        | 'completeEvaluation';
+        | 'completeEvaluation'
+        | 'createCourse'
+        | 'verifyCourse'
+        | 'createQuiz'
+        | 'createExercisePack'
+        | 'winChallenge';
     type: 'gain' | 'perte';
     points: number;
     createdAt: Date;
@@ -25,12 +33,17 @@ const PointTransactionSchema: Schema = new Schema({
     question: { type: Schema.Types.ObjectId, ref: 'Question' },
     answer:   { type: Schema.Types.ObjectId, ref: 'Answer' },
     revision: { type: Schema.Types.ObjectId, ref: 'Revision' },
+    course:   { type: Schema.Types.ObjectId, ref: 'Course' },
+    quiz:     { type: Schema.Types.ObjectId, ref: 'Quiz' },
+    challenge:{ type: Schema.Types.ObjectId, ref: 'Challenge' },
     action:   {
         type: String,
         enum: [
             'createRevision','likeRevision','unlikeRevision',
             'createAnswer','likeAnswer','unlikeAnswer',
             'validateAnswer', 'createQuestion', 'completeQuiz', 'completeEvaluation',
+            'createCourse', 'verifyCourse', 'createQuiz', 'createExercisePack',
+            'winChallenge',
         ],
         required: true
     },

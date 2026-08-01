@@ -18,7 +18,7 @@ import CourseCompetencies from "./CourseCompetencies";
 import CourseEvaluation from "./CourseEvaluation";
 import { useCourseNavigation, navigableToSelected } from "./hooks/useCourseNavigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight, HelpCircle, FileCheck } from "lucide-react";
+import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight, HelpCircle, FileCheck, BadgeCheck, Users } from "lucide-react";
 import {
     Drawer,
     DrawerContent,
@@ -376,6 +376,18 @@ function CourseHeader({ cours }: { cours: Course }) {
                     <BookOpen className="w-4 h-4" />
                     {cours.sections.length} section{cours.sections.length > 1 ? 's' : ''}
                 </span>
+                {cours.authors && cours.authors.length > 0 && (
+                    <span className="flex items-center gap-1.5">
+                        <Users className="w-4 h-4" />
+                        Par {cours.authors.map((a) => a.username).join(", ")}
+                    </span>
+                )}
+                {cours.verifiedBy && (
+                    <span className="flex items-center gap-1.5 text-emerald-600">
+                        <BadgeCheck className="w-4 h-4" />
+                        Vérifié par {cours.verifiedBy.username}
+                    </span>
+                )}
             </div>
         </div>
     );

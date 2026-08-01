@@ -364,7 +364,24 @@ export async function recordDefeat(
 }
 
 /**
- * XP gagnée sur un défi entre amis.
+ * Plafond d'XP tirée des défis entre amis, par joueur et par jour.
+ *
+ * Deux amis peuvent enchaîner les défis à volonté : sans plafond, l'XP du
+ * héros se farme à deux en une soirée. Au-delà, les défis restent jouables,
+ * ils ne rapportent simplement plus rien. 150 = environ trois victoires.
+ */
+export const MAX_CHALLENGE_XP_PER_DAY = 150;
+
+function isSameDay(a: Date, b: Date): boolean {
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
+}
+
+/**
+ * XP gagnée sur un défi entre amis, dans la limite du quota du jour.
  *
  * Aucun dégât, aucune perte de PV : un ami ne doit pas pouvoir vider tes PV et
  * te bloquer ta case de calendrier. Le PvE (quiz du jour) reste la seule source
@@ -372,16 +389,34 @@ export async function recordDefeat(
  */
 export async function grantChallengeXp(
   userId: string,
-  amount: number
-): Promise<{ xpGained: number; leveledUp: boolean; newLevel: number }> {
+  amount: number,
+  now: Date = new Date()
+): Promise<{ xpGained: number; leveledUp: boolean; newLevel: number; capped: boolean }> {
   try {
     const hero = await getOrCreateHero(userId);
-    const { leveledUp } = await gainXp(hero, amount);
+
+    // Jour suivant : le compteur repart de zéro.
+    if (!hero.challengeXpDay || !isSameDay(new Date(hero.challengeXpDay), now)) {
+      hero.challengeXpToday = 0;
+      hero.challengeXpDay = now;
+    }
+
+    const remaining = Math.max(0, MAX_CHALLENGE_XP_PER_DAY - (hero.challengeXpToday ?? 0));
+    const granted = Math.min(amount, remaining);
+
+    if (granted <= 0) {
+      // Rien à gagner, mais la remise à zéro du jour doit être conservée.
+      await hero.save();
+      return { xpGained: 0, leveledUp: false, newLevel: hero.level, capped: true };
+    }
+
+    hero.challengeXpToday = (hero.challengeXpToday ?? 0) + granted;
+    const { leveledUp } = await gainXp(hero, granted);
     await hero.save();
-    return { xpGained: amount, leveledUp, newLevel: hero.level };
+    return { xpGained: granted, leveledUp, newLevel: hero.level, capped: granted < amount };
   } catch (err) {
     console.error('Erreur grantChallengeXp:', err);
-    return { xpGained: 0, leveledUp: false, newLevel: 1 };
+    return { xpGained: 0, leveledUp: false, newLevel: 1, capped: false };
   }
 }
 

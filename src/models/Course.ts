@@ -13,6 +13,8 @@ export interface ICourse extends Document {
     niveau: string; // Collège, lycée, université...
     matiere: string; // Référence à la matière
     image?: string; // Image de fond du cours (optionnelle)
+    verifiedBy?: Types.ObjectId; // Correcteur ayant vérifié le cours
+    verifiedAt?: Date; // Date de vérification
     createdAt: Date;
     updatedAt: Date;
 }
@@ -33,6 +35,8 @@ const CourseSchema: Schema = new Schema({
     niveau: { type: String, required: true },
     matiere: { type: String, required: true },
     image: { type: String, default: "" }, // Image de fond du cours (optionnelle)
+    verifiedBy: { type: Schema.Types.ObjectId, ref: "User" }, // Correcteur ayant vérifié le cours
+    verifiedAt: { type: Date }, // Date de vérification
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now },
 });
