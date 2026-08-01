@@ -294,10 +294,59 @@ function CourseStats({ courseId }: { courseId: string }) {
 }
 
 // Aperçu du cours
-function CourseOverview({ cours, onOpenSidebar }: { cours: Course; onOpenSidebar?: () => void }) {
+function CourseOverview({
+    cours,
+    onOpenSidebar,
+    progress,
+    onResume,
+}: {
+    cours: Course;
+    onOpenSidebar?: () => void;
+    progress?: {
+        percentage: number;
+        totalLessons: number;
+        lessonsReadCount: number;
+        lastLessonId: string | null;
+    } | null;
+    onResume?: () => void;
+}) {
     return (
         <div className="max-w-3xl">
             <CourseHeader cours={cours} />
+
+            {/* Progression de l'élève dans le cours */}
+            {progress && progress.totalLessons > 0 && (
+                <div className="mt-6 p-4 bg-[#f7f6f3] border border-[#e3e2e0] rounded-xl">
+                    <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm font-medium text-[#37352f]">
+                            Votre progression
+                        </p>
+                        <p className="text-sm text-[#6b6b6b]">
+                            {progress.lessonsReadCount}/{progress.totalLessons} leçons · {progress.percentage}%
+                        </p>
+                    </div>
+                    <div className="h-2 bg-[#e3e2e0] rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-[#f97316] rounded-full transition-all duration-500"
+                            style={{ width: `${progress.percentage}%` }}
+                        />
+                    </div>
+                    {progress.lastLessonId && progress.percentage < 100 && onResume && (
+                        <button
+                            onClick={onResume}
+                            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#f97316] hover:underline"
+                        >
+                            <ChevronRight className="w-4 h-4" />
+                            Reprendre là où vous étiez
+                        </button>
+                    )}
+                    {progress.percentage === 100 && (
+                        <p className="mt-3 text-sm font-medium text-emerald-600">
+                            🎉 Cours terminé, bravo !
+                        </p>
+                    )}
+                </div>
+            )}
 
             <div className="notion-divider" />
 
@@ -439,6 +488,13 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
     const [selectedContent, setSelectedContent] = useState<SelectedContent | null>(null);
     const [drawerOpen, setDrawerOpen] = useState(false);
     const [readLessons, setReadLessons] = useState<Set<string>>(new Set());
+    const [courseProgress, setCourseProgress] = useState<{
+        percentage: number;
+        totalLessons: number;
+        lessonsReadCount: number;
+        lastLessonId: string | null;
+        lastSectionId: string | null;
+    } | null>(null);
     const markReadTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
     const { prev, next } = useCourseNavigation(fullCourse, selectedContent);
@@ -602,10 +658,36 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
             .then(data => {
                 if (data?.progress?.lessonsRead) {
                     setReadLessons(new Set(data.progress.lessonsRead));
+                    setCourseProgress({
+                        percentage: data.progress.percentage || 0,
+                        totalLessons: data.progress.totalLessons || 0,
+                        lessonsReadCount: data.progress.lessonsRead.length,
+                        lastLessonId: data.progress.lastLessonId || null,
+                        lastSectionId: data.progress.lastSectionId || null,
+                    });
                 }
             })
             .catch(() => {});
     }, [session, cours, params.coursId]);
+
+    // Reprendre le cours là où l'élève s'était arrêté
+    const handleResumeCourse = () => {
+        if (!courseProgress?.lastLessonId || !cours) return;
+        for (const section of cours.sections) {
+            const lesson = (section as any).lessons?.find(
+                (l: any) => l._id === courseProgress.lastLessonId
+            );
+            if (lesson) {
+                handleSelectContent({
+                    kind: 'lesson',
+                    lesson,
+                    sectionId: section._id,
+                    sectionTitle: section.title,
+                });
+                return;
+            }
+        }
+    };
 
     useEffect(() => {
         if (markReadTimerRef.current) clearTimeout(markReadTimerRef.current);
@@ -623,7 +705,23 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
                 },
                 body: JSON.stringify({ lessonId, sectionId: selectedContent.sectionId }),
             })
-                .then(res => { if (res.ok) setReadLessons(prev => new Set([...prev, lessonId])); })
+                .then(res => {
+                    if (res.ok) {
+                        setReadLessons(prev => new Set([...prev, lessonId]));
+                        // Met à jour localement la progression affichée (barre + reprendre)
+                        setCourseProgress(prev => {
+                            const total = prev?.totalLessons || 0;
+                            const count = (prev?.lessonsReadCount || 0) + 1;
+                            return {
+                                percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+                                totalLessons: total,
+                                lessonsReadCount: count,
+                                lastLessonId: lessonId,
+                                lastSectionId: selectedContent.sectionId,
+                            };
+                        });
+                    }
+                })
                 .catch(() => {});
         }, 5000);
 
@@ -705,6 +803,8 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
                         <CourseOverview
                             cours={cours}
                             onOpenSidebar={() => setDrawerOpen(true)}
+                            progress={courseProgress}
+                            onResume={handleResumeCourse}
                         />
                     )}
 
@@ -750,6 +850,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
                             <SidebarWrapper
                                 course={cours}
                                 onSelectContent={handleSelectContent}
+                                readLessons={readLessons}
                             />
                         </div>
                     </DrawerContent>

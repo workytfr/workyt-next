@@ -205,11 +205,11 @@ export async function POST(
         // 🏆 Les points des questions sont crédités sur le compte UNIQUEMENT
         // à la première complétion du quiz. Une retentative ne rapporte rien.
         let pointsAwarded = 0;
-        const alreadyCompleted = await QuizCompletion.exists({
+        const existingCompletion = await QuizCompletion.findOne({
             userId: session.user.id,
             quizId: id,
-        });
-        if (!alreadyCompleted && adjustedScore > 0) {
+        }).lean();
+        if (!existingCompletion && adjustedScore > 0) {
             try {
                 const { awardPointsOnce } = await import('@/lib/pointsService');
                 pointsAwarded = await awardPointsOnce(
@@ -223,30 +223,34 @@ export async function POST(
             }
         }
 
-        // Save completion (upsert)
-        try {
-            await QuizCompletion.findOneAndUpdate(
-                { userId: session.user.id, quizId: id },
-                {
-                    userId: session.user.id,
-                    quizId: id,
-                    courseId: quiz.sectionId ? undefined : undefined,
-                    sectionId: quiz.sectionId,
-                    score: adjustedScore,
-                    maxScore,
-                    answers: detailedAnswers.map(a => ({
-                        questionIndex: a.questionIndex,
-                        userAnswer: a.userAnswer,
-                        isCorrect: a.isCorrect,
-                        pointsEarned: a.pointsEarned,
-                    })),
-                    timeSpent,
-                    completedAt: new Date(),
-                },
-                { upsert: true, new: true }
-            );
-        } catch (saveErr) {
-            console.error("[POST /api/quizzes/[id]] Save completion error:", saveErr);
+        // Save completion : on conserve le MEILLEUR score.
+        // Une retentative avec un score inférieur n'écrase pas le record.
+        const isNewBest = !existingCompletion || adjustedScore > (existingCompletion.score || 0);
+        if (isNewBest) {
+            try {
+                await QuizCompletion.findOneAndUpdate(
+                    { userId: session.user.id, quizId: id },
+                    {
+                        userId: session.user.id,
+                        quizId: id,
+                        courseId: quiz.sectionId ? undefined : undefined,
+                        sectionId: quiz.sectionId,
+                        score: adjustedScore,
+                        maxScore,
+                        answers: detailedAnswers.map(a => ({
+                            questionIndex: a.questionIndex,
+                            userAnswer: a.userAnswer,
+                            isCorrect: a.isCorrect,
+                            pointsEarned: a.pointsEarned,
+                        })),
+                        timeSpent,
+                        completedAt: new Date(),
+                    },
+                    { upsert: true, new: true }
+                );
+            } catch (saveErr) {
+                console.error("[POST /api/quizzes/[id]] Save completion error:", saveErr);
+            }
         }
 
         return NextResponse.json({
@@ -257,6 +261,10 @@ export async function POST(
             timeModifier,
             timeModifierLabel: timeModifierLabel || undefined,
             pointsAwarded,
+            bestScore: isNewBest
+                ? adjustedScore
+                : Math.max(adjustedScore, (existingCompletion as any)?.score || 0),
+            isNewBest,
         });
     } catch (error: any) {
         console.error("[POST /api/quizzes/[id]] Error:", error);

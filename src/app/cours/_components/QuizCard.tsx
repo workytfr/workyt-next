@@ -68,7 +68,7 @@ export default function QuizCard({ quiz, onStartQuiz }: QuizCardProps) {
 
     // Determine button text
     const getButtonText = () => {
-        if (quiz.completed) return "Revoir le quiz";
+        if (quiz.completed) return "Refaire le quiz";
         return "Commencer le quiz";
     };
 
@@ -192,10 +192,10 @@ export default function QuizCard({ quiz, onStartQuiz }: QuizCardProps) {
                     </div>
                 )}
 
-                {/* Score info if completed */}
+                {/* Score info if completed (meilleur score conservé) */}
                 {quiz.completed && quiz.score !== undefined && quiz.maxScore !== undefined && (
                     <div className="flex items-center justify-between text-sm bg-white/50 rounded-lg p-2">
-                        <span className="text-gray-600">Score</span>
+                        <span className="text-gray-600">Meilleur score</span>
                         <span className={cn("font-semibold", getScoreColor(quiz.percentage))}>
                             {quiz.score} / {quiz.maxScore} pts
                         </span>

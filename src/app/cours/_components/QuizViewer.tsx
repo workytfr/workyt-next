@@ -45,6 +45,8 @@ interface DetailedResults {
     timeModifier?: number;
     timeModifierLabel?: string;
     pointsAwarded?: number;
+    bestScore?: number;
+    isNewBest?: boolean;
 }
 
 function formatTime(seconds: number): string {
@@ -507,9 +509,8 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
     const handleSubmit = async () => {
         if (!session || isSubmitting) return;
 
-        if (isCompleted) {
-            return;
-        }
+        // Les retentatives sont autorisées : seule la première complétion
+        // rapporte des points, et le meilleur score est conservé (côté API).
 
         // Validate all answers
         const unanswered = quiz.questions.reduce<number[]>((acc, q, i) => {
@@ -773,6 +774,17 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                             <Trophy className="w-4 h-4" />
                             +{results.pointsAwarded} points gagnés !
                         </motion.div>
+                    )}
+                    {isCompleted && results.isNewBest && (
+                        <div className="inline-flex items-center gap-1.5 mt-3 ml-2 px-4 py-2 rounded-full bg-emerald-100 text-emerald-700 text-sm font-semibold">
+                            <Trophy className="w-4 h-4" />
+                            Nouveau record !
+                        </div>
+                    )}
+                    {isCompleted && !results.isNewBest && results.bestScore !== undefined && (
+                        <p className="text-xs text-[#9ca3af] mt-3">
+                            Meilleur score conservé : {results.bestScore}/{results.maxScore} — les points ne sont gagnés qu'à la première complétion
+                        </p>
                     )}
                     <div className="flex items-center justify-center gap-2 mt-3 text-sm text-[#9ca3af]">
                         <Clock className="w-4 h-4" />
@@ -1182,7 +1194,7 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                     {isLastQuestion ? (
                         <Button
                             onClick={handleSubmit}
-                            disabled={isSubmitting || isCompleted}
+                            disabled={isSubmitting}
                             className={`flex-1 sm:flex-none ${allAnswered ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
                         >
                             {isSubmitting ? (
@@ -1191,7 +1203,10 @@ export default function QuizViewer({ quiz, onClose, onComplete, isCompleted }: Q
                                     Soumission...
                                 </>
                             ) : isCompleted ? (
-                                'Quiz déjà complété'
+                                <>
+                                    <Send className="w-4 h-4 mr-2" />
+                                    Refaire le quiz
+                                </>
                             ) : (
                                 <>
                                     <Send className="w-4 h-4 mr-2" />

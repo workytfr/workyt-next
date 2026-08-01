@@ -256,6 +256,13 @@ export default function CoursesPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href="/dashboard/cours/seo"
+            className="dash-button dash-button-secondary"
+          >
+            <Search className="w-4 h-4" />
+            <span className="hidden sm:inline">Audit SEO</span>
+          </Link>
+          <Link
             href="/cours/generer"
             className="dash-button dash-button-secondary"
           >

@@ -26,6 +26,7 @@ import {
   Dumbbell,
   HelpCircle,
   Users,
+  Search,
 } from "lucide-react";
 import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "@uiw/react-md-editor/markdown-editor.css";
@@ -64,6 +65,7 @@ import ProfileAvatar from "@/components/ui/profile";
 import AuthorReassign from "@/components/ui/AuthorReassign";
 import EditingPresenceBanner from "@/components/ui/EditingPresenceBanner";
 import MascotLoader from "@/components/ui/MascotLoader";
+import SeoScorePanel from "@/app/dashboard/_components/SeoScorePanel";
 import { getRoleIconPath } from "@/lib/roleIcon";
 import { educationData } from "@/data/educationData";
 import "../../../styles/dashboard-theme.css";
@@ -78,6 +80,7 @@ interface Course {
   status: string;
   image?: string;
   authors?: Array<{ _id: string; name: string }>;
+  verifiedBy?: { _id: string; name?: string; username?: string } | string | null;
   __v?: number; // version (verrou optimiste)
 }
 
@@ -121,7 +124,7 @@ interface Lesson {
   sectionId: string;
 }
 
-type Tab = "structure" | "content" | "settings";
+type Tab = "structure" | "content" | "settings" | "seo";
 
 // --- Composant Section sortable ---
 function SortableSection({
@@ -1282,6 +1285,7 @@ export default function CourseManagementPage() {
               { id: "structure" as Tab, label: "Structure", icon: Layers },
               { id: "content" as Tab, label: "Contenu", icon: FileText },
               { id: "settings" as Tab, label: "Paramètres", icon: Edit2 },
+              { id: "seo" as Tab, label: "SEO", icon: Search },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -1909,6 +1913,32 @@ export default function CourseManagementPage() {
               </p>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Onglet SEO — assistant de référencement en temps réel */}
+      {activeTab === "seo" && (
+        <div className="max-w-2xl">
+          <SeoScorePanel
+            input={{
+              title: (editedCourse ?? course).title,
+              description: (editedCourse ?? course).description,
+              image: (editedCourse ?? course).image,
+              matiere: course.matiere,
+              niveau: course.niveau,
+              status: course.status,
+              verifiedBy: course.verifiedBy,
+              sectionsCount: sections.length,
+              lessonsCount: sections.reduce(
+                (acc, s) => acc + (s.lessons?.length || 0),
+                0
+              ),
+            }}
+          />
+          <p className="mt-4 text-xs text-[#9ca3af]">
+            💡 Le score se met à jour en direct pendant que vous modifiez le titre,
+            la description ou l&apos;image du cours (onglet Structure / en-tête).
+          </p>
         </div>
       )}
 
