@@ -5,8 +5,10 @@
  *  - l'audit SEO global (/api/courses/seo-audit)
  *
  * Les critères suivent les bonnes pratiques Google :
- * title ~40-65 caractères, meta description ~120-160, image OG,
- * contenu suffisant, mot-clé (matière) dans titre + description, E-E-A-T.
+ * le titre Google est composé automatiquement par Workyt
+ * ("<Titre> - Cours <Matière> <Niveau> | Workyt"), donc on évalue la
+ * longueur du titre FINAL, la meta description ~120-160, l'image OG,
+ * le contenu, et les signaux de confiance (E-E-A-T).
  */
 
 export interface SeoCheckInput {
@@ -49,39 +51,51 @@ export function auditCourseSeo(input: SeoCheckInput): SeoAuditResult {
     const description = (input.description || '').trim();
     const titleLen = title.length;
     const descLen = description.length;
-    const nTitle = normalize(title);
     const nDesc = normalize(description);
     const nMatiere = normalize(input.matiere || '');
-    const nNiveau = normalize(input.niveau || '');
 
-    // 1. Longueur du titre (affichage Google : ~50-60 caractères)
+    // Le titre vu par Google est composé automatiquement par Workyt :
+    // "<Titre du cours> - Cours <Matière> <Niveau> | Workyt"
+    // Le rédacteur n'a donc PAS besoin d'y mettre la matière ou le niveau :
+    // son titre doit être court et clair pour laisser de la place au suffixe.
+    const googleSuffix = ` - Cours ${input.matiere} ${input.niveau} | Workyt`;
+    const googleTitleLen = titleLen + googleSuffix.length;
+
+    // 1. Longueur du titre Google final (affichage Google : ~60-65 caractères)
     checks.push({
         id: 'title-length',
-        label: 'Longueur du titre',
+        label: 'Longueur du titre (Google)',
         status:
-            titleLen >= 40 && titleLen <= 65
+            titleLen >= 15 && googleTitleLen <= 65
                 ? 'ok'
-                : (titleLen >= 30 && titleLen < 40) || (titleLen > 65 && titleLen <= 75)
+                : (titleLen >= 8 && titleLen < 15) || (googleTitleLen > 65 && googleTitleLen <= 75)
                   ? 'warning'
                   : 'error',
         advice:
-            titleLen < 40
-                ? `Titre trop court (${titleLen} car.). Visez 40-65 caractères, ex : "${title} — ${input.matiere} ${input.niveau}".`
-                : titleLen > 65
-                  ? `Titre trop long (${titleLen} car.), il sera coupé dans Google. Visez 40-65 caractères.`
-                  : `Titre optimal (${titleLen} caractères).`,
+            googleTitleLen > 65
+                ? `Le titre Google complet fera ${googleTitleLen} car. ("${title}${googleSuffix}") et sera coupé. Raccourcissez le titre du cours — la matière et le niveau sont ajoutés automatiquement.`
+                : titleLen < 15
+                  ? `Titre très court (${titleLen} car.). Soyez plus précis, ex : "Les fractions — additions et comparaisons".`
+                  : `Titre optimal : ${googleTitleLen} caractères au total dans Google (matière et niveau ajoutés automatiquement).`,
         weight: 15,
     });
 
-    // 2. Mot-clé (matière) dans le titre
-    const matiereInTitle = nMatiere.length > 0 && nTitle.includes(nMatiere);
+    // 2. Titre spécifique (pas un titre générique dupliqué partout)
+    const genericTitles = ['cours', 'lecon', 'leçon', 'chapitre', 'maths', 'mathematiques', 'nouveau cours'];
+    const isGeneric =
+        titleLen === 0 || genericTitles.includes(normalize(title));
     checks.push({
-        id: 'title-keyword',
-        label: 'Matière dans le titre',
-        status: matiereInTitle ? 'ok' : 'warning',
-        advice: matiereInTitle
-            ? 'La matière apparaît dans le titre.'
-            : `Ajoutez "${input.matiere}" dans le titre : c'est le mot-clé principal recherché par les élèves.`,
+        id: 'title-specific',
+        label: 'Titre précis et descriptif',
+        status: titleLen === 0 ? 'error' : isGeneric ? 'error' : titleLen < 8 ? 'warning' : 'ok',
+        advice:
+            titleLen === 0
+                ? 'Aucun titre : impossible de référencer le cours.'
+                : isGeneric
+                  ? 'Titre trop générique : Google ne saura pas le distinguer des autres. Mettez la notion exacte, ex : "Théorème de Pythagore".'
+                  : titleLen < 8
+                    ? 'Titre très court : précisez la notion exacte couverte.'
+                    : 'Le titre décrit précisément la notion du cours.',
         weight: 10,
     });
 
@@ -108,7 +122,8 @@ export function auditCourseSeo(input: SeoCheckInput): SeoAuditResult {
         weight: 20,
     });
 
-    // 4. Mot-clé dans la description
+    // 4. Mot-clé dans la description (la matière est déjà dans le titre
+    // automatique : ici c'est pour renforcer le snippet sous le titre Google)
     const matiereInDesc = nMatiere.length > 0 && nDesc.includes(nMatiere);
     checks.push({
         id: 'description-keyword',
@@ -116,21 +131,8 @@ export function auditCourseSeo(input: SeoCheckInput): SeoAuditResult {
         status: matiereInDesc ? 'ok' : 'warning',
         advice: matiereInDesc
             ? 'La matière apparaît dans la description.'
-            : `Citez "${input.matiere}" dans la description pour renforcer la pertinence.`,
-        weight: 10,
-    });
-
-    // 5. Niveau scolaire dans titre ou description
-    const niveauPresent =
-        nNiveau.length > 0 && (nTitle.includes(nNiveau) || nDesc.includes(nNiveau));
-    checks.push({
-        id: 'niveau-keyword',
-        label: 'Niveau scolaire mentionné',
-        status: niveauPresent ? 'ok' : 'warning',
-        advice: niveauPresent
-            ? 'Le niveau scolaire est mentionné.'
-            : `Mentionnez "${input.niveau}" dans le titre ou la description : les élèves cherchent "cours X ${input.niveau}".`,
-        weight: 5,
+            : `Citez "${input.matiere}" dans la description pour renforcer la pertinence du résumé Google.`,
+        weight: 15,
     });
 
     // 6. Image de couverture (Open Graph + rich results)

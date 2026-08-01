@@ -55,16 +55,16 @@ export default function SeoScorePanel({ input }: { input: SeoCheckInput }) {
                 />
             </div>
 
-            {/* Aperçu Google */}
+            {/* Aperçu Google (titre composé automatiquement par Workyt) */}
             <div className="p-3 bg-[#f7f6f3] rounded-lg border border-[#e3e2e0]">
                 <p className="text-[10px] uppercase tracking-wide text-[#9ca3af] mb-1.5">
                     Aperçu dans Google
                 </p>
                 <p className="text-sm text-[#1a0dab] font-medium leading-snug line-clamp-1">
-                    {input.title || "Titre du cours"} | Workyt
+                    {input.title || "Titre du cours"} - Cours {input.matiere} {input.niveau} | Workyt
                 </p>
                 <p className="text-xs text-emerald-700 leading-snug line-clamp-1">
-                    workyt.fr › cours › {input.matiere || "…"}
+                    workyt.fr › cours › …
                 </p>
                 <p className="text-xs text-[#4d5156] leading-snug line-clamp-2 mt-0.5">
                     {input.description || "Ajoutez une description pour contrôler ce que Google affiche ici…"}
