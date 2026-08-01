@@ -148,11 +148,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
             data-website-id="35576d18-82a4-49a7-8a72-cb4be757983b"
             strategy="afterInteractive"
         />
-        {/* Tidio Script */}
-        <Script
-            src="https://code.tidio.co/hpgdmupdosivjm7gryravknira1bbbgu.js"
-            strategy="lazyOnload"
-        />
         {/* Cookie Consent Scripts — chargés via next/script (lazyOnload pour pas bloquer le LCP) */}
         <Script
             id="consent-stub"
