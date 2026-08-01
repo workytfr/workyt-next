@@ -59,6 +59,13 @@ export async function addPointsWithBoost(
 
   await PointTransaction.create(txData);
 
+  // Guerre des Clans : chaque point compte deux fois — une fois pour l'assaut
+  // du joueur, une fois pour le trésor de son clan.
+  // Import dynamique + await volontairement absent : le crédit au clan ne doit
+  // ni ralentir ni faire échouer l'attribution des points elle-même.
+  void import('@/lib/clanService')
+    .then(({ creditClanPoints }) => creditClanPoints(userId, finalPoints))
+    .catch((err) => console.error('Erreur crédit clan:', err));
 
   return finalPoints;
 }

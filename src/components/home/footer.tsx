@@ -128,6 +128,7 @@ const Footer: React.FC = () => {
                                     { href: "/fiches", label: "Fiches" },
                                     { href: "/forum", label: "Forum" },
                                     { href: "/amis", label: "Mes amis" },
+                                    { href: "/clan", label: "Guerre des Clans" },
                                     { href: "https://blog.workyt.fr/", label: "Blog" },
                                     { href: "https://blog.workyt.fr/category/conseils-methodes/", label: "Nos conseils" },
                                 ].map((link) => (

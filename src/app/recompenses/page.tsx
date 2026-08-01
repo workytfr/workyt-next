@@ -15,7 +15,9 @@ import AdventureBoard from '@/components/adventure/AdventureBoard';
 import BattleModal from '@/components/adventure/rpg/BattleModal';
 import GuildQuests from '@/components/adventure/rpg/GuildQuests';
 import NoSSR from '@/components/NoSSR';
+import ClanWarStrip from '@/components/clan/ClanWarStrip';
 import Image from 'next/image';
+import Link from 'next/link';
 
 interface Reward {
     _id: string;
@@ -158,12 +160,13 @@ export default function RewardsListPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-                <div className="max-w-6xl mx-auto space-y-8">
-                    {/* Header (pilule titre) */}
-                    <div className="flex flex-col items-center gap-3">
-                        <Skeleton className="h-12 w-80 rounded-full" />
-                        <Skeleton className="h-4 w-96 rounded-full" />
+            <div className="min-h-screen bg-white">
+                <div className="max-w-[1400px] mx-auto px-6 py-12 space-y-8">
+                    {/* En-tête */}
+                    <div className="max-w-2xl space-y-3">
+                        <Skeleton className="h-7 w-52 rounded-full" />
+                        <Skeleton className="h-9 w-96 rounded-lg" />
+                        <Skeleton className="h-4 w-full max-w-xl rounded" />
                     </div>
 
                     {/* Cartes événements */}
@@ -197,22 +200,40 @@ export default function RewardsListPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
-            <div className="max-w-6xl mx-auto space-y-8">
-                {/* Header */}
-                <div
-                    className={`text-center space-y-4 transition-all duration-700 ${
-                        animate ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-                    }`}
-                >
-                    <div className="inline-flex items-center gap-3 bg-white/70 backdrop-blur-xl px-6 py-3 rounded-full shadow-lg border border-white/20 hover:bg-white/80 transition-all duration-300">
-                        <Trophy className="w-6 h-6 text-yellow-500" />
-                        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                            Récompenses & Événements
+        <div className="min-h-screen bg-white">
+            {/* En-tête, au format des pages /cours, /fiches et /forum */}
+            <header className="border-b border-gray-100 bg-gradient-to-b from-orange-50/30 to-white">
+                <div className="max-w-[1400px] mx-auto px-6 pt-12 pb-10 sm:pt-16 sm:pb-14">
+                    <div className="max-w-2xl">
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 text-xs font-medium mb-4">
+                            <Trophy className="w-3.5 h-3.5" />
+                            Workyt Quest
+                        </div>
+                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-3">
+                            Jeu &amp; récompenses
                         </h1>
+                        <p className="text-gray-500 text-base sm:text-lg leading-relaxed mb-4">
+                            Ton héros progresse à chaque quiz résolu, chaque quête accomplie et
+                            chaque case réclamée sur le plateau. Rejoins ton clan, défie tes amis,
+                            et tente ta chance aux concours de l&apos;association.
+                        </p>
+                        <p className="text-sm text-gray-500">
+                            Aller à :{' '}
+                            <Link href="/clan" className="text-orange-500 hover:underline">Guerre des Clans</Link>,{' '}
+                            <Link href="/amis" className="text-orange-500 hover:underline">Mes amis</Link>,{' '}
+                            <a href="#concours" className="text-orange-500 hover:underline">Concours en cours</a>.
+                        </p>
                     </div>
-                    <p className="text-gray-600 max-w-2xl mx-auto">
-                        Découvrez les récompenses disponibles et participez aux événements pour gagner des prix !
+                </div>
+            </header>
+
+            <div className="max-w-[1400px] mx-auto px-6 py-10 space-y-10">
+
+                {/* ---- Concours de l'association ---- */}
+                <div id="concours" className="scroll-mt-8">
+                    <h2 className="text-xl font-bold text-gray-900 mb-1">Concours &amp; événements</h2>
+                    <p className="text-sm text-gray-500 mb-4">
+                        Les concours organisés par l&apos;association, avec de vrais lots à gagner.
                     </p>
                 </div>
 
@@ -359,7 +380,7 @@ export default function RewardsListPage() {
 
                                 <CardHeader className="space-y-3">
                                     <div className="space-y-2">
-                                        <CardTitle className="text-lg group-hover:text-blue-600 transition-colors duration-300">
+                                        <CardTitle className="text-lg group-hover:text-orange-600 transition-colors duration-300">
                                             {reward.title}
                                         </CardTitle>
                                         {reward.description && (
@@ -424,10 +445,10 @@ export default function RewardsListPage() {
                         }`}
                         style={{ transitionDelay: '400ms' }}
                     >
-                        <Card className="bg-white/60 backdrop-blur-xl border border-white/30 shadow-xl hover:shadow-2xl transition-all duration-300">
+                        <Card className="border border-gray-200 shadow-sm">
                             <CardHeader>
                                 <div className="flex items-center gap-2">
-                                    <Calendar className="w-5 h-5 text-blue-600" />
+                                    <Calendar className="w-5 h-5 text-orange-500" />
                                     <CardTitle className="text-xl">Plateau de l&apos;Aventure</CardTitle>
                                 </div>
                                 <CardDescription>
@@ -490,6 +511,11 @@ export default function RewardsListPage() {
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* Guerre des Clans : rappel discret, repliable */}
+                                <NoSSR>
+                                    <ClanWarStrip />
+                                </NoSSR>
 
                                 {/* Arène de combat : le quiz du jour présenté comme un duel RPG */}
                                 <NoSSR>

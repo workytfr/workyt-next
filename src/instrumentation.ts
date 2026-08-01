@@ -42,6 +42,50 @@ export async function register() {
 
         console.log('[EvalTimeout] Cron programme : chaque minute, timezone Europe/Paris');
 
+        // ---- Guerre des Clans ----
+        // Lundi 00h05 : formation des clans de la semaine.
+        // 5 minutes après minuit pour laisser passer la résolution du dimanche.
+        const { formClans } = await import('@/lib/clanService');
+        cron.default.schedule('5 0 * * 1', async () => {
+            try {
+                const r = await formClans();
+                console.log('[Clans] Formation :', r);
+            } catch (error) {
+                console.error('[Clans] Erreur formation:', error);
+            }
+        }, { timezone: 'Europe/Paris' });
+
+        // Chaque jour à 00h01 : résolution de la journée écoulée.
+        // Idempotent — l'index unique {clan, day} protège d'un double passage.
+        const { resolveDay } = await import('@/lib/clanResolution');
+        cron.default.schedule('1 0 * * *', async () => {
+            try {
+                const r = await resolveDay();
+                if (r.resolved) console.log(`[Clans] Journée ${r.day} résolue — ${r.pairs} affrontement(s)`);
+            } catch (error) {
+                console.error('[Clans] Erreur résolution:', error);
+            }
+        }, { timezone: 'Europe/Paris' });
+
+        // Dimanche 23h50 : dernière journée PUIS bilan de la semaine.
+        // ⚠️ L'ordre est impératif. Le passage quotidien de 00h01 résout la
+        // veille : dimanche 00h01 il traite samedi (jour 6). Le jour 7 —
+        // dimanche lui-même — n'a donc jamais son passage. On le résout ici,
+        // avant le bilan, sinon la dernière journée ne compterait pour personne.
+        const { resolveWeek } = await import('@/lib/clanWeekly');
+        cron.default.schedule('50 23 * * 0', async () => {
+            try {
+                const d = await resolveDay();
+                console.log('[Clans] Jour 7 :', d);
+                const r = await resolveWeek();
+                console.log('[Clans] Semaine résolue :', r);
+            } catch (error) {
+                console.error('[Clans] Erreur résolution hebdomadaire:', error);
+            }
+        }, { timezone: 'Europe/Paris' });
+
+        console.log('[Clans] Crons programmés : formation lundi 00h05, résolution quotidienne 00h01, bilan dimanche 23h50');
+
         // Seed des rôles par défaut
         const { seedRoles } = await import('@/lib/roles');
         try {

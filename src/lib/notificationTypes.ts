@@ -15,6 +15,7 @@ import {
   KanbanSquare,
   Swords,
   Trophy,
+  Castle,
   type LucideIcon
 } from 'lucide-react';
 
@@ -34,6 +35,7 @@ export type NotificationCategory =
   | 'kanban'
   | 'friends'
   | 'challenge'
+  | 'clan'
   | 'other';
 
 export interface NotificationStyle {
@@ -68,6 +70,7 @@ export const NOTIFICATION_CATEGORIES: Array<{
   { id: 'reward', label: 'Récompenses', icon: Gift, activeClassName: 'bg-amber-500 text-white border-amber-500' },
   { id: 'friends', label: 'Amis', icon: UserPlus, activeClassName: 'bg-fuchsia-600 text-white border-fuchsia-600' },
   { id: 'challenge', label: 'Défis', icon: Swords, activeClassName: 'bg-red-600 text-white border-red-600' },
+  { id: 'clan', label: 'Clan', icon: Castle, activeClassName: 'bg-orange-600 text-white border-orange-600' },
   { id: 'evaluation', label: 'Évaluations', icon: ClipboardList, activeClassName: 'bg-violet-600 text-white border-violet-600' },
   { id: 'kanban', label: 'Kanban', icon: KanbanSquare, activeClassName: 'bg-cyan-600 text-white border-cyan-600' },
   { id: 'other', label: 'Autres', icon: Bell, activeClassName: 'bg-gray-600 text-white border-gray-600' }
@@ -176,6 +179,14 @@ const STYLES: Record<string, NotificationStyle> = {
     label: 'Résultat du duel',
     className: 'bg-yellow-100 text-yellow-700',
     category: 'challenge'
+  },
+
+  // Guerre des Clans
+  clan_result: {
+    icon: Castle,
+    label: 'Guerre des Clans',
+    className: 'bg-orange-100 text-orange-600',
+    category: 'clan'
   }
 };
 
@@ -217,6 +228,8 @@ export function getNotificationLink(
       return '/amis';
     case 'challenge':
       return `/defis/${relatedEntity.id}`;
+    case 'clan':
+      return '/clan';
     default:
       return null;
   }

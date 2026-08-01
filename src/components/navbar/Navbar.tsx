@@ -39,6 +39,7 @@ import {
     Ticket,
     ArrowUpRight,
     LayoutDashboard,
+    TrendingUp,
 } from "lucide-react";
 
 // Rôles ayant accès au tableau de bord (cf. dashboard/layout.tsx)
@@ -49,6 +50,7 @@ import ProfileCard from "@/components/ui/ProfileCard";
 import SearchCommandPalette from "@/components/SearchCommandPalette";
 import StreakIndicator from "@/components/ui/StreakIndicator";
 import MushroomIndicator from "@/components/ui/MushroomIndicator";
+import ClanWarIndicator from "@/components/ui/ClanWarIndicator";
 import NotificationBell from "@/components/NotificationBell";
 import BookmarkBell from "@/components/BookmarkBell";
 import QuestsPanel from "@/components/quests/QuestsPanel";
@@ -256,6 +258,17 @@ export default function Navbar() {
                                         <StreakIndicator userId={session.user.id} />
                                         <div className="h-4 w-px bg-[rgba(26,21,18,0.15)]" />
                                         <MushroomIndicator userId={session.user.id} />
+                                        {/* Ne se rend que si une guerre est en cours */}
+                                        <ClanWarIndicator userId={session.user.id} />
+                                        <div className="h-4 w-px bg-[rgba(26,21,18,0.15)]" />
+                                        <Link
+                                            href="/progression"
+                                            title="Ma Progression"
+                                            aria-label="Ma Progression"
+                                            className="flex items-center justify-center rounded-full p-1 text-emerald-600 transition hover:bg-emerald-50"
+                                        >
+                                            <TrendingUp className="h-4 w-4" />
+                                        </Link>
                                     </div>
                                     <BookmarkBell />
                                     <NotificationBell />

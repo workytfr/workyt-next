@@ -228,7 +228,8 @@ export default function FriendsPage() {
                         </h1>
                         <p className="text-base leading-relaxed text-gray-500">
                             Ajoute tes camarades pour suivre leur progression, les défier au quiz
-                            et vous entraider.
+                            et vous entraider. Retrouve-les ensuite dans la{' '}
+                            <Link href="/clan" className="text-orange-500 hover:underline">Guerre des Clans</Link>.
                         </p>
                     </div>
                 </div>
