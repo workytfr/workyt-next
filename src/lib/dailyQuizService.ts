@@ -31,12 +31,15 @@ export async function getDailyQuizForDate(date: Date) {
 }
 
 /**
- * Démarre (ou redémarre) le chrono anti-triche du joueur.
- * Appelé quand la question lui est affichée — GET /api/daily-quiz/play.
+ * Démarre le chrono anti-triche du joueur, une seule fois par jour.
+ * Appelé quand l'élève clique sur « Commencer le combat » — POST
+ * /api/daily-quiz/start.
  *
- * Tant qu'aucune réponse n'a été donnée, chaque affichage réécrit `startedAt` :
- * quelqu'un qui ouvre le matin, referme, et revient le soir ne doit pas être
- * considéré comme ayant mis 12 heures à répondre.
+ * `startedAt` n'est JAMAIS réécrit : le filtre exige son absence. Sinon il
+ * suffirait de recharger la page et de recliquer pour remettre le compteur à
+ * zéro après avoir cherché la réponse ailleurs — c'est-à-dire exactement la
+ * triche que ce chrono existe pour mesurer. Une fois la question vue, le
+ * temps court, point.
  */
 export async function startDailyQuizTimer(userId: string, date: Date): Promise<void> {
     await dbConnect();
@@ -46,7 +49,10 @@ export async function startDailyQuizTimer(userId: string, date: Date): Promise<v
     if (!quiz) return;
 
     await DailyQuizAttempt.updateOne(
-        { user: userId, date: normalizedDate, isCorrect: { $ne: true } },
+        // $in: [null] attrape le champ absent comme le champ null, sans être une
+        // égalité : Mongo ne le recopie donc pas dans le document créé à l'upsert,
+        // où c'est le $set ci-dessous qui pose la vraie date.
+        { user: userId, date: normalizedDate, isCorrect: { $ne: true }, startedAt: { $in: [null] } },
         {
             $set: { startedAt: new Date() },
             // user/date viennent déjà du filtre : les répéter ici créerait un conflit
@@ -58,8 +64,9 @@ export async function startDailyQuizTimer(userId: string, date: Date): Promise<v
         },
         { upsert: true }
     ).catch((err: any) => {
-        // 11000 : une ligne résolue existe déjà, le filtre isCorrect l'a exclue.
-        // Rien à faire, le chrono ne sert plus.
+        // 11000 : une ligne existe déjà mais le filtre l'a exclue — soit elle est
+        // résolue, soit son chrono tourne déjà. Dans les deux cas il n'y a rien à
+        // faire, et surtout rien à réécrire.
         if (err?.code !== 11000) throw err;
     });
 }

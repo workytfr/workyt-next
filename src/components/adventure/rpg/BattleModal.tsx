@@ -13,6 +13,8 @@ import { fetchHero, invalidateHero } from '@/lib/heroClient';
 
 interface QuizState {
   available: boolean;
+  /** Le chrono anti-triche tourne-t-il déjà ? */
+  started?: boolean;
   question?: string;
   answers?: string[];
   solved?: boolean;
@@ -63,6 +65,12 @@ export default function BattleModal({ onSolved }: BattleModalProps) {
   const [levelUp, setLevelUp] = useState<{ level: number; rewards?: { points: number; gems: number; mushrooms: number; equipment: boolean } } | null>(null);
   const [timeLeft, setTimeLeft] = useState(TURN_SECONDS);
   const [striking, setStriking] = useState(false);
+  const [starting, setStarting] = useState(false);
+  // Engagement de CETTE visite. Volontairement local : `quiz.started` dit que le
+  // chrono serveur tourne depuis un précédent passage, et s'y fier faisait
+  // repartir le décompte tout seul à l'ouverture de la page, sans que l'élève
+  // ait cliqué. Il doit toujours entrer dans le combat de son plein gré.
+  const [engaged, setEngaged] = useState(false);
   const [heroFainted, setHeroFainted] = useState(false);
   // Nombre de ripostes automatiques déjà déclenchées sur ce combat
   const strikeCountRef = useRef(0);
@@ -71,6 +79,7 @@ export default function BattleModal({ onSolved }: BattleModalProps) {
   // a encore un sens : quiz jouable, héros debout, monstre éveillé.
   const battleActive = !!quiz?.available
     && !quiz?.solved
+    && engaged
     && !!session
     && !heroFainted
     && !!monster
@@ -167,6 +176,31 @@ export default function BattleModal({ onSolved }: BattleModalProps) {
       // silencieux
     } finally {
       setStriking(false);
+    }
+  };
+
+  /**
+   * Démarre le chrono anti-triche. Tant que l'élève n'a pas cliqué, la
+   * question reste masquée et rien n'est décompté — parcourir la page ne
+   * doit jamais coûter de récompense.
+   *
+   * Si le chrono avait déjà été lancé aujourd'hui, le serveur ignore l'appel
+   * et garde l'heure d'origine : rouvrir la page ne remet rien à zéro.
+   */
+  const startBattle = async () => {
+    if (starting) return;
+    setStarting(true);
+    try {
+      const res = await fetch('/api/daily-quiz/start', { method: 'POST' });
+      if (!res.ok) return;
+      setEngaged(true);
+      setQuiz((prev) => (prev ? { ...prev, started: true } : prev));
+      setTimeLeft(TURN_SECONDS);
+      strikeCountRef.current = 0;
+    } catch {
+      /* silencieux : réessayer suffit */
+    } finally {
+      setStarting(false);
     }
   };
 
@@ -372,7 +406,9 @@ export default function BattleModal({ onSolved }: BattleModalProps) {
       {/* La question = l'attaque */}
       {!quiz.solved ? (
         <>
-          {/* Minuteur anti-triche */}
+          {/* Minuteur — n'apparaît qu'une fois le combat lancé : afficher un
+              compte à rebours figé avant le départ serait trompeur. */}
+          {engaged && (
           <div className="space-y-1">
             <div className="flex items-center justify-between text-xs font-bold">
               <span className="text-slate-300">⏱️ Temps pour répondre</span>
@@ -393,7 +429,47 @@ export default function BattleModal({ onSolved }: BattleModalProps) {
               <p className="text-[11px] text-red-300 font-semibold">Le monstre s&apos;apprête à attaquer…</p>
             )}
           </div>
+          )}
 
+          {!engaged ? (
+            <div className="rounded-xl border border-amber-400/40 bg-amber-500/10 p-4 text-center">
+              <p className="text-sm font-semibold text-amber-100">
+                {quiz.started
+                  ? `${monster?.name || 'Le monstre'} t'attend toujours…`
+                  : `Prêt à affronter ${monster?.name || 'le monstre'} ?`}
+              </p>
+              <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-amber-200/80">
+                {quiz.started ? (
+                  <>
+                    Tu as déjà découvert la question aujourd&apos;hui : le chrono a
+                    démarré à ce moment-là et ne repart pas de zéro. Réponds dès que
+                    tu es prêt.
+                  </>
+                ) : (
+                  <>
+                    Le chrono ne démarre qu&apos;au clic — tu peux lire le reste de la
+                    page sans rien perdre. Plus tu réponds vite, plus tu gagnes
+                    d&apos;XP ; prendre le temps de réfléchir ne coûte jamais de points
+                    de vie.
+                  </>
+                )}
+              </p>
+              <Button
+                onClick={startBattle}
+                disabled={starting}
+                className="mt-3 bg-amber-500 font-bold text-slate-900 hover:bg-amber-400"
+              >
+                {starting ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : quiz.started ? (
+                  <>⚔️ Reprendre le combat</>
+                ) : (
+                  <>⚔️ Commencer le combat</>
+                )}
+              </Button>
+            </div>
+          ) : (
+          <>
           <p className="text-sm font-semibold text-slate-100">{quiz.question}</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {quiz.answers?.map((answer, i) => {
@@ -426,6 +502,8 @@ export default function BattleModal({ onSolved }: BattleModalProps) {
               ? 'Le monstre a riposté ! Attaque à nouveau avec une autre réponse.'
               : 'Bonne réponse = attaque réussie · Bonne réponse du 1er coup = CRITIQUE (XP ×1.5)'}
           </p>
+          </>
+          )}
         </>
       ) : (
         <div className="text-sm space-y-1">

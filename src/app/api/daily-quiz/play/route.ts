@@ -8,7 +8,6 @@ import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import {
     getDailyQuizForDate,
     normalizeDate,
-    startDailyQuizTimer,
     submitDailyQuizAnswer
 } from '@/lib/dailyQuizService';
 
@@ -42,18 +41,18 @@ export async function GET() {
         const attempt = await DailyQuizAttempt.findOne({ user: user._id, date: today });
         const solved = attempt?.isCorrect === true;
 
-        // Démarre le chrono anti-triche au moment où la question est affichée.
-        // Ne doit jamais empêcher l'affichage du quiz.
-        if (!solved) {
-            try {
-                await startDailyQuizTimer(user._id.toString(), today);
-            } catch (err) {
-                console.error('Erreur startDailyQuizTimer:', err);
-            }
-        }
+        // ⚠️ Le chrono anti-triche NE démarre PAS ici.
+        //
+        // Cette route est appelée au chargement de la page, avant même que
+        // l'élève ait regardé la question : démarrer le chrono maintenant
+        // pénaliserait quelqu'un qui parcourt simplement la page. Il démarre
+        // explicitement via POST /api/daily-quiz/start, quand l'élève clique
+        // sur « Commencer le combat ».
 
         return NextResponse.json({
             available: true,
+            /** true si le chrono tourne déjà (l'élève a commencé) */
+            started: !!attempt?.startedAt,
             id: quiz._id.toString(),
             date: today.toISOString(),
             question: quiz.question,

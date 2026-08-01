@@ -45,7 +45,7 @@ const DailyQuizAttemptSchema = new Schema<IDailyQuizAttempt>({
     },
     answerIndex: {
         type: Number,
-        required: false, // la ligne peut exister avant toute réponse (chrono démarré au GET)
+        required: false, // la ligne peut exister avant toute réponse (chrono lancé au clic)
         min: 0,
         max: 3
     },
