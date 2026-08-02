@@ -52,16 +52,38 @@ export default function FriendsPage() {
     const [loading, setLoading] = useState(true);
     const [busy, setBusy] = useState<string | null>(null);
 
+    /** Défis encore jouables — ce qui manquait pour les retrouver */
+    const [ongoing, setOngoing] = useState<
+        Array<{
+            id: string;
+            status: string;
+            iAmChallenger: boolean;
+            myFinished: boolean;
+            opponent: { username: string } | null;
+        }>
+    >([]);
+
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<SearchResult[]>([]);
     const [searching, setSearching] = useState(false);
 
     const load = useCallback(async () => {
         try {
-            const [fRes, rRes] = await Promise.all([
+            const [fRes, rRes, cRes] = await Promise.all([
                 fetch('/api/friends'),
-                fetch('/api/friends/requests')
+                fetch('/api/friends/requests'),
+                fetch('/api/challenges')
             ]);
+            if (cRes.ok) {
+                const d = await cRes.json();
+                // Seuls les défis encore jouables : les terminés et les expirés
+                // n'ont plus rien à offrir et encombreraient l'écran.
+                setOngoing(
+                    (d.data.challenges ?? []).filter(
+                        (c: { status: string }) => c.status === 'pending' || c.status === 'active'
+                    )
+                );
+            }
             if (fRes.ok) {
                 const d = await fRes.json();
                 setFriends(d.data.friends);
@@ -163,6 +185,13 @@ export default function FriendsPage() {
             });
             const data = await res.json();
             if (!res.ok) {
+                // Un défi est déjà en cours avec cette personne : on y emmène le
+                // joueur au lieu de le laisser devant un refus sans issue.
+                if (data.challengeId) {
+                    toast.info(data.error || 'Défi déjà en cours');
+                    router.push(`/defis/${data.challengeId}`);
+                    return;
+                }
                 toast.error(data.error || 'Impossible de lancer le défi');
                 return;
             }
@@ -267,6 +296,42 @@ export default function FriendsPage() {
                         );
                     })}
                 </div>
+
+                {/* ---- Défis en cours ----
+                    Seul /defis/[id] donnait accès à un défi : une fois l'onglet
+                    fermé, il devenait introuvable, et le relancer était refusé
+                    puisqu'un défi était « déjà en cours ». Cette liste est la
+                    porte de retour. */}
+                {!loading && ongoing.length > 0 && (
+                    <div className="mb-4 rounded-2xl border border-red-100 bg-red-50/60 p-4">
+                        <p className="mb-3 flex items-center gap-2 text-sm font-bold text-red-800">
+                            <Swords className="h-4 w-4" />
+                            Défis en cours
+                        </p>
+                        <div className="grid gap-2 sm:grid-cols-2">
+                            {ongoing.map((c) => (
+                                <Link
+                                    key={c.id}
+                                    href={`/defis/${c.id}`}
+                                    className="flex items-center justify-between gap-3 rounded-xl bg-white px-3 py-2.5 shadow-sm transition-shadow hover:shadow-md"
+                                >
+                                    <span className="min-w-0 truncate text-sm font-semibold text-gray-900">
+                                        {c.opponent?.username ?? 'Adversaire'}
+                                    </span>
+                                    <span className="shrink-0 text-xs font-medium text-gray-500">
+                                        {c.status === 'pending'
+                                            ? c.iAmChallenger
+                                                ? 'En attente de réponse'
+                                                : 'À accepter'
+                                            : c.myFinished
+                                              ? "En attente de l'adversaire"
+                                              : 'À jouer →'}
+                                    </span>
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 {loading ? (
                     <div className="space-y-3">

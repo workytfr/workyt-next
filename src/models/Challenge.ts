@@ -116,8 +116,18 @@ const ChallengeSchema = new Schema<IChallenge>({
 // « Mes défis » dans les deux sens
 ChallengeSchema.index({ challenger: 1, status: 1, createdAt: -1 });
 ChallengeSchema.index({ opponent: 1, status: 1, createdAt: -1 });
-// Nettoyage automatique par Mongo : aucun cron à écrire
-ChallengeSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
+
+// ⚠️ PAS d'index TTL sur expiresAt.
+//
+// Il y en avait un — { expireAfterSeconds: 0 } — et il EFFAÇAIT physiquement
+// le défi passé l'échéance. Un joueur qui avait terminé ses questions voyait
+// donc son défi disparaître sans résultat, sans XP et sans la moindre trace,
+// simplement parce que l'adversaire n'était jamais venu jouer.
+//
+// L'expiration est désormais logique : le défi passe au statut « expired »
+// (ou « completed » par forfait si l'un des deux a joué), et reste consultable.
+// Voir expireOverdue dans challengeService.
+ChallengeSchema.index({ status: 1, expiresAt: 1 });
 
 const Challenge =
   mongoose.models.Challenge || mongoose.model<IChallenge>('Challenge', ChallengeSchema);

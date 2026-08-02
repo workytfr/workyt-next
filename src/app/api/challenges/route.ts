@@ -43,7 +43,13 @@ export async function POST(req: NextRequest) {
 
     const result = await createChallenge(me.id, opponentId, matiere);
     if (!result.success) {
-      return NextResponse.json({ error: result.message }, { status: 400 });
+      // `challengeId` est renseigné quand un défi est déjà en cours avec cette
+      // personne : le client peut y ramener le joueur plutôt que de le laisser
+      // devant un refus sans issue.
+      return NextResponse.json(
+        { error: result.message, challengeId: result.challengeId },
+        { status: 400 }
+      );
     }
 
     // La notification ne doit jamais faire échouer la création du défi

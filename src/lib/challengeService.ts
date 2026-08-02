@@ -96,6 +96,49 @@ async function sampleQuestions(
 }
 
 /**
+ * Clôture les défis dont l'échéance est passée.
+ *
+ * Appelé paresseusement — à l'affichage de la liste et avant toute création —
+ * plutôt que par un cron : un défi périmé ne gêne que les deux personnes
+ * concernées, et elles passent forcément par l'un de ces deux chemins.
+ *
+ * Si l'un des deux a joué et l'autre jamais, le premier l'emporte par FORFAIT
+ * et touche ses gains : avoir répondu à ses questions ne doit pas être puni
+ * par le silence d'en face. Si personne n'a joué, le défi est simplement
+ * marqué expiré.
+ */
+export async function expireOverdue(userId: string, now: Date = new Date()) {
+  await dbConnect();
+
+  const me = oid(userId);
+  const perimes = await Challenge.find({
+    $or: [{ challenger: me }, { opponent: me }],
+    status: { $in: ['pending', 'active'] },
+    expiresAt: { $lte: now }
+  });
+
+  for (const c of perimes) {
+    const aJoue = {
+      challenger: !!c.results.challenger.finishedAt,
+      opponent: !!c.results.opponent.finishedAt
+    };
+
+    if (aJoue.challenger !== aJoue.opponent) {
+      // Forfait : celui qui a joué remporte le défi
+      c.winner = aJoue.challenger ? c.challenger : c.opponent;
+      c.status = 'completed';
+      await c.save();
+      await awardXp(c);
+    } else {
+      c.status = 'expired';
+      await c.save();
+    }
+  }
+
+  return perimes.length;
+}
+
+/**
  * Crée un défi. L'adversaire doit être un ami accepté.
  */
 export async function createChallenge(
@@ -112,9 +155,15 @@ export async function createChallenge(
     return { success: false, message: 'Tu ne peux défier que tes amis' };
   }
 
+  // Solder les défis périmés AVANT de compter : sans ça, un défi que
+  // l'adversaire n'a jamais accepté bloquait une place à vie.
+  const maintenant = new Date();
+  await expireOverdue(fromId, maintenant);
+
   const active = await Challenge.countDocuments({
     challenger: oid(fromId),
-    status: { $in: ['pending', 'active'] }
+    status: { $in: ['pending', 'active'] },
+    expiresAt: { $gt: maintenant }
   });
   if (active >= MAX_ACTIVE) {
     return {
@@ -123,16 +172,23 @@ export async function createChallenge(
     };
   }
 
-  // Un défi déjà en cours avec cette personne ?
+  // Un défi déjà en cours avec cette personne ? On renvoie son identifiant :
+  // l'interface peut ainsi y ramener le joueur au lieu de le laisser devant un
+  // refus sans issue.
   const existing = await Challenge.findOne({
     status: { $in: ['pending', 'active'] },
+    expiresAt: { $gt: maintenant },
     $or: [
       { challenger: oid(fromId), opponent: oid(toId) },
       { challenger: oid(toId), opponent: oid(fromId) }
     ]
   }).select('_id');
   if (existing) {
-    return { success: false, message: 'Un défi est déjà en cours avec cette personne' };
+    return {
+      success: false,
+      message: 'Un défi est déjà en cours avec cette personne — reprends celui-là.',
+      challengeId: existing._id.toString()
+    };
   }
 
   const [heroA, heroB] = await Promise.all([
@@ -434,10 +490,15 @@ async function awardXp(c: IChallenge) {
 export async function listChallenges(userId: string) {
   await dbConnect();
 
+  // Les défis périmés sont soldés ici : c'est le chemin par lequel le joueur
+  // revient forcément, et il verra donc un état à jour plutôt qu'un défi
+  // fantôme qui l'empêche d'en relancer un.
+  await expireOverdue(userId);
+
   const me = oid(userId);
   const rows = await Challenge.find({
     $or: [{ challenger: me }, { opponent: me }],
-    status: { $in: ['pending', 'active', 'completed'] }
+    status: { $in: ['pending', 'active', 'completed', 'expired'] }
   })
     .sort({ createdAt: -1 })
     .limit(30)
