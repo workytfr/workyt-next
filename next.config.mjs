@@ -1,13 +1,5 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    // Déploiement en conteneur.
-    // ⚠️ Démarrer server.mjs, pas .next/standalone/server.js : ce dernier ignore
-    // le serveur custom et couperait Socket.IO. socket.io et jsonwebtoken sont
-    // à installer dans l'image, Next ne les trace pas.
-    output: "standalone",
-    outputFileTracingIncludes: {
-        "/": ["./server.mjs"],
-    },
     poweredByHeader: false,
     images: {
         remotePatterns: [
