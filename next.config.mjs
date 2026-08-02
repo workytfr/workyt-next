@@ -1,5 +1,20 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+    // Sortie autonome pour le déploiement en conteneur : Next produit
+    // .next/standalone avec le strict nécessaire, au lieu d'exiger tout
+    // node_modules dans l'image.
+    //
+    // ⚠️ Ce projet démarre par server.mjs (Next + Socket.IO sur le même port),
+    // PAS par le .next/standalone/server.js que Next génère ici. Ce dernier
+    // ignore le serveur custom : le lancer couperait le temps réel du forum.
+    // Le conteneur doit donc copier server.mjs à côté du standalone et le
+    // lancer lui — voir outputFileTracingIncludes plus bas, qui embarque le
+    // fichier, et penser à installer socket.io et jsonwebtoken dans l'image :
+    // Next ne les trace pas, puisque seul server.mjs les importe.
+    output: "standalone",
+    outputFileTracingIncludes: {
+        "/": ["./server.mjs"],
+    },
     poweredByHeader: false,
     images: {
         remotePatterns: [
