@@ -5,9 +5,8 @@
 //   Next (App Router) n'héberge pas Socket.IO nativement. On enveloppe donc le
 //   handler Next dans un serveur HTTP Node et on y attache Socket.IO, sur le
 //   MÊME port (3000) → ça passe par le proxy nginx existant (location /), sans
-//   config root. Tant que nginx ne transmet pas l'en-tête `Upgrade`, Socket.IO
-//   fonctionne en repli long-polling ; il basculera en WebSocket dès que le
-//   vhost autorisera l'upgrade.
+//   config root. Transport WebSocket uniquement (pas de repli long-polling) :
+//   le vhost nginx DOIT donc transmettre `Upgrade`/`Connection` sur /socket.io.
 //
 // Démarrage :
 //   - dev  : node server.mjs            (NODE_ENV != production)
@@ -93,6 +92,7 @@ app.prepare().then(() => {
         path: "/socket.io",
         // même origine (servi par ce serveur) → pas de CORS spécifique nécessaire
         serveClient: false,
+        transports: ["websocket"],
         pingInterval: 25000,
         pingTimeout: 20000,
     });

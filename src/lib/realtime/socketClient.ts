@@ -6,9 +6,10 @@ import { io, type Socket } from "socket.io-client";
  * Singleton Socket.IO côté client : une seule connexion partagée pour toute
  * l'app (évite d'ouvrir un socket par composant).
  *
- * Transports : on démarre en `polling` puis on tente l'upgrade `websocket`.
- * Tant que le vhost nginx ne transmet pas l'en-tête `Upgrade`, la connexion
- * reste en long-polling (fonctionnel). Aucune URL → même origine.
+ * Transports : WebSocket uniquement (pas de repli long-polling). On évite ainsi
+ * la phase de handshake HTTP + upgrade, et les requêtes de polling qui chargent
+ * inutilement le serveur. Prérequis : le vhost nginx DOIT transmettre les
+ * en-têtes `Upgrade`/`Connection` sur /socket.io. Aucune URL → même origine.
  */
 let socket: Socket | null = null;
 
@@ -26,7 +27,8 @@ export function getForumSocket(token?: string): Socket {
         path: "/socket.io",
         autoConnect: true,
         auth: token ? { token } : {},
-        transports: ["polling", "websocket"],
+        transports: ["websocket"],
+        upgrade: false,
         reconnection: true,
         reconnectionDelay: 1000,
         reconnectionDelayMax: 5000,
