@@ -27,6 +27,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import ChestAnimation from "./ChestAnimation";
+import ChestCard from "@/components/chests/ChestCard";
 
 interface Quest {
   id: string;
@@ -591,51 +592,6 @@ function QuestCard({
 }
 
 function ChestsInfo({ chests }: { chests: any[] }) {
-  const getChestTypeLabel = (type: string) => {
-    const labels: Record<string, string> = {
-      common: "Commun",
-      rare: "Rare",
-      epic: "Epique",
-      legendary: "Legendaire",
-    };
-    return labels[type] || type;
-  };
-
-  const getCosmeticLabel = (cosmeticType?: string, cosmeticId?: string) => {
-    if (!cosmeticType || !cosmeticId) return "";
-
-    const labels: Record<string, Record<string, string>> = {
-      profile_border: {
-        silver: "Bordure Argent",
-        gold: "Bordure Or",
-        eclair_green: "Bordure Eclair Vert",
-        fumee: "Bordure Fumee",
-        poison_orange: "Bordure Poison Orange",
-        halloween_pumpkins_apng: "Bordure Citrouilles",
-      },
-      profile_image: {
-        "FoxyPink.webp": "Image Foxy Rose",
-        "FoxyFrenchies.webp": "Image Foxy Frenchies",
-        "FoxyHallo.webp": "Image Foxy Halloween",
-        "FoxyTerreur.webp": "Image Foxy Terreur",
-        "FoxyMecha.webp": "Image Foxy Mecha",
-        "FoxyWaMe.webp": "Image Foxy WaMe",
-        "FoxyWaterMelon.webp": "Image Foxy Pasteque",
-        "FoxySably.webp": "Image Foxy Sably",
-        "FoxyLmdpc.webp": "Image Foxy Lmdpc (Partenaire)",
-        "FoxyStagey.webp": "Image Foxy Stagey (Partenaire)",
-      },
-      username_color: {
-        rainbow: "Couleur Arc-en-ciel",
-        legendary: "Couleur Legendaire",
-        neon: "Couleur Neon",
-        galaxy: "Couleur Galaxie",
-      },
-    };
-
-    return labels[cosmeticType]?.[cosmeticId] || `${cosmeticType} ${cosmeticId}`;
-  };
-
   if (chests.length === 0) {
     return (
       <div className="text-center py-12">
@@ -652,106 +608,7 @@ function ChestsInfo({ chests }: { chests: any[] }) {
       </p>
 
       {chests.map((chest: any) => (
-        <div
-          key={chest._id}
-          className="border border-gray-200 rounded-xl overflow-hidden"
-        >
-          {/* En-tete du coffre */}
-          <div className="flex items-center gap-3 p-4 bg-gray-50 border-b border-gray-100">
-            <Image
-              src={`/coffre/${chest.type}_f.png`}
-              alt={chest.name}
-              width={36}
-              height={36}
-              className="object-contain"
-            />
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="font-semibold text-gray-900 text-sm">
-                  {chest.name}
-                </h4>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full ${
-                    chestTypeColors[chest.type as keyof typeof chestTypeColors]
-                  } text-white font-medium`}
-                >
-                  {getChestTypeLabel(chest.type)}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500">{chest.description}</p>
-            </div>
-          </div>
-
-          {/* Recompenses possibles */}
-          <div className="p-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              {chest.possibleRewards.map((reward: any, index: number) => (
-                <div
-                  key={index}
-                  className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg text-sm"
-                >
-                  <div className="flex items-center gap-2">
-                    {reward.type === "points" && (
-                      <>
-                        <Image
-                          src="/badge/points.png"
-                          alt=""
-                          width={18}
-                          height={18}
-                          className="object-contain"
-                        />
-                        <span className="text-gray-700 text-xs font-medium">
-                          {reward.amount} points
-                        </span>
-                      </>
-                    )}
-                    {reward.type === "gems" && (
-                      <>
-                        <Image
-                          src="/badge/diamond.png"
-                          alt=""
-                          width={18}
-                          height={18}
-                          className="object-contain"
-                        />
-                        <span className="text-gray-700 text-xs font-medium">
-                          {reward.amount} diamants
-                        </span>
-                      </>
-                    )}
-                    {reward.type === "mushrooms" && (
-                      <>
-                        <Image
-                          src="/badge/champiworkyt.webp"
-                          alt=""
-                          width={18}
-                          height={18}
-                          className="object-contain"
-                        />
-                        <span className="text-gray-700 text-xs font-medium">
-                          {reward.amount} champignon{reward.amount > 1 ? 's' : ''}
-                        </span>
-                      </>
-                    )}
-                    {reward.type === "cosmetic" && (
-                      <>
-                        <Gift className="w-4 h-4 text-purple-500" />
-                        <span className="text-gray-700 text-xs font-medium">
-                          {getCosmeticLabel(reward.cosmeticType, reward.cosmeticId)}
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  {reward.probability != null && (
-                    <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">
-                      {reward.probability}%
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        <ChestCard key={chest._id} chest={chest} />
       ))}
     </div>
   );

@@ -6,7 +6,6 @@ import {
     ArrowRight,
     Check,
     X,
-    Sparkles,
     Zap,
     Clock,
     Award,
@@ -76,30 +75,12 @@ export default function LearningSimulations() {
             id="simulations"
             className="relative overflow-hidden bg-[#fff8ee] px-4 py-20 md:py-28"
         >
-            {/* Notebook pattern */}
+            {/* Notebook pattern — seule texture conservée, aucune animation de fond :
+                ici c'est l'interactivité des cartes qui porte le côté vivant. */}
             <div
                 className="wk-cahier pointer-events-none absolute inset-0 opacity-[0.35]"
                 aria-hidden="true"
             />
-            {/* Sparkles décoratives */}
-            {[
-                { top: "12%", left: "8%", size: 14, delay: "0s" },
-                { top: "20%", left: "92%", size: 12, delay: "0.6s" },
-                { top: "72%", left: "6%", size: 10, delay: "1.2s" },
-                { top: "82%", left: "88%", size: 14, delay: "1.8s" },
-            ].map((s, i) => (
-                <div
-                    key={i}
-                    className="wk-twinkle pointer-events-none absolute z-[1]"
-                    style={{ top: s.top, left: s.left, animationDelay: s.delay }}
-                    aria-hidden="true"
-                >
-                    <Sparkles
-                        className="text-[var(--wk-accent)]"
-                        style={{ width: s.size, height: s.size }}
-                    />
-                </div>
-            ))}
 
             <div className="relative z-[2] mx-auto max-w-[1400px]">
                 {/* Header */}
@@ -107,15 +88,21 @@ export default function LearningSimulations() {
                     <div className="max-w-2xl">
                         <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
                             <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
-                            <span>03</span>
-                            <span>Simulations live</span>
+                            <span>02</span>
+                            <span>Essaie maintenant</span>
                         </div>
                         <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl lg:text-7xl">
-                            Regarde Workyt en{" "}
-                            <span className="italic text-[var(--wk-accent)]">action</span>.
+                            Pas une capture d&apos;écran.{" "}
+                            <span className="wk-underline italic text-[var(--wk-accent)]">
+                                Le vrai truc
+                            </span>
+                            .
                         </h2>
                         <p className="mt-4 max-w-xl text-[rgba(26,21,18,0.7)]">
-                            Trois briques qui font tourner la plateforme : un exercice avec correction, un quiz noté, et la validation des compétences du programme officiel.
+                            Trois briques qui font tourner la plateforme : un exercice
+                            avec sa correction, un quiz noté, et la validation d&apos;une
+                            compétence du programme officiel. Clique dedans, c&apos;est
+                            jouable ici même.
                         </p>
                     </div>
                     <Link href="/cours" className="wk-btn-ink self-start md:self-end">

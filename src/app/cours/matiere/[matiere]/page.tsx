@@ -1,10 +1,12 @@
 import { Metadata } from 'next'
 import Link from 'next/link'
+import { Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import dbConnect from '@/lib/mongodb'
 import Course from '@/models/Course'
 import { buildIdSlug } from '@/utils/slugify'
-import { getAllSubjectSlugs, slugToSubject } from '@/utils/subjectSlug'
+import { getAllSubjectSlugs, slugToSubject, levelToSlug } from '@/utils/subjectSlug'
+import NiveauFilter, { CourseGrid, type CourseItem } from './niveau-filter'
 
 interface PageProps {
     params: Promise<{ matiere: string }>
@@ -58,6 +60,15 @@ export default async function MatiereCoursPage({ params }: PageProps) {
     } catch (err) {
         console.error('Hub cours/matiere DB error:', err)
     }
+
+    const courseItems: CourseItem[] = courses.map((c: any) => ({
+        id: c._id.toString(),
+        href: `/cours/${buildIdSlug(c._id.toString(), c.slug || c.title)}`,
+        title: c.title,
+        description: c.description ?? '',
+        niveau: c.niveau ?? '',
+        niveauSlug: c.niveau ? levelToSlug(c.niveau) : '',
+    }))
 
     const url = `https://workyt.fr/cours/matiere/${slug}`
     const collectionLd = {
@@ -113,20 +124,9 @@ export default async function MatiereCoursPage({ params }: PageProps) {
                         <Link href="/cours" className="text-orange-500 underline">Voir tous les cours</Link>.
                     </p>
                 ) : (
-                    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {courses.map((c: any) => {
-                            const href = `/cours/${buildIdSlug(c._id.toString(), c.slug || c.title)}`
-                            return (
-                                <li key={c._id.toString()} className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-orange-200 hover:shadow-sm transition">
-                                    <Link href={href} className="block">
-                                        <div className="text-xs uppercase tracking-wider text-gray-400 mb-2">{c.niveau}</div>
-                                        <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{c.title}</h2>
-                                        <p className="text-sm text-gray-500 line-clamp-3">{c.description}</p>
-                                    </Link>
-                                </li>
-                            )
-                        })}
-                    </ul>
+                    <Suspense fallback={<CourseGrid courses={courseItems} />}>
+                        <NiveauFilter courses={courseItems} />
+                    </Suspense>
                 )}
             </main>
         </>

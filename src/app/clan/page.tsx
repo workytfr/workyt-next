@@ -3,9 +3,10 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { toast } from 'sonner';
 import {
-  Loader2, Swords, Users, Hammer, ShieldQuestion, Check, Megaphone, Crosshair
+  Loader2, Swords, Users, Hammer, ShieldQuestion, Check, Megaphone, Crosshair, Trophy
 } from 'lucide-react';
 import ClanBanner from '@/components/clan/ClanBanner';
 import ClanCastle from '@/components/clan/ClanCastle';
@@ -13,6 +14,8 @@ import BattleReportModal from '@/components/clan/BattleReportModal';
 import GarrisonPanel from '@/components/clan/GarrisonPanel';
 import WarFeed, { type WarEvent } from '@/components/clan/WarFeed';
 import ClanTutorial from '@/components/clan/ClanTutorial';
+import ChestCard from '@/components/chests/ChestCard';
+import type { ChestWithOdds } from '@/lib/chestOdds';
 
 /**
  * Tableau de bord de la Guerre des Clans.
@@ -46,6 +49,14 @@ interface ClanData {
     gate?: string | null;
   };
   rankings?: { role: string; entries: RankEntry[] }[];
+  /** Butin de dimanche au rang actuel du clan (barème serveur, jamais recopié) */
+  rewards?: {
+    mvp: string[];
+    winner: string[];
+    loserPoints: number;
+    /** Coffres réels indexés par type — absent si le coffre n'est pas seedé */
+    chests: Record<string, ChestWithOdds>;
+  };
   members?: { userId: string; username: string; role: string; totalPoints: number; wounded: boolean }[];
   feed?: WarEvent[];
   day?: number;
@@ -67,6 +78,54 @@ const ROLE_STYLE: Record<string, string> = {
   soigneur: 'border-emerald-400 bg-emerald-50 text-emerald-700'
 };
 const GATES = ['nord', 'est', 'sud'] as const;
+
+/**
+ * Les coffres réellement remis pour un lot, avec leur table de butin.
+ *
+ * `types` peut contenir des doublons (['legendary','legendary'] au rang 6) :
+ * on n'affiche qu'une carte par coffre, avec un « ×2 ».
+ */
+function ChestLoot({
+  types, chests
+}: {
+  types: string[];
+  chests: Record<string, ChestWithOdds>;
+}) {
+  const counts = types.reduce<Record<string, number>>((acc, t) => {
+    acc[t] = (acc[t] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  return (
+    <div className="space-y-2">
+      {Object.entries(counts).map(([type, n]) => {
+        const chest = chests[type];
+        // Coffre non seedé ou désactivé : on le dit, plutôt que d'inventer une
+        // table de butin que la résolution du dimanche ne distribuera pas.
+        if (!chest) {
+          return (
+            <p key={type} className="rounded-lg border border-dashed border-gray-300 bg-white p-3 text-xs italic text-gray-500">
+              Coffre « {type} » indisponible pour le moment.
+            </p>
+          );
+        }
+        return (
+          <ChestCard
+            key={type}
+            chest={chest}
+            badge={
+              n > 1 ? (
+                <span className="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold text-orange-700">
+                  ×{n}
+                </span>
+              ) : undefined
+            }
+          />
+        );
+      })}
+    </div>
+  );
+}
 
 export default function ClanPage() {
   const { status } = useSession();
@@ -165,7 +224,7 @@ export default function ClanPage() {
     );
   }
 
-  const { clan, rival, me, members = [], rankings, feed = [] } = data;
+  const { clan, rival, me, members = [], rankings, rewards, feed = [] } = data;
   const isAttacker = me?.role === 'attaquant';
 
   return (
@@ -381,6 +440,49 @@ export default function ClanPage() {
                 </div>
               ))}
             </div>
+          </section>
+        )}
+
+        {/* L'enjeu de la semaine. Le barème vient du serveur : la page ne peut
+            pas promettre autre chose que ce qui sera réellement distribué. */}
+        {rewards && (
+          <section className="rounded-2xl border border-amber-200 bg-amber-50/60 p-5 shadow-sm">
+            <h2 className="mb-1 flex items-center gap-2 font-bold text-gray-800">
+              <Trophy className="h-5 w-5 text-amber-500" />
+              L&apos;enjeu de cette guerre
+            </h2>
+            <p className="mb-4 text-sm text-gray-600">
+              Distribué <strong>dimanche à minuit</strong>, au rang{' '}
+              <strong>{clan.tierName ?? `n°${clan.tier}`}</strong>. Monter de rang améliore le butin.
+            </p>
+
+            <div className="space-y-5 text-sm">
+              <div>
+                <p className="mb-2 font-semibold text-gray-800">👑 MVP du clan vainqueur</p>
+                <ChestLoot types={rewards.mvp} chests={rewards.chests} />
+              </div>
+              <div>
+                <p className="mb-2 font-semibold text-gray-800">🏆 Clan vainqueur — chaque membre</p>
+                <ChestLoot types={rewards.winner} chests={rewards.chests} />
+              </div>
+              <div className="border-t border-amber-200 pt-4">
+                <p className="mb-2 font-semibold text-gray-800">🤝 Clan perdant — chaque membre</p>
+                <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white p-3">
+                  <Image src="/badge/points.png" alt="" width={18} height={18} className="object-contain" />
+                  <span className="text-xs font-medium text-gray-700">
+                    {rewards.loserPoints} points de compensation
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-4 border-t border-amber-200 pt-3 text-xs text-gray-500">
+              Chances indiquées <strong>hors boost</strong> — un « éclat de chance » actif
+              améliore le tirage des récompenses rares.
+              Les coffres sont réservés au clan vainqueur. Les points de compensation ne vont
+              qu&apos;aux membres ayant gagné <strong>au moins 1 point</strong> dans la semaine.
+              Le meilleur contributeur du clan perdant est le seul à <strong>conserver son rang</strong>.
+            </p>
           </section>
         )}
 

@@ -1,16 +1,13 @@
 import '@radix-ui/themes/styles.css';
-import { BannerWithButton } from "@/components/ui/notificationHome";
+import HeroBackdrop from "@/components/home/hero-backdrop";
 import Hero2026 from "@/components/home/hero-2026";
 import NosServices from "@/components/home/nos-services";
-import { WobbleCardDemo } from "@/components/home/notre-mission";
-import { FeedCard } from "@/components/home/news";
-import { Avis } from '@/components/home/avis';
-import PartenairesView from "@/components/home/partenaires";
-import WorkytAwardSection from "@/components/home/workyt-award";
-import OrgChart from "@/components/home/OrgChart";
-import { GamificationSection } from "@/components/home/gamification";
-import { CoursSystemSection } from "@/components/home/cours-system";
 import LearningSimulations from "@/components/home/learning-simulations";
+import { WobbleCardDemo } from "@/components/home/notre-mission";
+import { GamificationSection } from "@/components/home/gamification";
+import FaqSection from "@/components/home/faq";
+import PartenairesView from "@/components/home/partenaires";
+import CtaFinal from "@/components/home/cta-final";
 import { Metadata } from 'next'
 
 
@@ -97,34 +94,39 @@ const educationalOrganizationSchema = {
 
 export default function Home() {
     return (
-        <div className="flex flex-col bg-white">
+        /* `relative` + fond papier : la navbar est une pilule flottante posée
+           sur la page, avec de la marge autour d'elle. En blanc, cette marge
+           dessinait un bandeau clair jusqu'au hero. Le fond papier et les
+           calques d'ambiance partent maintenant de y=0, donc derrière elle. */
+        <div className="relative flex flex-col bg-[var(--wk-paper)]">
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
                     __html: JSON.stringify(educationalOrganizationSchema),
                 }}
             />
-            <BannerWithButton
-                tVersion="v4.6"
-                tTitle="🎉 Bienvenue sur Workyt v4.6.0 !"
-                tDetails="Après une année d'absence, les cours font leur retour sur Workyt, désormais enrichis de fonctionnalités innovantes."
-                tButton="Voir les cours"
-                linkHref="/cours"
-                tDismiss="Masquer"
-            />
+            {/* Parcours : ce qu'on propose → la preuve jouable → qui on est →
+                pourquoi on revient → les objections → la confiance → l'action.
+
+                Retirés de la page d'accueil :
+                - BannerWithButton (v4.6.0) : un numéro de version n'est pas une
+                  information visiteur ; le retour des cours est porté par le hero.
+                - CoursSystemSection : redondant avec les simulations, qui montrent
+                  la même chose en interactif.
+                - WorkytAwardSection et OrgChart : contenu institutionnel → /a-propos.
+                - Avis : témoignages non sourcés. Une page sans avis est neutre,
+                  une page avec de faux avis est un risque. À rétablir avec de
+                  vrais retours signés.
+                - FeedCard (blog) : contenu périphérique → footer. */}
+            <HeroBackdrop />
             <Hero2026 />
-            <NosServices/>
-            <CoursSystemSection/>
-            <LearningSimulations/>
-            <WobbleCardDemo/>
-            <PartenairesView/>
-            <WorkytAwardSection/>
-            <GamificationSection/>
-            <FeedCard/>
-            <div className="px-4 md:px-8 lg:px-16 py-8 w-full max-w-full overflow-x-hidden">
-                <Avis/>
-            </div>
-            <OrgChart/>
+            <NosServices />
+            <LearningSimulations />
+            <WobbleCardDemo />
+            <GamificationSection />
+            <FaqSection />
+            <PartenairesView />
+            <CtaFinal />
         </div>
     );
 }

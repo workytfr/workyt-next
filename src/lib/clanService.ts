@@ -498,6 +498,22 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
   const { warDay } = await import('@/lib/clanResolution');
   const { default: ClanDailyResult } = await import('@/models/ClanDailyResult');
   const { default: ClanSoldier } = await import('@/models/ClanSoldier');
+  // Import dynamique : clanWeekly importe clanService (seasonKey), un import
+  // statique créerait un cycle. Le barème n'est PAS recopié ici — la page doit
+  // afficher exactement ce que la résolution du dimanche distribuera.
+  const { REWARDS_BY_TIER } = await import('@/lib/clanWeekly');
+  const { default: Chest } = await import('@/models/Chest');
+  const { withOdds } = await import('@/lib/chestOdds');
+
+  const tierRewards = REWARDS_BY_TIER[clan.tier] ?? REWARDS_BY_TIER[1];
+
+  // Les VRAIS coffres, avec leur table de butin. On ne charge que les types
+  // effectivement distribués à ce rang, et on filtre sur `isActive` comme le
+  // fait grantChest : un coffre désactivé ne serait pas remis, l'annoncer
+  // serait une promesse en l'air.
+  const chestTypes = [...new Set([...tierRewards.mvp, ...tierRewards.winner])];
+  const chestDocs = await Chest.find({ type: { $in: chestTypes }, isActive: true }).lean<any[]>();
+  const chestsByType = new Map(chestDocs.map((c) => [c.type, withOdds(c)]));
 
   // Éclaireur : c'est lui qui révèle l'ordre du jour adverse. Sans lui, la
   // porte visée par l'ennemi reste inconnue jusqu'au rapport du lendemain.
@@ -555,6 +571,19 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
       memberCount: clan.memberCount,
       dailyOrder: clan.dailyOrder ?? null,
       isCaptain: clan.captain?.toString() === userId
+    },
+    /**
+     * Ce que cette guerre paiera dimanche, au rang ACTUEL du clan.
+     * Monter de rang change le butin : l'afficher est ce qui donne un sens
+     * matériel à la progression (§10 du CDC).
+     *
+     * `chests` porte les coffres réels (nom, description, table de butin avec
+     * probabilités) ; un type absent de la Map = coffre non seedé ou désactivé,
+     * l'UI le signale plutôt que d'inventer un contenu.
+     */
+    rewards: {
+      ...tierRewards,
+      chests: Object.fromEntries(chestsByType)
     },
     rival: rival && {
       id: rival._id.toString(),

@@ -321,7 +321,94 @@
   transform: perspective(800px) rotateX(3deg) rotateY(-3deg) scale(1.02);
 }
 
+/* Entrée en scène — montée sobre, une seule fois au chargement.
+   `wk-bounce-in` reste pour les éléments ludiques (récompenses, corrections) ;
+   ici on veut de la tenue, pas du rebond. Les délais sont posés en inline
+   `animation-delay` pour cadencer la composition. */
+@keyframes wk-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.wk-rise {
+  opacity: 0;
+  animation: wk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Marqueur maison — trait tracé à la main sous un mot clé.
+   Remplace les numéros 01/02/03 : même rôle de repère, mais c'est notre écriture. */
+.wk-underline {
+  position: relative;
+  display: inline-block;
+}
+.wk-underline::after {
+  content: '';
+  position: absolute;
+  left: -2px;
+  right: -2px;
+  bottom: 0.02em;
+  height: 0.34em;
+  background: var(--wk-accent-2);
+  opacity: 0.45;
+  border-radius: 999px 999px 40% 60%;
+  transform: rotate(-0.6deg);
+  z-index: -1;
+}
+
+/* Aperçu produit — chrome de navigateur factice, assumé comme tel */
+.wk-window {
+  border-radius: 16px;
+  border: 1px solid rgba(26, 21, 18, 0.12);
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(26, 21, 18, 0.12), 0 2px 8px rgba(26, 21, 18, 0.06);
+}
+.wk-window-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(26, 21, 18, 0.08);
+  background: rgba(26, 21, 18, 0.02);
+}
+.wk-window-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(26, 21, 18, 0.15);
+}
+
 ::selection { background: #ffd7a8; color: var(--wk-ink); }
+
+/* ============================================================
+   Accessibilité — toutes les animations décoratives sont
+   ornementales : si l'utilisateur demande moins de mouvement,
+   on coupe. Une seule règle, pas de garde à écrire composant
+   par composant.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .wk-twinkle,
+  .wk-confetti,
+  .wk-orbit,
+  .wk-wobble,
+  .wk-float-y,
+  .wk-pulse-glow,
+  .wk-animate-shine::after,
+  .wk-gradient-text,
+  .wk-marquee-track,
+  .wk-bounce-in,
+  .wk-draw,
+  .wk-rise,
+  .animate-fade-in-up {
+    animation: none !important;
+  }
+  .wk-draw { stroke-dashoffset: 0; }
+  .wk-bounce-in,
+  .wk-rise { opacity: 1; transform: none; }
+  .wk-tilt:hover { transform: none; }
+  .wk-btn-orange:hover,
+  .wk-btn-ink:hover { transform: none; }
+  * { scroll-behavior: auto !important; }
+}
 
 @layer base {
   body {

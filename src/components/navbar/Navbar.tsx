@@ -39,18 +39,14 @@ import {
     Ticket,
     ArrowUpRight,
     LayoutDashboard,
-    TrendingUp,
 } from "lucide-react";
 
 // Rôles ayant accès au tableau de bord (cf. dashboard/layout.tsx)
 const STAFF_ROLES = ["Admin", "Rédacteur", "Correcteur", "Modérateur", "Helpeur"];
 import WorkytLogo from "@/components/ui/WorkytLogo";
-import ActiveEvalIndicator from "@/components/ActiveEvalIndicator";
 import ProfileCard from "@/components/ui/ProfileCard";
 import SearchCommandPalette from "@/components/SearchCommandPalette";
-import StreakIndicator from "@/components/ui/StreakIndicator";
-import MushroomIndicator from "@/components/ui/MushroomIndicator";
-import ClanWarIndicator from "@/components/ui/ClanWarIndicator";
+import StatusCluster from "@/components/navbar/StatusCluster";
 import NotificationBell from "@/components/NotificationBell";
 import BookmarkBell from "@/components/BookmarkBell";
 import QuestsPanel from "@/components/quests/QuestsPanel";
@@ -167,7 +163,15 @@ export default function Navbar() {
         <>
             <header className="sticky top-0 z-[100] px-3 pt-3 sm:px-4 sm:pt-4 safe-area-top">
                 <div className="mx-auto max-w-[1400px]">
-                    <nav className="flex items-center justify-between rounded-full border border-[rgba(26,21,18,0.1)] bg-white/75 px-3 py-2 backdrop-blur-md shadow-[0_6px_24px_rgba(26,21,18,0.06)] sm:px-4 sm:py-2.5">
+                    {/* Pas de `backdrop-blur` ici, et ce n'est pas un choix
+                        esthétique : un `backdrop-filter` fait de l'élément le
+                        bloc conteneur de ses descendants en `position: fixed`.
+                        Les panneaux de la série, des champignons, de la guerre
+                        des clans, des notifications et des favoris se calculent
+                        tous une position en coordonnées viewport — ils se
+                        retrouvaient décalés de la position de la pilule.
+                        Le fond quasi opaque remplace le flou. */}
+                    <nav className="relative flex items-center justify-between rounded-full border border-[rgba(26,21,18,0.1)] bg-white/95 px-3 py-2 shadow-[0_6px_24px_rgba(26,21,18,0.06)] sm:px-4 sm:py-2.5">
                         {/* Logo */}
                         <Link href="/" aria-label="Workyt — accueil" className="group flex flex-shrink-0 items-center gap-2 pl-1">
                             <WorkytLogo className="h-6 sm:h-7" />
@@ -239,7 +243,6 @@ export default function Navbar() {
 
                         {/* Desktop right side */}
                         <div className="hidden flex-shrink-0 items-center gap-2 lg:flex xl:gap-3">
-                            <ActiveEvalIndicator />
                             {/* Don */}
                             <Link
                                 href="https://www.helloasso.com/associations/workyt/formulaires/1"
@@ -254,22 +257,7 @@ export default function Navbar() {
 
                             {session ? (
                                 <>
-                                    <div className="flex items-center gap-1 rounded-full bg-[rgba(26,21,18,0.05)] px-2 py-1">
-                                        <StreakIndicator userId={session.user.id} />
-                                        <div className="h-4 w-px bg-[rgba(26,21,18,0.15)]" />
-                                        <MushroomIndicator userId={session.user.id} />
-                                        {/* Ne se rend que si une guerre est en cours */}
-                                        <ClanWarIndicator userId={session.user.id} />
-                                        <div className="h-4 w-px bg-[rgba(26,21,18,0.15)]" />
-                                        <Link
-                                            href="/progression"
-                                            title="Ma Progression"
-                                            aria-label="Ma Progression"
-                                            className="flex items-center justify-center rounded-full p-1 text-emerald-600 transition hover:bg-emerald-50"
-                                        >
-                                            <TrendingUp className="h-4 w-4" />
-                                        </Link>
-                                    </div>
+                                    <StatusCluster userId={session.user.id} />
                                     <BookmarkBell />
                                     <NotificationBell />
 
@@ -392,9 +380,13 @@ export default function Navbar() {
                             )}
                         </div>
 
-                        {/* Mobile right side */}
+                        {/* Mobile / tablette right side.
+                            StatusCluster décide lui-même de sa forme selon la
+                            largeur : aligné à partir de md, replié en dessous.
+                            BookmarkBell descend dans le drawer — à 360px, cinq
+                            cibles de 44px plus le logo ne tiennent pas. */}
                         <div className="ml-2 flex flex-1 items-center justify-end gap-1 lg:hidden sm:gap-2">
-                            <ActiveEvalIndicator />
+                            {session && <StatusCluster userId={session.user.id} />}
                             <button
                                 onClick={() => setIsSearchOpen(true)}
                                 className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-gray-500 transition-colors touch-manipulation active:bg-[rgba(26,21,18,0.08)]"
@@ -402,7 +394,6 @@ export default function Navbar() {
                             >
                                 <Search className="h-5 w-5" />
                             </button>
-                            {session && <BookmarkBell />}
                             {session && <NotificationBell />}
                             <button
                                 className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-gray-700 transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-orange-200 active:bg-[rgba(26,21,18,0.08)]"
@@ -536,6 +527,12 @@ export default function Navbar() {
                                 <Link href={`/compte/${session.user.id}`} className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
                                     <PersonIcon className="h-4 w-4 shrink-0 text-gray-400" />
                                     Mon Compte
+                                </Link>
+                                {/* Reprise du BookmarkBell, retiré de la barre mobile
+                                    pour ne pas dépasser quatre cibles à 360px. */}
+                                <Link href="/fiches/favoris" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
+                                    <StarIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                                    Mes favoris
                                 </Link>
                                 <Link href="/award" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
                                     <Ticket className="h-4 w-4 shrink-0 text-orange-400" />

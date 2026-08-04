@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import connectDB from '@/lib/mongodb';
 import Chest from '@/models/Chest';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { withOdds } from '@/lib/chestOdds';
 
 /**
  * GET /api/chests - Récupérer tous les coffres avec leurs récompenses possibles
@@ -29,26 +30,8 @@ export async function GET(req: NextRequest) {
       type: 1 // Trier par type: common, rare, epic, legendary
     });
 
-    // Calculer les probabilités pour chaque récompense
-    const chestsWithProbabilities = chests.map(chest => {
-      const totalWeight = chest.possibleRewards.reduce((sum: number, reward: any) => sum + reward.weight, 0);
-      
-      const rewardsWithProbability = chest.possibleRewards.map((reward: any) => {
-        const probability = Math.round((reward.weight / totalWeight) * 100);
-        return {
-          ...reward.toObject(),
-          probability
-        };
-      });
-
-      return {
-        _id: chest._id,
-        type: chest.type,
-        name: chest.name,
-        description: chest.description,
-        possibleRewards: rewardsWithProbability
-      };
-    });
+    // Probabilités : calcul partagé avec la page des clans (voir chestOdds.ts)
+    const chestsWithProbabilities = chests.map(withOdds);
 
     return NextResponse.json({ chests: chestsWithProbabilities }, { status: 200 });
   } catch (error) {

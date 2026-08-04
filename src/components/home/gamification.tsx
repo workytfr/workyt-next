@@ -1,488 +1,242 @@
-"use client";
-
-import React from "react";
 import Link from "next/link";
-import { WobbleCard } from "../ui/wobble-card";
-import { TextGenerateEffect } from "@/components/ui/text-generate-effect";
-import { Badge } from "@/components/ui/Badge";
 import {
-    Gem,
-    Trophy,
-    Zap,
-    Crown,
-    Gift,
-    FileText,
-    Palette,
-    Flame,
-    Calendar,
-    Target,
-    Award,
     ArrowRight,
-    Sparkles,
-    TrendingUp,
-    MessageCircle,
-    Heart,
     CheckCircle,
+    FileText,
+    Flame,
+    Gem,
+    Heart,
+    MessageCircle,
+    Target,
 } from "lucide-react";
-import Image from "next/image";
-import { GEM_CONFIG } from "@/lib/gemConfig";
+
+/* Section volontairement resserrée.
+   L'ancienne version empilait des WobbleCard en dégradés émeraude, teal et
+   jaune — une palette qui n'est pas celle du site, sur une hauteur de trois
+   écrans. Tout le contenu est conservé (sources de points, paliers de série,
+   mondes, gemmes), mais présenté en trois blocs lisibles d'un coup d'œil. */
 
 const POINT_SOURCES = [
-    { action: "Créer une fiche de révision", points: "+10 pts", icon: <FileText className="w-4 h-4" /> },
-    { action: "Répondre sur le forum", points: "+2 pts", icon: <MessageCircle className="w-4 h-4" /> },
-    { action: "Réponse validée", points: "+variable", icon: <CheckCircle className="w-4 h-4" /> },
-    { action: "Like reçu sur une fiche", points: "+5 pts", icon: <Heart className="w-4 h-4" /> },
-    { action: "Compléter un quiz", points: "+score", icon: <Target className="w-4 h-4" /> },
-];
-
-const WORLDS = [
-    { name: "Mangas", levels: "1-3", color: "from-red-500 to-orange-500", emoji: "🥷" },
-    { name: "Français", levels: "4-6", color: "from-blue-500 to-indigo-500", emoji: "🇫🇷" },
-    { name: "Renards", levels: "7-9", color: "from-pink-500 to-rose-500", emoji: "🦊" },
-    { name: "Québec", levels: "10-12", color: "from-red-600 to-red-400", emoji: "🍁" },
-    { name: "Égypte", levels: "13-15", color: "from-yellow-600 to-amber-500", emoji: "🏛️" },
-    { name: "Neiges", levels: "16-18", color: "from-cyan-500 to-blue-400", emoji: "❄️" },
-    { name: "Imaginaire", levels: "19-21", color: "from-purple-600 to-pink-500", emoji: "✨" },
+    { action: "Créer une fiche de révision", points: "+10", icon: FileText },
+    { action: "Compléter un quiz", points: "+score", icon: Target },
+    { action: "Like reçu sur une fiche", points: "+5", icon: Heart },
+    { action: "Répondre sur le forum", points: "+2", icon: MessageCircle },
+    { action: "Réponse validée par l'auteur", points: "variable", icon: CheckCircle },
 ];
 
 const STREAK_MILESTONES = [
-    { days: 3, label: "Naissante", reward: "+5 pts", color: "text-yellow-400" },
-    { days: 7, label: "Stable", reward: "+15 pts +1", rewardIcon: "mushroom", color: "text-yellow-500" },
-    { days: 14, label: "Ardente", reward: "+30 pts +1", rewardIcon: "mushroom", color: "text-orange-500" },
-    { days: 30, label: "Infernale", reward: "+50 pts +1", rewardIcon: "gem", color: "text-red-500" },
-    { days: 60, label: "Éternelle", reward: "+100 pts +2", rewardIcon: "gem", color: "text-red-600" },
-    { days: 100, label: "Légendaire", reward: "+200 pts +5", rewardIcon: "gem", color: "text-purple-500" },
+    { days: 3, label: "Naissante", reward: "+5 pts" },
+    { days: 7, label: "Stable", reward: "+15 pts · 1 champignon" },
+    { days: 14, label: "Ardente", reward: "+30 pts · 1 champignon" },
+    { days: 30, label: "Infernale", reward: "+50 pts · 1 gemme" },
+    { days: 60, label: "Éternelle", reward: "+100 pts · 2 gemmes" },
+    { days: 100, label: "Légendaire", reward: "+200 pts · 5 gemmes" },
+];
+
+const WORLDS = [
+    { name: "Mangas", levels: "1-3", color: "#f43f5e" },
+    { name: "Français", levels: "4-6", color: "#3b82f6" },
+    { name: "Renards", levels: "7-9", color: "#ec4899" },
+    { name: "Québec", levels: "10-12", color: "#dc2626" },
+    { name: "Égypte", levels: "13-15", color: "#d97706" },
+    { name: "Neiges", levels: "16-18", color: "#06b6d4" },
+    { name: "Imaginaire", levels: "19-21", color: "#a855f7" },
 ];
 
 export function GamificationSection() {
     return (
-        <section id="gamification" className="relative overflow-hidden bg-[var(--wk-paper)] py-20 md:py-28">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                {/* Header */}
-                <div className="mb-16 max-w-3xl">
-                    <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
-                        <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
-                        <span>07</span>
-                        <span>Gamification</span>
+        <section
+            id="gamification"
+            className="relative bg-[var(--wk-paper-2)] px-4 py-20 md:py-28"
+        >
+            <div className="mx-auto max-w-[1400px]">
+                {/* En-tête */}
+                <div className="mb-14 flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+                    <div className="max-w-2xl">
+                        <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
+                            <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
+                            <span>04</span>
+                            <span>Progression</span>
+                        </div>
+                        <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl">
+                            Ce que tu donnes,{" "}
+                            <span className="wk-underline italic text-[var(--wk-accent)]">
+                                tu le récupères
+                            </span>
+                            .
+                        </h2>
                     </div>
-                    <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl lg:text-7xl">
-                        Apprends. <span className="italic text-[var(--wk-accent)]">Progresse.</span> Débloque.
-                    </h2>
-                    <div className="mt-6">
-                        <TextGenerateEffect
-                            words="Chaque action sur Workyt te rapporte des points : créer des fiches, répondre au forum, compléter des quiz. Tu commences avec 20 points offerts pour bien démarrer ! Accumule des points pour monter de niveau, débloquer des badges et personnaliser ton profil avec des gemmes."
-                            className="text-base md:text-lg text-[rgba(26,21,18,0.7)] leading-relaxed"
-                        />
+                    <p className="max-w-sm leading-relaxed text-[rgba(26,21,18,0.7)]">
+                        Aider quelqu&apos;un rapporte autant que réviser. Les points
+                        te font monter les niveaux, les niveaux ouvrent les mondes,
+                        et les gemmes personnalisent ton profil.
+                    </p>
+                </div>
+
+                <div className="grid gap-5 lg:grid-cols-12">
+                    {/* ---- Gagner des points ---- */}
+                    <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-6 md:p-8 lg:col-span-5">
+                        <div className="font-mono-ui text-[11px] uppercase tracking-[0.16em] text-[var(--wk-accent)]">
+                            01 · Gagner
+                        </div>
+                        <h3 className="font-serif-display mt-2 text-2xl">
+                            Chaque action compte
+                        </h3>
+
+                        <ul className="mt-6 divide-y divide-[rgba(26,21,18,0.08)] border-y border-[rgba(26,21,18,0.08)]">
+                            {POINT_SOURCES.map(({ action, points, icon: Icon }) => (
+                                <li
+                                    key={action}
+                                    className="flex items-center justify-between gap-4 py-3"
+                                >
+                                    <span className="flex items-center gap-3 text-sm text-[rgba(26,21,18,0.75)]">
+                                        <Icon className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.35)]" />
+                                        {action}
+                                    </span>
+                                    <span className="font-serif-display shrink-0 text-lg text-[var(--wk-ink)]">
+                                        {points}
+                                    </span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <p className="font-mono-ui mt-5 text-[11px] uppercase tracking-[0.14em] text-[rgba(26,21,18,0.45)]">
+                            20 points offerts à l&apos;inscription
+                        </p>
                     </div>
-                </div>
 
-                {/* ========== ÉTAPE 1 : Comment gagner des points ========== */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-                    <WobbleCard
-                        containerClassName="bg-gradient-to-br from-emerald-600 to-teal-700 min-h-[320px]"
-                        className=""
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                    <Image src="/badge/points.png" alt="Points" width={24} height={24} className="w-6 h-6 object-contain" />
+                    {/* ---- La série ---- */}
+                    <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-6 md:p-8 lg:col-span-7">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <div className="font-mono-ui text-[11px] uppercase tracking-[0.16em] text-[var(--wk-accent)]">
+                                    02 · Tenir
                                 </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white">Gagne des points</h3>
-                                    <p className="text-emerald-200 text-sm">20 points offerts à l&apos;inscription !</p>
-                                </div>
+                                <h3 className="font-serif-display mt-2 text-2xl">
+                                    La série quotidienne
+                                </h3>
                             </div>
-                            <div className="space-y-2.5">
-                                {POINT_SOURCES.map((source) => (
-                                    <div key={source.action} className="flex items-center justify-between bg-white/10 rounded-lg px-4 py-2.5 backdrop-blur-sm">
-                                        <div className="flex items-center gap-2.5 text-white">
-                                            <span className="text-emerald-300">{source.icon}</span>
-                                            <span className="text-sm">{source.action}</span>
-                                        </div>
-                                        <span className="text-emerald-300 font-bold text-sm">{source.points}</span>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="flex items-center justify-center gap-1.5 mt-3">
-                                <Image src="/badge/champiworkyt.webp" alt="Champignon" width={14} height={14} className="w-3.5 h-3.5 object-contain" />
-                                <p className="text-emerald-200/70 text-xs">
-                                    Active un boost champignon pour x1.25 sur tes points !
-                                </p>
-                            </div>
+                            <Flame className="h-7 w-7 shrink-0 text-[var(--wk-accent)]" />
                         </div>
-                    </WobbleCard>
 
-                    {/* Streak */}
-                    <WobbleCard
-                        containerClassName="bg-gradient-to-br from-orange-500 to-red-600 min-h-[320px]"
-                        className=""
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                    <Flame className="w-6 h-6 text-orange-200" />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white">Série quotidienne</h3>
-                                    <p className="text-orange-200 text-sm">Reviens chaque jour</p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-2">
-                                {STREAK_MILESTONES.map((m) => (
-                                    <div key={m.days} className="bg-white/10 rounded-lg px-3 py-2 backdrop-blur-sm">
-                                        <div className="flex items-center gap-1.5">
-                                            <Flame className={`w-3.5 h-3.5 ${m.color}`} />
-                                            <span className="text-white font-bold text-sm">{m.days}j</span>
-                                        </div>
-                                        <div className="flex items-center gap-1 mt-0.5">
-                                            <span className="text-orange-100 text-[11px]">{m.reward}</span>
-                                            {m.rewardIcon === "gem" && (
-                                                <Image src="/badge/diamond.png" alt="Gemme" width={11} height={11} className="w-[11px] h-[11px] object-contain" />
-                                            )}
-                                            {m.rewardIcon === "mushroom" && (
-                                                <Image src="/badge/champiworkyt.webp" alt="Champignon" width={11} height={11} className="w-[11px] h-[11px] object-contain" />
-                                            )}
-                                        </div>
+                        {/* Ligne de paliers — une seule rangée, pas six cartes */}
+                        <ol className="mt-7 grid grid-cols-3 gap-x-4 gap-y-6 sm:grid-cols-6">
+                            {STREAK_MILESTONES.map((m, i) => (
+                                <li key={m.days} className="relative">
+                                    <div
+                                        className="mb-3 h-1 rounded-full"
+                                        style={{
+                                            background: `color-mix(in srgb, var(--wk-accent) ${20 + i * 16}%, rgba(26,21,18,0.08))`,
+                                        }}
+                                    />
+                                    <div className="font-serif-display text-2xl leading-none">
+                                        {m.days}
+                                        <span className="font-mono-ui ml-0.5 text-[10px] uppercase text-[rgba(26,21,18,0.45)]">
+                                            j
+                                        </span>
                                     </div>
-                                ))}
-                            </div>
-                            <p className="text-orange-200/70 text-xs mt-3 text-center">
-                                Ta flamme évolue visuellement à chaque palier !
-                            </p>
-                        </div>
-                    </WobbleCard>
-                </div>
+                                    <div className="mt-1.5 text-xs font-semibold text-[var(--wk-ink)]">
+                                        {m.label}
+                                    </div>
+                                    <div className="mt-0.5 text-[11px] leading-snug text-[rgba(26,21,18,0.55)]">
+                                        {m.reward}
+                                    </div>
+                                </li>
+                            ))}
+                        </ol>
 
-                {/* ========== ÉTAPE 2 : Quêtes + Calendrier ========== */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <WobbleCard
-                        containerClassName="lg:col-span-2 bg-gradient-to-br from-violet-600 to-purple-700 min-h-[280px]"
-                        className=""
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                    <Target className="w-6 h-6 text-violet-200" />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white">Quêtes & Missions</h3>
-                                    <p className="text-violet-200 text-sm">Des objectifs renouvelés chaque jour</p>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-                                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                                    <p className="text-2xl font-bold text-white">3</p>
-                                    <p className="text-violet-200 text-xs">Quêtes / jour</p>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                                    <p className="text-2xl font-bold text-white">Hebdo</p>
-                                    <p className="text-violet-200 text-xs">+ défis semaine</p>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                                    <p className="text-2xl font-bold text-white">Mensuel</p>
-                                    <p className="text-violet-200 text-xs">+ objectif du mois</p>
-                                </div>
-                            </div>
-                            <p className="text-violet-100 text-sm leading-relaxed">
-                                Complète des quêtes pour gagner des{" "}
-                                <span className="inline-flex items-center gap-0.5 font-semibold text-white">
-                                    <Image src="/badge/points.png" alt="" width={12} height={12} className="w-3 h-3 object-contain" /> points,{" "}
-                                    <Image src="/badge/diamond.png" alt="" width={12} height={12} className="w-3 h-3 object-contain" /> gemmes,{" "}
-                                    <Image src="/badge/champiworkyt.webp" alt="" width={12} height={12} className="w-3 h-3 object-contain" /> champignons
-                                </span>{" "}
-                                et même des <span className="font-semibold text-white">coffres</span> contenant des récompenses aléatoires !
-                            </p>
-                        </div>
-                    </WobbleCard>
+                        <p className="mt-7 border-t border-[rgba(26,21,18,0.08)] pt-5 text-sm text-[rgba(26,21,18,0.65)]">
+                            Une quête quotidienne, une récompense mensuelle le 15, et un
+                            coffre garanti les jours fériés. Rater un jour ne remet pas
+                            tout à zéro — les champignons protègent la série.
+                        </p>
+                    </div>
 
-                    <WobbleCard
-                        containerClassName="bg-gradient-to-br from-sky-500 to-blue-600 min-h-[280px]"
-                        className=""
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                    <Calendar className="w-6 h-6 text-sky-200" />
-                                </div>
-                                <div>
-                                    <h3 className="text-xl font-bold text-white">Calendrier</h3>
-                                    <p className="text-sky-200 text-sm">Récompense quotidienne</p>
-                                </div>
-                            </div>
-                            <div className="space-y-2.5">
-                                <div className="bg-white/10 rounded-lg px-3 py-2.5 backdrop-blur-sm">
-                                    <p className="text-white text-sm font-medium">Chaque jour</p>
-                                    <div className="flex items-center gap-1 text-sky-200 text-xs">
-                                        <span>1-3</span>
-                                        <Image src="/badge/points.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                        <span>ou 1</span>
-                                        <Image src="/badge/diamond.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                        <span>(5% chance)</span>
-                                    </div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg px-3 py-2.5 backdrop-blur-sm">
-                                    <p className="text-white text-sm font-medium">Jours fériés</p>
-                                    <div className="flex items-center gap-1 text-sky-200 text-xs">
-                                        <span>10</span>
-                                        <Image src="/badge/points.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                        <span>bonus + événements spéciaux</span>
-                                    </div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg px-3 py-2.5 backdrop-blur-sm">
-                                    <p className="text-white text-sm font-medium">Le 15 du mois</p>
-                                    <p className="text-sky-200 text-xs">Coffre surprise garanti !</p>
-                                </div>
-                            </div>
+                    {/* ---- Les mondes ---- */}
+                    <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-6 md:p-8 lg:col-span-7">
+                        <div className="font-mono-ui text-[11px] uppercase tracking-[0.16em] text-[var(--wk-accent)]">
+                            03 · Traverser
                         </div>
-                    </WobbleCard>
-                </div>
+                        <h3 className="font-serif-display mt-2 text-2xl">
+                            Vingt-et-un niveaux, sept mondes
+                        </h3>
 
-                {/* ========== ÉTAPE 3 : Progression — Mondes & Niveaux ========== */}
-                <div className="mb-8">
-                    <WobbleCard
-                        containerClassName="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 min-h-[240px]"
-                        className=""
-                    >
-                        <div className="p-6 md:p-8">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
-                                    <Crown className="w-6 h-6 text-yellow-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white">7 Mondes, 21 Niveaux</h3>
-                                    <p className="text-gray-400 text-sm">Traverse les mondes en accumulant des points</p>
-                                </div>
-                            </div>
-                            <div className="flex flex-wrap gap-2 mb-4">
-                                {WORLDS.map((world, i) => (
-                                    <div key={world.name} className="flex items-center gap-2">
-                                        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r ${world.color} text-white text-sm font-medium`}>
-                                            <span>{world.emoji}</span>
-                                            <span>{world.name}</span>
-                                            <span className="text-white/70 text-xs">Nv.{world.levels}</span>
-                                        </div>
-                                        {i < WORLDS.length - 1 && (
-                                            <ArrowRight className="w-3.5 h-3.5 text-gray-600 hidden sm:block" />
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-4">
-                                <div className="bg-white/5 rounded-lg p-3 text-center">
-                                    <p className="text-yellow-400 text-xl font-bold">20</p>
-                                    <p className="text-gray-400 text-xs">pts offerts au départ</p>
-                                </div>
-                                <div className="bg-white/5 rounded-lg p-3 text-center">
-                                    <p className="text-orange-400 text-xl font-bold">500</p>
-                                    <p className="text-gray-400 text-xs">pts → Monde Français</p>
-                                </div>
-                                <div className="bg-white/5 rounded-lg p-3 text-center">
-                                    <p className="text-red-400 text-xl font-bold">2 500</p>
-                                    <p className="text-gray-400 text-xs">pts → Monde Québec</p>
-                                </div>
-                                <div className="bg-white/5 rounded-lg p-3 text-center">
-                                    <p className="text-purple-400 text-xl font-bold">8 000</p>
-                                    <p className="text-gray-400 text-xs">pts → Immortel</p>
-                                </div>
-                            </div>
-                        </div>
-                    </WobbleCard>
-                </div>
-
-                {/* ========== ÉTAPE 4 : Gemmes + Personnalisation ========== */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-                    <WobbleCard
-                        containerClassName="lg:col-span-2 bg-gradient-to-br from-blue-600 to-purple-700 min-h-[340px]"
-                        className=""
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                    <Image src="/badge/diamond.png" alt="Gemme" width={24} height={24} className="w-6 h-6 object-contain" />
-                                </div>
-                                <div>
-                                    <h3 className="text-2xl font-bold text-white">Gemmes & Boutique</h3>
-                                    <div className="flex items-center gap-1 text-blue-200 text-sm">
-                                        <span>100</span>
-                                        <Image src="/badge/points.png" alt="" width={12} height={12} className="w-3 h-3 object-contain" />
-                                        <span>= 1</span>
-                                        <Image src="/badge/diamond.png" alt="" width={12} height={12} className="w-3 h-3 object-contain" />
-                                    </div>
-                                </div>
-                            </div>
-                            <p className="text-blue-100 text-sm leading-relaxed mb-5">
-                                Convertis tes points en gemmes pour débloquer des personnalisations exclusives : couleurs de pseudo, avatars Foxy, contours de profil et badge de profil.
-                            </p>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                                    <Palette className="w-5 h-5 text-blue-300 mx-auto mb-1" />
-                                    <p className="text-white font-semibold text-sm">Couleurs</p>
-                                    <div className="flex items-center justify-center gap-0.5 text-blue-200 text-xs">
-                                        <span>{Math.min(...Object.values(GEM_CONFIG.PRICES.usernameColor))}-{Math.max(...Object.values(GEM_CONFIG.PRICES.usernameColor))}</span>
-                                        <Image src="/badge/diamond.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                    </div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                                    <Crown className="w-5 h-5 text-pink-300 mx-auto mb-1" />
-                                    <p className="text-white font-semibold text-sm">Avatars</p>
-                                    <div className="flex items-center justify-center gap-0.5 text-blue-200 text-xs">
-                                        <span>2-50</span>
-                                        <Image src="/badge/diamond.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                    </div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                                    <Sparkles className="w-5 h-5 text-yellow-300 mx-auto mb-1" />
-                                    <p className="text-white font-semibold text-sm">Contours</p>
-                                    <div className="flex items-center justify-center gap-0.5 text-blue-200 text-xs">
-                                        <span>2-20</span>
-                                        <Image src="/badge/diamond.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                    </div>
-                                </div>
-                                <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm text-center">
-                                    <Award className="w-5 h-5 text-orange-300 mx-auto mb-1" />
-                                    <p className="text-white font-semibold text-sm">Badge profil</p>
-                                    <div className="flex items-center justify-center gap-0.5 text-blue-200 text-xs">
-                                        <span>5</span>
-                                        <Image src="/badge/diamond.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mt-4">
-                                {[
-                                    { name: "Arc-en-ciel", price: GEM_CONFIG.PRICES.usernameColor.rainbow },
-                                    { name: "Néon", price: GEM_CONFIG.PRICES.usernameColor.neon },
-                                    { name: "Lightning", price: GEM_CONFIG.PRICES.usernameColor.lightning },
-                                    { name: "Légendaire", price: GEM_CONFIG.PRICES.usernameColor.legendary },
-                                ].map((c) => (
-                                    <div key={c.name} className="bg-white/5 rounded-lg px-2.5 py-1.5 flex items-center justify-between">
-                                        <span className="text-white text-xs">{c.name}</span>
-                                        <div className="flex items-center gap-0.5 text-blue-300 text-xs font-semibold">
-                                            <span>{c.price}</span>
-                                            <Image src="/badge/diamond.png" alt="" width={10} height={10} className="w-2.5 h-2.5 object-contain" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </WobbleCard>
-
-                    <WobbleCard
-                        containerClassName="bg-gradient-to-br from-pink-500 to-rose-600 min-h-[340px]"
-                        className=""
-                    >
-                        <div className="p-6">
-                            <div className="flex items-center gap-3 mb-4">
-                                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                                    <Crown className="w-6 h-6 text-pink-200" />
-                                </div>
-                                <h3 className="text-xl font-bold text-white">Avatars Foxy</h3>
-                            </div>
-                            <div className="grid grid-cols-3 gap-2 mb-4">
-                                {[
-                                    { name: "Mecha", file: "FoxyMecha.webp", price: GEM_CONFIG.PRICES.profileImage["FoxyMecha.webp"] },
-                                    { name: "Terreur", file: "FoxyTerreur.webp", price: GEM_CONFIG.PRICES.profileImage["FoxyTerreur.webp"] },
-                                    { name: "Frenchies", file: "FoxyFrenchies.webp", price: GEM_CONFIG.PRICES.profileImage["FoxyFrenchies.webp"] },
-                                ].map((p) => (
-                                    <div key={p.name} className="bg-white/10 rounded-lg p-2.5 text-center backdrop-blur-sm">
-                                        <Image
-                                            src={`/profile/${p.file}`}
-                                            alt={p.name}
-                                            width={40}
-                                            height={40}
-                                            className="w-10 h-10 rounded-full mx-auto mb-1.5 object-cover"
-                                        />
-                                        <p className="text-white text-xs font-medium">{p.name}</p>
-                                        <div className="flex items-center justify-center gap-0.5 text-pink-200 text-[11px]">
-                                            <span>{p.price}</span>
-                                            <Image src="/badge/diamond.png" alt="" width={9} height={9} className="w-[9px] h-[9px] object-contain" />
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                            <div className="bg-white/10 rounded-lg p-3 backdrop-blur-sm">
-                                <div className="flex items-center gap-1.5 mb-1">
-                                    <Image src="/badge/champiworkyt.webp" alt="Champignon" width={16} height={16} className="w-4 h-4 object-contain" />
-                                    <span className="font-semibold text-white text-sm">Champignons</span>
-                                </div>
-                                <p className="text-pink-100 text-xs leading-relaxed">
-                                    Gagne-les via les streaks, quêtes et le calendrier. Utilise-les pour activer des boosts temporaires : x1.25 points, quête bonus ou chance de coffre améliorée !
-                                </p>
-                            </div>
-                        </div>
-                    </WobbleCard>
-                </div>
-
-                {/* ========== ÉTAPE 5 : Badges ========== */}
-                <div className="mb-8">
-                    <WobbleCard
-                        containerClassName="bg-gradient-to-r from-amber-500 via-yellow-500 to-orange-500 min-h-[200px]"
-                        className=""
-                    >
-                        <div className="p-6 md:p-8">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-                                <div className="md:w-1/2">
-                                    <div className="flex items-center gap-3 mb-3">
-                                        <Trophy className="w-8 h-8 text-yellow-100" />
-                                        <h3 className="text-2xl font-bold text-white">48 Badges à débloquer</h3>
-                                    </div>
-                                    <p className="text-yellow-100 text-sm leading-relaxed">
-                                        Des badges automatiques qui se débloquent au fur et à mesure de ta progression : fiches, forum, quiz, streak, points, champignons, calendrier et événements spéciaux.
-                                    </p>
-                                </div>
-                                <div className="md:w-1/2 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                    {[
-                                        { label: "Commun", count: "20+", dot: "bg-gray-300" },
-                                        { label: "Rare", count: "12+", dot: "bg-blue-400" },
-                                        { label: "Épique", count: "10+", dot: "bg-purple-400" },
-                                        { label: "Légendaire", count: "5+", dot: "bg-yellow-300" },
-                                    ].map((r) => (
-                                        <div key={r.label} className="bg-white/15 rounded-lg p-2.5 text-center backdrop-blur-sm">
-                                            <div className="flex items-center justify-center gap-1.5 mb-1">
-                                                <span className={`w-2 h-2 rounded-full ${r.dot}`} />
-                                                <span className="text-white font-bold text-lg">{r.count}</span>
-                                            </div>
-                                            <p className="text-yellow-100 text-xs">{r.label}</p>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </WobbleCard>
-                </div>
-
-                {/* ========== CTA ========== */}
-                <div className="relative overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.1)] bg-[var(--wk-ink)] p-8 text-[var(--wk-paper)] md:p-12">
-                    <div
-                        className="pointer-events-none absolute inset-0 opacity-[0.12]"
-                        style={{
-                            background:
-                                "radial-gradient(ellipse at 70% 20%, #ff6a1a 0%, transparent 55%)",
-                        }}
-                    />
-                    <div className="relative grid items-center gap-8 md:grid-cols-[1fr_auto]">
-                        <div>
-                            <Gift className="mb-4 h-10 w-10 text-[var(--wk-accent-2)]" />
-                            <h3 className="font-serif-display text-3xl leading-[0.95] md:text-5xl">
-                                Prêt à commencer ton <span className="italic text-[var(--wk-accent-2)]">aventure</span> ?
-                            </h3>
-                            <p className="mt-4 max-w-2xl text-[rgba(253,250,244,0.75)]">
-                                Rejoins la communauté, contribue et regarde ta flamme grandir. Chaque fiche, chaque réponse, chaque quiz te rapproche du prochain monde.
-                            </p>
-                        </div>
-                        <div className="flex flex-col gap-3 sm:flex-row md:flex-col">
-                            <Link href="/cours" className="wk-btn-orange wk-animate-shine">
-                                Découvrir les cours
-                                <ArrowRight className="h-4 w-4" />
-                            </Link>
-                            <Link
-                                href="/fiches"
-                                className="wk-btn-ghost !border-[rgba(253,250,244,0.2)] !bg-[rgba(253,250,244,0.08)] !text-[var(--wk-paper)] hover:!bg-[rgba(253,250,244,0.15)]"
-                            >
-                                <FileText className="h-4 w-4" />
-                                Déposer une fiche
-                            </Link>
+                        <div className="mt-6 flex flex-wrap gap-2">
+                            {WORLDS.map((w) => (
+                                <span
+                                    key={w.name}
+                                    className="inline-flex items-center gap-2 rounded-full border border-[rgba(26,21,18,0.1)] bg-[var(--wk-paper)] py-1.5 pl-2.5 pr-3 text-sm"
+                                >
+                                    <span
+                                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                                        style={{ background: w.color }}
+                                        aria-hidden="true"
+                                    />
+                                    <span className="font-semibold">{w.name}</span>
+                                    <span className="font-mono-ui text-[10px] text-[rgba(26,21,18,0.45)]">
+                                        {w.levels}
+                                    </span>
+                                </span>
+                            ))}
                         </div>
                     </div>
+
+                    {/* ---- Les gemmes ---- */}
+                    <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-[var(--wk-ink)] p-6 text-[var(--wk-paper)] md:p-8 lg:col-span-5">
+                        <div className="flex items-start justify-between gap-4">
+                            <div>
+                                <div className="font-mono-ui text-[11px] uppercase tracking-[0.16em] text-[var(--wk-accent-2)]">
+                                    04 · Dépenser
+                                </div>
+                                <h3 className="font-serif-display mt-2 text-2xl">
+                                    Gemmes &amp; boutique
+                                </h3>
+                            </div>
+                            <Gem className="h-7 w-7 shrink-0 text-[var(--wk-accent-2)]" />
+                        </div>
+
+                        <p className="mt-4 text-sm leading-relaxed text-[rgba(253,250,244,0.7)]">
+                            Couleurs de pseudo, avatars Foxy, contours de profil et
+                            badges. Purement cosmétique — aucune gemme n&apos;achète
+                            un contenu ni un avantage.
+                        </p>
+
+                        <Link
+                            href="/recompenses"
+                            className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-[var(--wk-accent-2)] transition hover:gap-3 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[var(--wk-accent-2)]"
+                        >
+                            Voir les récompenses
+                            <ArrowRight className="h-4 w-4" />
+                        </Link>
+                    </div>
+                </div>
+
+                {/* ---- Discord ----
+                    Sa place est ici : on parle d'appartenance et de progression,
+                    c'est exactement ce que le serveur apporte. Le CTA de
+                    conversion, lui, est en fin de page. */}
+                <div className="mt-5 flex flex-col items-start justify-between gap-6 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-6 md:flex-row md:items-center md:p-8">
+                    <div className="max-w-xl">
+                        <h3 className="font-serif-display text-2xl leading-tight md:text-3xl">
+                            Réviser seul, c&apos;est dur.{" "}
+                            <span className="italic text-[var(--wk-accent)]">
+                                À plusieurs, moins.
+                            </span>
+                        </h3>
+                        <p className="mt-2.5 text-sm leading-relaxed text-[rgba(26,21,18,0.65)]">
+                            Salons d&apos;étude en vocal, entraide en direct, défis entre
+                            clans et sessions de révision avant les épreuves.
+                        </p>
+                    </div>
+                    <a
+                        href="https://dc.gg/workyt"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="wk-btn-ink shrink-0 justify-center"
+                    >
+                        Rejoindre le Discord
+                        <ArrowRight className="h-4 w-4" />
+                    </a>
                 </div>
             </div>
         </section>

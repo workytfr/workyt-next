@@ -1,57 +1,47 @@
-"use client";
-
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowUpRight, Sparkles } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
+/* Quatre services, pas six.
+   — Blog : déplacé dans le footer (contenu périphérique, pas un produit).
+   — Discord : déplacé dans la section gamification, là où on parle
+     d'appartenance et de communauté. Il y gagne en pertinence. */
 const services = [
     {
         title: "Cours en ligne",
-        desc: "Cours structurés avec théorie, exos et quiz. Progresse à ton rythme, gagne des points.",
+        desc: "Théorie, exercices et quiz, chapitre par chapitre. Progresse à ton rythme.",
         img: "/workytcours.png",
         href: "/cours",
-        tag: "COURS",
+        tag: "Cours",
         accent: "#ff6a1a",
-    },
-    {
-        title: "Forum d'entraide",
-        desc: "Bloqué sur un exo ? Poste ta question, la communauté répond en moyenne en 12 min.",
-        img: "/workytforum.png",
-        href: "/forum",
-        tag: "FORUM",
-        accent: "#6ec1e4",
+        cta: "Parcourir les cours",
     },
     {
         title: "Fiches de révision",
-        desc: "Partage tes synthèses, accède à celles des autres. Révise plus vite, plus mieux.",
+        desc: "Les synthèses de la communauté, relues et classées par matière et par niveau.",
         img: "/workytfiche.png",
         href: "/fiches",
-        tag: "FICHES",
+        tag: "Fiches",
         accent: "#7ed957",
+        cta: "Explorer les fiches",
     },
     {
-        title: "Blog",
-        desc: "Actus éducation, méthodes de travail, astuces pour le bac — tout ce qu'il faut savoir.",
-        img: "/workytblog.png",
-        href: "https://blog.workyt.fr/",
-        tag: "BLOG",
-        accent: "#c77dff",
-    },
-    {
-        title: "Discord",
-        desc: "Un serveur vivant pour battre la procrastination ensemble — salons d'étude, events.",
-        img: "/workytdiscord.png",
-        href: "https://dc.gg/workyt",
-        tag: "COMMU",
-        accent: "#5865f2",
+        title: "Forum d'entraide",
+        desc: "Bloqué sur un exercice ? Pose ta question, quelqu'un l'a déjà résolue.",
+        img: "/workytforum.png",
+        href: "/forum",
+        tag: "Forum",
+        accent: "#6ec1e4",
+        cta: "Rejoindre le forum",
     },
     {
         title: "Orientation",
-        desc: "Conseils, guides métiers, retours d'expérience — trouve ta voie sereinement.",
+        desc: "Guides métiers, conseils et retours d'expérience pour choisir sereinement.",
         img: "/workytorientation.png",
         href: "https://blog.workyt.fr/category/orientation-scolaire/",
-        tag: "ORIENTATION",
+        tag: "Orientation",
         accent: "#ffb547",
+        cta: "Découvrir",
     },
 ];
 
@@ -69,60 +59,62 @@ export default function NosServices() {
                             <span>01</span>
                             <span>Nos services</span>
                         </div>
-                        <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl lg:text-7xl">
+                        <h2 className="font-serif-display mt-4 text-4xl leading-[0.95] sm:text-5xl md:text-6xl">
                             Tout pour réussir,{" "}
                             <span className="italic">au même endroit.</span>
                         </h2>
                     </div>
-                    <p className="max-w-md leading-relaxed text-[rgba(26,21,18,0.7)]">
-                        Workyt rassemble enseignants, élèves et parents dans un
-                        seul écosystème — des cours aux communautés, du forum
-                        aux fiches, chaque outil aide les workeurs à avancer.
+                    <p className="max-w-sm leading-relaxed text-[rgba(26,21,18,0.7)]">
+                        Quatre outils qui se répondent : tu apprends dans les cours,
+                        tu révises avec les fiches, tu débloques sur le forum, tu te
+                        projettes avec l&apos;orientation.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                    {services.map((s, i) => {
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                    {services.map((s) => {
                         const external = s.href.startsWith("http");
-                        const CardInner = (
+
+                        const inner = (
                             <>
-                                <div className="flex items-center justify-between">
-                                    <span className="wk-chip !border-[#ffd8a8] !bg-[#fff3e0] !text-[#7a3a0a]">
-                                        <Sparkles className="h-3 w-3" />
-                                        {s.tag}
-                                    </span>
-                                    <span className="font-mono-ui text-[11px] text-[rgba(26,21,18,0.4)]">
-                                        {String(i + 1).padStart(2, "0")}
-                                    </span>
-                                </div>
                                 <div
-                                    className="relative mt-4 aspect-[16/10] overflow-hidden rounded-2xl border border-[rgba(26,21,18,0.1)]"
+                                    className="relative aspect-[16/11] overflow-hidden rounded-2xl border border-[rgba(26,21,18,0.1)]"
                                     style={{
-                                        background: `linear-gradient(135deg, ${s.accent}22, ${s.accent}08)`,
+                                        background: `linear-gradient(135deg, ${s.accent}1f, ${s.accent}08)`,
                                     }}
                                 >
                                     <Image
                                         src={s.img}
-                                        alt={`Aperçu du service ${s.title} de Workyt`}
+                                        alt={`Aperçu de ${s.title} sur Workyt`}
                                         fill
-                                        sizes="(max-width:768px) 100vw, (max-width:1024px) 50vw, 33vw"
-                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                                        className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                                     />
-                                    <div className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-white shadow transition group-hover:-translate-y-1 group-hover:translate-x-1">
-                                        <ArrowUpRight className="h-3.5 w-3.5" />
-                                    </div>
                                 </div>
-                                <h3 className="font-serif-display mt-4 text-2xl">
-                                    {s.title}
-                                </h3>
-                                <p className="mt-1 text-sm leading-relaxed text-[rgba(26,21,18,0.65)]">
-                                    {s.desc}
-                                </p>
+
+                                <div className="mt-5 flex flex-1 flex-col">
+                                    <span
+                                        className="font-mono-ui text-[11px] uppercase tracking-[0.16em]"
+                                        style={{ color: s.accent }}
+                                    >
+                                        {s.tag}
+                                    </span>
+                                    <h3 className="font-serif-display mt-1.5 text-2xl leading-tight">
+                                        {s.title}
+                                    </h3>
+                                    <p className="mt-2 text-sm leading-relaxed text-[rgba(26,21,18,0.65)]">
+                                        {s.desc}
+                                    </p>
+                                    <span className="mt-auto flex items-center gap-1.5 pt-5 text-sm font-semibold text-[var(--wk-ink)]">
+                                        {s.cta}
+                                        <ArrowUpRight className="h-4 w-4 transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                                    </span>
+                                </div>
                             </>
                         );
 
-                        const commonClasses =
-                            "group relative flex min-h-[340px] flex-col overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 transition hover:-translate-y-1 hover:shadow-[0_12px_32px_rgba(26,21,18,0.08)]";
+                        const className =
+                            "group flex flex-col rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-4 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,21,18,0.18)] hover:shadow-[0_16px_40px_rgba(26,21,18,0.09)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--wk-accent)]";
 
                         return external ? (
                             <a
@@ -130,17 +122,13 @@ export default function NosServices() {
                                 href={s.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className={commonClasses}
+                                className={className}
                             >
-                                {CardInner}
+                                {inner}
                             </a>
                         ) : (
-                            <Link
-                                key={s.title}
-                                href={s.href}
-                                className={commonClasses}
-                            >
-                                {CardInner}
+                            <Link key={s.title} href={s.href} className={className}>
+                                {inner}
                             </Link>
                         );
                     })}
