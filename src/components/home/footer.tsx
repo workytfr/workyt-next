@@ -3,7 +3,6 @@
 import React from 'react';
 import Link from 'next/link';
 import WorkytLogo from '@/components/ui/WorkytLogo';
-import LegalMentionsModal from './LegalMentionsModal';
 import {
     InstagramLogoIcon,
     TwitterLogoIcon,
@@ -158,6 +157,7 @@ const Footer: React.FC = () => {
                                     { href: "mailto:admin@workyt.fr", label: "Nous contacter" },
                                     { href: "https://discord.gg/workyt", label: "Discord" },
                                     { href: "/mentions-legales", label: "Mentions légales" },
+                                    { href: "/conditions-utilisation", label: "Conditions d'utilisation" },
                                     { href: "/politique-confidentialite", label: "Confidentialité" },
                                 ].map((link) => (
                                     <li key={link.label}>
@@ -166,7 +166,6 @@ const Footer: React.FC = () => {
                                         </Link>
                                     </li>
                                 ))}
-                                <li><LegalMentionsModal /></li>
                             </ul>
                         </div>
                     </div>

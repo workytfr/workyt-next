@@ -111,13 +111,37 @@ export default function PolitiqueConfidentialitePage() {
                 <h2>Sous-traitants</h2>
                 <p>Pour faire fonctionner Workyt, nous utilisons :</p>
                 <ul>
-                    <li><strong>Vercel</strong> (hébergement)</li>
-                    <li><strong>Cloudflare</strong> (CDN, protection DDoS)</li>
-                    <li><strong>MongoDB Atlas</strong> (base de données)</li>
-                    <li><strong>Cloudflare R2</strong> (stockage de fichiers)</li>
-                    <li><strong>Umami</strong> (mesure d'audience anonyme)</li>
-                    <li><strong>Mailchimp</strong> (envoi d'emails — uniquement si tu t'es inscrit)</li>
+                    <li><strong>youss.dev</strong> (hébergement du site)</li>
+                    <li><strong>Cloudflare</strong> (DNS, CDN et protection DDoS en amont de l&apos;hébergeur)</li>
+                    <li><strong>Sliplane</strong> (hébergement de la base de données)</li>
+                    <li><strong>Cloudflare R2</strong> (stockage des fichiers déposés)</li>
+                    <li><strong>UploadThing</strong> (téléversement de fichiers depuis l&apos;éditeur)</li>
+                    <li><strong>Umami</strong> (mesure d&apos;audience anonyme)</li>
+                    <li><strong>Mailchimp</strong> (envoi d&apos;emails — uniquement si tu t&apos;es inscrit)</li>
                 </ul>
+
+                <h2>Où sont hébergées tes données</h2>
+                <p>
+                    La base de données est hébergée par Sliplane,{" "}
+                    <strong>en Allemagne</strong>, donc au sein de l&apos;Union
+                    européenne. Le site lui-même est hébergé par youss.dev.
+                </p>
+                <p>
+                    En revanche, certains prestataires listés ci-dessus sont établis aux
+                    États-Unis ou y disposent d&apos;infrastructures — notamment{" "}
+                    <strong>Cloudflare</strong>, <strong>UploadThing</strong> et{" "}
+                    <strong>Mailchimp</strong>. Les données qui transitent par eux
+                    peuvent être traitées hors de l&apos;Union européenne, dans le cadre
+                    des garanties prévues par le RGPD (clauses contractuelles types ou
+                    certification au Data Privacy Framework selon le prestataire).
+                </p>
+                <p>
+                    Pour toute question sur un transfert précis, écris-nous à{" "}
+                    <a href="mailto:admin@workyt.fr" className="text-orange-500 hover:underline">
+                        admin@workyt.fr
+                    </a>
+                    .
+                </p>
 
                 <h2>Réclamations</h2>
                 <p>

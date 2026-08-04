@@ -45,13 +45,6 @@ const partenairesList = [
         darkBg: true,
     },
     {
-        name: "Shiftek Hosting",
-        logo: "/ShiftekHosting.png",
-        website: "https://shiftek.fr/hosting/",
-        description: "Hébergement web performant",
-        darkBg: true,
-    },
-    {
         name: "LearnHouse",
         logo: "/learnhouse_2.webp",
         website: "https://www.learnhouse.app",

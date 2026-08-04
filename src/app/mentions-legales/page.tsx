@@ -57,12 +57,28 @@ export default function MentionsLegalesPage() {
 
                 <h2>Hébergement</h2>
                 <p>
-                    Le site est hébergé sur les infrastructures de Vercel et Cloudflare.
+                    Le site est hébergé par{" "}
+                    <a
+                        href="https://youss.dev/"
+                        className="text-orange-500 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        youss.dev
+                    </a>
+                    . Le trafic transite par <strong>Cloudflare</strong> (DNS, CDN et
+                    protection contre les attaques) avant d&apos;atteindre
+                    l&apos;hébergeur. La base de données est hébergée par{" "}
+                    <a
+                        href="https://sliplane.io/"
+                        className="text-orange-500 hover:underline"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
+                        Sliplane
+                    </a>
+                    .
                 </p>
-                <ul>
-                    <li><strong>Vercel Inc.</strong> — 340 S Lemon Ave #4133, Walnut, CA 91789, USA</li>
-                    <li><strong>Cloudflare, Inc.</strong> — 101 Townsend St, San Francisco, CA 94107, USA</li>
-                </ul>
 
                 <h2>Propriété intellectuelle</h2>
                 <p>
