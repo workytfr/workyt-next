@@ -100,6 +100,14 @@ interface Props {
   bannerSeed?: string;
   /** Porte mise en avant — l'ordre du jour, ou la cible du joueur */
   highlight?: string | null;
+  /**
+   * Porte que l'ENNEMI a désignée, révélée par l'Éclaireur.
+   *
+   * Volontairement distincte de `highlight` : un halo orange pointillé, c'est
+   * « c'est là qu'on frappe » ; un halo rouge plein, c'est « c'est là qu'on
+   * va nous frapper ». Les confondre était toute l'ambiguïté de la vue.
+   */
+  threat?: string | null;
   onGateClick?: (gate: string) => void;
   className?: string;
 }
@@ -111,6 +119,7 @@ export default function ClanCastle({
   side = 'ally',
   bannerSeed,
   highlight,
+  threat,
   onGateClick,
   className
 }: Props) {
@@ -222,6 +231,7 @@ export default function ClanCastle({
           const pct = g.hpMax > 0 ? Math.max(0, Math.min(1, g.hp / g.hpMax)) : 0;
           const damage = 1 - pct;
           const isHot = highlight === g.name;
+          const isThreatened = threat === g.name;
           const clickable = !!onGateClick;
           const fallen = st === 'tombee';
 
@@ -231,7 +241,10 @@ export default function ClanCastle({
               onClick={clickable ? () => onGateClick!(g.name) : undefined}
               className={clickable ? 'cursor-pointer' : undefined}
               role={clickable ? 'button' : undefined}
-              aria-label={`Porte ${g.name}, ${g.fallen ? 'tombée' : `${g.hp} sur ${g.hpMax} points`}`}
+              aria-label={
+                `Porte ${g.name}, ${g.fallen ? 'tombée' : `${g.hp} sur ${g.hpMax} points`}` +
+                (isThreatened ? ", visée par l'ennemi" : '')
+              }
             >
               {/* Corps de la tour, créneaux compris */}
               <path
@@ -331,6 +344,22 @@ export default function ClanCastle({
                 <path d={`M${x + 38},${TOWER_TOP + 2} l-5,12 l8,9`} />
               </g>
 
+              {/* Halo de menace — révélé par l'Éclaireur. Tracé plus large que
+                  le halo de désignation pour que les deux se lisent quand ils
+                  tombent sur la même porte : on frappe là où on est frappé. */}
+              {isThreatened && (
+                <rect
+                  x={x - 10}
+                  y={TOWER_TOP - 19}
+                  width="96"
+                  height={GROUND - TOWER_TOP + 30}
+                  rx="12"
+                  fill="none"
+                  stroke="#C8102E"
+                  strokeWidth="4"
+                />
+              )}
+
               {/* Halo de désignation */}
               {isHot && (
                 <rect
@@ -372,6 +401,28 @@ export default function ClanCastle({
           );
         })}
       </svg>
+
+      {/* ── Le donjon, en chiffres ──
+          Sur le dessin, ses PV ne se lisent que dans la hauteur de la
+          bannière : illisible, alors que c'est LA jauge qui décide de la
+          guerre dès qu'une porte est tombée (les assauts sur une brèche
+          frappent le donjon, voir clanCombat.resolveGates). */}
+      <div className="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5">
+        <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Donjon</span>
+        <span className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
+          <span
+            className={`block h-full rounded-full ${
+              keepPct > 0.5 ? 'bg-emerald-600' : keepPct > 0.2 ? 'bg-amber-400' : 'bg-red-600'
+            }`}
+            style={{ width: `${keepPct * 100}%` }}
+          />
+        </span>
+        <span
+          className={`text-[11px] font-bold tabular-nums ${keepDown ? 'text-red-600' : 'text-gray-800'}`}
+        >
+          {keepDown ? 'abattu' : `${keepHp}/${keepHpMax}`}
+        </span>
+      </div>
 
       {/* Chiffres, sous le dessin : l'état ne doit jamais reposer
           sur la seule couleur */}

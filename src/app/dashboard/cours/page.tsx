@@ -429,6 +429,10 @@ export default function CoursesPage() {
                     src={course.image}
                     alt={course.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, 360px"
+                    // Le proxy de prod (WAF YDev) bloque /_next/image en 403 :
+                    // on sert l'URL d'origine tant que la règle n'est pas levée.
+                    unoptimized
                     className="object-cover"
                   />
                 ) : (
@@ -567,6 +571,7 @@ export default function CoursesPage() {
                             alt=""
                             width={48}
                             height={48}
+                            unoptimized
                             className="rounded-lg object-cover"
                           />
                         ) : (

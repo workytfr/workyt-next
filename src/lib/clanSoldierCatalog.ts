@@ -55,7 +55,7 @@ export const SOLDIER_CATALOG: SoldierDef[] = [
 
   // --- soutien ---
   { key: 'eclaireur', name: 'Éclaireur', emoji: '🔭', kind: 'soutien', cost: 90, atk: 0, def: 0,
-    image: IMG('Eclaireur.png'), effect: 'reveal', description: "Révèle en direct la porte visée par l'ennemi." },
+    image: IMG('Eclaireur.png'), effect: 'reveal', description: "Révèle en direct où l'ennemi masse son assaut." },
   { key: 'infirmier', name: 'Infirmier', emoji: '⛑️', kind: 'soutien', cost: 100, atk: 0, def: 0,
     image: IMG('infirmier.png'), effect: 'heal_player', description: "Remet 1 joueur blessé d'aplomb chaque jour." },
   { key: 'medecin', name: 'Médecin de camp', emoji: '🩺', kind: 'soutien', cost: 120, atk: 0, def: 0,

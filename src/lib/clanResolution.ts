@@ -75,7 +75,13 @@ function toCombatMember(m: any): CombatMember {
   };
 }
 
-async function loadSide(clan: any): Promise<CombatSide> {
+/**
+ * Exporté pour l'Éclaireur : clanService reconstruit le camp ADVERSE avec la
+ * même fonction que la résolution, plutôt qu'avec une approximation maison.
+ * Une unité de reconnaissance qui mentirait sur la pression réelle vaudrait
+ * moins que pas d'unité du tout.
+ */
+export async function loadSide(clan: any): Promise<CombatSide> {
   const [members, soldierDocs] = await Promise.all([
     ClanMember.find({ clan: clan._id })
       .select('user role dailyPoints multiplier wounded woundedAt gate')
@@ -261,6 +267,12 @@ async function resolvePair(clanA: any, clanB: any, season: string, day: number, 
                 verdict.b, rallyB, outcomesOnA, season, day, now,
                 keepDealtA, keepDealtB, keepAfterB, keepFellB, keepFellA, phantomB)
   ]);
+
+  // Le tchat ne survit pas à la journée : les deux fils repartent vierges, et
+  // le quota de messages de chacun avec eux. Import dynamique — clanChat
+  // importe clanResolution (warDay), un import statique créerait un cycle.
+  const { purgeChat } = await import('@/lib/clanChat');
+  await Promise.all([purgeChat(clanA._id), purgeChat(clanB._id)]);
 }
 
 /* -------------------------------------------------------- persistance */

@@ -6,13 +6,15 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import {
-  Loader2, Swords, Users, Hammer, ShieldQuestion, Check, Megaphone, Crosshair, Trophy
+  Loader2, Swords, Users, Hammer, ShieldQuestion, Check, Megaphone, Crosshair, Trophy,
+  Telescope
 } from 'lucide-react';
 import ClanBanner from '@/components/clan/ClanBanner';
 import ClanCastle from '@/components/clan/ClanCastle';
 import BattleReportModal from '@/components/clan/BattleReportModal';
 import GarrisonPanel from '@/components/clan/GarrisonPanel';
 import WarFeed, { type WarEvent } from '@/components/clan/WarFeed';
+import ClanChat from '@/components/clan/ClanChat';
 import ClanTutorial from '@/components/clan/ClanTutorial';
 import ChestCard from '@/components/chests/ChestCard';
 import type { ChestWithOdds } from '@/lib/chestOdds';
@@ -32,6 +34,11 @@ interface ClanSide {
   gates: Gate[]; keepHp: number; keepHpMax: number;
   daysWon: number; memberCount: number;
   resources?: number; isCaptain?: boolean; dailyOrder?: string | null;
+  /** Côté rival : true si un Éclaireur est en garnison (sinon dailyOrder = null) */
+  scouted?: boolean;
+  /** Côté rival, avec Éclaireur : où l'ennemi masse son assaut, et sa part */
+  pressureGate?: string | null;
+  pressureShare?: number | null;
 }
 interface RankEntry {
   userId: string; username: string; dailyPoints: number;
@@ -265,7 +272,20 @@ export default function ClanPage() {
 
         {/* Les deux châteaux */}
         <div className="grid gap-4 xl:gap-10 lg:grid-cols-[1fr_auto_1fr] lg:items-start">
-          <CastleCard side={clan} mine highlight={clan.dailyOrder} />
+          {/* Ma porte est surlignée du bon côté du champ de bataille : sur le
+              château ADVERSE si je l'attaque, sur le MIEN si je la tiens.
+              `gate` porte les deux sens selon le rôle (clanCombat.ts). */}
+          <CastleCard
+            side={clan}
+            mine
+            highlight={isAttacker ? clan.dailyOrder : me?.gate ?? clan.dailyOrder}
+            /* La pression réelle prime sur l'ordre affiché : c'est là que les
+               coups tombent vraiment. L'ordre ne sert que le matin, tant que
+               personne n'a encore marqué. */
+            threat={rival?.pressureGate ?? rival?.dailyOrder}
+            threatShare={rival?.pressureShare}
+            scouted={rival?.scouted}
+          />
           <div className="flex items-center justify-center lg:pt-24">
             <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 text-white shadow-lg">
               <Swords className="h-6 w-6" />
@@ -275,7 +295,7 @@ export default function ClanPage() {
             <CastleCard
               side={rival}
               enemy
-              highlight={me?.gate}
+              highlight={isAttacker ? me?.gate ?? clan.dailyOrder : null}
               onGateClick={
                 isAttacker
                   ? (g) => post('gate', '/api/clan/deploy', { action: 'gate', gate: g }, `Tu vises la Porte ${g}`)
@@ -374,7 +394,10 @@ export default function ClanPage() {
               <Megaphone className="h-5 w-5" /> Ordre du jour
             </h2>
             <p className="mb-3 text-sm text-indigo-700/80">
-              Les membres qui suivent gagnent <strong>+20 %</strong>. Ceux qui n&apos;ont rien
+              Un seul ordre, lu différemment selon le rôle : les{' '}
+              <strong>attaquants</strong> frappent cette porte <em>chez l&apos;ennemi</em>, les{' '}
+              <strong>défenseurs</strong> tiennent celle du même nom <em>chez toi</em>. Les
+              membres qui suivent gagnent <strong>+20 %</strong> ; ceux qui n&apos;ont rien
               choisi le suivent automatiquement.
             </p>
             <div className="flex flex-wrap gap-2">
@@ -498,6 +521,9 @@ export default function ClanPage() {
           <WarFeed events={feed} day={data.day} />
         </section>
 
+        {/* Tchat — juste sous le fil : on lit ce qui s'est passé, on en parle */}
+        <ClanChat />
+
         {/* Membres */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
           <h2 className="mb-3 flex items-center gap-2 font-bold text-gray-800">
@@ -532,10 +558,16 @@ export default function ClanPage() {
 /* ---------------------------------------------------------- morceaux */
 
 function CastleCard({
-  side, mine, enemy, highlight, onGateClick
+  side, mine, enemy, highlight, threat, threatShare, scouted, onGateClick
 }: {
   side: ClanSide; mine?: boolean; enemy?: boolean;
-  highlight?: string | null; onGateClick?: (g: string) => void;
+  highlight?: string | null;
+  /** Porte visée par l'ennemi — connue seulement avec un Éclaireur */
+  threat?: string | null;
+  /** Part de l'assaut adverse qui tombe sur `threat`, si elle est mesurée */
+  threatShare?: number | null;
+  scouted?: boolean;
+  onGateClick?: (g: string) => void;
 }) {
   return (
     <div className={`rounded-2xl border-2 bg-white p-4 shadow-sm ${mine ? 'border-orange-300' : 'border-gray-200'}`}>
@@ -560,12 +592,60 @@ function CastleCard({
         keepHpMax={side.keepHpMax}
         side={enemy ? 'enemy' : 'ally'}
         highlight={highlight}
+        threat={threat}
         onGateClick={onGateClick}
       />
+
+      {/* Légende du halo. Sans elle, le cerclage orange sur son PROPRE château
+          se lit comme « on me vise » alors qu'il dit l'inverse. */}
+      {highlight && (
+        <p className="mt-1 flex items-center justify-center gap-1.5 text-[11px] text-gray-500">
+          <span className="inline-block h-2.5 w-2.5 rounded-sm border-2 border-dashed border-orange-500" />
+          {mine ? 'Porte que ton clan tient' : 'Porte que tu vises'} :{' '}
+          <strong className="font-semibold capitalize text-gray-700">{highlight}</strong>
+        </p>
+      )}
+
+      {/* L'Éclaireur : ce qu'on paie 90 ⚒️. On dit aussi quand il MANQUE —
+          une information absente doit se distinguer d'une absence d'ordre. */}
+      {mine && (
+        threat ? (
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-center text-[11px] text-red-600">
+            <Telescope className="h-3.5 w-3.5 shrink-0" />
+            {typeof threatShare === 'number' ? (
+              <span>
+                L&apos;ennemi masse <strong className="font-bold">{threatShare} %</strong> de son
+                assaut sur la porte{' '}
+                <strong className="font-bold capitalize">{threat}</strong>
+              </span>
+            ) : (
+              <span>
+                Ordre ennemi : porte <strong className="font-bold capitalize">{threat}</strong>
+              </span>
+            )}
+          </p>
+        ) : scouted ? (
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+            <Telescope className="h-3.5 w-3.5 shrink-0" />
+            L&apos;ennemi n&apos;a encore rien engagé aujourd&apos;hui
+          </p>
+        ) : (
+          <p className="mt-1 flex items-center justify-center gap-1.5 text-[11px] text-gray-400">
+            <Telescope className="h-3.5 w-3.5 shrink-0" />
+            Un Éclaireur révélerait la porte visée par l&apos;ennemi
+          </p>
+        )
+      )}
 
       {onGateClick && (
         <p className="mt-2 text-center text-[11px] text-gray-400">
           Clique une porte pour la viser
+          {side.gates?.some((g) => g.fallen) && (
+            <>
+              {' '}— viser une porte <strong className="font-semibold text-gray-500">tombée</strong>{' '}
+              fait passer tes coups sur le donjon
+            </>
+          )}
         </p>
       )}
     </div>

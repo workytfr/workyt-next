@@ -57,18 +57,24 @@ export default function MentionsLegalesPage() {
 
                 <h2>Hébergement</h2>
                 <p>
-                    Le site est hébergé par{" "}
+                    Le site est hébergé par <strong>YDev Services</strong> —{" "}
                     <a
-                        href="https://youss.dev/"
+                        href="https://hosting.youss.dev/"
                         className="text-orange-500 hover:underline"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        youss.dev
+                        hosting.youss.dev
                     </a>
-                    . Le trafic transite par <strong>Cloudflare</strong> (DNS, CDN et
+                    , contact{" "}
+                    <a href="mailto:youss@youss.dev" className="text-orange-500 hover:underline">
+                        youss@youss.dev
+                    </a>
+                    , sur des serveurs situés <strong>à Paris, en France</strong>. Le
+                    blog et sa base de données y sont également hébergés. Le trafic
+                    transite par <strong>Cloudflare</strong> (DNS, CDN et
                     protection contre les attaques) avant d&apos;atteindre
-                    l&apos;hébergeur. La base de données est hébergée par{" "}
+                    l&apos;hébergeur. La base de données du site est hébergée par{" "}
                     <a
                         href="https://sliplane.io/"
                         className="text-orange-500 hover:underline"
@@ -77,7 +83,7 @@ export default function MentionsLegalesPage() {
                     >
                         Sliplane
                     </a>
-                    .
+                    , <strong>en Allemagne</strong>.
                 </p>
 
                 <h2>Propriété intellectuelle</h2>
@@ -106,8 +112,8 @@ export default function MentionsLegalesPage() {
                 <h2>Cookies</h2>
                 <p>
                     Le site utilise un nombre minimal de cookies, uniquement à des fins
-                    techniques (session, authentification) ou de mesure d'audience anonyme
-                    (Umami). Aucun cookie publicitaire ou de tracking commercial.
+                    techniques (session, authentification). Aucun cookie publicitaire,
+                    de tracking commercial ni de mesure d&apos;audience.
                 </p>
 
                 <h2>Signaler un contenu</h2>

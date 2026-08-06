@@ -523,6 +523,40 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
     cancelled: false
   }));
 
+  /**
+   * Là où l'ennemi masse réellement son assaut, en direct.
+   *
+   * L'ordre du jour adverse ne suffit pas : un capitaine qui n'en publie
+   * aucun rendait son clan totalement opaque, et ne rien publier devenait une
+   * contre-mesure gratuite. La pression, elle, ne se cache pas — elle est la
+   * somme des contributions déjà engagées, calculée avec la MÊME fonction que
+   * la résolution de minuit (computeAssault), donc sans approximation.
+   *
+   * Ce n'est pas une prédiction : les joueurs peuvent encore changer de porte
+   * jusqu'à minuit. C'est un état de la journée à l'instant de la lecture.
+   */
+  let pressure: { gate: string; share: number } | null = null;
+  if (hasScout && rival) {
+    const { loadSide } = await import('@/lib/clanResolution');
+    const { computeAssault, GATES } = await import('@/lib/clanCombat');
+
+    const rivalSide = await loadSide(rival);
+    // Les portes visées sont les MIENNES : c'est mon château qu'ils assaillent
+    const a = computeAssault(rivalSide, clan.gates);
+
+    const byGate = GATES.map((g) => ({
+      gate: g,
+      force: a.byGate[g] + a.sapperByGate[g] + a.ramByGate[g]
+    }));
+    const total = byGate.reduce((s, x) => s + x.force, 0);
+    const top = byGate.reduce((x, y) => (x.force >= y.force ? x : y));
+
+    // Rien d'engagé encore ce matin : on ne montre pas une porte au hasard
+    if (total > 0 && top.force > 0) {
+      pressure = { gate: top.gate, share: Math.round((top.force / total) * 100) };
+    }
+  }
+
   const [members, rankings, lastResult] = await Promise.all([
     ClanMember.find({ clan: clan._id })
       .populate('user', 'username')
@@ -596,6 +630,9 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
       memberCount: rival.memberCount,
       /** Renseigné uniquement si un Éclaireur est en garnison */
       dailyOrder: hasScout ? rival.dailyOrder ?? null : null,
+      /** Porte où l'ennemi concentre son assaut, et la part qu'elle encaisse */
+      pressureGate: pressure?.gate ?? null,
+      pressureShare: pressure?.share ?? null,
       scouted: hasScout
     },
     members: members.map((m) => ({

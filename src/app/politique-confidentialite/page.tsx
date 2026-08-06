@@ -63,13 +63,11 @@ export default function PolitiqueConfidentialitePage() {
                 <ul>
                     <li>Contenus que tu publies (questions, réponses, fiches, cours)</li>
                     <li>Interactions (likes, commentaires, badges)</li>
-                    <li>Données techniques anonymes (navigateur, type d'appareil) via Umami</li>
                 </ul>
 
                 <h2>Pourquoi nous collectons ces données</h2>
                 <ul>
                     <li><strong>Te fournir le service :</strong> compte utilisateur, sauvegarde de tes contributions, gamification.</li>
-                    <li><strong>Améliorer la plateforme :</strong> mesure d'audience anonyme via Umami pour comprendre quelles pages sont utiles.</li>
                     <li><strong>Modération :</strong> détecter et empêcher les abus.</li>
                     <li><strong>Notifications :</strong> t'informer des réponses à tes questions (uniquement si tu l'as activé).</li>
                 </ul>
@@ -94,11 +92,11 @@ export default function PolitiqueConfidentialitePage() {
                 <ul>
                     <li><strong>Cookies de session :</strong> nécessaires à l'authentification (durée : session).</li>
                     <li><strong>Préférences :</strong> mémorisation de tes choix d'affichage (durée : 1 an).</li>
-                    <li><strong>Mesure d'audience anonyme</strong> via Umami : comptage des visiteurs sans tracking individuel.</li>
                 </ul>
                 <p>
-                    Workyt n'utilise <strong>aucun cookie publicitaire</strong>, aucun
-                    pixel de tracking commercial.
+                    Workyt n&apos;utilise <strong>aucun cookie publicitaire</strong>, aucun
+                    pixel de tracking commercial, et <strong>aucun outil de mesure
+                    d&apos;audience</strong>.
                 </p>
 
                 <h2>Conservation des données</h2>
@@ -111,20 +109,28 @@ export default function PolitiqueConfidentialitePage() {
                 <h2>Sous-traitants</h2>
                 <p>Pour faire fonctionner Workyt, nous utilisons :</p>
                 <ul>
-                    <li><strong>youss.dev</strong> (hébergement du site)</li>
+                    <li><strong>youss.dev</strong> (hébergement du site et du blog, en France)</li>
                     <li><strong>Cloudflare</strong> (DNS, CDN et protection DDoS en amont de l&apos;hébergeur)</li>
-                    <li><strong>Sliplane</strong> (hébergement de la base de données)</li>
+                    <li><strong>Sliplane</strong> (hébergement de la base de données, en Allemagne)</li>
                     <li><strong>Cloudflare R2</strong> (stockage des fichiers déposés)</li>
                     <li><strong>UploadThing</strong> (téléversement de fichiers depuis l&apos;éditeur)</li>
-                    <li><strong>Umami</strong> (mesure d&apos;audience anonyme)</li>
                     <li><strong>Mailchimp</strong> (envoi d&apos;emails — uniquement si tu t&apos;es inscrit)</li>
                 </ul>
 
                 <h2>Où sont hébergées tes données</h2>
                 <p>
-                    La base de données est hébergée par Sliplane,{" "}
-                    <strong>en Allemagne</strong>, donc au sein de l&apos;Union
-                    européenne. Le site lui-même est hébergé par youss.dev.
+                    Le site, ainsi que le blog{" "}
+                    <a href="https://blog.workyt.fr" className="text-orange-500 hover:underline" target="_blank" rel="noopener noreferrer">
+                        blog.workyt.fr
+                    </a>{" "}
+                    et sa propre base de données, sont hébergés par YDev Services
+                    (youss.dev) sur des serveurs situés{" "}
+                    <strong>à Paris, en France</strong>.
+                </p>
+                <p>
+                    La base de données principale du site est hébergée par Sliplane,{" "}
+                    <strong>en Allemagne</strong>. Tout cela reste donc au sein de
+                    l&apos;Union européenne.
                 </p>
                 <p>
                     En revanche, certains prestataires listés ci-dessus sont établis aux
