@@ -30,7 +30,7 @@ export default function PolitiqueConfidentialitePage() {
                 Politique de confidentialité
             </h1>
             <p className="text-sm text-gray-500 mb-8">
-                Dernière mise à jour : avril 2026
+                Dernière mise à jour : août 2026
             </p>
 
             <section className="prose prose-gray max-w-none">
@@ -71,6 +71,105 @@ export default function PolitiqueConfidentialitePage() {
                     <li><strong>Modération :</strong> détecter et empêcher les abus.</li>
                     <li><strong>Notifications :</strong> t'informer des réponses à tes questions (uniquement si tu l'as activé).</li>
                 </ul>
+
+                <h2>Sur quelle base légale</h2>
+                <p>
+                    Le RGPD impose que chaque traitement repose sur une base légale
+                    précise. Voici les nôtres, traitement par traitement :
+                </p>
+                <ul>
+                    <li>
+                        <strong>Ton compte, tes contributions, ta progression et la
+                        gamification</strong> — exécution du contrat (article 6.1.b).
+                        Sans ces données, le service ne peut pas fonctionner : il n&apos;y a
+                        rien à te demander d&apos;accepter, c&apos;est le service lui-même.
+                    </li>
+                    <li>
+                        <strong>Modération et sécurité</strong> — intérêt légitime
+                        (article 6.1.f). Nous avons un intérêt légitime à garder le site
+                        sûr pour un public en grande partie mineur.
+                    </li>
+                    <li>
+                        <strong>Notifications par email</strong> — consentement
+                        (article 6.1.a). Tu les actives, tu les désactives, quand tu veux.
+                    </li>
+                    <li>
+                        <strong>Newsletter</strong> — consentement (article 6.1.a). Tu
+                        peux le retirer à tout moment, via le lien de désinscription
+                        présent dans chaque email.
+                    </li>
+                    <li>
+                        <strong>Cookies de session</strong> — strictement nécessaires au
+                        fonctionnement du site, donc dispensés de consentement. Nous
+                        n&apos;en posons aucun autre.
+                    </li>
+                    <li>
+                        <strong>Logs techniques</strong> — intérêt légitime : diagnostic
+                        des pannes et détection des abus.
+                    </li>
+                </ul>
+                <p>
+                    Retirer un consentement n&apos;a aucun effet sur ce qui a été fait
+                    avant, et ne te fait jamais perdre l&apos;accès au site : seules les
+                    fonctions concernées s&apos;arrêtent.
+                </p>
+
+                <h2>Si tu as moins de 15 ans</h2>
+                <p>
+                    Workyt s&apos;adresse aux collégiens et aux lycéens : une grande
+                    partie de nos membres sont mineurs, et c&apos;est assumé. Voici ce que
+                    ça change.
+                </p>
+                <p>
+                    <strong>Pour ton compte et l&apos;usage du site</strong>, aucune
+                    autorisation parentale n&apos;est requise : la base légale est
+                    l&apos;exécution du contrat, pas le consentement.
+                </p>
+                <p>
+                    <strong>Pour la newsletter</strong>, c&apos;est différent. En France,
+                    la majorité numérique est fixée à 15 ans : en dessous de cet âge, un
+                    consentement doit être donné avec un titulaire de l&apos;autorité
+                    parentale. L&apos;inscription à la newsletter est donc réservée aux
+                    membres de <strong>15 ans ou plus</strong>. Si tu as moins de 15 ans et
+                    que tu souhaites la recevoir, un de tes parents peut nous écrire.
+                </p>
+                <p>
+                    <strong>Ce qui est visible par les autres</strong> : ton pseudo et ce
+                    que tu publies (questions, réponses, fiches, commentaires). Ton adresse
+                    email n&apos;est jamais affichée. Nous te recommandons de{" "}
+                    <strong>ne jamais publier d&apos;information personnelle</strong> —
+                    nom complet, établissement, adresse, numéro de téléphone, comptes de
+                    réseaux sociaux — ni dans tes contributions, ni dans ta biographie de
+                    profil.
+                </p>
+                <p>
+                    <strong>Workyt ne propose aucune messagerie privée.</strong> Aucun
+                    membre ne peut t&apos;écrire en privé : tous les échanges se font
+                    publiquement, là où ils peuvent être vus et signalés.
+                </p>
+                <p>
+                    <strong>Si quelque chose ne va pas</strong>, utilise le bouton de
+                    signalement présent sur les contenus, ou écris directement à{" "}
+                    <a href="mailto:admin@workyt.fr" className="text-orange-500 hover:underline">
+                        admin@workyt.fr
+                    </a>
+                    . Nous traitons en priorité tout signalement de harcèlement ou de
+                    contenu inapproprié.
+                </p>
+
+                <h3>Aux parents</h3>
+                <p>
+                    En tant que titulaire de l&apos;autorité parentale, tu peux exercer
+                    l&apos;ensemble des droits ci-dessous au nom de ton enfant : demander
+                    l&apos;accès à ses données, leur rectification, ou la suppression de
+                    son compte. Écris à{" "}
+                    <a href="mailto:admin@workyt.fr" className="text-orange-500 hover:underline">
+                        admin@workyt.fr
+                    </a>{" "}
+                    en indiquant le pseudo de ton enfant. Nous pourrons te demander un
+                    justificatif de l&apos;autorité parentale avant d&apos;agir — c&apos;est
+                    une protection pour l&apos;enfant, pas une formalité.
+                </p>
 
                 <h2>Tes droits RGPD</h2>
                 <p>Conformément au RGPD, tu disposes des droits suivants :</p>

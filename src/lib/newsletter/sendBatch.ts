@@ -9,6 +9,23 @@ import { fetchAllUserActivity, hasUserActivity } from './fetchUserActivity';
 import { renderNewsletterEmail } from './emailTemplate';
 
 /**
+ * À qui on a le DROIT d'écrire.
+ *
+ * Deux conditions, et les deux sont nécessaires : la personne est abonnée, et
+ * son consentement a été recueilli et horodaté. `newsletterOptIn` seul ne
+ * suffit pas — il valait `true` par défaut pour tous les comptes créés avant
+ * août 2026, sans que personne n'ait jamais rien accepté. Ces comptes n'ont
+ * pas de `newsletterConsentAt` et sont donc exclus tant qu'ils n'ont pas
+ * confirmé (campagne de reconsentement).
+ *
+ * ⚠️ Ne jamais interroger `User` pour un envoi sans passer par ce filtre.
+ */
+export const DESTINATAIRES_VALIDES = {
+    newsletterOptIn: true,
+    newsletterConsentAt: { $exists: true, $ne: null },
+} as const;
+
+/**
  * Calcule le mercredi precedent (00:00:00) = debut de la periode
  * Si on est mercredi, c'est le mercredi d'il y a 7 jours
  */
@@ -99,11 +116,11 @@ export async function sendNewsletterBatch(batchSize: number = 450): Promise<{
     ])];
 
     const users = await User.find({
-        newsletterOptIn: true,
-        $or: [
-            { 'newsletterPreferences.hebdo': true },
-            { newsletterPreferences: { $exists: false } }, // Backward compat: users sans preferences = opt-in
-        ],
+        ...DESTINATAIRES_VALIDES,
+        // La compatibilite ascendante « pas de preferences = opt-in » a ete
+        // RETIREE : elle faisait exactement ce que le consentement interdit,
+        // considerer une absence de choix comme un accord.
+        'newsletterPreferences.hebdo': true,
         _id: { $in: activeUserIds, $nin: batch.sentUserIds },
     })
         .limit(batchSize)
@@ -120,7 +137,7 @@ export async function sendNewsletterBatch(batchSize: number = 450): Promise<{
 
     // Mettre a jour le status et le total
     batch.status = 'sending';
-    batch.totalRecipients = await User.countDocuments({ newsletterOptIn: true });
+    batch.totalRecipients = await User.countDocuments(DESTINATAIRES_VALIDES);
     await batch.save();
 
     // 3. Recuperer l'activite utilisateur en bulk
@@ -199,7 +216,7 @@ export async function sendNewsletterBatch(batchSize: number = 450): Promise<{
 
     // Verifier s'il reste des users
     const remaining = await User.countDocuments({
-        newsletterOptIn: true,
+        ...DESTINATAIRES_VALIDES,
         _id: { $nin: batch.sentUserIds },
     });
 

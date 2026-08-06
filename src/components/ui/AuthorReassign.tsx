@@ -72,8 +72,13 @@ export default function AuthorReassign({
         setSearching(true);
         const t = setTimeout(async () => {
             try {
+                // La recherche est réservée aux admins depuis qu'elle expose
+                // les emails : le jeton est désormais OBLIGATOIRE.
                 const res = await fetch(
-                    `/api/users?search=${encodeURIComponent(q)}&limit=8`
+                    `/api/users?search=${encodeURIComponent(q)}&limit=8`,
+                    accessToken
+                        ? { headers: { Authorization: `Bearer ${accessToken}` } }
+                        : undefined
                 );
                 const data = await res.json();
                 setResults(data.users || []);
@@ -84,7 +89,7 @@ export default function AuthorReassign({
             }
         }, 300);
         return () => clearTimeout(t);
-    }, [query, open]);
+    }, [query, open, accessToken]);
 
     const assign = async (u: UserResult) => {
         setSaving(true);

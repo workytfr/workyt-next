@@ -6,8 +6,13 @@ import connectDB from '../src/lib/mongodb';
 import User from '../src/models/User';
 
 /**
- * Script de migration one-shot : ajoute newsletterOptIn et unsubscribeToken
- * a tous les utilisateurs existants.
+ * Script de migration one-shot : ajoute unsubscribeToken a tous les
+ * utilisateurs existants.
+ *
+ * ⚠️ Ce script posait aussi `newsletterOptIn: true` sur tout le monde. C'est
+ * RETIRE : abonner d'office est precisement ce que le consentement interdit
+ * (RGPD art. 4-11, considerant 32). Le rejouer aurait reabonne toute la base
+ * et annule la campagne de reconsentement. Ne jamais le remettre.
  */
 async function migrateNewsletterFields() {
     try {
@@ -24,7 +29,6 @@ async function migrateNewsletterFields() {
                 { _id: user._id },
                 {
                     $set: {
-                        newsletterOptIn: true,
                         unsubscribeToken: crypto.randomUUID(),
                     }
                 }

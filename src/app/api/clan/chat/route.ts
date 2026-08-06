@@ -43,8 +43,17 @@ export async function POST(req: NextRequest) {
     const rl = rateLimit(`clan-chat:${me.id}`, 5, 60 * 1000);
     if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
+    // Rien n'est nettoyé ni tronqué ici : sendMessage n'accepte que des clés
+    // du catalogue et des valeurs fermées, donc une chaîne fantaisiste est
+    // simplement rejetée. Pas de désinfection, pas de surface.
     const body = await req.json().catch(() => ({}));
-    const result = await sendMessage(me.id, me.username, String(body?.text ?? ''));
+    const result = await sendMessage(me.id, me.username, {
+      template: String(body?.template ?? ''),
+      memberId: body?.memberId ?? null,
+      gate: body?.gate ?? null,
+      soldier: body?.soldier ?? null,
+      role: body?.role ?? null
+    });
 
     if (!result.success) {
       return NextResponse.json({ error: result.message }, { status: 400 });

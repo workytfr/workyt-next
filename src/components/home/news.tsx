@@ -103,26 +103,38 @@ export function FeedCard() {
     }, [feedUrl, corsUrl, apiKey]);
 
     // Fonction pour enrichir les articles avec les IDs des auteurs
+    //
+    // On demande la résolution des SEULS noms d'auteurs présents dans le flux,
+    // et rien d'autre. L'ancienne version téléchargeait mille comptes avec
+    // leurs adresses email pour n'en retenir que trois : l'annuaire complet
+    // des membres transitait par le navigateur de chaque visiteur.
     const enrichAuthorsWithIds = async (articles: Article[]): Promise<Article[]> => {
+        const names = [...new Set(
+            articles.map(a => a.author?.trim()).filter(Boolean) as string[]
+        )];
+        if (names.length === 0) return articles;
+
         try {
-            const response = await fetch('/api/users?limit=1000');
+            const response = await fetch(
+                `/api/users?resolve=${encodeURIComponent(names.join(','))}`
+            );
             if (!response.ok) return articles;
-            
+
             const data = await response.json();
             if (!data.users) return articles;
 
-            return articles.map(article => {
-                const authorName = article.author.toLowerCase().trim();
-                const matchingUser = data.users.find((user: any) => {
-                    const userName = (user.name || user.username || "").toLowerCase().trim();
-                    return userName.includes(authorName) || authorName.includes(userName);
-                });
+            // Index par nom ET par pseudo, en minuscules : le flux du blog peut
+            // porter l'un ou l'autre.
+            const parNom = new Map<string, string>();
+            for (const u of data.users) {
+                if (u.name) parNom.set(u.name.toLowerCase(), u._id);
+                if (u.username) parNom.set(u.username.toLowerCase(), u._id);
+            }
 
-                return {
-                    ...article,
-                    authorId: matchingUser?._id || undefined
-                };
-            });
+            return articles.map(article => ({
+                ...article,
+                authorId: parNom.get(article.author?.toLowerCase().trim() ?? '') || undefined
+            }));
         } catch (error) {
             console.error("Error enriching authors:", error);
             return articles;

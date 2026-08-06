@@ -50,6 +50,7 @@ interface ClanData {
   rival?: ClanSide | null;
   reason?: string;
   me?: {
+    userId: string;
     role: string; dailyPoints: number; totalPoints: number;
     multiplier: number; nextMultiplier: number;
     roleRank: number | null; roleSize: number; wounded: boolean;
@@ -521,8 +522,13 @@ export default function ClanPage() {
           <WarFeed events={feed} day={data.day} />
         </section>
 
-        {/* Tchat — juste sous le fil : on lit ce qui s'est passé, on en parle */}
-        <ClanChat />
+        {/* Tchat — juste sous le fil : on lit ce qui s'est passé, on en parle.
+            Les membres viennent d'ici : le compositeur ne peut proposer que
+            des joueurs du clan, jamais un compte quelconque du site. */}
+        <ClanChat
+          members={members.map((m) => ({ userId: m.userId, username: m.username }))}
+          myUserId={me?.userId}
+        />
 
         {/* Membres */}
         <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">

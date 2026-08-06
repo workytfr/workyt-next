@@ -577,6 +577,8 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
     day: warDay(now),
     feed: lastResult?.events ?? [],
     me: {
+      /** Mon identifiant — le tchat s'en sert pour repérer ce qui m'est adressé */
+      userId,
       role: membership.role,
       dailyPoints: membership.dailyPoints,
       totalPoints: membership.totalPoints,

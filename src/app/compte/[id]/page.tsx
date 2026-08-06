@@ -95,6 +95,11 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     // Newsletter preferences
     const [newsletterPrefs, setNewsletterPrefs] = useState<{ hebdo: boolean; classique: boolean } | null>(null);
     const [newsletterLoading, setNewsletterLoading] = useState(false);
+    /** Le consentement a-t-il deja ete recueilli pour ce compte ? */
+    const [consentDonne, setConsentDonne] = useState(true);
+    /** Abonnement demande, en attente de la declaration des 15 ans */
+    const [attenteAge, setAttenteAge] = useState<'hebdo' | 'classique' | null>(null);
+    const [ageCoche, setAgeCoche] = useState(false);
 
     useEffect(() => {
         if (!id || !session?.user?.id) return;
@@ -102,6 +107,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
         fetch('/api/newsletter/preferences')
             .then(res => res.json())
             .then(data => {
+                setConsentDonne(!!data.consentDonne);
                 if (data.newsletterPreferences) {
                     setNewsletterPrefs(data.newsletterPreferences);
                 } else if (typeof data.newsletterOptIn === 'boolean') {
@@ -111,30 +117,47 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
             .catch(() => {});
     }, [id, session?.user?.id]);
 
-    const toggleNewsletterPref = async (type: 'hebdo' | 'classique') => {
-        if (!newsletterPrefs) return;
+    const envoyerPref = async (type: 'hebdo' | 'classique', newValue: boolean, ageDeclare?: boolean) => {
         setNewsletterLoading(true);
         try {
-            const newValue = !newsletterPrefs[type];
             const res = await fetch('/api/newsletter/preferences', {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     newsletterPreferences: { [type]: newValue },
+                    ...(ageDeclare ? { ageDeclare: true } : {}),
                 }),
             });
             const data = await res.json();
             if (data.success) {
                 setNewsletterPrefs(data.newsletterPreferences);
+                if (ageDeclare) setConsentDonne(true);
+                setAttenteAge(null);
+                setAgeCoche(false);
                 Toast({
                     title: newValue ? "Newsletter activee" : "Newsletter desactivee",
                 });
+            } else {
+                Toast({ title: data.error || "Erreur", variant: "destructive" });
             }
         } catch {
             Toast({ title: "Erreur", variant: "destructive" });
         } finally {
             setNewsletterLoading(false);
         }
+    };
+
+    const toggleNewsletterPref = async (type: 'hebdo' | 'classique') => {
+        if (!newsletterPrefs) return;
+        const newValue = !newsletterPrefs[type];
+
+        // S'abonner sans consentement enregistre : on demande d'abord la
+        // declaration des 15 ans. Se desabonner ne demande jamais rien.
+        if (newValue && !consentDonne) {
+            setAttenteAge(type);
+            return;
+        }
+        await envoyerPref(type, newValue);
     };
 
     // Fonction pour formater les points
@@ -502,6 +525,46 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                                 />
                                             </button>
                                         </div>
+
+                                        {/* Declaration des 15 ans — demandee UNE fois, au
+                                            moment de s'abonner, jamais a l'inscription au
+                                            site. C'est le seul traitement fonde sur le
+                                            consentement, donc le seul ou l'age compte. */}
+                                        {attenteAge && (
+                                            <div className="p-4 rounded-xl border-2 border-indigo-200 bg-indigo-50/60 space-y-3">
+                                                <p className="text-sm text-gray-700">
+                                                    La newsletter repose sur ton consentement. En France, la
+                                                    majorite numerique est fixee a 15 ans : en dessous, un parent
+                                                    doit faire la demande a{' '}
+                                                    <a href="mailto:admin@workyt.fr" className="text-indigo-600 underline">
+                                                        admin@workyt.fr
+                                                    </a>.
+                                                </p>
+                                                <label className="flex items-start gap-2 text-sm font-medium text-gray-800 cursor-pointer">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={ageCoche}
+                                                        onChange={(e) => setAgeCoche(e.target.checked)}
+                                                        className="mt-0.5 h-4 w-4 accent-indigo-600"
+                                                    />
+                                                    Je declare avoir 15 ans ou plus.
+                                                </label>
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        onClick={() => envoyerPref(attenteAge, true, true)}
+                                                        disabled={!ageCoche || newsletterLoading}
+                                                    >
+                                                        Confirmer mon inscription
+                                                    </Button>
+                                                    <Button
+                                                        variant="outline"
+                                                        onClick={() => { setAttenteAge(null); setAgeCoche(false); }}
+                                                    >
+                                                        Annuler
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

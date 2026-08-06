@@ -18,6 +18,10 @@ export interface IUser extends Document {
     discordId?: string;
     verified: boolean;
     newsletterOptIn: boolean;
+    /** Preuve du consentement (art. 7.1). Absente = pas d'envoi. */
+    newsletterConsentAt?: Date;
+    /** « J'ai 15 ans ou plus », déclaré au moment du consentement */
+    newsletterAgeDeclaree?: boolean;
     newsletterPreferences: {
         hebdo: boolean;
         classique: boolean;
@@ -138,9 +142,45 @@ const UserSchema = new Schema<IUser>({
         trim: true,
         default: ""
     },
+    /**
+     * Abonnement à la newsletter.
+     *
+     * ⚠️ Le défaut était `true` : tout compte créé était abonné sans le
+     * moindre acte de sa part. Le RGPD exige un acte positif clair
+     * (article 4-11), et le considérant 32 exclut explicitement les cases
+     * pré-cochées et l'inscription par défaut. Ne JAMAIS remettre `true` ici.
+     *
+     * Un abonnement n'est valable que si `newsletterConsentAt` est renseigné :
+     * ce drapeau seul ne prouve rien.
+     */
     newsletterOptIn: {
         type: Boolean,
-        default: true,
+        default: false,
+    },
+    /**
+     * Date du consentement. C'est LA preuve exigée par l'article 7.1 (« être
+     * en mesure de démontrer que la personne a consenti »). Absente = aucun
+     * consentement recueilli, donc aucun envoi (voir sendBatch).
+     */
+    newsletterConsentAt: {
+        type: Date,
+    },
+    /**
+     * Déclaration « j'ai 15 ans ou plus », faite au moment du consentement.
+     *
+     * En France, la majorité numérique est fixée à 15 ans (art. 45 de la loi
+     * Informatique et Libertés) : en dessous, un consentement doit être donné
+     * avec un titulaire de l'autorité parentale. La newsletter étant le seul
+     * traitement fondé sur le consentement, c'est le seul endroit où l'âge a
+     * une conséquence — et donc le seul endroit où on le demande.
+     *
+     * On ne stocke NI date de naissance NI âge : seul ce seuil compte, et il
+     * est figé avec le consentement auquel il se rapporte. Une déclaration ne
+     * périme donc jamais : elle vaut pour ce consentement-là, et une nouvelle
+     * inscription en redemande une.
+     */
+    newsletterAgeDeclaree: {
+        type: Boolean,
     },
     newsletterPreferences: {
         hebdo: {
