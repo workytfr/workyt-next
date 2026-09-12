@@ -3,7 +3,7 @@ import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 /**
  * Types possibles pour une question
  */
-export type QuestionType = 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code';
+export type QuestionType = 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code' | 'Point sur image' | 'Zone sur image' | 'Graphique';
 
 /**
  * Interface pour une question du quiz
@@ -69,7 +69,7 @@ const QuizSchema: Schema = new Schema({
             question: { type: String, required: true },
             questionType: {
                 type: String,
-                enum: ['QCM', 'Réponse courte', 'Vrai/Faux', 'Texte à trous', 'Classement', 'Glisser-déposer', 'Slider', 'Code'],
+                enum: ['QCM', 'Réponse courte', 'Vrai/Faux', 'Texte à trous', 'Classement', 'Glisser-déposer', 'Slider', 'Code', 'Point sur image', 'Zone sur image', 'Graphique'],
                 required: true
             },
             questionPic: { type: String },

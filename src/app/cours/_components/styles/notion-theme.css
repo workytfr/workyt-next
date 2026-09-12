@@ -499,7 +499,8 @@
   color: var(--notion-accent);
 }
 
-.notion-lesson-content pre {
+/* Les blocs de code Workyt (.wk-code) apportent leur propre habillage */
+.notion-lesson-content pre:not(.wk-code__pre) {
   background: #1a1a1a;
   color: #e5e5e5;
   padding: 1.25rem;
@@ -508,7 +509,7 @@
   margin: 1.5rem 0;
 }
 
-.notion-lesson-content pre code {
+.notion-lesson-content pre:not(.wk-code__pre) code {
   background: transparent;
   color: inherit;
   padding: 0;

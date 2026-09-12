@@ -1,3 +1,11 @@
+// Origine de l'instance Umami, autorisée dans le CSP.
+// Doit désigner la même instance que NEXT_PUBLIC_UMAMI_URL lu par le layout :
+// sans cette entrée, le navigateur bloque le script et aucune visite n'est
+// comptée. Variable absente = aucune origine ajoutée (et aucun script chargé).
+const umamiOrigin = process.env.NEXT_PUBLIC_UMAMI_URL
+    ? new URL(process.env.NEXT_PUBLIC_UMAMI_URL).origin
+    : "";
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     poweredByHeader: false,
@@ -81,7 +89,7 @@ const nextConfig = {
                     },
                     {
                         key: "Content-Security-Policy",
-                        value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://cdn.cookie-script.com https://chimpstatic.com https://*.list-manage.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; connect-src 'self' blob: https: wss:; frame-src 'self' blob: https://www.google.com https://td.doubleclick.net; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:; base-uri 'self'; form-action 'self';",
+                        value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${umamiOrigin} https://*.consentframework.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.cookie-script.com https://chimpstatic.com https://*.list-manage.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; connect-src 'self' blob: https: wss:; frame-src 'self' blob: https://www.google.com https://td.doubleclick.net; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:; base-uri 'self'; form-action 'self';`,
                     },
                     {
                         key: "Permissions-Policy",

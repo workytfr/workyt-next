@@ -6,6 +6,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import remarkGfm from "remark-gfm";
+import { markdownCodeComponents } from "@/components/ui/CodeBlock";
 import { Eye, EyeOff, FileText, CheckCircle, HelpCircle, User } from "lucide-react";
 import BookmarkButton from "@/components/BookmarkButton";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
@@ -127,6 +128,7 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
                     <ReactMarkdown
                         rehypePlugins={[rehypeKatex]}
                         remarkPlugins={[remarkMath, remarkGfm]}
+                        components={markdownCodeComponents}
                     >
                         {exercise.content}
                     </ReactMarkdown>
@@ -180,6 +182,7 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
                             <ReactMarkdown
                                 rehypePlugins={[rehypeKatex]}
                                 remarkPlugins={[remarkMath, remarkGfm]}
+                                components={markdownCodeComponents}
                             >
                                 {exercise.correction.text}
                             </ReactMarkdown>

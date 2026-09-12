@@ -6,6 +6,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
 import { isValidObjectId } from "mongoose";
 import { hasPermission } from "@/lib/roles";
+import { codeAnswersMatch } from "@/lib/codeAnswer";
+import { graphMatches, parseGraphSettings, pinMatches, zoneMatches } from "@/lib/imageQuestion";
 
 /**
  * GET /api/quizzes/[id]
@@ -30,21 +32,36 @@ export async function GET(
             return NextResponse.json({ error: "Quiz non trouvé" }, { status: 404 });
         }
 
-        // 🏆 Si le quiz franchit le seuil des 5 questions après modification
-        // (et que la récompense n'a jamais été versée), l'auteur reçoit ses 5 points.
-        const updatedQuestions = (quiz as any).questions;
-        if (Array.isArray(updatedQuestions) && updatedQuestions.length > 5 && (quiz as any).author) {
-            try {
-                const { awardPointsOnce } = await import('@/lib/pointsService');
-                await awardPointsOnce((quiz as any).author.toString(), 5, 'createQuiz', {
-                    quiz: id,
-                });
-            } catch (e) {
-                console.error('Erreur attribution points quiz (modif):', (e as any)?.message);
-            }
+        // 🔒 Les corrigés ne sortent que pour ceux qui éditent le quiz.
+        // Un élève reçoit l'énoncé sans correctAnswer / explication : la
+        // correction lui est renvoyée par le POST, une fois qu'il a soumis.
+        const session = await getServerSession(authOptions);
+        const isAuthor =
+            !!session?.user?.id &&
+            String((quiz as any).author ?? "") === String(session.user.id);
+        const canSeeAnswers =
+            isAuthor ||
+            (!!session?.user && (await hasPermission(session.user.role, "quiz.edit")));
+
+        if (canSeeAnswers) {
+            return NextResponse.json({ quiz }, { status: 200 });
         }
 
-        return NextResponse.json({ quiz }, { status: 200 });
+        const publicQuiz = {
+            ...(quiz as any),
+            questions: ((quiz as any).questions as IQuestion[]).map((q: any) => {
+                const {
+                    correctAnswer,
+                    explanation,
+                    messageForCorrectAnswer,
+                    messageForIncorrectAnswer,
+                    ...rest
+                } = q;
+                return rest;
+            }),
+        };
+
+        return NextResponse.json({ quiz: publicQuiz }, { status: 200 });
     } catch (error: any) {
         console.error("[GET /api/quizzes/[id]] Error:", error);
         return NextResponse.json(
@@ -156,15 +173,33 @@ export async function POST(
                     break;
                 }
 
+                case 'Point sur image':
+                    isCorrect = pinMatches(userAnswer, correct);
+                    break;
+
+                case 'Zone sur image':
+                    isCorrect = zoneMatches(userAnswer, correct);
+                    break;
+
+                case 'Graphique': {
+                    const { tolerance } = parseGraphSettings(q.answers);
+                    isCorrect = graphMatches(userAnswer, correct, tolerance);
+                    break;
+                }
+
                 case 'Code':
-                    if (Array.isArray(correct) && Array.isArray(userAnswer)) {
-                        isCorrect = correct.length === userAnswer.length &&
+                    // Comparaison tolérante aux écarts de forme (indentation,
+                    // guillemets, point-virgule final) mais pas au sens :
+                    // voir @/lib/codeAnswer.
+                    if (Array.isArray(correct)) {
+                        const submitted = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
+                        isCorrect = correct.length === submitted.length &&
                             correct.every((c: any, idx: number) =>
-                                typeof userAnswer[idx] === 'string' &&
-                                userAnswer[idx].trim() === String(c).trim()
+                                codeAnswersMatch(submitted[idx], c)
                             );
-                    } else if (typeof correct === 'string' && typeof userAnswer === 'string') {
-                        isCorrect = userAnswer.trim() === correct.trim();
+                    } else {
+                        const submitted = Array.isArray(userAnswer) ? userAnswer[0] : userAnswer;
+                        isCorrect = codeAnswersMatch(submitted, correct);
                     }
                     break;
             }
@@ -352,6 +387,24 @@ export async function PATCH(
             ).lean();
             if (!quiz) {
                 return NextResponse.json({ error: "Quiz non trouvé" }, { status: 404 });
+            }
+        }
+
+        // 🏆 Si l'édition fait franchir au quiz le seuil des 5 questions,
+        // l'auteur reçoit ses 5 points (awardPointsOnce garantit l'unicité).
+        const patchedQuestions = (quiz as any).questions;
+        if (
+            Array.isArray(patchedQuestions) &&
+            patchedQuestions.length > 5 &&
+            (quiz as any).author
+        ) {
+            try {
+                const { awardPointsOnce } = await import("@/lib/pointsService");
+                await awardPointsOnce((quiz as any).author.toString(), 5, "createQuiz", {
+                    quiz: id,
+                });
+            } catch (e) {
+                console.error("Erreur attribution points quiz (modif):", (e as any)?.message);
             }
         }
 

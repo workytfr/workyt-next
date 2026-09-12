@@ -37,7 +37,7 @@ export interface Exercise {
 
 export interface QuizQuestion {
     question: string;
-    questionType: 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code';
+    questionType: 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code' | 'Point sur image' | 'Zone sur image' | 'Graphique';
     questionPic?: string;
     answerSelectionType: 'single' | 'multiple';
     answers: string[];
@@ -47,6 +47,9 @@ export interface QuizQuestion {
     // Classement: answers = items in correct order, correctAnswer = [0,1,2,...] (identity)
     // Glisser-déposer: answers = left items, correctAnswer = right items (matching strings)
     // Code: answers[0] = language, answers[1] = code template with {{blank}} markers, correctAnswer = expected values
+    // Point sur image: answers[0] = imageUrl, correctAnswer = { x, y, radius } en % de l'image
+    // Zone sur image: answers[0] = imageUrl, correctAnswer = { x, y, w, h, minOverlap } en % de l'image
+    // Graphique: answers = [xMin, xMax, yMin, yMax, step, tolerance], correctAnswer = [{ x, y }, ...]
 }
 
 export interface TimeBonus {

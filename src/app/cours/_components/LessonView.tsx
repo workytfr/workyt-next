@@ -16,6 +16,11 @@ import { visit } from "unist-util-visit";
 import katex from "katex";
 import "katex/dist/katex.min.css";
 
+// Blocs de code partagés (leçons / exercices / quiz)
+import { highlightCodeBlocks } from "@/lib/codeHighlight";
+import { useCodeBlockCopy } from "@/components/ui/CodeBlock";
+import "@/components/ui/code-block.css";
+
 interface LessonViewProps {
     title: string;
     content: string;
@@ -429,6 +434,10 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
             .use(enhancedStylePlugin)
             .parse(preprocessedContent);
 
+        // Coloration syntaxique des <pre><code> : on transforme l'arbre avant
+        // sérialisation, donc le code arrive colorisé dès le rendu serveur.
+        highlightCodeBlocks(tree as any);
+
         processedHtml = unified()
             .use(rehypeStringify, { allowDangerousHtml: true })
             .stringify(tree);
@@ -463,6 +472,11 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
     const tocItems = useMemo(() => extractHeadings(htmlWithIds), [htmlWithIds]);
     const readingTime = useMemo(() => estimateReadingTime(content), [content]);
 
+    // Les blocs de code sont du HTML injecté : leur bouton « Copier » est
+    // branché par délégation sur le conteneur.
+    const contentRef = useRef<HTMLDivElement>(null);
+    useCodeBlockCopy(contentRef);
+
     return (
         <article className="max-w-none">
             {/* En-tête de la leçon */}
@@ -488,6 +502,7 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
 
             {/* Contenu principal */}
             <div
+                ref={contentRef}
                 className="prose prose-lg max-w-none notion-lesson-content"
                 style={{ lineHeight: '1.8' }}
                 dangerouslySetInnerHTML={{ __html: htmlWithIds }}
