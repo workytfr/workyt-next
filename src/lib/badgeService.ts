@@ -15,6 +15,7 @@ import '../models/Bookmark';
 import '../models/Streak';
 import '../models/MushroomTransaction';
 import '../models/CalendarClaim';
+import '../models/UserLeague';
 
 export class BadgeService {
   /**
@@ -99,6 +100,9 @@ export class BadgeService {
 
       case 'calendar_claims':
         return await this.checkCalendarClaims(user._id.toString(), value);
+
+      case 'clan_win':
+        return await this.checkClanWins(user._id.toString(), value);
 
       case 'event':
         return false;
@@ -288,6 +292,20 @@ export class BadgeService {
       return count >= requiredCount;
     } catch (error) {
       console.error('Erreur lors de la verification des reclamations calendrier:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Verifie le nombre de Guerres des Clans remportees
+   */
+  private static async checkClanWins(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const UserLeague = mongoose.model('UserLeague');
+      const league = await UserLeague.findOne({ user: userId }).select('wins').lean<any>();
+      return (league?.wins || 0) >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des victoires de clan:', error);
       return false;
     }
   }

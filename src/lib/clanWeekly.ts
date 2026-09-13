@@ -238,6 +238,17 @@ async function settleClan(
       { upsert: true }
     );
 
+    // --- badges de victoire ---
+    // Apres la mise a jour du rang : les badges clan_win lisent UserLeague.wins.
+    if (outcome === 'win') {
+      try {
+        const { BadgeService } = await import('@/lib/badgeService');
+        await BadgeService.triggerBadgeCheck(userId);
+      } catch (err) {
+        console.error('[Clans] Erreur verification badges:', err);
+      }
+    }
+
     // --- notification ---
     try {
       const title =

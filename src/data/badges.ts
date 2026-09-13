@@ -477,6 +477,56 @@ const badges: Partial<IBadge>[] = [
   },
 
   // ═══════════════════════════════════════
+  // GUERRE DES CLANS – Victoires hebdomadaires
+  // La forteresse s'agrandit a chaque palier (voir UserLeague.wins).
+  // ═══════════════════════════════════════
+  {
+    slug: 'clan_win_1',
+    name: 'Palissade',
+    description: 'A remporte sa premiere Guerre des Clans.',
+    icon: '/badge/guerredesclans_level1.svg',
+    category: 'performance',
+    condition: { type: 'clan_win', value: 1 },
+    rarity: 'commun',
+  },
+  {
+    slug: 'clan_win_5',
+    name: 'Bourg fortifie',
+    description: 'A remporte 5 Guerres des Clans.',
+    icon: '/badge/guerredesclans_level2.svg',
+    category: 'performance',
+    condition: { type: 'clan_win', value: 5 },
+    rarity: 'rare',
+  },
+  {
+    slug: 'clan_win_15',
+    name: 'Chateau fort',
+    description: 'A remporte 15 Guerres des Clans.',
+    icon: '/badge/guerredesclans_level3.svg',
+    category: 'performance',
+    condition: { type: 'clan_win', value: 15 },
+    rarity: 'rare',
+  },
+  {
+    slug: 'clan_win_30',
+    name: 'Citadelle',
+    description: 'A remporte 30 Guerres des Clans.',
+    icon: '/badge/guerredesclans_level4.svg',
+    category: 'performance',
+    condition: { type: 'clan_win', value: 30 },
+    rarity: 'épique',
+  },
+  {
+    slug: 'clan_win_60',
+    name: 'Capitale imprenable',
+    description: 'A remporte 60 Guerres des Clans.',
+    icon: '/badge/guerredesclans_level5.svg',
+    category: 'performance',
+    condition: { type: 'clan_win', value: 60 },
+    rarity: 'légendaire',
+  },
+
+  // ═══════════════════════════════════════
   // EVENEMENTS SPECIAUX
   // ═══════════════════════════════════════
   {
