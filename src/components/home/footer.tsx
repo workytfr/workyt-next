@@ -97,7 +97,7 @@ const Footer: React.FC = () => {
                             {/* Réseaux sociaux */}
                             <div className="flex items-center gap-2.5 pt-1">
                                 {[
-                                    { href: "https://discord.gg/workyt", icon: DiscordLogoIcon, label: "Discord" },
+                                    { href: "https://dc.gg/workyt", icon: DiscordLogoIcon, label: "Discord" },
                                     { href: "https://instagram.com/workyt", icon: InstagramLogoIcon, label: "Instagram" },
                                     { href: "https://twitter.com/workyt_fr", icon: TwitterLogoIcon, label: "Twitter" },
                                     { href: "https://linkedin.com/company/workyt", icon: LinkedInLogoIcon, label: "LinkedIn" },
@@ -155,7 +155,7 @@ const Footer: React.FC = () => {
                                     { href: "https://www.helloasso.com/associations/workyt/formulaires/1", label: "Faire un don" },
                                     { href: "https://www.journal-officiel.gouv.fr/pages/associations-detail-annonce/?q.id=id:202200100800", label: "Détails de l'association" },
                                     { href: "mailto:admin@workyt.fr", label: "Nous contacter" },
-                                    { href: "https://discord.gg/workyt", label: "Discord" },
+                                    { href: "https://dc.gg/workyt", label: "Discord" },
                                     { href: "/mentions-legales", label: "Mentions légales" },
                                     { href: "/conditions-utilisation", label: "Conditions d'utilisation" },
                                     { href: "/politique-confidentialite", label: "Confidentialité" },

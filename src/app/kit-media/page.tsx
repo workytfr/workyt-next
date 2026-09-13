@@ -172,7 +172,7 @@ export default async function KitMediaPage() {
                 "https://twitter.com/workyt_fr",
                 "https://www.instagram.com/workyt",
                 "https://www.linkedin.com/company/workyt",
-                "https://discord.gg/workyt",
+                "https://dc.gg/workyt",
             ],
         },
     };
