@@ -1,0 +1,231 @@
+/* ==========================================
+   BLOC DE CODE WORKYT
+   Thème sombre chaud, accents orange — cohérent avec le reste du site.
+   Partagé par les leçons (HTML injecté), les exercices (react-markdown)
+   et les quiz : mêmes classes, même rendu.
+   ========================================== */
+
+.wk-code {
+    --wk-code-bg: #1f1d1b;
+    --wk-code-bar: #26231f;
+    --wk-code-border: #332f2a;
+    --wk-code-text: #e8e6e3;
+    --wk-code-muted: #8a8178;
+
+    margin: 1.5rem 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--wk-code-bg);
+    border: 1px solid var(--wk-code-border);
+    font-family: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+
+/* --- Barre supérieure : langage + copier --- */
+
+.wk-code .wk-code__bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.5rem 0.75rem 0.5rem 1rem;
+    background: var(--wk-code-bar);
+    border-bottom: 1px solid var(--wk-code-border);
+}
+
+.wk-code .wk-code__lang {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--wk-code-muted);
+    user-select: none;
+}
+
+.wk-code .wk-code__copy {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--wk-code-muted);
+    font-family: inherit;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.wk-code__copy:hover {
+    color: #f97316;
+    background: rgba(249, 115, 22, 0.1);
+    border-color: rgba(249, 115, 22, 0.25);
+}
+
+.wk-code__copy:focus-visible {
+    outline: 2px solid #f97316;
+    outline-offset: 1px;
+}
+
+.wk-code__copy[data-copied="true"] {
+    color: #4ade80;
+}
+
+.wk-code__copy svg {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+/* --- Le code --- */
+
+.wk-code .wk-code__pre {
+    margin: 0;
+    padding: 1rem 1.25rem;
+    overflow-x: auto;
+    background: transparent;
+    color: var(--wk-code-text);
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    tab-size: 4;
+}
+
+.wk-code .wk-code__pre code {
+    display: block;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    font-size: inherit;
+    border-radius: 0;
+    white-space: pre;
+}
+
+/* Numérotation optionnelle, alignée sur la hauteur de ligne du <pre> */
+.wk-code--numbered .wk-code__pre {
+    display: flex;
+    gap: 1rem;
+}
+
+.wk-code .wk-code__gutter {
+    flex-shrink: 0;
+    text-align: right;
+    color: var(--wk-code-muted);
+    opacity: 0.5;
+    user-select: none;
+    font-size: inherit;
+    line-height: inherit;
+}
+
+.wk-code__gutter span {
+    display: block;
+}
+
+/* Barre de défilement discrète */
+.wk-code__pre::-webkit-scrollbar {
+    height: 8px;
+}
+
+.wk-code__pre::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.wk-code__pre::-webkit-scrollbar-thumb {
+    background: var(--wk-code-border);
+    border-radius: 4px;
+}
+
+.wk-code__pre::-webkit-scrollbar-thumb:hover {
+    background: #4a443d;
+}
+
+/* ==========================================
+   COLORATION — classes highlight.js / lowlight
+   ========================================== */
+
+.wk-code .hljs-comment,
+.wk-code .hljs-quote {
+    color: #7d7669;
+    font-style: italic;
+}
+
+.wk-code .hljs-keyword,
+.wk-code .hljs-selector-tag,
+.wk-code .hljs-literal,
+.wk-code .hljs-doctag,
+.wk-code .hljs-formula {
+    color: #ff9d5c;
+}
+
+.wk-code .hljs-string,
+.wk-code .hljs-regexp,
+.wk-code .hljs-addition,
+.wk-code .hljs-attribute,
+.wk-code .hljs-meta .hljs-string {
+    color: #9fd28a;
+}
+
+.wk-code .hljs-number,
+.wk-code .hljs-symbol,
+.wk-code .hljs-bullet,
+.wk-code .hljs-variable,
+.wk-code .hljs-template-variable,
+.wk-code .hljs-link,
+.wk-code .hljs-selector-attr {
+    color: #e5c07b;
+}
+
+.wk-code .hljs-title,
+.wk-code .hljs-title.function_,
+.wk-code .hljs-section,
+.wk-code .hljs-name,
+.wk-code .hljs-selector-id,
+.wk-code .hljs-selector-class {
+    color: #7dc4e4;
+}
+
+.wk-code .hljs-type,
+.wk-code .hljs-title.class_,
+.wk-code .hljs-class .hljs-title,
+.wk-code .hljs-built_in,
+.wk-code .hljs-builtin-name,
+.wk-code .hljs-params {
+    color: #d9a7e8;
+}
+
+.wk-code .hljs-attr,
+.wk-code .hljs-property,
+.wk-code .hljs-operator {
+    color: #e8e6e3;
+}
+
+.wk-code .hljs-meta,
+.wk-code .hljs-subst {
+    color: #8a8178;
+}
+
+.wk-code .hljs-deletion {
+    color: #f2777a;
+}
+
+.wk-code .hljs-emphasis {
+    font-style: italic;
+}
+
+.wk-code .hljs-strong {
+    font-weight: 600;
+}
+
+/* --- Mobile --- */
+
+@media (max-width: 640px) {
+    .wk-code {
+        margin: 1.25rem 0;
+        border-radius: 10px;
+    }
+
+    .wk-code .wk-code__pre {
+        padding: 0.875rem 1rem;
+        font-size: 0.75rem;
+    }
+}

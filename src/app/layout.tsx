@@ -126,6 +126,12 @@ export default function RootLayout({ children }: RootLayoutProps) {
         "areaServed": { "@type": "Country", "name": "France" },
     };
 
+    // Analytics : sans configuration, rien n'est chargé (voir plus bas).
+    // L'URL sert aussi à construire le CSP dans next.config.mjs — les deux
+    // doivent désigner la même instance.
+    const umamiUrl = process.env.NEXT_PUBLIC_UMAMI_URL?.replace(/\/$/, "");
+    const umamiWebsiteId = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+
     return (
         <html lang="fr" suppressHydrationWarning>
         <body className={`${funnelDisplay.variable} ${montserrat.variable} font-sans overflow-x-hidden`}>
@@ -141,6 +147,28 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <ClientProviders>
             {children}
         </ClientProviders>
+        {/* Analytics Umami — afterInteractive pour compter la pageview sans
+            bloquer le LCP ; le recorder est lazyOnload (non critique).
+            Piloté par NEXT_PUBLIC_UMAMI_URL / NEXT_PUBLIC_UMAMI_WEBSITE_ID :
+            variables absentes (dev, préproduction) = aucun script chargé, donc
+            pas de pageviews parasites dans les statistiques de production. */}
+        {umamiUrl && umamiWebsiteId && (
+            <>
+                <Script
+                    id="umami-analytics"
+                    src={`${umamiUrl}/script.js`}
+                    data-website-id={umamiWebsiteId}
+                    data-performance="true"
+                    strategy="afterInteractive"
+                />
+                <Script
+                    id="umami-recorder"
+                    src={`${umamiUrl}/recorder.js`}
+                    data-website-id={umamiWebsiteId}
+                    strategy="lazyOnload"
+                />
+            </>
+        )}
         {/* Cookie Consent Scripts — chargés via next/script (lazyOnload pour pas bloquer le LCP) */}
         <Script
             id="consent-stub"

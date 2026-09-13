@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import EditingPresenceBanner from "@/components/ui/EditingPresenceBanner";
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,13 @@ import {
     Plus, Trash2, Save, X, Calculator, Loader2, ChevronDown, ChevronUp,
     HelpCircle, Image, Lightbulb, GripVertical, ArrowRight, ArrowUp, ArrowDown,
     Code2, SlidersHorizontal, ListOrdered, Link2, CheckCircle2, Type, ToggleLeft,
-    Copy, Clock, Target
+    Copy, Clock, Target, MapPin, SquareDashedMousePointer, LineChart
 } from 'lucide-react';
 import 'katex/dist/katex.min.css';
 import { InlineMath, BlockMath } from 'react-katex';
 import SkillPicker from '@/components/ui/SkillPicker';
+import ImageCanvas from '@/app/cours/_components/quiz/inputs/ImageCanvas';
+import GraphInput from '@/app/cours/_components/quiz/inputs/GraphInput';
 
 interface ICourse {
     _id: string;
@@ -25,7 +27,7 @@ interface ICourse {
     sections: { _id: string; title: string }[];
 }
 
-type QuestionType = 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code';
+type QuestionType = 'QCM' | 'Réponse courte' | 'Vrai/Faux' | 'Texte à trous' | 'Classement' | 'Glisser-déposer' | 'Slider' | 'Code' | 'Point sur image' | 'Zone sur image' | 'Graphique';
 
 interface Question {
     question: string;
@@ -57,6 +59,9 @@ const QUESTION_TYPES: { value: QuestionType; label: string; icon: React.ReactNod
     { value: 'Slider', label: 'Slider / Estimation', icon: <SlidersHorizontal className="w-4 h-4" />, description: 'Donner une valeur numérique avec tolérance', color: 'bg-orange-50 text-orange-700 border-orange-200' },
     { value: 'Code', label: 'Compléter du code', icon: <Code2 className="w-4 h-4" />, description: 'Remplir les blancs dans du code source', color: 'bg-gray-100 text-gray-700 border-gray-300' },
     { value: 'Texte à trous', label: 'Texte à trous', icon: <Type className="w-4 h-4" />, description: 'Remplir les blancs dans un texte', color: 'bg-teal-50 text-teal-700 border-teal-200' },
+    { value: 'Point sur image', label: 'Point sur image', icon: <MapPin className="w-4 h-4" />, description: 'Cliquer au bon endroit sur une image', color: 'bg-rose-50 text-rose-700 border-rose-200' },
+    { value: 'Zone sur image', label: 'Zone sur image', icon: <SquareDashedMousePointer className="w-4 h-4" />, description: 'Entourer une région, noté au recouvrement', color: 'bg-indigo-50 text-indigo-700 border-indigo-200' },
+    { value: 'Graphique', label: 'Graphique', icon: <LineChart className="w-4 h-4" />, description: 'Placer des points sur un repère cartésien', color: 'bg-cyan-50 text-cyan-700 border-cyan-200' },
 ];
 
 function getTypeInfo(type: QuestionType) {
@@ -82,6 +87,14 @@ function getDefaultsForType(type: QuestionType): Partial<Question> {
             return { answers: ['javascript', ''], correctAnswer: '', answerSelectionType: 'single' };
         case 'Texte à trous':
             return { answers: [''], correctAnswer: '', answerSelectionType: 'single' };
+        case 'Point sur image':
+            // answers[0] = URL de l'image ; correctAnswer = cible en % de l'image
+            return { answers: [''], correctAnswer: { x: 50, y: 50, radius: 8 }, answerSelectionType: 'single' };
+        case 'Zone sur image':
+            return { answers: [''], correctAnswer: { x: 30, y: 30, w: 40, h: 40, minOverlap: 60 }, answerSelectionType: 'single' };
+        case 'Graphique':
+            // answers = [xMin, xMax, yMin, yMax, pas, tolérance]
+            return { answers: ['-5', '5', '-5', '5', '1', '0.5'], correctAnswer: [], answerSelectionType: 'single' };
         default:
             return { answers: ['', ''], correctAnswer: 0, answerSelectionType: 'single' };
     }
@@ -94,6 +107,11 @@ export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, i
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [expandedQuestions, setExpandedQuestions] = useState<Set<number>>(new Set());
     const [showLatexHelp, setShowLatexHelp] = useState(false);
+
+    // Coin de depart du rectangle en cours de trace (question "Zone sur image").
+    // Une ref plutot qu'un state : la valeur ne doit pas declencher de rendu,
+    // elle ne sert qu'a calculer le rectangle pendant le glissement.
+    const zoneDragStart = useRef<{ x: number; y: number } | null>(null);
 
     // Sélection cours/section
     const [courses, setCourses] = useState<ICourse[]>([]);
@@ -619,6 +637,240 @@ export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, i
         );
     };
 
+    // --- Questions visuelles ------------------------------------------------
+    // L'auteur pose la reponse attendue sur le meme support que celui presente
+    // a l'eleve : l'image (answers[0]) ou le repere (answers = reglages), et la
+    // cible dans correctAnswer, en pourcentages ou en unites du repere.
+
+    const updateAnswerSlot = (index: number, slot: number, value: string) => {
+        const updated = [...questions];
+        const q = updated[index];
+        while (q.answers.length <= slot) q.answers.push('');
+        q.answers[slot] = value;
+        setQuestions(updated);
+    };
+
+    const updateCorrect = (index: number, value: any) => {
+        const updated = [...questions];
+        updated[index].correctAnswer = value;
+        setQuestions(updated);
+    };
+
+    const renderImageUrlField = (question: Question, index: number) => (
+        <div>
+            <Label className="text-xs text-gray-500 mb-1.5 flex items-center gap-1">
+                {/* `Image` est ici l'icône lucide, pas un <img> : la règle
+                    jsx-a11y se fie au nom du composant et se trompe de cible. */}
+                {/* eslint-disable-next-line jsx-a11y/alt-text */}
+                <Image className="w-3 h-3" aria-hidden="true" />
+                Image support de la question (URL)
+            </Label>
+            <Input
+                value={question.answers[0] || ''}
+                onChange={(e) => updateAnswerSlot(index, 0, e.target.value)}
+                placeholder="https://exemple.com/schema.png"
+                className="h-8 text-sm"
+            />
+        </div>
+    );
+
+    const renderPinFields = (question: Question, index: number) => {
+        const imageUrl = question.answers[0] || '';
+        const target = (question.correctAnswer && typeof question.correctAnswer === 'object')
+            ? question.correctAnswer
+            : { x: 50, y: 50, radius: 8 };
+
+        return (
+            <div className="space-y-4">
+                <div className="p-3 bg-rose-50 rounded-lg border border-rose-200">
+                    <p className="text-xs text-rose-700 flex items-center gap-1.5">
+                        <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        Cliquez sur l&apos;apercu pour placer la cible. La reponse est juste si
+                        l&apos;eleve clique dans le cercle de tolerance.
+                    </p>
+                </div>
+
+                {renderImageUrlField(question, index)}
+
+                {imageUrl ? (
+                    <>
+                        <ImageCanvas
+                            src={imageUrl}
+                            alt="Apercu de la question"
+                            onPoint={(point) => updateCorrect(index, { ...target, ...point })}
+                        >
+                            <span
+                                style={{
+                                    left: `${target.x}%`,
+                                    top: `${target.y}%`,
+                                    width: `${target.radius * 2}%`,
+                                    aspectRatio: '1',
+                                }}
+                                className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-emerald-500 bg-emerald-400/20 pointer-events-none"
+                            />
+                            <span
+                                style={{ left: `${target.x}%`, top: `${target.y}%` }}
+                                className="absolute -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-emerald-600 pointer-events-none"
+                            />
+                        </ImageCanvas>
+
+                        <div>
+                            <Label className="text-xs text-gray-500">
+                                Rayon de tolerance : {target.radius} % de l&apos;image
+                            </Label>
+                            <input
+                                type="range"
+                                min={1}
+                                max={40}
+                                step={1}
+                                value={target.radius}
+                                onChange={(e) =>
+                                    updateCorrect(index, { ...target, radius: parseInt(e.target.value, 10) })
+                                }
+                                className="w-full accent-orange-500"
+                            />
+                        </div>
+                    </>
+                ) : (
+                    <p className="text-xs text-gray-400">
+                        Renseignez une URL d&apos;image pour placer la cible.
+                    </p>
+                )}
+            </div>
+        );
+    };
+
+    const renderZoneFields = (question: Question, index: number) => {
+        const imageUrl = question.answers[0] || '';
+        const zone = (question.correctAnswer && typeof question.correctAnswer === 'object')
+            ? question.correctAnswer
+            : { x: 30, y: 30, w: 40, h: 40, minOverlap: 60 };
+
+        return (
+            <div className="space-y-4">
+                <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <p className="text-xs text-indigo-700 flex items-center gap-1.5">
+                        <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        Tracez la zone attendue sur l&apos;apercu. La note depend du recouvrement
+                        entre le rectangle de l&apos;eleve et celui-ci : entourer toute
+                        l&apos;image ne suffit donc pas.
+                    </p>
+                </div>
+
+                {renderImageUrlField(question, index)}
+
+                {imageUrl ? (
+                    <>
+                        <ImageCanvas
+                            src={imageUrl}
+                            alt="Apercu de la question"
+                            onDragStart={(point) => {
+                                zoneDragStart.current = point;
+                            }}
+                            onDragMove={(point) => {
+                                const start = zoneDragStart.current;
+                                if (!start) return;
+                                updateCorrect(index, {
+                                    ...zone,
+                                    x: Math.min(start.x, point.x),
+                                    y: Math.min(start.y, point.y),
+                                    w: Math.abs(point.x - start.x),
+                                    h: Math.abs(point.y - start.y),
+                                });
+                            }}
+                            onDragEnd={() => {
+                                zoneDragStart.current = null;
+                            }}
+                        >
+                            {zone.w > 0 && zone.h > 0 && (
+                                <span
+                                    style={{
+                                        left: `${zone.x}%`,
+                                        top: `${zone.y}%`,
+                                        width: `${zone.w}%`,
+                                        height: `${zone.h}%`,
+                                    }}
+                                    className="absolute border-2 border-emerald-500 bg-emerald-400/20 rounded pointer-events-none"
+                                />
+                            )}
+                        </ImageCanvas>
+
+                        <div>
+                            <Label className="text-xs text-gray-500">
+                                Recouvrement minimal exige : {zone.minOverlap} %
+                            </Label>
+                            <input
+                                type="range"
+                                min={20}
+                                max={95}
+                                step={5}
+                                value={zone.minOverlap}
+                                onChange={(e) =>
+                                    updateCorrect(index, { ...zone, minOverlap: parseInt(e.target.value, 10) })
+                                }
+                                className="w-full accent-orange-500"
+                            />
+                            <p className="text-[11px] text-gray-400 mt-1">
+                                60 % convient pour une region bien delimitee ; descendez vers 40 %
+                                si la frontiere est floue.
+                            </p>
+                        </div>
+                    </>
+                ) : (
+                    <p className="text-xs text-gray-400">
+                        Renseignez une URL d&apos;image pour tracer la zone.
+                    </p>
+                )}
+            </div>
+        );
+    };
+
+    const renderGraphFields = (question: Question, index: number) => {
+        const answers = question.answers.length >= 6
+            ? question.answers
+            : ['-5', '5', '-5', '5', '1', '0.5'];
+        const fields: { slot: number; label: string }[] = [
+            { slot: 0, label: 'x minimum' },
+            { slot: 1, label: 'x maximum' },
+            { slot: 2, label: 'y minimum' },
+            { slot: 3, label: 'y maximum' },
+            { slot: 4, label: 'Pas de la grille' },
+            { slot: 5, label: 'Tolerance' },
+        ];
+
+        return (
+            <div className="space-y-4">
+                <div className="p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <p className="text-xs text-cyan-700 flex items-center gap-1.5">
+                        <HelpCircle className="w-3.5 h-3.5 flex-shrink-0" />
+                        Placez les points attendus sur le repere ci-dessous. L&apos;ordre dans
+                        lequel l&apos;eleve les pose n&apos;a pas d&apos;importance.
+                    </p>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                    {fields.map(({ slot, label }) => (
+                        <div key={slot}>
+                            <Label className="text-xs text-gray-500">{label}</Label>
+                            <Input
+                                type="number"
+                                value={answers[slot]}
+                                onChange={(e) => updateAnswerSlot(index, slot, e.target.value)}
+                                className="h-8 text-sm"
+                            />
+                        </div>
+                    ))}
+                </div>
+
+                <GraphInput
+                    question={{ ...question, answers } as any}
+                    value={Array.isArray(question.correctAnswer) ? question.correctAnswer : []}
+                    onChange={(points: any) => updateCorrect(index, points)}
+                />
+            </div>
+        );
+    };
+
     const renderSliderFields = (question: Question, index: number) => {
         // answers[0]=min, [1]=max, [2]=step, [3]=unit, [4]=tolerance
         const answers = question.answers.length >= 5 ? question.answers : ['0', '100', '1', '', '5'];
@@ -990,6 +1242,9 @@ export default function QuizForm({ sectionId: propSectionId, onSave, onCancel, i
                             {question.questionType === 'Slider' && renderSliderFields(question, index)}
                             {question.questionType === 'Code' && renderCodeFields(question, index)}
                             {question.questionType === 'Texte à trous' && renderTexteATrousFields(question, index)}
+                            {question.questionType === 'Point sur image' && renderPinFields(question, index)}
+                            {question.questionType === 'Zone sur image' && renderZoneFields(question, index)}
+                            {question.questionType === 'Graphique' && renderGraphFields(question, index)}
                         </div>
 
                         {/* Explanation */}
