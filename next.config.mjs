@@ -9,6 +9,14 @@ const umamiOrigin = process.env.NEXT_PUBLIC_UMAMI_URL
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     poweredByHeader: false,
+    // Build standalone : c'est le format attendu par l'hébergeur (build + start
+    // standard, haute dispo). Socket.IO vit dans le microservice séparé
+    // `socket-server.mjs` (plus de serveur custom, incompatible standalone).
+    output: "standalone",
+    // Ancrer la racine du tracing au repo : sinon Next remonte chercher un
+    // package.json parent (ex. dans le home) et imbrique le standalone dans
+    // Desktop/workyt-next/… au lieu de produire .next/standalone/server.js.
+    outputFileTracingRoot: import.meta.dirname,
     images: {
         remotePatterns: [
             {

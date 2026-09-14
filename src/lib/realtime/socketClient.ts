@@ -8,8 +8,13 @@ import { io, type Socket } from "socket.io-client";
  *
  * Transports : WebSocket uniquement (pas de repli long-polling). On évite ainsi
  * la phase de handshake HTTP + upgrade, et les requêtes de polling qui chargent
- * inutilement le serveur. Prérequis : le vhost nginx DOIT transmettre les
- * en-têtes `Upgrade`/`Connection` sur /socket.io. Aucune URL → même origine.
+ * inutilement le serveur.
+ *
+ * URL du microservice Socket.IO :
+ *   - absente → même origine (le serveur WebSocket est routé derrière
+ *     workyt.fr/socket.io avec transmission des en-têtes `Upgrade`/`Connection`) ;
+ *   - renseignée (NEXT_PUBLIC_SOCKET_URL) → connexion directe au microservice
+ *     (dans ce cas lui autoriser l'origine via SOCKET_CORS_ORIGINS).
  */
 let socket: Socket | null = null;
 
@@ -23,7 +28,9 @@ export function getForumSocket(token?: string): Socket {
         return socket;
     }
 
-    socket = io({
+    const url = process.env.NEXT_PUBLIC_SOCKET_URL || undefined;
+
+    socket = io(url, {
         path: "/socket.io",
         autoConnect: true,
         auth: token ? { token } : {},
