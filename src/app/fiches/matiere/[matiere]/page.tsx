@@ -1,5 +1,6 @@
 import { Metadata } from 'next'
-import Link from 'next/link'
+import FicheHub from '@/app/fiches/_components/FicheHub'
+import type { FicheTileData } from '@/app/fiches/_components/ficheUi'
 import { notFound } from 'next/navigation'
 import dbConnect from '@/lib/mongodb'
 import Revision from '@/models/Revision'
@@ -39,10 +40,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export const revalidate = 3600
 
-function stripHtml(html: string): string {
-    return (html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim()
-}
-
 export default async function MatiereFichesPage({ params }: PageProps) {
     const { matiere: slug } = await params
     const subject = slugToSubject(slug)
@@ -55,13 +52,25 @@ export default async function MatiereFichesPage({ params }: PageProps) {
             new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout DB')), 5000)),
         ])
         fiches = await Revision.find({ subject })
-            .select('_id title slug content level files createdAt updatedAt')
+            .select('_id title slug content subject level status likes files createdAt updatedAt')
             .sort({ updatedAt: -1, createdAt: -1 })
             .limit(60)
             .lean()
     } catch (err) {
         console.error('Hub fiches/matiere DB error:', err)
     }
+
+    const items: FicheTileData[] = fiches.map((f: any) => ({
+        id: f._id.toString(),
+        title: f.title,
+        slug: f.slug,
+        subject: f.subject,
+        level: f.level,
+        status: f.status,
+        content: typeof f.content === 'string' ? f.content.slice(0, 1200) : '',
+        likes: typeof f.likes === 'number' ? f.likes : undefined,
+        date: f.createdAt,
+    }))
 
     const url = `https://workyt.fr/fiches/matiere/${slug}`
     const collectionLd = {
@@ -95,47 +104,7 @@ export default async function MatiereFichesPage({ params }: PageProps) {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-            <main className="mx-auto max-w-[1200px] px-6 py-10">
-                <nav aria-label="Fil d'Ariane" className="mb-6 text-sm text-gray-500">
-                    <Link href="/" className="hover:text-orange-500">Accueil</Link>
-                    {' › '}
-                    <Link href="/fiches" className="hover:text-orange-500">Fiches</Link>
-                    {' › '}
-                    <span className="text-gray-900">{subject}</span>
-                </nav>
-                <header className="mb-8">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-                        Fiches de révision {subject}
-                    </h1>
-                    <p className="mt-3 text-gray-600 max-w-2xl">
-                        Révise <strong>{subject}</strong> avec les fiches gratuites de la
-                        communauté Workyt. Synthèses, méthodes, formules — tout ce qu'il
-                        faut pour le brevet, le bac et tes examens.
-                    </p>
-                </header>
-                {fiches.length === 0 ? (
-                    <p className="text-gray-500">
-                        Aucune fiche de {subject} pour le moment.{' '}
-                        <Link href="/fiches" className="text-orange-500 underline">Voir toutes les fiches</Link>.
-                    </p>
-                ) : (
-                    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {fiches.map((f: any) => {
-                            const href = `/fiches/${buildIdSlug(f._id.toString(), f.slug || f.title)}`
-                            const excerpt = stripHtml(f.content).slice(0, 140)
-                            return (
-                                <li key={f._id.toString()} className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-orange-200 hover:shadow-sm transition">
-                                    <Link href={href} className="block">
-                                        <div className="text-xs uppercase tracking-wider text-gray-400 mb-2">{f.level}</div>
-                                        <h2 className="text-base font-semibold text-gray-900 mb-2 line-clamp-2">{f.title}</h2>
-                                        {excerpt && <p className="text-sm text-gray-500 line-clamp-3">{excerpt}…</p>}
-                                    </Link>
-                                </li>
-                            )
-                        })}
-                    </ul>
-                )}
-            </main>
+            <FicheHub kind="matiere" label={subject} fiches={items} />
         </>
     )
 }

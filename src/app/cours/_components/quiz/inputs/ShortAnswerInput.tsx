@@ -18,9 +18,9 @@ export default function ShortAnswerInput({ value, onChange }: QuestionInputProps
                 placeholder="Tapez votre réponse..."
                 aria-label="Votre réponse"
                 autoComplete="off"
-                className="w-full p-4 border-2 border-[#e3e2e0] rounded-xl text-[#37352f] placeholder-[#b4b4b0] focus:border-[#f97316] focus:ring-0 focus:outline-none transition-colors bg-white text-sm sm:text-base"
+                className="w-full p-4 border-2 border-[#e8dfd0] rounded-xl text-[#1a1512] placeholder-[#b4b4b0] focus:border-[#ff6a1a] focus:ring-0 focus:outline-none transition-colors bg-white text-sm sm:text-base"
             />
-            <p className="text-xs text-[#9ca3af]">
+            <p className="text-xs text-[#8f857b]">
                 La casse et les espaces en trop ne sont pas pris en compte.
             </p>
         </div>

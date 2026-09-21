@@ -94,7 +94,7 @@ export default function ImageCanvas({
             onPointerUp={handlePointerUp}
             onPointerCancel={handlePointerUp}
             style={{ touchAction: "none" }}
-            className={`relative select-none overflow-hidden rounded-xl border-2 border-[#e3e2e0] bg-[#fafaf9] cursor-crosshair ${className}`}
+            className={`relative select-none overflow-hidden rounded-xl border-2 border-[#e8dfd0] bg-[#fafaf9] cursor-crosshair ${className}`}
         >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={src} alt={alt} draggable={false} className="block w-full h-auto" />

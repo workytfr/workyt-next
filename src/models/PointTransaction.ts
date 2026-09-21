@@ -8,6 +8,7 @@ export interface IPointTransaction extends Document {
     course?: Types.ObjectId;     // publication / vérification de cours
     quiz?: Types.ObjectId;       // création de quiz
     challenge?: Types.ObjectId;  // défi au quiz entre amis
+    mentorship?: Types.ObjectId; // suivi personnalisé (ressource, objectif, point d'étape, série)
     action:               // pour préciser le type exact d'événement
         | 'createRevision'
         | 'likeRevision'
@@ -22,7 +23,11 @@ export interface IPointTransaction extends Document {
         | 'verifyCourse'
         | 'createQuiz'
         | 'createExercisePack'
-        | 'winChallenge';
+        | 'winChallenge'
+        | 'completeAssignedResource'
+        | 'reachMentorshipGoal'
+        | 'mentorshipCheckin'
+        | 'mentorshipDuoStreak';
     type: 'gain' | 'perte';
     points: number;
     createdAt: Date;
@@ -36,6 +41,7 @@ const PointTransactionSchema: Schema = new Schema({
     course:   { type: Schema.Types.ObjectId, ref: 'Course' },
     quiz:     { type: Schema.Types.ObjectId, ref: 'Quiz' },
     challenge:{ type: Schema.Types.ObjectId, ref: 'Challenge' },
+    mentorship:{ type: Schema.Types.ObjectId, ref: 'Mentorship' },
     action:   {
         type: String,
         enum: [
@@ -44,6 +50,7 @@ const PointTransactionSchema: Schema = new Schema({
             'validateAnswer', 'createQuestion', 'completeQuiz', 'completeEvaluation',
             'createCourse', 'verifyCourse', 'createQuiz', 'createExercisePack',
             'winChallenge',
+            'completeAssignedResource', 'reachMentorshipGoal', 'mentorshipCheckin', 'mentorshipDuoStreak',
         ],
         required: true
     },

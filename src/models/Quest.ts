@@ -16,7 +16,9 @@ export type QuestActionType =
   | 'course_complete'        // Terminer un cours
   | 'fiche_create'           // Créer une fiche
   | 'fiche_like_received'    // Recevoir un like sur une fiche
-  | 'fiche_bookmark';        // Mettre une fiche en favoris
+  | 'fiche_bookmark'         // Mettre une fiche en favoris
+  | 'mentorship_resource_done' // Terminer une ressource donnée par son bénévole
+  | 'mentorship_goal_reached'; // Atteindre un objectif de son plan de suivi
 
 /**
  * Types de récompenses
@@ -45,6 +47,8 @@ export interface IQuest extends Document {
     chestType?: 'common' | 'rare' | 'epic' | 'legendary'; // Pour les coffres
   }[];
   isActive: boolean; // Si la quête est active
+  /** `mentored` : proposée seulement aux élèves qui ont un suivi en cours (voir QuestService) */
+  audience?: 'all' | 'mentored';
   startDate?: Date; // Date de début (pour les quêtes spéciales)
   endDate?: Date; // Date de fin (pour les quêtes spéciales)
   createdAt: Date;
@@ -84,7 +88,9 @@ const QuestSchema = new Schema<IQuest>({
         'course_complete',
         'fiche_create',
         'fiche_like_received',
-        'fiche_bookmark'
+        'fiche_bookmark',
+        'mentorship_resource_done',
+        'mentorship_goal_reached'
       ],
       required: true
     },
@@ -113,6 +119,11 @@ const QuestSchema = new Schema<IQuest>({
       enum: ['common', 'rare', 'epic', 'legendary']
     }
   }],
+  audience: {
+    type: String,
+    enum: ["all", "mentored"],
+    default: "all"
+  },
   isActive: {
     type: Boolean,
     default: true

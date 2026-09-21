@@ -1,7 +1,9 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { FileText } from "lucide-react";
+import { PAGE_CONTAINER, Eyebrow } from "@/components/wk/primitives";
+import { subjectToSlug } from "@/utils/subjectSlug";
+import { FicheActions } from "./_components/ficheUi";
 import dbConnect from "@/lib/mongodb";
 import Revision from "@/models/Revision";
 import { buildIdSlug } from "@/utils/slugify";
@@ -81,41 +83,54 @@ export default async function FichesPage() {
         })),
     };
 
+    const popular = [
+        "Mathématiques",
+        "Sciences de la Vie et de la Terre (SVT)",
+        "Physique-Chimie",
+        "Français",
+        "Histoire-Géographie",
+        "Philosophie",
+    ];
+
     return (
-        <div className="min-h-screen bg-white">
+        <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
 
-            {/* Hero SSR pour Googlebot */}
-            <header className="border-b border-gray-100 bg-gradient-to-b from-orange-50/30 to-white">
-                <div className="max-w-[1400px] mx-auto px-6 pt-12 pb-10 sm:pt-16 sm:pb-14">
-                    <div className="max-w-2xl">
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 text-orange-600 text-xs font-medium mb-4">
-                            <FileText className="w-3.5 h-3.5" />
-                            Bibliothèque de révisions
-                        </div>
-                        <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight mb-3">
-                            Fiches de révision gratuites
+            {/* En-tête — rendu côté serveur pour Googlebot */}
+            <header className="relative overflow-hidden border-b border-[rgba(26,21,18,0.08)]">
+                <div className="wk-dotgrid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+                <div className={`${PAGE_CONTAINER} relative grid grid-cols-1 gap-10 pb-12 pt-12 md:pb-16 md:pt-16 lg:grid-cols-12 lg:items-end`}>
+                    <div className="lg:col-span-7">
+                        <Eyebrow>Fiches de révision</Eyebrow>
+                        <h1 className="font-serif-display mt-5 text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.92]">
+                            Fiches de révision
+                            <br />
+                            <span className="italic text-[rgba(26,21,18,0.45)]">gratuites</span>
+                            <span className="text-[var(--wk-accent)]">.</span>
                         </h1>
-                        <p className="text-gray-500 text-base sm:text-lg leading-relaxed mb-4">
-                            Synthèses, méthodes, formules — tout ce qu'il faut pour le Brevet, le
-                            Bac et les examens du supérieur. Les fiches sont rédigées et relues
-                            par les bénévoles de l'asso Workyt. Gratuit, sans pub, sans
-                            abonnement.
+                        <p className="mt-6 max-w-[58ch] text-lg leading-relaxed text-[rgba(26,21,18,0.68)]">
+                            Synthèses, méthodes, formules : tout ce qu&apos;il faut pour le Brevet, le Bac et les examens du
+                            supérieur. Rédigées et relues par la communauté de l&apos;association. Sans pub, sans abonnement.
                         </p>
-                        <p className="text-sm text-gray-500">
-                            Parcours par matière :{" "}
-                            <Link href="/fiches/matiere/mathematiques" className="text-orange-500 hover:underline">Mathématiques</Link>,{" "}
-                            <Link href="/fiches/matiere/sciences-de-la-vie-et-de-la-terre-svt" className="text-orange-500 hover:underline">SVT</Link>,{" "}
-                            <Link href="/fiches/matiere/physique-chimie" className="text-orange-500 hover:underline">Physique-Chimie</Link>,{" "}
-                            <Link href="/fiches/matiere/francais" className="text-orange-500 hover:underline">Français</Link>,{" "}
-                            <Link href="/fiches/matiere/histoire-geographie" className="text-orange-500 hover:underline">Histoire-Géographie</Link>,{" "}
-                            <Link href="/fiches/matiere/philosophie" className="text-orange-500 hover:underline">Philosophie</Link>.
-                        </p>
+                        <nav aria-label="Matières populaires" className="mt-6 flex flex-wrap gap-2">
+                            {popular.map((s) => (
+                                <Link
+                                    key={s}
+                                    href={`/fiches/matiere/${subjectToSlug(s)}`}
+                                    className="wk-chip !py-1.5 transition hover:border-[var(--wk-accent)] hover:text-[#c24a0a]"
+                                >
+                                    {s}
+                                </Link>
+                            ))}
+                        </nav>
+                    </div>
+                    <div className="lg:col-span-5">
+                        <FicheActions />
                     </div>
                 </div>
             </header>
 
-            {/* Catalogue interactif (filtres / recherche client) */}
+            {/* Catalogue interactif (filtres / recherche côté client) */}
             <Suspense fallback={null}>
                 <FichesPageClient />
             </Suspense>

@@ -1,0 +1,123 @@
+/* ==========================================
+   Blocs pédagogiques des leçons (définition, propriété, théorème,
+   remarque, attention, exemple) — style Workyt.
+
+   Même vocabulaire que le reste du site : carte blanche arrondie sur le
+   papier, tuile d'icône colorée, type en capitales espacées, titre en
+   Funnel Display. Pas de bordure latérale ni de fond teinté.
+   Le balisage est produit par LessonView (deux chemins de rendu).
+   ========================================== */
+
+.wk-block {
+  --wk-block-tile: #f5efe3;
+  --wk-block-icon: #1a1512;
+  --wk-block-label: rgba(26, 21, 18, 0.6);
+  --wk-block-border: rgba(26, 21, 18, 0.08);
+
+  margin: 1.75rem 0;
+  padding: 1.25rem 1.375rem 1.375rem;
+  background: #ffffff;
+  border: 1px solid var(--wk-block-border);
+  border-radius: 24px;
+}
+
+.wk-block__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.875rem;
+}
+
+.wk-block__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.75rem;
+  background: var(--wk-block-tile);
+  color: var(--wk-block-icon);
+}
+
+.wk-block__icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.wk-block__heading {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 0.125rem;
+}
+
+.wk-block__label {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  color: var(--wk-block-label);
+}
+
+.wk-block__title {
+  font-family: var(--font-funnel-display), system-ui, sans-serif;
+  font-size: 1.25rem;
+  line-height: 1.2;
+  color: #1a1512;
+}
+
+.wk-block__body {
+  color: #1a1512;
+  line-height: 1.7;
+}
+
+.wk-block__body > :first-child {
+  margin-top: 0;
+}
+
+.wk-block__body > :last-child {
+  margin-bottom: 0;
+}
+
+/* ─── Variantes : une couleur de la palette Workyt par type ─── */
+
+.wk-block--definition {
+  --wk-block-tile: #ff6a1a;
+  --wk-block-icon: #ffffff;
+  --wk-block-label: #c24a0a;
+}
+
+.wk-block--propriete {
+  --wk-block-tile: #6ec1e4;
+  --wk-block-icon: #1a1512;
+  --wk-block-label: #2f86b3;
+}
+
+.wk-block--theoreme {
+  --wk-block-tile: #1a1512;
+  --wk-block-icon: #ffb547;
+  --wk-block-label: #1a1512;
+}
+
+.wk-block--remarque {
+  --wk-block-tile: #f5efe3;
+  --wk-block-icon: #1a1512;
+  --wk-block-label: rgba(26, 21, 18, 0.6);
+}
+
+.wk-block--exemple {
+  --wk-block-tile: #7ed957;
+  --wk-block-icon: #1a1512;
+  --wk-block-label: #3f8a1f;
+}
+
+/* « Attention » doit se remarquer : c'est le seul bloc au contour coloré */
+.wk-block--attention {
+  --wk-block-tile: #e5484d;
+  --wk-block-icon: #ffffff;
+  --wk-block-label: #c2272d;
+  --wk-block-border: rgba(229, 72, 77, 0.35);
+}

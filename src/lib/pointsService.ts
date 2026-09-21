@@ -18,7 +18,11 @@ type PointAction =
   | 'verifyCourse'
   | 'createQuiz'
   | 'createExercisePack'
-  | 'winChallenge';
+  | 'winChallenge'
+  | 'completeAssignedResource'
+  | 'reachMentorshipGoal'
+  | 'mentorshipCheckin'
+  | 'mentorshipDuoStreak';
 
 /**
  * Ajoute des points a un utilisateur en appliquant le boost actif si present.
@@ -35,6 +39,7 @@ export async function addPointsWithBoost(
     course?: string;
     quiz?: string;
     challenge?: string;
+    mentorship?: string;
   }
 ): Promise<number> {
   if (basePoints <= 0) return 0;
@@ -56,6 +61,7 @@ export async function addPointsWithBoost(
   if (refs?.course) txData.course = refs.course;
   if (refs?.quiz) txData.quiz = refs.quiz;
   if (refs?.challenge) txData.challenge = refs.challenge;
+  if (refs?.mentorship) txData.mentorship = refs.mentorship;
 
   await PointTransaction.create(txData);
 
@@ -143,7 +149,7 @@ export async function awardPointsCapped(
   basePoints: number,
   action: PointAction,
   maxPerDay: number,
-  refs?: { challenge?: string; course?: string; quiz?: string },
+  refs?: { challenge?: string; course?: string; quiz?: string; mentorship?: string },
   now: Date = new Date()
 ): Promise<{ awarded: number; capped: boolean }> {
   if (basePoints <= 0) return { awarded: 0, capped: false };

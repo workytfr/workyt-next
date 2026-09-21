@@ -16,6 +16,7 @@ import {
     Loader2,
     Send,
 } from "lucide-react";
+import { useBackdropDismiss } from "@/hooks/useBackdropDismiss";
 
 const MAX_IMAGES = 2;
 const MAX_FILES = 4;
@@ -31,6 +32,7 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose, onSubmit
     const [content, setContent] = useState("");
     const [files, setFiles] = useState<File[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const backdrop = useBackdropDismiss(onClose, isSubmitting);
     const [showTips, setShowTips] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -142,9 +144,7 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose, onSubmit
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 className="fixed inset-x-0 bottom-0 top-[88px] sm:top-[96px] z-40 flex items-stretch justify-center bg-black/40 p-2 sm:p-4"
-                onClick={(e) => {
-                    if (e.target === e.currentTarget && !isSubmitting) onClose();
-                }}
+                {...backdrop}
             >
                 <motion.div
                     ref={popupRef}
@@ -198,8 +198,8 @@ const AnswerPopup: React.FC<AnswerPopupProps> = ({ questionId, onClose, onSubmit
                                         <ul className="list-disc pl-4 space-y-1 text-gray-700">
                                             <li>Explique ton raisonnement <b>étape par étape</b></li>
                                             <li>Utilise les <b>formules LaTeX</b> (bouton Σ) si besoin</li>
-                                            <li>Tu peux <b>dessiner un schéma</b> directement dans l'éditeur (bouton crayon)</li>
-                                            <li>Sois bienveillant — l'élève apprend</li>
+                                            <li>Tu peux <b>dessiner un schéma</b> directement dans l&apos;éditeur (bouton crayon)</li>
+                                            <li>Sois bienveillant — l&apos;élève apprend</li>
                                         </ul>
                                     </motion.div>
                                 )}

@@ -134,6 +134,15 @@ export default function Navbar() {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isBlogOpen]);
 
+    // Une page peut demander l'ouverture de la connexion (ex. « Se connecter
+    // pour demander un suivi ») sans dupliquer le formulaire :
+    // window.dispatchEvent(new Event('workyt:open-auth'))
+    useEffect(() => {
+        const open = () => setIsAuthOpen(true);
+        window.addEventListener('workyt:open-auth', open);
+        return () => window.removeEventListener('workyt:open-auth', open);
+    }, []);
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const urlParams = new URLSearchParams(window.location.search);
@@ -157,7 +166,11 @@ export default function Navbar() {
     };
 
     const isActive = (href: string) => pathname.startsWith(href);
-    const linkBase = "relative rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors";
+    const linkBase = "relative whitespace-nowrap rounded-full px-3 py-2 text-[15px] xl:px-3.5 2xl:px-4 font-semibold tracking-[-0.005em] transition-colors";
+    const linkActive = "bg-[rgba(255,106,26,0.1)] text-[#c24a0a]";
+    const linkIdle = "text-[rgba(26,21,18,0.82)] hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]";
+    // Entrées des menus déroulants (Blog, profil)
+    const menuItem = "mx-2 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[var(--wk-ink)] transition-colors hover:bg-[var(--wk-paper-2)]";
 
     return (
         <>
@@ -178,21 +191,17 @@ export default function Navbar() {
                         </Link>
 
                         {/* Desktop nav */}
-                        <div className="hidden flex-1 items-center justify-center gap-0.5 lg:flex xl:gap-1">
+                        <div className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex xl:gap-1">
                             {navLinks.map((link) => (
                                 <Link
                                     key={link.href}
                                     href={link.href}
                                     className={`${linkBase} ${
-                                        isActive(link.href)
-                                            ? "text-orange-600"
-                                            : "text-[rgba(26,21,18,0.75)] hover:bg-[rgba(26,21,18,0.05)] hover:text-[var(--wk-ink)]"
+                                        isActive(link.href) ? linkActive : linkIdle
                                     }`}
+                                    aria-current={isActive(link.href) ? "page" : undefined}
                                 >
                                     {link.label}
-                                    {isActive(link.href) && (
-                                        <span className="absolute -bottom-0.5 left-3 right-3 h-0.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500" />
-                                    )}
                                 </Link>
                             ))}
 
@@ -201,9 +210,7 @@ export default function Navbar() {
                                 <button
                                     onClick={() => setIsBlogOpen(!isBlogOpen)}
                                     className={`${linkBase} flex items-center gap-1 outline-none ${
-                                        pathname.includes("blog")
-                                            ? "text-orange-600"
-                                            : "text-[rgba(26,21,18,0.75)] hover:bg-[rgba(26,21,18,0.05)] hover:text-[var(--wk-ink)]"
+                                        pathname.includes("blog") || isBlogOpen ? linkActive : linkIdle
                                     }`}
                                 >
                                     Blog
@@ -211,15 +218,15 @@ export default function Navbar() {
                                 </button>
 
                                 {isBlogOpen && (
-                                    <div className="absolute left-1/2 top-full z-[200] mt-2 w-[220px] -translate-x-1/2 rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white py-2 shadow-xl">
+                                    <div className="absolute left-1/2 top-full z-[200] mt-2 w-[220px] -translate-x-1/2 rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white py-2 shadow-[0_18px_48px_rgba(26,21,18,0.14)]">
                                         {blogLinks.map((link) => (
                                             <Link
                                                 key={link.href}
                                                 href={link.href}
-                                                className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-orange-50 hover:text-orange-700"
+                                                className={menuItem}
                                                 onClick={() => setIsBlogOpen(false)}
                                             >
-                                                <link.icon className="h-4 w-4 text-gray-400" />
+                                                <link.icon className="h-4 w-4 text-[var(--wk-accent)]" />
                                                 {link.label}
                                             </Link>
                                         ))}
@@ -230,29 +237,29 @@ export default function Navbar() {
                             {/* Search */}
                             <button
                                 onClick={() => setIsSearchOpen(true)}
-                                className="ml-1 flex items-center gap-1.5 rounded-full border border-[rgba(26,21,18,0.1)] bg-[rgba(26,21,18,0.04)] px-3 py-1.5 text-sm text-gray-500 transition hover:bg-[rgba(26,21,18,0.08)] hover:text-[var(--wk-ink)] xl:gap-2"
+                                className="ml-1 flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border border-[rgba(26,21,18,0.1)] bg-[var(--wk-paper)] px-3 py-2 text-sm text-[rgba(26,21,18,0.62)] transition hover:border-[rgba(26,21,18,0.2)] hover:text-[var(--wk-ink)]"
                                 aria-label="Rechercher"
                             >
-                                <Search className="h-3.5 w-3.5 shrink-0" />
-                                <span className="hidden text-xs xl:inline">Rechercher…</span>
-                                <kbd className="hidden rounded border border-[rgba(26,21,18,0.15)] bg-white px-1.5 py-0.5 font-mono-ui text-[10px] xl:inline">
+                                <Search className="h-4 w-4 shrink-0" />
+                                <span className="hidden font-medium 2xl:inline">Rechercher…</span>
+                                <kbd className="hidden whitespace-nowrap rounded border border-[rgba(26,21,18,0.15)] bg-white px-1.5 py-0.5 font-mono-ui text-[10px] leading-none min-[1680px]:inline-block">
                                     Ctrl K
                                 </kbd>
                             </button>
                         </div>
 
                         {/* Desktop right side */}
-                        <div className="hidden flex-shrink-0 items-center gap-2 lg:flex xl:gap-3">
+                        <div className="hidden flex-shrink-0 items-center gap-2 lg:flex">
                             {/* Don */}
                             <Link
                                 href="https://www.helloasso.com/associations/workyt/formulaires/1"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="flex items-center gap-1.5 rounded-full border border-pink-200 px-3 py-1.5 text-sm font-medium text-pink-600 transition hover:bg-pink-50 hover:text-pink-700"
+                                className="flex items-center gap-1.5 rounded-full border border-[rgba(26,21,18,0.12)] px-3.5 py-2 text-sm font-semibold text-[var(--wk-ink)] transition hover:border-[var(--wk-accent)] hover:text-[#c24a0a]"
                             >
-                                <Heart className="h-3.5 w-3.5 shrink-0" />
-                                <span className="hidden xl:inline">Faire un don</span>
-                                <span className="xl:hidden">Don</span>
+                                <Heart className="h-4 w-4 shrink-0 fill-[var(--wk-accent)] text-[var(--wk-accent)]" />
+                                <span className="hidden 2xl:inline">Faire un don</span>
+                                <span className="2xl:hidden">Don</span>
                             </Link>
 
                             {session ? (
@@ -264,7 +271,7 @@ export default function Navbar() {
                                     <div ref={profileRef} className="relative">
                                         <button
                                             onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                            className="flex items-center gap-1.5 outline-none transition-opacity hover:opacity-80"
+                                            className="flex shrink-0 items-center gap-1 outline-none transition-opacity hover:opacity-80"
                                         >
                                             <ProfileCard
                                                 username={session.user.username}
@@ -273,18 +280,19 @@ export default function Navbar() {
                                                 role={session.user.role}
                                                 showChevron={false}
                                             />
-                                            <ChevronDownIcon className={`h-3.5 w-3.5 shrink-0 text-gray-400 transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`} />
+                                            <ChevronDownIcon className={`h-3.5 w-3.5 shrink-0 text-[rgba(26,21,18,0.5)] transition-transform duration-200 ${isProfileOpen ? "rotate-180" : ""}`} />
                                         </button>
 
                                         {isProfileOpen && (
-                                            <div className="absolute right-0 top-full z-[200] mt-2 w-64 rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white py-2 shadow-xl">
-                                                <div className="border-b border-gray-100 px-4 py-2.5">
-                                                    <p className="truncate text-xs text-gray-400">{session.user?.email}</p>
+                                            <div className="absolute right-0 top-full z-[200] mt-2 w-64 rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white py-2 shadow-[0_18px_48px_rgba(26,21,18,0.14)]">
+                                                <div className="border-b border-[rgba(26,21,18,0.06)] px-4 pb-3 pt-1.5">
+                                                    <p className="truncate text-sm font-semibold text-[var(--wk-ink)]">{session.user.username}</p>
+                                                    <p className="truncate text-xs text-[rgba(26,21,18,0.55)]">{session.user?.email}</p>
                                                 </div>
 
                                                 {isStaff && (
                                                     <div className="py-1">
-                                                        <Link href="/dashboard" className="mx-2 flex items-center gap-3 rounded-xl bg-orange-50 px-3 py-2.5 text-sm font-medium text-orange-700 transition-colors hover:bg-orange-100" onClick={() => setIsProfileOpen(false)}>
+                                                        <Link href="/dashboard" className="mx-2 flex items-center gap-3 rounded-xl bg-[rgba(255,106,26,0.1)] px-3 py-2.5 text-sm font-semibold text-[#c24a0a] transition-colors hover:bg-[rgba(255,106,26,0.16)]" onClick={() => setIsProfileOpen(false)}>
                                                             <LayoutDashboard className="h-4 w-4" />
                                                             Tableau de bord
                                                         </Link>
@@ -292,77 +300,77 @@ export default function Navbar() {
                                                 )}
 
                                                 <div className="py-1">
-                                                    <Link href={`/compte/${session.user.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                                                        <PersonIcon className="h-4 w-4 text-gray-400" />
+                                                    <Link href={`/compte/${session.user.id}`} className={menuItem} onClick={() => setIsProfileOpen(false)}>
+                                                        <PersonIcon className="h-4 w-4 text-[rgba(26,21,18,0.5)]" />
                                                         Mon Compte
                                                     </Link>
-                                                    <Link href="/award" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                                                        <Ticket className="h-4 w-4 text-orange-400" />
+                                                    <Link href="/award" className={menuItem} onClick={() => setIsProfileOpen(false)}>
+                                                        <Ticket className="h-4 w-4 text-[var(--wk-accent)]" />
                                                         Workyt Award
                                                     </Link>
-                                                    <Link href="/recompenses" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                                                        <StarIcon className="h-4 w-4 text-gray-400" />
+                                                    <Link href="/recompenses" className={menuItem} onClick={() => setIsProfileOpen(false)}>
+                                                        <StarIcon className="h-4 w-4 text-[rgba(26,21,18,0.5)]" />
                                                         Récompenses
                                                     </Link>
-                                                    <Link href="/gems" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                                                        <StarFilledIcon className="h-4 w-4 text-gray-400" />
+                                                    <Link href="/gems" className={menuItem} onClick={() => setIsProfileOpen(false)}>
+                                                        <StarFilledIcon className="h-4 w-4 text-[rgba(26,21,18,0.5)]" />
                                                         Gemmes
                                                     </Link>
                                                 </div>
 
-                                                <div className="my-1 h-px bg-gray-100" />
+                                                <div className="my-1 h-px bg-[rgba(26,21,18,0.06)]" />
 
                                                 <button
                                                     onClick={() => {
                                                         setIsProfileOpen(false);
                                                         setIsQuestsOpen(true);
                                                     }}
-                                                    className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                                                    className={`${menuItem} w-[calc(100%-1rem)] text-left`}
                                                 >
-                                                    <Gift className="mr-2 h-4 w-4" />
+                                                    <Gift className="h-4 w-4 text-[rgba(26,21,18,0.5)]" />
                                                     Quêtes
                                                 </button>
 
-                                                <div className="my-1 h-px bg-gray-100" />
+                                                <div className="my-1 h-px bg-[rgba(26,21,18,0.06)]" />
 
                                                 <div className="py-1">
-                                                    <Link href="/fiches/creer" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                                                        <FileTextIcon className="h-4 w-4 text-gray-400" />
+                                                    <Link href="/fiches/creer" className={menuItem} onClick={() => setIsProfileOpen(false)}>
+                                                        <FileTextIcon className="h-4 w-4 text-[rgba(26,21,18,0.5)]" />
                                                         Partager une fiche
                                                     </Link>
-                                                    <Link href="/forum/creer" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-gray-50" onClick={() => setIsProfileOpen(false)}>
-                                                        <ChatBubbleIcon className="h-4 w-4 text-gray-400" />
+                                                    <Link href="/forum/creer" className={menuItem} onClick={() => setIsProfileOpen(false)}>
+                                                        <ChatBubbleIcon className="h-4 w-4 text-[rgba(26,21,18,0.5)]" />
                                                         Déposer une question
                                                     </Link>
                                                 </div>
 
-                                                <div className="my-1 h-px bg-gray-100" />
+                                                <div className="my-1 h-px bg-[rgba(26,21,18,0.06)]" />
 
-                                                <Link href="https://dc.gg/workyt" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 transition-colors hover:bg-indigo-50 hover:text-indigo-700" onClick={() => setIsProfileOpen(false)}>
+                                                <Link href="https://dc.gg/workyt" target="_blank" rel="noopener noreferrer" className={menuItem} onClick={() => setIsProfileOpen(false)}>
                                                     <DiscordLogoIcon className="h-4 w-4 text-indigo-500" />
                                                     Discord
                                                 </Link>
 
-                                                <div className="my-1 h-px bg-gray-100" />
+                                                <div className="my-1 h-px bg-[rgba(26,21,18,0.06)]" />
 
                                                 <div className="flex items-center justify-center gap-3 px-4 py-2.5">
-                                                    <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="p-1 text-gray-400 transition-colors hover:text-blue-400">
+                                                    <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="rounded-full p-1.5 text-[rgba(26,21,18,0.45)] transition-colors hover:text-blue-400">
                                                         <TwitterLogoIcon className="h-4 w-4" />
                                                     </a>
-                                                    <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="p-1 text-gray-400 transition-colors hover:text-pink-500">
+                                                    <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="rounded-full p-1.5 text-[rgba(26,21,18,0.45)] transition-colors hover:text-pink-500">
                                                         <InstagramLogoIcon className="h-4 w-4" />
                                                     </a>
-                                                    <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="p-1 text-gray-400 transition-colors hover:text-red-500">
+                                                    <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="rounded-full p-1.5 text-[rgba(26,21,18,0.45)] transition-colors hover:text-red-500">
                                                         <VideoIcon className="h-4 w-4" />
                                                     </a>
-                                                    <a href="https://www.linkedin.com/company/workyt" target="_blank" rel="noopener noreferrer" className="p-1 text-gray-400 transition-colors hover:text-blue-600">
+                                                    <a href="https://www.linkedin.com/company/workyt" target="_blank" rel="noopener noreferrer" className="rounded-full p-1.5 text-[rgba(26,21,18,0.45)] transition-colors hover:text-blue-600">
                                                         <LinkedInLogoIcon className="h-4 w-4" />
                                                     </a>
                                                 </div>
 
-                                                <div className="my-1 h-px bg-gray-100" />
+                                                <div className="my-1 h-px bg-[rgba(26,21,18,0.06)]" />
 
-                                                <button onClick={handleSignOut} className="flex w-full items-center gap-3 px-4 py-2.5 text-sm text-red-600 transition-colors hover:bg-red-50">
+                                                <button onClick={handleSignOut} className="mx-2 flex w-[calc(100%-1rem)] items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-red-600 transition-colors hover:bg-red-50">
                                                     <ExitIcon className="h-4 w-4" />
                                                     Déconnexion
                                                 </button>
@@ -389,14 +397,14 @@ export default function Navbar() {
                             {session && <StatusCluster userId={session.user.id} />}
                             <button
                                 onClick={() => setIsSearchOpen(true)}
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-gray-500 transition-colors touch-manipulation active:bg-[rgba(26,21,18,0.08)]"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-[rgba(26,21,18,0.7)] transition-colors touch-manipulation active:bg-[rgba(26,21,18,0.08)]"
                                 aria-label="Rechercher"
                             >
                                 <Search className="h-5 w-5" />
                             </button>
                             {session && <NotificationBell />}
                             <button
-                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-gray-700 transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-orange-200 active:bg-[rgba(26,21,18,0.08)]"
+                                className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-[var(--wk-ink)] transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-[rgba(255,106,26,0.3)] active:bg-[rgba(26,21,18,0.08)]"
                                 onClick={() => setIsMenuOpen(!isMenuOpen)}
                                 aria-label={isMenuOpen ? "Fermer le menu" : "Ouvrir le menu"}
                             >
@@ -425,11 +433,11 @@ export default function Navbar() {
                 aria-modal="true"
                 aria-label="Menu de navigation"
             >
-                <div className="flex shrink-0 items-center justify-between border-b border-gray-100 p-4 safe-area-top">
+                <div className="flex shrink-0 items-center justify-between border-b border-[rgba(26,21,18,0.06)] p-4 safe-area-top">
                     <WorkytLogo className="h-6" />
                     <button
                         onClick={closeMobileMenu}
-                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-500 transition-colors touch-manipulation hover:bg-gray-100 active:bg-gray-200"
+                        className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[rgba(26,21,18,0.7)] transition-colors touch-manipulation hover:bg-[var(--wk-paper-2)] active:bg-[rgba(26,21,18,0.1)]"
                         aria-label="Fermer le menu"
                     >
                         <Cross2Icon className="h-5 w-5" />
@@ -444,10 +452,10 @@ export default function Navbar() {
                                 <Link
                                     key={link.href}
                                     href={link.href}
-                                    className={`flex min-h-[48px] items-center justify-between px-5 py-3 text-base font-medium transition-colors active:bg-gray-100 ${
+                                    className={`flex min-h-[48px] items-center justify-between px-5 py-3 text-base font-semibold transition-colors active:bg-[var(--wk-paper-2)] ${
                                         isActive(link.href)
-                                            ? "bg-orange-50/80 text-orange-600"
-                                            : "text-gray-700"
+                                            ? "bg-[rgba(255,106,26,0.1)] text-[#c24a0a]"
+                                            : "text-[var(--wk-ink)]"
                                     }`}
                                     onClick={closeMobileMenu}
                                 >
@@ -455,30 +463,30 @@ export default function Navbar() {
                                         <Icon className="h-5 w-5 shrink-0" />
                                         {link.label}
                                     </span>
-                                    <ChevronRight className="h-4 w-4 shrink-0 text-gray-300" />
+                                    <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)]" />
                                 </Link>
                             );
                         })}
 
                         <button
                             onClick={() => setIsBlogOpenMobile(!isBlogOpenMobile)}
-                            className={`flex min-h-[48px] w-full items-center justify-between px-5 py-3 text-base font-medium transition-colors active:bg-gray-100 ${
-                                isBlogOpenMobile ? "bg-orange-50/80 text-orange-600" : "text-gray-700"
+                            className={`flex min-h-[48px] w-full items-center justify-between px-5 py-3 text-base font-semibold transition-colors active:bg-[var(--wk-paper-2)] ${
+                                isBlogOpenMobile ? "bg-[rgba(255,106,26,0.1)] text-[#c24a0a]" : "text-[var(--wk-ink)]"
                             }`}
                         >
                             <span className="flex items-center gap-3">
                                 <Newspaper className="h-5 w-5 shrink-0" />
                                 Blog
                             </span>
-                            <ChevronDownIcon className={`h-4 w-4 shrink-0 text-gray-300 transition-transform duration-200 ${isBlogOpenMobile ? "rotate-180" : ""}`} />
+                            <ChevronDownIcon className={`h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)] transition-transform duration-200 ${isBlogOpenMobile ? "rotate-180" : ""}`} />
                         </button>
                         {isBlogOpenMobile && (
-                            <div className="bg-gray-50/50">
+                            <div className="bg-[var(--wk-paper)]">
                                 {blogLinks.map((link) => (
                                     <Link
                                         key={link.href}
                                         href={link.href}
-                                        className="flex min-h-[44px] items-center pl-14 pr-5 text-sm text-gray-600 transition-colors active:bg-gray-100 active:text-orange-600"
+                                        className="flex min-h-[44px] items-center pl-14 pr-5 text-[15px] font-medium text-[rgba(26,21,18,0.78)] transition-colors active:bg-[var(--wk-paper-2)] active:text-[#c24a0a]"
                                         onClick={closeMobileMenu}
                                     >
                                         {link.label}
@@ -488,20 +496,20 @@ export default function Navbar() {
                         )}
                     </div>
 
-                    <div className="mx-4 my-2 h-px bg-gray-100" />
+                    <div className="mx-4 my-2 h-px bg-[rgba(26,21,18,0.06)]" />
 
                     <Link
                         href="https://www.helloasso.com/associations/workyt/formulaires/1"
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex min-h-[48px] items-center gap-3 px-5 py-3 text-base font-medium text-pink-600 transition-colors active:bg-pink-50"
+                        className="flex min-h-[48px] items-center gap-3 px-5 py-3 text-base font-semibold text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]"
                         onClick={closeMobileMenu}
                     >
-                        <Heart className="h-5 w-5 shrink-0" />
+                        <Heart className="h-5 w-5 shrink-0 fill-[var(--wk-accent)] text-[var(--wk-accent)]" />
                         Faire un don
                     </Link>
 
-                    <div className="mx-4 my-2 h-px bg-gray-100" />
+                    <div className="mx-4 my-2 h-px bg-[rgba(26,21,18,0.06)]" />
 
                     {session ? (
                         <>
@@ -516,7 +524,7 @@ export default function Navbar() {
 
                             {isStaff && (
                                 <div className="py-1">
-                                    <Link href="/dashboard" className="mx-4 flex min-h-[44px] items-center gap-3 rounded-xl bg-orange-50 px-4 py-3 text-sm font-medium text-orange-700 transition-colors active:bg-orange-100" onClick={closeMobileMenu}>
+                                    <Link href="/dashboard" className="mx-4 flex min-h-[44px] items-center gap-3 rounded-xl bg-[rgba(255,106,26,0.1)] px-4 py-3 text-[15px] font-semibold text-[#c24a0a] transition-colors active:bg-[rgba(255,106,26,0.16)]" onClick={closeMobileMenu}>
                                         <LayoutDashboard className="h-4 w-4 shrink-0" />
                                         Tableau de bord
                                     </Link>
@@ -524,31 +532,31 @@ export default function Navbar() {
                             )}
 
                             <div className="py-1">
-                                <Link href={`/compte/${session.user.id}`} className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
-                                    <PersonIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                                <Link href={`/compte/${session.user.id}`} className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
+                                    <PersonIcon className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.5)]" />
                                     Mon Compte
                                 </Link>
                                 {/* Reprise du BookmarkBell, retiré de la barre mobile
                                     pour ne pas dépasser quatre cibles à 360px. */}
-                                <Link href="/fiches/favoris" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
-                                    <StarIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                                <Link href="/fiches/favoris" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
+                                    <StarIcon className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.5)]" />
                                     Mes favoris
                                 </Link>
-                                <Link href="/award" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
-                                    <Ticket className="h-4 w-4 shrink-0 text-orange-400" />
+                                <Link href="/award" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
+                                    <Ticket className="h-4 w-4 shrink-0 text-[var(--wk-accent)]" />
                                     Workyt Award
                                 </Link>
-                                <Link href="/recompenses" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
-                                    <StarIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                                <Link href="/recompenses" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
+                                    <StarIcon className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.5)]" />
                                     Récompenses
                                 </Link>
-                                <Link href="/gems" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
-                                    <StarFilledIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                                <Link href="/gems" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
+                                    <StarFilledIcon className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.5)]" />
                                     Gemmes
                                 </Link>
                             </div>
 
-                            <div className="mx-4 my-2 h-px bg-gray-100" />
+                            <div className="mx-4 my-2 h-px bg-[rgba(26,21,18,0.06)]" />
 
                             <div className="px-2 py-1">
                                 <button
@@ -556,51 +564,51 @@ export default function Navbar() {
                                         closeMobileMenu();
                                         setIsQuestsOpen(true);
                                     }}
-                                    className="flex w-full items-center px-4 py-2 text-left text-sm text-gray-700 transition-colors hover:bg-gray-50"
+                                    className="flex min-h-[44px] w-full items-center gap-3 px-3 py-3 text-left text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]"
                                 >
-                                    <Gift className="mr-2 h-4 w-4" />
+                                    <Gift className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.5)]" />
                                     Quêtes
                                 </button>
                             </div>
 
-                            <div className="mx-4 my-2 h-px bg-gray-100" />
+                            <div className="mx-4 my-2 h-px bg-[rgba(26,21,18,0.06)]" />
 
                             <div className="py-1">
-                                <Link href="/fiches/creer" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
-                                    <FileTextIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                                <Link href="/fiches/creer" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
+                                    <FileTextIcon className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.5)]" />
                                     Partager une fiche
                                 </Link>
-                                <Link href="/forum/creer" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-gray-50" onClick={closeMobileMenu}>
-                                    <ChatBubbleIcon className="h-4 w-4 shrink-0 text-gray-400" />
+                                <Link href="/forum/creer" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
+                                    <ChatBubbleIcon className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.5)]" />
                                     Déposer une question
                                 </Link>
                             </div>
 
-                            <div className="mx-4 my-2 h-px bg-gray-100" />
+                            <div className="mx-4 my-2 h-px bg-[rgba(26,21,18,0.06)]" />
 
-                            <Link href="https://dc.gg/workyt" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-sm text-gray-700 transition-colors active:bg-indigo-50 active:text-indigo-700" onClick={closeMobileMenu}>
+                            <Link href="https://dc.gg/workyt" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] items-center gap-3 px-5 py-3 text-[15px] font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]" onClick={closeMobileMenu}>
                                 <DiscordLogoIcon className="h-4 w-4 shrink-0 text-indigo-500" />
                                 Discord
                             </Link>
 
-                            <div className="mx-4 my-2 h-px bg-gray-100" />
+                            <div className="mx-4 my-2 h-px bg-[rgba(26,21,18,0.06)]" />
 
                             <div className="flex items-center justify-center gap-1">
-                                <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-400 transition-colors active:text-blue-400">
+                                <a href="https://twitter.com/workyt_fr?lang=fr" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[rgba(26,21,18,0.5)] transition-colors active:text-blue-400">
                                     <TwitterLogoIcon className="h-5 w-5" />
                                 </a>
-                                <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-400 transition-colors active:text-pink-500">
+                                <a href="https://www.instagram.com/workyt/?hl=fr" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[rgba(26,21,18,0.5)] transition-colors active:text-pink-500">
                                     <InstagramLogoIcon className="h-5 w-5" />
                                 </a>
-                                <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-400 transition-colors active:text-red-500">
+                                <a href="https://www.youtube.com/channel/UCp1tqlZATPdyB1FxIAqQeJg" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[rgba(26,21,18,0.5)] transition-colors active:text-red-500">
                                     <VideoIcon className="h-5 w-5" />
                                 </a>
-                                <a href="https://www.linkedin.com/company/workyt" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-gray-400 transition-colors active:text-blue-600">
+                                <a href="https://www.linkedin.com/company/workyt" target="_blank" rel="noopener noreferrer" className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full text-[rgba(26,21,18,0.5)] transition-colors active:text-blue-600">
                                     <LinkedInLogoIcon className="h-5 w-5" />
                                 </a>
                             </div>
 
-                            <div className="mx-4 my-2 h-px bg-gray-100" />
+                            <div className="mx-4 my-2 h-px bg-[rgba(26,21,18,0.06)]" />
 
                             <button onClick={handleSignOut} className="flex min-h-[48px] w-full items-center gap-3 rounded-lg px-5 py-3 text-sm font-medium text-red-600 transition-colors active:bg-red-50">
                                 <ExitIcon className="h-4 w-4 shrink-0" />

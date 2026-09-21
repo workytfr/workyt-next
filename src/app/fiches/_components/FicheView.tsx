@@ -5,15 +5,23 @@ import { useSession } from "next-auth/react";
 import ReactMarkdown from "react-markdown";
 import { sharedRemarkPlugins, sharedRehypePlugins } from "@/lib/markdownPlugins";
 import "katex/dist/katex.min.css";
-import { Badge } from "@/components/ui/Badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
-import SubjectIcon from "@/components/fiches/SubjectIcon";
-import { CalendarIcon, LockClosedIcon, ReloadIcon } from "@radix-ui/react-icons";
-import { FileText, ArrowLeft, BookOpen } from "lucide-react";
-import CommentForm from "@/app/fiches/_components/CommentForm";
+import {
+    FileText,
+    ArrowLeft,
+    BookOpen,
+    ChevronRight,
+    MessageCircle,
+    Lock,
+    RefreshCw,
+    AlertTriangle,
+    HeartHandshake,
+    ArrowUpRight,
+    PenLine,
+    CalendarDays,
+} from "lucide-react";
 import FileViewer from "@/app/fiches/_components/FileViewer";
 import LikedByList from "@/app/fiches/_components/LikedByList";
 import CommentsList from "@/app/fiches/_components/CommentsList";
@@ -21,12 +29,17 @@ import StatusChanger from "@/app/fiches/_components/StatusChanger";
 import DeleteFicheButton from "@/app/fiches/_components/DeleteFicheButton";
 import ReportButton from "@/components/ReportButton";
 import BookmarkButton from "@/components/BookmarkButton";
-import { subjectGradients } from "@/data/educationData";
+import { PAGE_CONTAINER, SubjectLabel, LevelChip } from "@/components/wk/primitives";
+import { subjectToSlug, levelToSlug } from "@/utils/subjectSlug";
+import { FicheStatusChip, ficheStatusTint } from "./ficheUi";
 
 interface FicheViewProps {
     id: string;
     initialFiche?: any;
 }
+
+/** Ouvre la fenêtre de connexion de la navbar (il n'existe pas de page /connexion) */
+const openAuth = () => window.dispatchEvent(new Event("workyt:open-auth"));
 
 export default function FicheView({ id, initialFiche }: FicheViewProps) {
     const { data: session } = useSession();
@@ -109,26 +122,18 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gradient-to-r from-orange-400 to-pink-500">
-                <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-8 space-y-6">
-                    <div className="p-8 bg-white rounded-xl shadow-lg space-y-6 relative overflow-hidden">
-                        {isRetrying && (
-                            <div className="absolute top-0 left-0 w-full h-1 bg-orange-200">
-                                <div className="h-full bg-gradient-to-r from-orange-400 to-pink-500 animate-progress"></div>
-                            </div>
-                        )}
-                        <div className="flex flex-col gap-4">
-                            <Skeleton className="h-10 w-3/4 rounded-lg bg-gray-200" />
-                            <Skeleton className="h-6 w-1/2 rounded-lg bg-gray-200" />
+            <div className="min-h-screen bg-[var(--wk-paper)]">
+                <div className={`${PAGE_CONTAINER} py-10`}>
+                    {isRetrying && (
+                        <div className="mb-6 h-1 w-full overflow-hidden rounded-full bg-[rgba(255,106,26,0.15)]">
+                            <div className="h-full w-1/2 animate-pulse bg-[var(--wk-accent)]" />
                         </div>
-                        <div className="h-64 w-full bg-gray-200 rounded-lg flex items-center justify-center">
-                            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-orange-500"></div>
-                        </div>
-                        <div className="space-y-4">
-                            <Skeleton className="h-6 w-full rounded-lg bg-gray-200" />
-                            <Skeleton className="h-6 w-11/12 rounded-lg bg-gray-200" />
-                            <Skeleton className="h-6 w-10/12 rounded-lg bg-gray-200" />
-                        </div>
+                    )}
+                    <Skeleton className="h-4 w-48 rounded-full" />
+                    <Skeleton className="mt-6 h-12 w-2/3 rounded-2xl" />
+                    <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_340px]">
+                        <Skeleton className="h-[420px] rounded-3xl" />
+                        <Skeleton className="h-[260px] rounded-3xl" />
                     </div>
                 </div>
             </div>
@@ -137,40 +142,27 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
 
     if (error) {
         return (
-            <div className="min-h-screen bg-gray-50">
-                <div className="max-w-4xl w-full mx-auto px-4 md:px-8 py-16">
-                    <div className="p-8 bg-white rounded-xl shadow-lg">
-                        <div className="mb-8 text-center">
-                            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-100 text-red-500 mb-4">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                            <h2 className="text-2xl font-bold text-gray-800 mb-2">Une erreur est survenue</h2>
-                            <p className="text-gray-600 mb-6">{error}</p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <Button
-                                    onClick={handleRetry}
-                                    className="flex items-center justify-center gap-2 bg-gradient-to-r from-orange-400 to-pink-500 hover:opacity-90 text-white"
-                                >
-                                    <ReloadIcon className="h-4 w-4" /> Réessayer
-                                </Button>
-                                <Link href="/fiches">
-                                    <Button variant="outline" className="flex items-center justify-center gap-2">
-                                        <ArrowLeft size={16} /> Retour aux fiches
-                                    </Button>
-                                </Link>
-                            </div>
+            <div className="min-h-screen bg-[var(--wk-paper)]">
+                <div className="mx-auto max-w-xl px-4 py-16">
+                    <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-8 text-center">
+                        <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-red-50 text-red-600">
+                            <AlertTriangle className="h-7 w-7" />
+                        </span>
+                        <h2 className="font-serif-display mt-4 text-3xl">Une erreur est survenue</h2>
+                        <p className="mt-2 text-sm text-[rgba(26,21,18,0.65)]">{error}</p>
+                        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+                            <button type="button" onClick={handleRetry} className="wk-btn-orange justify-center !py-2.5 text-sm">
+                                <RefreshCw className="h-4 w-4" /> Réessayer
+                            </button>
+                            <Link href="/fiches" className="wk-btn-ghost justify-center !py-2.5 text-sm">
+                                <ArrowLeft className="h-4 w-4" /> Retour aux fiches
+                            </Link>
                         </div>
-                        <div className="border-t border-gray-200 pt-6 mt-6">
-                            <h3 className="text-sm font-medium text-gray-900 mb-2">Suggestions:</h3>
-                            <ul className="text-sm text-gray-600 list-disc pl-5 space-y-1">
-                                <li>Vérifiez votre connexion internet</li>
-                                <li>Le serveur peut être momentanément surchargé</li>
-                                <li>L&apos;identifiant de la fiche est peut-être incorrect</li>
-                                <li>La fiche a peut-être été supprimée</li>
-                            </ul>
-                        </div>
+                        <ul className="mt-8 space-y-1 border-t border-[rgba(26,21,18,0.06)] pt-6 text-left text-sm text-[rgba(26,21,18,0.6)]">
+                            <li>· Vérifie ta connexion internet</li>
+                            <li>· Le serveur peut être momentanément surchargé</li>
+                            <li>· La fiche a peut-être été supprimée</li>
+                        </ul>
                     </div>
                 </div>
             </div>
@@ -182,212 +174,210 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
     const isCreator = currentUser && fiche && currentUser.id === fiche.author._id.toString();
     const isAdmin = currentUser?.role === "Admin";
 
-    const getStatusBadgeStyle = (status: string) => {
-        switch (status) {
-            case "Certifiée":
-                return "bg-blue-100 text-blue-800 border-blue-300 shadow-md shadow-blue-100";
-            case "Vérifiée":
-                return "bg-green-100 text-green-800 border-green-300 shadow-md shadow-green-100";
-            default:
-                return "bg-gray-100 text-gray-800 border-gray-300";
-        }
-    };
-
-    const subjectGradient = subjectGradients[fiche.subject] || "from-orange-500 to-pink-500";
-
-    const renderStatusBadge = (status: string) => {
-        if (status === "Certifiée") {
-            return (
-                <div className="relative flex items-center gap-2">
-                    <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)} relative z-10`}>{status}</Badge>
-                    <div className="relative">
-                        <div className="absolute inset-0 rounded-full bg-blue-400 opacity-25 animate-pulse"></div>
-                        <img src={`/badge/${status}.svg`} alt={`Statut: ${status}`} className="h-12 w-12 relative z-10 filter drop-shadow-lg" />
-                        <div className="absolute inset-0 bg-gradient-to-br from-white to-transparent opacity-60 rounded-full animate-shine"></div>
-                    </div>
-                </div>
-            );
-        } else if (status === "Vérifiée") {
-            return (
-                <div className="flex items-center gap-2">
-                    <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)}`}>{status}</Badge>
-                    <img src={`/badge/${status}.svg`} alt={`Statut: ${status}`} className="h-10 w-10 filter drop-shadow" />
-                </div>
-            );
-        }
-        return (
-            <div className="flex items-center gap-2">
-                <Badge className={`px-3 py-1 ${getStatusBadgeStyle(status)}`}>{status}</Badge>
-                <img src={`/badge/${status}.svg`} alt={`Statut: ${status}`} className="h-8 w-8" />
-            </div>
-        );
-    };
-
-    // Détecter le type du premier fichier
+    // Type du premier fichier joint
     const firstFileUrl = fiche.files?.[0] || "";
     const firstFileBase = firstFileUrl.split("?")[0].toLowerCase();
     const hasPdfFile = fiche.files?.length > 0 && firstFileBase.endsWith(".pdf");
-    const hasImageFile = fiche.files?.length > 0 && (firstFileBase.endsWith(".jpg") || firstFileBase.endsWith(".jpeg") || firstFileBase.endsWith(".png") || firstFileBase.endsWith(".webp"));
+    const hasImageFile =
+        fiche.files?.length > 0 &&
+        (firstFileBase.endsWith(".jpg") || firstFileBase.endsWith(".jpeg") || firstFileBase.endsWith(".png") || firstFileBase.endsWith(".webp"));
+
+    const card = "rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white";
+    const commentsCount = fiche.comments?.length || 0;
 
     return (
-        <div className="min-h-screen flex flex-col bg-gray-50 overflow-x-hidden text-black">
-            {/* En-tête */}
-            <div
-                className={`w-full py-10 md:py-14 bg-gradient-to-r ${subjectGradient}`}
-                style={{ textShadow: "0px 2px 4px rgba(0, 0, 0, 0.2)" }}
-            >
-                <div className="max-w-4xl mx-auto px-4 md:px-8">
-                    <Link href="/fiches" className="inline-flex items-center gap-1.5 text-white/80 hover:text-white text-sm mb-4 transition-colors">
-                        <ArrowLeft size={16} />
-                        <span>Retour aux fiches</span>
-                    </Link>
-                    <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
-                                    <SubjectIcon subject={fiche.subject} size={24} className="text-white" />
-                                </div>
-                                <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1 rounded-full text-sm">{fiche.subject}</Badge>
-                                <Badge className="bg-white/20 backdrop-blur-sm text-white border-white/30 px-3 py-1 rounded-full text-sm">{fiche.level}</Badge>
-                            </div>
-                            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{fiche.title}</h1>
-                            <div className="flex flex-wrap items-center gap-3 text-white/80 text-sm">
-                                <span className="flex items-center">
-                                    <CalendarIcon className="mr-2" />
-                                    Publié le {new Date(fiche.createdAt).toLocaleDateString("fr-FR")}
+        <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
+            {/* ─── En-tête ─── */}
+            <header className="border-b border-[rgba(26,21,18,0.08)]">
+                <div className={`${PAGE_CONTAINER} pb-8 pt-8 md:pb-10 md:pt-10`}>
+                    <nav aria-label="Fil d'Ariane" className="flex flex-wrap items-center gap-1.5 text-sm text-[rgba(26,21,18,0.55)]">
+                        <Link href="/" className="hover:text-[var(--wk-accent)]">Accueil</Link>
+                        <ChevronRight className="h-3.5 w-3.5" />
+                        <Link href="/fiches" className="hover:text-[var(--wk-accent)]">Fiches</Link>
+                        {fiche.subject && (
+                            <>
+                                <ChevronRight className="h-3.5 w-3.5" />
+                                <Link href={`/fiches/matiere/${subjectToSlug(fiche.subject)}`} className="hover:text-[var(--wk-accent)]">{fiche.subject}</Link>
+                            </>
+                        )}
+                        {fiche.level && (
+                            <>
+                                <ChevronRight className="h-3.5 w-3.5" />
+                                <Link href={`/fiches/niveau/${levelToSlug(fiche.level)}`} className="hover:text-[var(--wk-accent)]">{fiche.level}</Link>
+                            </>
+                        )}
+                    </nav>
+
+                    <div className="mt-6 flex flex-wrap items-center gap-2.5">
+                        {fiche.subject && <SubjectLabel subject={fiche.subject} />}
+                        {fiche.level && <LevelChip level={fiche.level} />}
+                        <FicheStatusChip status={fiche.status} />
+                    </div>
+                    <h1 className="font-serif-display mt-4 max-w-5xl text-[clamp(1.9rem,4vw,3.25rem)] leading-[1.02]">{fiche.title}</h1>
+
+                    <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-3">
+                        <div className="flex items-center gap-3">
+                            <ProfileAvatar
+                                username={fiche.author?.username || "Inconnu"}
+                                points={fiche.author?.points || 0}
+                                userId={fiche.author?._id}
+                                role={fiche.author?.role}
+                                size="small"
+                            />
+                            <div className="leading-tight">
+                                <Link href={`/compte/${fiche.author?._id}`} className="hover:underline">
+                                    <UsernameDisplay
+                                        username={fiche.author?.username || "Inconnu"}
+                                        userId={fiche.author?._id}
+                                        className="text-sm font-semibold"
+                                        role={fiche.author?.role}
+                                    />
+                                </Link>
+                                <span className="flex items-center gap-1 text-xs text-[rgba(26,21,18,0.5)]">
+                                    <CalendarDays className="h-3 w-3" />
+                                    Publiée le {new Date(fiche.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
                                 </span>
-                                {fiche.courseId && (
-                                    <Link
-                                        href={`/cours/${fiche.courseId._id || fiche.courseId}`}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-white/20 backdrop-blur-sm rounded-full text-white hover:bg-white/30 transition-colors text-xs font-medium"
-                                    >
-                                        <BookOpen className="w-3.5 h-3.5" />
-                                        {fiche.courseId.title || "Voir le cours"}
-                                    </Link>
-                                )}
                             </div>
                         </div>
-                        <BookmarkButton revisionId={fiche._id} size="lg" className="mt-2 p-2 bg-white/20 backdrop-blur-sm rounded-full" />
+                        {fiche.courseId && (
+                            <Link
+                                href={`/cours/${fiche.courseId._id || fiche.courseId}`}
+                                className="wk-chip !py-1.5 transition hover:border-[var(--wk-accent)] hover:text-[#c24a0a]"
+                            >
+                                <BookOpen className="h-3.5 w-3.5" />
+                                {fiche.courseId.title || "Voir le cours"}
+                            </Link>
+                        )}
                     </div>
                 </div>
-            </div>
+            </header>
 
-            <div className="max-w-4xl w-full mx-auto px-4 md:px-8 -mt-8 mb-12 relative z-10">
-                {/* Carte principale */}
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                    {/* Auteur + statut */}
-                    <div className="p-4 md:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-gray-100">
-                        <div className="flex items-center gap-3">
-                            <ProfileAvatar username={fiche.author?.username || "Inconnu"} points={fiche.author?.points || 0} userId={fiche.author?._id} role={fiche.author?.role} />
-                            <div>
-                                <Link href={`/compte/${fiche.author?._id}`}>
-                                    <UsernameDisplay username={fiche.author?.username || "Inconnu"} userId={fiche.author?._id} className="font-medium hover:underline cursor-pointer block" role={fiche.author?.role} />
-                                </Link>
-                                <p className="text-sm text-gray-500">Auteur</p>
+            <div className={`${PAGE_CONTAINER} py-8 md:py-10`}>
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-10">
+                    {/* ─── Colonne principale ─── */}
+                    <main className="min-w-0 space-y-6">
+                        <article className={`${card} overflow-hidden`} style={ficheStatusTint(fiche.status)}>
+                            {/* Aperçu image (seulement pour les images, pas les PDF) */}
+                            {hasImageFile && (
+                                <div className="aspect-video w-full overflow-hidden border-b border-[rgba(26,21,18,0.06)] bg-[var(--wk-paper)]">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                                    <img src={`/api/file-proxy?ficheId=${fiche._id}&index=0`} alt="Aperçu de la fiche" className="h-full w-full object-contain" />
+                                </div>
+                            )}
+                            {fiche.content ? (
+                                <div className="prose max-w-none p-5 text-[rgba(26,21,18,0.88)] prose-headings:font-serif-display prose-headings:font-normal prose-headings:text-[var(--wk-ink)] sm:p-8">
+                                    <ReactMarkdown remarkPlugins={sharedRemarkPlugins} rehypePlugins={sharedRehypePlugins as any}>
+                                        {fiche.content}
+                                    </ReactMarkdown>
+                                </div>
+                            ) : (
+                                !hasImageFile && (
+                                    <p className="p-8 text-sm text-[rgba(26,21,18,0.55)]">Cette fiche est un document : il s&apos;affiche juste en dessous.</p>
+                                )
+                            )}
+                        </article>
+
+                        {/* Fichiers attachés (lecteur PDF intégré) */}
+                        {fiche.files?.length > 0 && (
+                            <section className={`${card} overflow-hidden p-5 sm:p-6`}>
+                                <h2 className="font-serif-display mb-4 flex items-center gap-2 text-2xl">
+                                    <FileText className="h-5 w-5 text-[var(--wk-accent)]" />
+                                    {hasPdfFile ? "Document" : "Fichiers attachés"}
+                                    <span className="text-base text-[rgba(26,21,18,0.45)]">({fiche.files.length})</span>
+                                </h2>
+                                <FileViewer ficheId={fiche._id} files={fiche.files} />
+                            </section>
+                        )}
+
+                        {/* Commentaires */}
+                        <section className={`${card} overflow-hidden p-5 sm:p-6`} aria-label="Commentaires">
+                            {!currentUser && (
+                                <div className="mb-5 flex flex-col items-center gap-3 rounded-2xl bg-[var(--wk-paper)] p-5 text-center sm:flex-row sm:text-left">
+                                    <MessageCircle className="h-5 w-5 shrink-0 text-[rgba(26,21,18,0.45)]" />
+                                    <p className="flex-1 text-sm text-[rgba(26,21,18,0.65)]">Connecte-toi pour commenter cette fiche.</p>
+                                    <button type="button" onClick={openAuth} className="wk-btn-ink !py-2 text-sm">Se connecter</button>
+                                </div>
+                            )}
+                            <CommentsList
+                                revisionId={fiche._id}
+                                ficheAuthorId={fiche.author?._id}
+                                currentUser={currentUser ? { username: (currentUser as any).username, id: (currentUser as any).id } : null}
+                            />
+                        </section>
+                    </main>
+
+                    {/* ─── Panneau latéral ─── */}
+                    <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
+                        <div className={`${card} p-5`}>
+                            <div className="flex items-center justify-between gap-2">
+                                <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                                    <MessageCircle className="h-4 w-4" />
+                                    {commentsCount} commentaire{commentsCount > 1 ? "s" : ""}
+                                </span>
+                                <div className="flex items-center gap-1">
+                                    <BookmarkButton revisionId={fiche._id} size="sm" />
+                                    <ReportButton contentId={fiche._id} contentType="revision" variant="dropdown" />
+                                </div>
+                            </div>
+                            <div className="mt-4 border-t border-[rgba(26,21,18,0.06)] pt-4">
+                                <LikedByList revisionId={fiche._id} likedBy={fiche.likedBy || []} initialLikes={fiche.likes || 0} />
                             </div>
                         </div>
-                        <div className="flex items-center gap-3">
-                            {renderStatusBadge(fiche.status)}
-                            <ReportButton contentId={fiche._id} contentType="revision" variant="button" size="sm" />
-                        </div>
-                    </div>
 
-                    {/* Aperçu image (seulement pour les images, pas les PDF) */}
-                    {hasImageFile && (
-                        <div className="relative border-b border-gray-100">
-                            <div className="aspect-video w-full overflow-hidden bg-gray-50">
-                                {/* eslint-disable-next-line @next/next/no-img-element */}
-                                <img src={`/api/file-proxy?ficheId=${fiche._id}&index=0`} alt="Aperçu" className="w-full h-full object-contain" />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Contenu de la fiche */}
-                    <div className="p-5 md:p-8">
-                        {fiche.content && (
-                            <div className="prose max-w-none text-black">
-                                <ReactMarkdown
-                                    remarkPlugins={sharedRemarkPlugins}
-                                    rehypePlugins={sharedRehypePlugins as any}
-                                >
-                                    {fiche.content}
-                                </ReactMarkdown>
+                        {/* Relecture : réservé à l'équipe et à l'auteur */}
+                        {(userHasPermission || isCreator) && (
+                            <div className={`${card} p-5`}>
+                                <h2 className="flex items-center gap-2 text-sm font-semibold">
+                                    <Lock className="h-4 w-4" /> Actions sur la fiche
+                                </h2>
+                                <div className="mt-4 space-y-4">
+                                    {userHasPermission && (
+                                        <div>
+                                            <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[rgba(26,21,18,0.5)]">Statut</p>
+                                            <StatusChanger
+                                                ficheId={fiche._id}
+                                                currentStatus={fiche.status}
+                                                onStatusChange={(newStatus) => setFiche((prev: any) => ({ ...prev, status: newStatus }))}
+                                            />
+                                        </div>
+                                    )}
+                                    {(isCreator || isAdmin) && (
+                                        <div className="border-t border-[rgba(26,21,18,0.06)] pt-4">
+                                            <DeleteFicheButton ficheId={fiche._id} ficheTitle={fiche.title} isCreator={isCreator} isAdmin={isAdmin} />
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         )}
 
-                        <div className="mt-8 pt-6 border-t border-gray-100 flex gap-4 flex-wrap">
-                            <LikedByList revisionId={fiche._id} likedBy={fiche.likedBy || []} initialLikes={fiche.likes || 0} />
-                            <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1.5 text-black">
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                                </svg>
-                                {fiche.comments?.length || 0} Commentaires
-                            </Badge>
-                        </div>
-                    </div>
-                </div>
+                        <Link
+                            href={`/suivi?${new URLSearchParams({ subject: fiche.subject || "", level: fiche.level || "" })}#demande`}
+                            className="group block rounded-3xl bg-[var(--wk-ink)] p-5 text-[var(--wk-paper)] transition hover:-translate-y-0.5"
+                        >
+                            <HeartHandshake className="h-6 w-6 text-[var(--wk-accent-2)]" />
+                            <p className="font-serif-display mt-3 text-2xl leading-tight">Un examen qui approche ?</p>
+                            <p className="mt-1.5 text-sm text-white/65">Un bénévole de l&apos;association peut t&apos;aider à réviser. Gratuit.</p>
+                            <span className="mt-4 inline-flex items-center gap-1.5 text-sm font-semibold text-[var(--wk-accent-2)]">
+                                Demander un suivi <ArrowUpRight className="h-4 w-4 transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+                            </span>
+                        </Link>
 
-                {/* Fichiers attachés - le PDF viewer est ici directement */}
-                {fiche.files?.length > 0 && (
-                    <div className="mt-6 bg-white rounded-xl shadow-sm p-5 md:p-6 overflow-hidden">
-                        <h2 className="text-lg font-semibold mb-4 flex items-center text-black">
-                            <FileText size={20} className="mr-2 text-gray-500" />
-                            {hasPdfFile ? "Document" : "Fichiers attachés"} ({fiche.files.length})
-                        </h2>
-                        <FileViewer ficheId={fiche._id} files={fiche.files} />
-                    </div>
-                )}
-
-                {/* Actions */}
-                {(userHasPermission || isCreator) && (
-                    <div className="mt-6 bg-white rounded-xl shadow-sm p-5 md:p-6 border border-gray-200">
-                        <h2 className="text-lg font-semibold mb-4 flex items-center text-black">
-                            <LockClosedIcon className="h-4 w-4 mr-2" />
-                            Actions sur la fiche
-                        </h2>
-                        <div className="space-y-4">
-                            {userHasPermission && (
-                                <div>
-                                    <h3 className="text-base font-medium mb-2 text-gray-700">Changer le statut</h3>
-                                    <StatusChanger ficheId={fiche._id} currentStatus={fiche.status} onStatusChange={(newStatus) => setFiche((prev: any) => ({ ...prev, status: newStatus }))} />
+                        {fiche.subject && (
+                            <div className="rounded-3xl bg-[var(--wk-paper-2)] p-5 text-sm">
+                                <p className="font-semibold">Continuer en {fiche.subject}</p>
+                                <div className="mt-3 flex flex-col gap-2">
+                                    <Link href={`/fiches/matiere/${subjectToSlug(fiche.subject)}`} className="inline-flex items-center gap-2 font-medium text-[rgba(26,21,18,0.75)] hover:text-[var(--wk-accent)]">
+                                        <FileText className="h-4 w-4" /> Toutes les fiches de {fiche.subject}
+                                    </Link>
+                                    <Link href="/fiches/creer" className="inline-flex items-center gap-2 font-medium text-[rgba(26,21,18,0.75)] hover:text-[var(--wk-accent)]">
+                                        <PenLine className="h-4 w-4" /> Déposer ma propre fiche
+                                    </Link>
                                 </div>
-                            )}
-                            {(isCreator || isAdmin) && (
-                                <div className="border-t pt-4">
-                                    <h3 className="text-base font-medium mb-2 text-gray-700">Supprimer la fiche</h3>
-                                    <DeleteFicheButton ficheId={fiche._id} ficheTitle={fiche.title} isCreator={isCreator} isAdmin={isAdmin} />
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Commentaires */}
-                <div className="mt-6 bg-white rounded-xl shadow-sm p-5 md:p-6 overflow-hidden">
-                    {!currentUser && (
-                        <div className="bg-gray-50 rounded-lg p-4 text-center mb-4">
-                            <p className="text-gray-600 mb-3 text-sm">Connecte-toi pour poster un commentaire.</p>
-                            <Link href="/connexion">
-                                <Button className="bg-black hover:bg-gray-800 text-white">Se connecter</Button>
-                            </Link>
-                        </div>
-                    )}
-                    <CommentsList
-                        revisionId={fiche._id}
-                        ficheAuthorId={fiche.author?._id}
-                        currentUser={currentUser ? { username: (currentUser as any).username, id: (currentUser as any).id } : null}
-                    />
+                            </div>
+                        )}
+                    </aside>
                 </div>
             </div>
-
-            <style jsx global>{`
-                @keyframes shine { 0% { transform: translateX(-100%) rotate(45deg); } 100% { transform: translateX(100%) rotate(45deg); } }
-                @keyframes pulse { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
-                @keyframes progress { 0% { width: 0%; } 100% { width: 100%; } }
-                .animate-shine::after { content: ''; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.3) 50%, rgba(255,255,255,0) 100%); transform: rotate(45deg); animation: shine 2s infinite; }
-                .animate-pulse { animation: pulse 2s infinite; }
-                .animate-progress { animation: progress 1.5s linear; }
-            `}</style>
         </div>
     );
 }

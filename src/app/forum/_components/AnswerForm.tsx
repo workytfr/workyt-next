@@ -286,7 +286,7 @@ export default function AnswerForm({ questionId, onSubmitted, questionStatus, qu
 
     if (sessionStatus !== "authenticated") {
         return (
-            <div className="rounded-xl border border-gray-200 bg-white p-5 text-center">
+            <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 text-center">
                 <p className="text-sm text-gray-600">
                     Connecte-toi pour répondre à cette question.
                 </p>
@@ -296,7 +296,7 @@ export default function AnswerForm({ questionId, onSubmitted, questionStatus, qu
 
     if (isClosed) {
         return (
-            <div className="rounded-xl border border-gray-200 bg-gray-50 p-5 text-center">
+            <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-[var(--wk-paper-2)] p-5 text-center">
                 <p className="text-sm text-gray-600">
                     Cette question est fermée — tu ne peux plus y répondre.
                 </p>
@@ -311,7 +311,7 @@ export default function AnswerForm({ questionId, onSubmitted, questionStatus, qu
                 ref={cardRef as any}
                 type="button"
                 onClick={() => setExpanded(true)}
-                className="w-full text-left rounded-xl border border-gray-200 bg-white hover:border-orange-300 hover:bg-orange-50/30 transition-colors p-5 flex items-center gap-4 group"
+                className="w-full text-left rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white hover:border-[var(--wk-accent)] hover:bg-[rgba(255,106,26,0.04)] transition-colors p-5 flex items-center gap-4 group"
             >
                 <span className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 text-orange-700 group-hover:bg-orange-200 transition-colors shrink-0">
                     <MessageSquarePlus size={22} />
@@ -333,7 +333,7 @@ export default function AnswerForm({ questionId, onSubmitted, questionStatus, qu
 
     // État déplié — formulaire complet
     return (
-        <div ref={cardRef} className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div ref={cardRef} className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white overflow-hidden">
             {/* Header */}
             <div className="flex items-center justify-between gap-3 p-4 border-b border-gray-200 bg-gradient-to-r from-orange-50 to-white">
                 <div className="flex items-center gap-3">

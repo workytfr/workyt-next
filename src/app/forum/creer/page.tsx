@@ -25,6 +25,8 @@ import {
     X,
     AlertTriangle,
     HelpCircle,
+    Users,
+    HeartHandshake,
 } from "lucide-react";
 import PointsIcon from "@/components/ui/PointsIcon";
 
@@ -88,6 +90,13 @@ export default function ForumPostPage() {
                     setDraftStatus("saved");
                 }
             }
+            // Pré-remplissage depuis un lien (?subject=&classLevel=), ex. un bénévole
+            // qui sollicite la communauté depuis un suivi. Le brouillon reste prioritaire.
+            const params = new URLSearchParams(window.location.search);
+            const qSubject = params.get("subject");
+            const qLevel = params.get("classLevel");
+            if (qSubject && educationData.subjects.includes(qSubject)) setSubject((s) => s || qSubject);
+            if (qLevel && educationData.levels.includes(qLevel)) setClassLevel((l) => l || qLevel);
         } catch {}
         setDraftLoaded(true);
     }, []);
@@ -265,31 +274,59 @@ export default function ForumPostPage() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-orange-50/40 via-white to-white text-black">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+        <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
+            <div className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-8 sm:px-6 lg:px-10">
                 <Link
                     href="/forum"
-                    className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black mb-6 transition-colors"
+                    className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[rgba(26,21,18,0.55)] transition-colors hover:text-[var(--wk-ink)]"
                 >
                     <ArrowLeft size={16} /> Retour au forum
                 </Link>
 
-                {/* Hero */}
-                <header className="max-w-3xl mx-auto text-center mb-10">
-                    <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
-                        <Sparkles size={14} /> Demande de l'aide à la communauté
+                {/* En-tête + choix du type d'aide */}
+                <header className="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-end">
+                    <div className="lg:col-span-7">
+                        <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
+                            <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
+                            <Sparkles size={13} /> Demander de l&apos;aide
+                        </div>
+                        <h1 className="font-serif-display mt-5 text-[clamp(2.4rem,5.5vw,4.25rem)] leading-[0.95]">
+                            Poser une question<span className="text-[var(--wk-accent)]">.</span>
+                        </h1>
+                        <p className="mt-5 max-w-[52ch] text-lg leading-relaxed text-[rgba(26,21,18,0.68)]">
+                            Plus ta question est claire, plus tu auras de réponses utiles et rapides.
+                        </p>
                     </div>
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-                        Poser une question
-                    </h1>
-                    <p className="mt-3 text-gray-600 sm:text-lg">
-                        Plus ta question est claire, plus tu auras de réponses utiles et rapides.
-                    </p>
+                    <div className="lg:col-span-5">
+                        <div className="grid grid-cols-2 gap-2 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-2" role="radiogroup" aria-label="Type d'aide">
+                            <span
+                                role="radio"
+                                aria-checked="true"
+                                className="flex flex-col gap-1 rounded-2xl bg-[var(--wk-ink)] p-4 text-[var(--wk-paper)]"
+                            >
+                                <span className="flex items-center gap-2 text-sm font-semibold">
+                                    <Users size={16} className="text-[var(--wk-accent-2)]" /> À la communauté
+                                </span>
+                                <span className="text-xs text-white/65">Une question précise, des réponses rapides.</span>
+                            </span>
+                            <Link
+                                href={`/suivi?${new URLSearchParams({ ...(subject ? { subject } : {}), ...(classLevel ? { level: classLevel } : {}) })}#demande`}
+                                role="radio"
+                                aria-checked="false"
+                                className="group flex flex-col gap-1 rounded-2xl p-4 transition hover:bg-[var(--wk-paper)]"
+                            >
+                                <span className="flex items-center gap-2 text-sm font-semibold">
+                                    <HeartHandshake size={16} className="text-[var(--wk-accent)]" /> Personnalisée
+                                </span>
+                                <span className="text-xs text-[rgba(26,21,18,0.6)]">Un bénévole t&apos;accompagne quelques semaines.</span>
+                            </Link>
+                        </div>
+                    </div>
                 </header>
 
                 {/* Étapes */}
-                <section className="max-w-5xl mx-auto mb-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <section className="mb-8">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <Step n={1} icon={<BookOpen size={20} />} title="Décris ta question" text="Titre, matière, niveau pour aider la communauté à te trouver." />
                         <Step n={2} icon={<PenLine size={20} />} title="Précise ton blocage" text="Ce que tu as essayé, et exactement où tu bloques." />
                         <Step n={3} icon={<Send size={20} />} title="Publie" text="Choisis ta mise. Tu récupères les points si personne ne répond." />
@@ -298,7 +335,7 @@ export default function ForumPostPage() {
 
                 <form
                     onSubmit={handleSubmit}
-                    className="max-w-5xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm p-5 sm:p-8 space-y-10"
+                    className="space-y-10 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-8 lg:p-10"
                 >
                     {/* Status bar */}
                     <div className="flex items-center justify-between flex-wrap gap-2 -mt-2">
@@ -350,7 +387,7 @@ export default function ForumPostPage() {
                                 placeholder="Ex. Je bloque sur la dérivée d'une fonction composée"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value.slice(0, 100))}
-                                className="w-full p-4 border border-gray-300 rounded bg-white text-black"
+                                className="w-full rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white p-4 text-[var(--wk-ink)] outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]"
                             />
                             <p className="mt-1 text-xs text-gray-500">{title.length}/100 caractères. Un titre précis attire plus de réponses qu'un *"AIDE SVP"*.</p>
                         </div>
@@ -364,7 +401,7 @@ export default function ForumPostPage() {
                                     id="subject"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
-                                    className="w-full p-4 border border-gray-300 rounded bg-white text-black"
+                                    className="w-full rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white p-4 text-[var(--wk-ink)] outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]"
                                 >
                                     <option value="" disabled>Choisir une matière</option>
                                     {educationData.subjects.map((s, i) => (
@@ -380,7 +417,7 @@ export default function ForumPostPage() {
                                     id="level"
                                     value={classLevel}
                                     onChange={(e) => setClassLevel(e.target.value)}
-                                    className="w-full p-4 border border-gray-300 rounded bg-white text-black"
+                                    className="w-full rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white p-4 text-[var(--wk-ink)] outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]"
                                 >
                                     <option value="" disabled>Choisir un niveau</option>
                                     {educationData.levels.map((l, i) => (
@@ -399,7 +436,7 @@ export default function ForumPostPage() {
                             subtitle="Les deux sections sont obligatoires — elles aident les autres à comprendre où tu en es."
                         />
 
-                        <div className="rounded-xl border border-gray-200 p-5 space-y-6 bg-gray-50/40">
+                        <div className="space-y-6 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-[var(--wk-paper)] p-5">
                             {/* Sous-bloc 1 — Ce que j'ai fait */}
                             <div>
                                 <div className="flex items-center gap-2 mb-2">
@@ -590,16 +627,16 @@ export default function ForumPostPage() {
 
 function Step({ n, icon, title, text }: { n: number; icon: React.ReactNode; title: string; text: string }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 hover:border-gray-300 transition-colors">
+        <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 transition-colors hover:border-[rgba(26,21,18,0.18)]">
             <div className="flex items-center gap-3 mb-2">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white text-sm font-bold">
+                <span className="font-mono-ui inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--wk-ink)] text-sm font-bold text-[var(--wk-paper)]">
                     {n}
                 </span>
-                <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-orange-100 text-orange-700">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(255,106,26,0.12)] text-[var(--wk-accent)]">
                     {icon}
                 </span>
             </div>
-            <h3 className="font-semibold text-base">{title}</h3>
+            <h3 className="font-serif-display text-xl">{title}</h3>
             <p className="text-sm text-gray-600 mt-1">{text}</p>
         </div>
     );
@@ -608,11 +645,11 @@ function Step({ n, icon, title, text }: { n: number; icon: React.ReactNode; titl
 function SectionHeader({ n, title, subtitle }: { n: number; title: string; subtitle?: string }) {
     return (
         <div className="flex items-start gap-3">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-black text-white text-sm font-semibold shrink-0 mt-0.5">
+            <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--wk-ink)] text-sm font-semibold text-[var(--wk-paper)]">
                 {n}
             </span>
             <div>
-                <h3 className="text-lg font-semibold">{title}</h3>
+                <h3 className="font-serif-display text-2xl">{title}</h3>
                 {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
             </div>
         </div>

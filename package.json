@@ -11,6 +11,7 @@
     "lint": "eslint .",
     "fixCourses": "ts-node scripts/fixCourses.ts",
     "seedQuests": "tsx scripts/seedQuests.ts",
+    "seedMentorship": "tsx scripts/seedMentorship.ts",
     "newsletter": "tsx scripts/sendNewsletter.ts",
     "newsletter:migrate": "tsx scripts/migrateNewsletterFields.ts"
   },

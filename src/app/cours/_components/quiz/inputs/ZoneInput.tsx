@@ -27,7 +27,7 @@ export default function ZoneInput({ question, value, onChange }: QuestionInputPr
 
     if (!imageUrl) {
         return (
-            <div className="p-4 rounded-xl border-2 border-dashed border-[#e3e2e0] text-sm text-[#6b6b6b]">
+            <div className="p-4 rounded-xl border-2 border-dashed border-[#e8dfd0] text-sm text-[#6b625a]">
                 Cette question n&apos;a pas d&apos;image associée.
             </div>
         );
@@ -59,7 +59,7 @@ export default function ZoneInput({ question, value, onChange }: QuestionInputPr
 
     return (
         <div className="space-y-3">
-            <p className="text-xs text-[#9ca3af] flex items-center gap-1.5">
+            <p className="text-xs text-[#8f857b] flex items-center gap-1.5">
                 <SquareDashedMousePointer className="w-3.5 h-3.5" />
                 Tracez un rectangle autour de la zone demandée (cliquez-glissez).
             </p>
@@ -79,12 +79,12 @@ export default function ZoneInput({ question, value, onChange }: QuestionInputPr
                             width: `${rect.w}%`,
                             height: `${rect.h}%`,
                         }}
-                        className="absolute border-2 border-[#f97316] bg-[#f97316]/20 rounded pointer-events-none"
+                        className="absolute border-2 border-[#ff6a1a] bg-[#ff6a1a]/20 rounded pointer-events-none"
                     />
                 )}
             </ImageCanvas>
 
-            <p className="text-xs text-[#9ca3af]">
+            <p className="text-xs text-[#8f857b]">
                 {committed
                     ? "Tracez à nouveau pour corriger votre zone."
                     : "Aucune zone tracée pour l'instant."}

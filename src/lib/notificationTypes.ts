@@ -16,6 +16,12 @@ import {
   Swords,
   Trophy,
   Castle,
+  HeartHandshake,
+  Handshake,
+  BookMarked,
+  Target,
+  ShieldAlert,
+  Inbox,
   type LucideIcon
 } from 'lucide-react';
 
@@ -36,6 +42,7 @@ export type NotificationCategory =
   | 'friends'
   | 'challenge'
   | 'clan'
+  | 'suivi'
   | 'other';
 
 export interface NotificationStyle {
@@ -71,6 +78,7 @@ export const NOTIFICATION_CATEGORIES: Array<{
   { id: 'friends', label: 'Amis', icon: UserPlus, activeClassName: 'bg-fuchsia-600 text-white border-fuchsia-600' },
   { id: 'challenge', label: 'Défis', icon: Swords, activeClassName: 'bg-red-600 text-white border-red-600' },
   { id: 'clan', label: 'Clan', icon: Castle, activeClassName: 'bg-orange-600 text-white border-orange-600' },
+  { id: 'suivi', label: 'Suivi', icon: HeartHandshake, activeClassName: 'bg-rose-600 text-white border-rose-600' },
   { id: 'evaluation', label: 'Évaluations', icon: ClipboardList, activeClassName: 'bg-violet-600 text-white border-violet-600' },
   { id: 'kanban', label: 'Kanban', icon: KanbanSquare, activeClassName: 'bg-cyan-600 text-white border-cyan-600' },
   { id: 'other', label: 'Autres', icon: Bell, activeClassName: 'bg-gray-600 text-white border-gray-600' }
@@ -187,6 +195,50 @@ const STYLES: Record<string, NotificationStyle> = {
     label: 'Guerre des Clans',
     className: 'bg-orange-100 text-orange-600',
     category: 'clan'
+  },
+
+  // Suivi personnalisé
+  mentorship_request: {
+    icon: Inbox,
+    label: 'Demande de suivi',
+    className: 'bg-rose-100 text-rose-600',
+    category: 'suivi'
+  },
+  mentorship_matched: {
+    icon: Handshake,
+    label: 'Suivi',
+    className: 'bg-rose-100 text-rose-600',
+    category: 'suivi'
+  },
+  mentorship_message: {
+    icon: MessageCircle,
+    label: 'Suivi',
+    className: 'bg-rose-100 text-rose-600',
+    category: 'suivi'
+  },
+  mentorship_resource: {
+    icon: BookMarked,
+    label: 'Ressource à faire',
+    className: 'bg-amber-100 text-amber-700',
+    category: 'suivi'
+  },
+  mentorship_checkin: {
+    icon: Target,
+    label: 'Point d’étape',
+    className: 'bg-emerald-100 text-emerald-600',
+    category: 'suivi'
+  },
+  mentorship_update: {
+    icon: HeartHandshake,
+    label: 'Suivi',
+    className: 'bg-rose-100 text-rose-600',
+    category: 'suivi'
+  },
+  mentorship_alert: {
+    icon: ShieldAlert,
+    label: 'Modération suivi',
+    className: 'bg-red-100 text-red-600',
+    category: 'suivi'
   }
 };
 
@@ -230,6 +282,8 @@ export function getNotificationLink(
       return `/defis/${relatedEntity.id}`;
     case 'clan':
       return '/clan';
+    case 'mentorship':
+      return `/suivi/${relatedEntity.id}`;
     default:
       return null;
   }

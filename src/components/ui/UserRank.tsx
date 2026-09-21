@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { getRankProgress, getPrestigeInfo, RANKS } from '@/lib/rankSystem';
 import PrestigeGem from '@/components/ui/PrestigeGem';
 
@@ -29,6 +30,8 @@ const WORLDS = Array.from(
   .sort((a, b) => a[1] - b[1])
   .map(([world]) => world);
 
+const muted = 'text-[rgba(26,21,18,0.55)]';
+
 export default function UserRank({ points, className = '', showProgress = true }: UserRankProps) {
   const { currentRank, nextRank, progress, pointsNeeded } = getRankProgress(points);
   const prestigeInfo = getPrestigeInfo(points);
@@ -37,157 +40,122 @@ export default function UserRank({ points, className = '', showProgress = true }
   const currentWorldIndex = WORLDS.indexOf(currentRank.world);
 
   return (
-    <div className={`space-y-3 ${className}`}>
-      {/* Identité du rang */}
-      <div
-        className="rounded-2xl p-5 border"
-        style={{ backgroundColor: `${currentRank.color}12`, borderColor: `${currentRank.color}30` }}
-      >
-        <div className="flex items-center gap-4">
-          <div
-            className="w-14 h-14 rounded-2xl flex items-center justify-center text-3xl flex-shrink-0"
-            style={{ backgroundColor: `${currentRank.color}20` }}
-          >
-            {currentRank.badge}
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <div className="font-bold text-xl text-gray-900 leading-tight">{currentRank.name}</div>
-            <div className="text-sm text-gray-500 mt-0.5 truncate">{currentRank.world}</div>
-            <div className="text-xs text-gray-400 mt-1">
-              {points.toLocaleString('fr-FR')} pts · Niveau {currentRank.level}
-            </div>
-          </div>
-
-          {/* Dots position dans le monde */}
-          <div className="flex flex-col items-center gap-1.5 flex-shrink-0">
-            <span className="text-xs font-semibold text-gray-500">{currentRank.worldLevel}/3</span>
-            <div className="flex gap-1.5">
+    <div className={`space-y-4 ${className}`}>
+      {/* Rang actuel */}
+      <div className="flex items-center gap-4">
+        <div
+          className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-4xl"
+          style={{ backgroundColor: `${currentRank.color}1f`, boxShadow: `inset 0 0 0 1px ${currentRank.color}40` }}
+        >
+          {currentRank.badge}
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-serif-display text-2xl leading-tight text-[var(--wk-ink)]">{currentRank.name}</p>
+          <p className={`mt-0.5 truncate text-sm ${muted}`}>{currentRank.world}</p>
+          <div className="mt-2 flex items-center gap-2">
+            <span className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-[rgba(26,21,18,0.5)]">Niv. {currentRank.level}</span>
+            <span className="flex gap-1" title={`Étape ${currentRank.worldLevel} sur 3 dans ce monde`}>
               {[1, 2, 3].map(i => (
-                <div
+                <span
                   key={i}
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: i <= currentRank.worldLevel ? currentRank.color : '#E5E7EB' }}
+                  className="h-1.5 w-4 rounded-full"
+                  style={{ backgroundColor: i <= currentRank.worldLevel ? currentRank.color : 'rgba(26,21,18,0.1)' }}
                 />
               ))}
-            </div>
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Barre de progression */}
+      {/* Vers le rang suivant */}
       {showProgress && (
         nextRank ? (
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-            <div className="flex items-center justify-between mb-2.5">
-              <div className="flex items-center gap-1.5 text-sm font-medium text-gray-700">
-                <span>Prochain :</span>
+          <div className="rounded-2xl bg-[var(--wk-paper)] p-4">
+            <div className="flex items-baseline justify-between gap-3">
+              <p className="text-sm text-[rgba(26,21,18,0.7)]">
+                Encore <strong className="text-[var(--wk-ink)]">{pointsNeeded.toLocaleString('fr-FR')} pts</strong>
+              </p>
+              <p className="flex min-w-0 items-center gap-1 text-sm font-semibold" style={{ color: nextRank.color }}>
                 <span>{nextRank.badge}</span>
-                <span className="font-semibold" style={{ color: nextRank.color }}>{nextRank.name}</span>
-              </div>
-              <span className="text-xs text-gray-500 tabular-nums">
-                {pointsNeeded.toLocaleString('fr-FR')} pts
-              </span>
+                <span className="truncate">{nextRank.name}</span>
+              </p>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+            <div className="mt-2.5 h-2.5 overflow-hidden rounded-full bg-[rgba(26,21,18,0.08)]">
               <div
-                className="h-2 rounded-full transition-[width] duration-500 ease-out"
+                className="h-full rounded-full transition-[width] duration-500 ease-out"
                 style={{
-                  width: `${Math.max(progress, 2)}%`,
+                  width: `${Math.max(progress, 3)}%`,
                   background: `linear-gradient(90deg, ${currentRank.color}, ${nextRank.color})`,
                 }}
               />
             </div>
-            <div className="flex justify-between mt-1.5 text-xs text-gray-400">
-              <span>{currentRank.name}</span>
-              <span className="font-semibold text-gray-600">{Math.round(progress)}%</span>
-              <span>{nextRank.name}</span>
-            </div>
+            <p className={`mt-1.5 text-right text-xs font-semibold ${muted}`}>{Math.round(progress)} %</p>
           </div>
         ) : (
-          <div className="bg-amber-50 rounded-xl p-4 border border-amber-200 text-center">
-            <div className="text-sm font-semibold text-amber-800">✨ Rang maximum atteint</div>
-            <div className="text-xs text-amber-600 mt-0.5">Tu as conquis tous les mondes</div>
+          <div className="rounded-2xl bg-[#fff7e8] p-4 text-center">
+            <p className="text-sm font-semibold text-[#9a5d00]">✨ Rang maximum atteint</p>
+            <p className="mt-0.5 text-xs text-[#c27a00]">Tu as conquis tous les mondes</p>
           </div>
         )
       )}
 
-      {/* Zone C : Prestige */}
+      {/* Prestige */}
       {prestigeInfo.level > 0 && prestigeInfo.tier && (
         <div
-          className="rounded-2xl p-4 border"
-          style={{ backgroundColor: `${prestigeInfo.color}10`, borderColor: `${prestigeInfo.color}35` }}
+          className="flex items-center gap-3 rounded-2xl p-4"
+          style={{ backgroundColor: `${prestigeInfo.color}12`, boxShadow: `inset 0 0 0 1px ${prestigeInfo.color}33` }}
         >
-          <div className="flex items-center gap-3">
-            {/* Gemme animée */}
-            <div className="flex-shrink-0">
-              <PrestigeGem
-                color={prestigeInfo.color}
-                intensity={prestigeInfo.rankInTier}
-                size={44}
-              />
-            </div>
-
-            <div className="flex-1 min-w-0">
-              <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: prestigeInfo.color }}>
-                Prestige {prestigeInfo.level <= 100 ? prestigeInfo.level : '100+'}
-              </div>
-              <div className="font-bold text-base text-gray-900">{prestigeInfo.displayLevel}</div>
-            </div>
-
-            {prestigeInfo.level <= 100 && (
-              <div className="text-right flex-shrink-0">
-                <div className="text-xs text-gray-500 tabular-nums">
-                  {prestigeInfo.nextLevelPoints.toLocaleString('fr-FR')} pts
-                </div>
-                <div className="w-16 bg-gray-200 rounded-full h-1.5 mt-1 overflow-hidden">
-                  <div
-                    className="h-1.5 rounded-full transition-[width] duration-500"
-                    style={{ width: `${prestigeInfo.progressInLevel}%`, backgroundColor: prestigeInfo.color }}
-                  />
-                </div>
-              </div>
-            )}
+          <PrestigeGem color={prestigeInfo.color} intensity={prestigeInfo.rankInTier} size={40} />
+          <div className="min-w-0 flex-1">
+            <p className="font-mono-ui text-[10px] uppercase tracking-[0.14em]" style={{ color: prestigeInfo.color }}>
+              Prestige {prestigeInfo.level <= 100 ? prestigeInfo.level : '100+'}
+            </p>
+            <p className="font-semibold text-[var(--wk-ink)]">{prestigeInfo.displayLevel}</p>
           </div>
+          {prestigeInfo.level <= 100 && (
+            <div className="shrink-0 text-right">
+              <p className={`text-xs tabular-nums ${muted}`}>{prestigeInfo.nextLevelPoints.toLocaleString('fr-FR')} pts</p>
+              <div className="mt-1 h-1.5 w-16 overflow-hidden rounded-full bg-[rgba(26,21,18,0.08)]">
+                <div className="h-full rounded-full" style={{ width: `${prestigeInfo.progressInLevel}%`, backgroundColor: prestigeInfo.color }} />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* Carte des mondes (dépliable) */}
-      <div>
+      {/* Carte des mondes */}
+      <div className="border-t border-[rgba(26,21,18,0.06)] pt-3">
         <button
+          type="button"
           onClick={() => setMapOpen(v => !v)}
-          className="w-full flex items-center justify-between text-xs text-gray-400 hover:text-gray-600 transition-colors py-1 px-1"
+          aria-expanded={mapOpen}
+          className="flex w-full items-center justify-between rounded-xl px-1 py-1 text-sm font-semibold text-[var(--wk-ink)] transition hover:text-[var(--wk-accent)]"
         >
-          <span className="font-medium">
-            Carte des mondes · Monde {currentWorldIndex + 1}/{WORLDS.length}
+          <span>
+            Carte des mondes <span className={`font-normal ${muted}`}>· {currentWorldIndex + 1}/{WORLDS.length}</span>
           </span>
-          <span>{mapOpen ? '▲' : '▼'}</span>
+          <ChevronDown className={`h-4 w-4 transition-transform ${mapOpen ? 'rotate-180' : ''}`} />
         </button>
 
         {mapOpen && (
-          <div className="mt-2 grid grid-cols-5 gap-2">
+          <ol className="mt-3 space-y-1">
             {WORLDS.map((world, idx) => {
               const isDone = idx < currentWorldIndex;
               const isCurrent = idx === currentWorldIndex;
               return (
-                <div
+                <li
                   key={world}
-                  className={`flex flex-col items-center gap-1 p-2 rounded-xl text-center ${
-                    isCurrent ? 'bg-white shadow-sm border-2' : isDone ? 'bg-gray-50' : 'opacity-40'
-                  }`}
-                  style={isCurrent ? { borderColor: currentRank.color } : {}}
-                  title={world}
+                  className={`flex items-center gap-3 rounded-xl px-2.5 py-2 text-sm ${isCurrent ? 'bg-[var(--wk-paper)]' : ''} ${!isDone && !isCurrent ? 'opacity-45' : ''}`}
+                  style={isCurrent ? { boxShadow: `inset 0 0 0 1.5px ${currentRank.color}` } : undefined}
                 >
-                  <span className="text-xl">{WORLD_ICONS[world] ?? '🌍'}</span>
-                  <span className="text-[9px] font-bold">
-                    {isDone ? <span className="text-emerald-600">✓</span>
-                      : isCurrent ? <span style={{ color: currentRank.color }}>●</span>
-                      : <span className="text-gray-300">○</span>}
-                  </span>
-                </div>
+                  <span className="w-6 text-center text-lg">{WORLD_ICONS[world] ?? '🌍'}</span>
+                  <span className={`min-w-0 flex-1 truncate ${isCurrent ? 'font-semibold text-[var(--wk-ink)]' : 'text-[rgba(26,21,18,0.7)]'}`}>{world}</span>
+                  {isDone && <span className="text-xs font-semibold text-emerald-700">✓</span>}
+                  {isCurrent && <span className="text-[11px] font-semibold" style={{ color: currentRank.color }}>Ici</span>}
+                </li>
               );
             })}
-          </div>
+          </ol>
         )}
       </div>
     </div>

@@ -98,7 +98,7 @@ export default function LessonTableOfContents({ items }: LessonTableOfContentsPr
         <div className="relative">
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="fixed z-40 right-4 bottom-20 lg:bottom-6 p-2 bg-white/80 backdrop-blur-sm border border-[#e3e2e0] text-[#9ca3af] rounded-lg shadow-sm hover:text-[#6b6b6b] hover:shadow-md transition-all"
+                className="fixed z-40 right-4 bottom-20 lg:bottom-6 p-2 bg-white/80 backdrop-blur-sm border border-[#e8dfd0] text-[#8f857b] rounded-lg shadow-sm hover:text-[#6b625a] hover:shadow-md transition-all"
                 aria-label="Sommaire de la leçon"
             >
                 {isOpen ? <X className="w-4 h-4" /> : <List className="w-4 h-4" />}
@@ -107,9 +107,9 @@ export default function LessonTableOfContents({ items }: LessonTableOfContentsPr
             {isOpen && (
                 <>
                     <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
-                    <div className="fixed right-4 bottom-32 lg:bottom-16 z-50 w-64 max-h-[55vh] bg-white border border-[#e3e2e0] rounded-xl shadow-lg overflow-y-auto notion-scrollbar">
-                        <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-[#e3e2e0] px-4 py-2.5">
-                            <span className="text-xs font-medium text-[#9ca3af] uppercase tracking-wide">Sur cette page</span>
+                    <div className="fixed right-4 bottom-32 lg:bottom-16 z-50 w-64 max-h-[55vh] bg-white border border-[#e8dfd0] rounded-xl shadow-lg overflow-y-auto notion-scrollbar">
+                        <div className="sticky top-0 bg-white/90 backdrop-blur-sm border-b border-[#e8dfd0] px-4 py-2.5">
+                            <span className="text-xs font-medium text-[#8f857b] uppercase tracking-wide">Sur cette page</span>
                         </div>
                         <ul className="p-2 space-y-0.5">
                             {items.map((item) => (
@@ -117,11 +117,11 @@ export default function LessonTableOfContents({ items }: LessonTableOfContentsPr
                                     <button
                                         onClick={() => scrollTo(item.id)}
                                         className={`w-full text-left text-xs py-1.5 px-3 rounded-md transition-colors ${
-                                            item.level === 3 ? 'pl-6 text-[#9ca3af]' : 'text-[#6b6b6b]'
+                                            item.level === 3 ? 'pl-6 text-[#8f857b]' : 'text-[#6b625a]'
                                         } ${
                                             activeId === item.id
-                                                ? 'bg-[#fff7ed] text-[#f97316] font-medium'
-                                                : 'hover:bg-[#f7f6f3]'
+                                                ? 'bg-[#fff1e6] text-[#ff6a1a] font-medium'
+                                                : 'hover:bg-[#f5efe3]'
                                         }`}
                                     >
                                         <span className="line-clamp-2">{item.text}</span>

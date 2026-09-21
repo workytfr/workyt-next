@@ -11,6 +11,7 @@ import FicheEditor from "./FicheEditor";
 import { generateGradientBackground } from "./pdfBackground";
 import TemplatePicker from "./TemplatePicker";
 import type { FicheTemplate } from "./ficheTemplates";
+import { useBackdropDismiss } from "@/hooks/useBackdropDismiss";
 
 interface PdfComposerModalProps {
     open: boolean;
@@ -392,14 +393,14 @@ export default function PdfComposerModal({
         }
     };
 
+    const backdrop = useBackdropDismiss(onClose, busy);
+
     if (!open) return null;
 
     return (
         <div
             className="fixed inset-x-0 bottom-0 top-[88px] sm:top-[96px] z-40 bg-black/40 flex items-stretch justify-center p-2 sm:p-4"
-            onClick={(e) => {
-                if (e.target === e.currentTarget && !busy) onClose();
-            }}
+            {...backdrop}
         >
             <div className="flex flex-col w-full max-w-7xl bg-white rounded-lg shadow-2xl overflow-hidden">
                 <style dangerouslySetInnerHTML={{ __html: PDF_CONTENT_CSS }} />
@@ -504,7 +505,7 @@ export default function PdfComposerModal({
                                             <PreviewPane markdown={previewMarkdown} />
                                         ) : (
                                             <p className="text-gray-400 italic text-sm">
-                                                L'aperçu apparaîtra ici dès que tu commences à écrire.
+                                                L&apos;aperçu apparaîtra ici dès que tu commences à écrire.
                                             </p>
                                         )}
                                     </div>

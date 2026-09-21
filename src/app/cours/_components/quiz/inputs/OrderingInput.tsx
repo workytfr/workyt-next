@@ -44,7 +44,7 @@ export default function OrderingInput({ question, value, onChange }: QuestionInp
 
     return (
         <div className="space-y-2">
-            <p className="text-xs text-[#9ca3af] mb-3">
+            <p className="text-xs text-[#8f857b] mb-3">
                 Utilisez les flèches pour remettre les éléments dans le bon ordre.
             </p>
 
@@ -54,15 +54,15 @@ export default function OrderingInput({ question, value, onChange }: QuestionInp
                         key={itemIndex}
                         layout
                         transition={{ type: "spring", stiffness: 500, damping: 40 }}
-                        className="flex items-center gap-2 p-3 rounded-xl border-2 border-[#e3e2e0] bg-white"
+                        className="flex items-center gap-2 p-3 rounded-xl border-2 border-[#e8dfd0] bg-white"
                     >
                         <GripVertical className="w-4 h-4 text-[#b4b4b0] flex-shrink-0" />
 
-                        <span className="w-6 h-6 rounded-full bg-[#f7f6f3] flex items-center justify-center text-xs font-medium text-[#6b6b6b] flex-shrink-0">
+                        <span className="w-6 h-6 rounded-full bg-[#f5efe3] flex items-center justify-center text-xs font-medium text-[#6b625a] flex-shrink-0">
                             {posIndex + 1}
                         </span>
 
-                        <span className="flex-1 text-sm sm:text-base text-[#37352f]">
+                        <span className="flex-1 text-sm sm:text-base text-[#1a1512]">
                             <LatexText text={items[itemIndex]} />
                         </span>
 
@@ -72,18 +72,18 @@ export default function OrderingInput({ question, value, onChange }: QuestionInp
                                 onClick={() => moveItem(posIndex, posIndex - 1)}
                                 disabled={posIndex === 0}
                                 aria-label="Monter d'une place"
-                                className="p-1 rounded hover:bg-[#f7f6f3] disabled:opacity-30 transition-colors"
+                                className="p-1 rounded hover:bg-[#f5efe3] disabled:opacity-30 transition-colors"
                             >
-                                <ArrowUp className="w-3.5 h-3.5 text-[#6b6b6b]" />
+                                <ArrowUp className="w-3.5 h-3.5 text-[#6b625a]" />
                             </button>
                             <button
                                 type="button"
                                 onClick={() => moveItem(posIndex, posIndex + 1)}
                                 disabled={posIndex === order.length - 1}
                                 aria-label="Descendre d'une place"
-                                className="p-1 rounded hover:bg-[#f7f6f3] disabled:opacity-30 transition-colors"
+                                className="p-1 rounded hover:bg-[#f5efe3] disabled:opacity-30 transition-colors"
                             >
-                                <ArrowDown className="w-3.5 h-3.5 text-[#6b6b6b]" />
+                                <ArrowDown className="w-3.5 h-3.5 text-[#6b625a]" />
                             </button>
                         </div>
                     </motion.div>

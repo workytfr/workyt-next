@@ -80,7 +80,7 @@ export default function CourseFichesSection({
 
     return (
         <>
-            <div className="mt-12 pt-8 border-t border-[#e3e2e0]">
+            <div className="mt-12 pt-8 border-t border-[#e8dfd0]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -88,10 +88,10 @@ export default function CourseFichesSection({
                             <FileCheck className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold text-[#37352f]">
+                            <h3 className="font-serif-display text-2xl text-[#1a1512]">
                                 Fiches de révision
                             </h3>
-                            <p className="text-sm text-[#9ca3af]">
+                            <p className="text-sm text-[#8f857b]">
                                 {total > 0
                                     ? `${total} fiche${total > 1 ? "s" : ""} pour ce cours`
                                     : "Aucune fiche pour le moment"}
@@ -132,7 +132,7 @@ export default function CourseFichesSection({
                 {loading ? (
                     <div className="space-y-3">
                         {[...Array(2)].map((_, i) => (
-                            <div key={i} className="h-20 bg-[#f7f6f3] rounded-xl animate-pulse" />
+                            <div key={i} className="h-20 bg-[#f5efe3] rounded-xl animate-pulse" />
                         ))}
                     </div>
                 ) : fiches.length > 0 ? (
@@ -144,7 +144,7 @@ export default function CourseFichesSection({
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: index * 0.1 }}
                                 onClick={() => router.push(`/fiches/${buildIdSlug(fiche._id, fiche.title)}`)}
-                                className="group flex items-center gap-4 p-4 bg-[#f7f6f3] hover:bg-[#efeeeb] rounded-xl cursor-pointer transition-colors"
+                                className="group flex items-center gap-4 p-4 bg-[#f5efe3] hover:bg-[#efeeeb] rounded-xl cursor-pointer transition-colors"
                             >
                                 <div className="flex-shrink-0">
                                     <ProfileAvatar
@@ -154,10 +154,10 @@ export default function CourseFichesSection({
                                     />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-[#37352f] truncate group-hover:text-orange-600 transition-colors">
+                                    <p className="text-sm font-medium text-[#1a1512] truncate group-hover:text-orange-600 transition-colors">
                                         {fiche.title}
                                     </p>
-                                    <div className="flex items-center gap-3 mt-1 text-xs text-[#9ca3af]">
+                                    <div className="flex items-center gap-3 mt-1 text-xs text-[#8f857b]">
                                         <span>{fiche.author.username}</span>
                                         <span><TimeAgo date={fiche.createdAt} /></span>
                                         <span className="flex items-center gap-1">
@@ -169,19 +169,19 @@ export default function CourseFichesSection({
                                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(fiche.status)}`}>
                                     {fiche.status}
                                 </span>
-                                <ChevronRight className="w-4 h-4 text-[#bfbfbf] group-hover:text-orange-500 transition-colors" />
+                                <ChevronRight className="w-4 h-4 text-[#b8ad9f] group-hover:text-orange-500 transition-colors" />
                             </motion.div>
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-8 bg-[#f7f6f3] rounded-xl">
+                    <div className="text-center py-8 bg-[#f5efe3] rounded-xl">
                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3">
-                            <FileCheck className="w-6 h-6 text-[#9ca3af]" />
+                            <FileCheck className="w-6 h-6 text-[#8f857b]" />
                         </div>
-                        <p className="text-sm text-[#6b6b6b] mb-1">
+                        <p className="text-sm text-[#6b625a] mb-1">
                             Aucune fiche de révision pour ce cours
                         </p>
-                        <p className="text-xs text-[#9ca3af]">
+                        <p className="text-xs text-[#8f857b]">
                             Soyez le premier à partager vos fiches !
                         </p>
                     </div>
@@ -294,18 +294,18 @@ function CreateFicheModal({
                 className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-[#e3e2e0]">
+                <div className="flex items-center justify-between p-6 border-b border-[#e8dfd0]">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
                             <Upload className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-semibold text-[#37352f]">Déposer une fiche</h2>
-                            <p className="text-xs text-[#9ca3af]">Liée à ce cours</p>
+                            <h2 className="text-lg font-semibold text-[#1a1512]">Déposer une fiche</h2>
+                            <p className="text-xs text-[#8f857b]">Liée à ce cours</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors">
-                        <X className="w-5 h-5 text-[#6b6b6b]" />
+                    <button onClick={onClose} className="p-2 hover:bg-[#f5efe3] rounded-lg transition-colors">
+                        <X className="w-5 h-5 text-[#6b625a]" />
                     </button>
                 </div>
 
@@ -319,7 +319,7 @@ function CreateFicheModal({
 
                     {/* Titre */}
                     <div>
-                        <label className="block text-sm font-medium text-[#37352f] mb-1.5">
+                        <label className="block text-sm font-medium text-[#1a1512] mb-1.5">
                             Titre de la fiche *
                         </label>
                         <input
@@ -327,13 +327,13 @@ function CreateFicheModal({
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder="Ex: Résumé du chapitre 3 — Les fonctions"
-                            className="w-full px-4 py-2.5 border border-[#e3e2e0] rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
+                            className="w-full px-4 py-2.5 border border-[#e8dfd0] rounded-xl text-sm focus:outline-none focus:border-orange-400 focus:ring-1 focus:ring-orange-400"
                         />
                     </div>
 
                     {/* Contenu */}
                     <div>
-                        <label className="block text-sm font-medium text-[#37352f] mb-1.5">
+                        <label className="block text-sm font-medium text-[#1a1512] mb-1.5">
                             Contenu (optionnel)
                         </label>
                         <div data-color-mode="light">
@@ -349,18 +349,18 @@ function CreateFicheModal({
                     {/* Matière et niveau */}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="block text-sm font-medium text-[#37352f] mb-1.5">
+                            <label className="block text-sm font-medium text-[#1a1512] mb-1.5">
                                 Matière
                             </label>
-                            <div className="w-full px-4 py-2.5 border border-[#e3e2e0] rounded-xl text-sm bg-[#f7f6f3] text-[#6b6b6b]">
+                            <div className="w-full px-4 py-2.5 border border-[#e8dfd0] rounded-xl text-sm bg-[#f5efe3] text-[#6b625a]">
                                 {subject}
                             </div>
                         </div>
                         <div>
-                            <label className="block text-sm font-medium text-[#37352f] mb-1.5">
+                            <label className="block text-sm font-medium text-[#1a1512] mb-1.5">
                                 Niveau
                             </label>
-                            <div className="w-full px-4 py-2.5 border border-[#e3e2e0] rounded-xl text-sm bg-[#f7f6f3] text-[#6b6b6b]">
+                            <div className="w-full px-4 py-2.5 border border-[#e8dfd0] rounded-xl text-sm bg-[#f5efe3] text-[#6b625a]">
                                 {level}
                             </div>
                         </div>
@@ -368,7 +368,7 @@ function CreateFicheModal({
 
                     {/* Fichiers */}
                     <div>
-                        <label className="block text-sm font-medium text-[#37352f] mb-1.5">
+                        <label className="block text-sm font-medium text-[#1a1512] mb-1.5">
                             Fichiers (PDF ou images)
                         </label>
                         <input
@@ -376,10 +376,10 @@ function CreateFicheModal({
                             multiple
                             accept="application/pdf,image/*"
                             onChange={handleFileChange}
-                            className="w-full text-sm text-[#6b6b6b] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:font-medium file:text-sm hover:file:bg-orange-100 file:cursor-pointer"
+                            className="w-full text-sm text-[#6b625a] file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-orange-50 file:text-orange-600 file:font-medium file:text-sm hover:file:bg-orange-100 file:cursor-pointer"
                         />
                         {files.length > 0 && (
-                            <p className="text-xs text-[#9ca3af] mt-1">
+                            <p className="text-xs text-[#8f857b] mt-1">
                                 {files.length} fichier{files.length > 1 ? "s" : ""} sélectionné{files.length > 1 ? "s" : ""}
                             </p>
                         )}
@@ -390,7 +390,7 @@ function CreateFicheModal({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="flex-1 px-4 py-2.5 border border-[#e3e2e0] text-[#6b6b6b] text-sm font-medium rounded-xl hover:bg-[#f7f6f3] transition-colors"
+                            className="flex-1 px-4 py-2.5 border border-[#e8dfd0] text-[#6b625a] text-sm font-medium rounded-xl hover:bg-[#f5efe3] transition-colors"
                         >
                             Annuler
                         </button>

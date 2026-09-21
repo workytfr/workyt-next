@@ -5,6 +5,7 @@ import { Tldraw, type Editor } from "tldraw";
 import "tldraw/tldraw.css";
 import { Loader2, X } from "lucide-react";
 import { uploadToR2 } from "./uploadToR2";
+import { useBackdropDismiss } from "@/hooks/useBackdropDismiss";
 
 interface DrawModalProps {
     open: boolean;
@@ -78,14 +79,14 @@ export default function DrawModal({ open, initialSnapshotUrl, onClose, onSave, i
         }
     };
 
+    const backdrop = useBackdropDismiss(onClose, busy);
+
     if (!open) return null;
 
     return (
         <div
             className="fixed inset-x-0 bottom-0 top-[88px] sm:top-[96px] z-40 bg-black/40 flex items-stretch justify-center p-2 sm:p-4"
-            onClick={(e) => {
-                if (e.target === e.currentTarget && !busy) onClose();
-            }}
+            {...backdrop}
         >
             <div className="flex flex-col w-full max-w-6xl bg-white rounded-lg shadow-2xl overflow-hidden">
                 <div className="flex items-center justify-between bg-white px-4 py-2 border-b">

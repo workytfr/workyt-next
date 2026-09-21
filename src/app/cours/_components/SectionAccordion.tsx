@@ -76,12 +76,12 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                 <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div 
                         className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-all ${
-                            isOpen ? 'bg-[#f97316] text-white' : 'bg-[#f1f1ef] text-[#9ca3af] group-hover:bg-[#e3e2e0]'
+                            isOpen ? 'bg-[#ff6a1a] text-white' : 'bg-[#efe6d6] text-[#8f857b] group-hover:bg-[#e8dfd0]'
                         }`}
                     >
                         <ChevronRight className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
                     </div>
-                    <span className="text-sm font-medium text-[#37352f] truncate">
+                    <span className="text-sm font-medium text-[#1a1512] truncate">
                         {sectionData.title}
                     </span>
                 </div>
@@ -90,7 +90,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                     <span className={`flex-shrink-0 text-xs px-2 py-1 rounded-full ml-2 ${
                         readCount === totalLessons 
                             ? 'bg-[#ecfdf5] text-[#10b981]' 
-                            : 'bg-[#f1f1ef] text-[#6b6b6b]'
+                            : 'bg-[#efe6d6] text-[#6b625a]'
                     }`}>
                         {readCount}/{totalLessons}
                     </span>
@@ -100,8 +100,8 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
             <AccordionContent className="px-3 pb-2">
                 {isLoading ? (
                     <div className="flex items-center gap-2 py-3 px-2">
-                        <div className="w-4 h-4 border-2 border-[#e3e2e0] border-t-[#f97316] rounded-full animate-spin" />
-                        <span className="text-sm text-[#9ca3af]">Chargement...</span>
+                        <div className="w-4 h-4 border-2 border-[#e8dfd0] border-t-[#ff6a1a] rounded-full animate-spin" />
+                        <span className="text-sm text-[#8f857b]">Chargement...</span>
                     </div>
                 ) : (
                     <div className="space-y-0.5 pl-11">
@@ -117,8 +117,8 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                                             key={lesson._id}
                                             className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm transition-colors group ${
                                                 isRead 
-                                                    ? 'text-[#9ca3af] hover:bg-[#ebebea]' 
-                                                    : 'text-[#37352f] hover:bg-[#ebebea]'
+                                                    ? 'text-[#8f857b] hover:bg-[#ebebea]' 
+                                                    : 'text-[#1a1512] hover:bg-[#ebebea]'
                                             }`}
                                             onClick={() => onSelectContent({
                                                 kind: 'lesson',
@@ -142,7 +142,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                                                 {lesson.title}
                                             </span>
                                             {readTime && (
-                                                <span className="flex-shrink-0 text-xs text-[#9ca3af] flex items-center gap-0.5">
+                                                <span className="flex-shrink-0 text-xs text-[#8f857b] flex items-center gap-0.5">
                                                     <Clock className="w-3 h-3" />
                                                     {readTime}m
                                                 </span>
@@ -156,7 +156,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                         {/* Exercices */}
                         {sectionData.exercises && sectionData.exercises.length > 0 && (
                             <button
-                                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm text-[#37352f] hover:bg-[#ebebea] transition-colors group mt-1"
+                                className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm text-[#1a1512] hover:bg-[#ebebea] transition-colors group mt-1"
                                 onClick={() => onSelectContent({
                                     kind: 'exercises',
                                     exercises: sectionData.exercises || [],
@@ -178,8 +178,8 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                             <button
                                 className={`w-full flex items-center gap-2 px-3 py-2.5 rounded-xl text-left text-sm transition-colors group mt-1 ${
                                     session?.user 
-                                        ? 'text-[#37352f] hover:bg-[#ebebea]' 
-                                        : 'text-[#9ca3af] cursor-not-allowed'
+                                        ? 'text-[#1a1512] hover:bg-[#ebebea]' 
+                                        : 'text-[#8f857b] cursor-not-allowed'
                                 }`}
                                 onClick={() => session?.user && onSelectContent({
                                     kind: 'quizzes',
@@ -191,7 +191,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                                 <div className={`flex-shrink-0 w-6 h-6 rounded-lg flex items-center justify-center ${
                                     session?.user 
                                         ? 'bg-[#fffbeb] text-[#f59e0b]' 
-                                        : 'bg-[#f1f1ef] text-[#9ca3af]'
+                                        : 'bg-[#efe6d6] text-[#8f857b]'
                                 }`}>
                                     <Trophy className="w-3.5 h-3.5" />
                                 </div>
@@ -199,7 +199,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                                     Quiz ({sectionData.quizzes.length})
                                 </span>
                                 {!session?.user && (
-                                    <span className="text-xs text-[#9ca3af]">Connexion requise</span>
+                                    <span className="text-xs text-[#8f857b]">Connexion requise</span>
                                 )}
                             </button>
                         )}
@@ -214,7 +214,7 @@ export function SectionAccordion({ courseId, sectionInitial, onSelectContent, re
                         )}
 
                         {!sectionData.lessons?.length && !sectionData.exercises?.length && !sectionData.quizzes?.length && (
-                            <p className="text-sm text-[#9ca3af] px-3 py-3">
+                            <p className="text-sm text-[#8f857b] px-3 py-3">
                                 Aucun contenu dans cette section
                             </p>
                         )}

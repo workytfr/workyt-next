@@ -124,7 +124,7 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
 
             {/* Content */}
             <div className="p-6">
-                <div className="prose prose-lg max-w-none text-[#37352f] leading-relaxed">
+                <div className="prose max-w-none text-[#1a1512] leading-relaxed prose-headings:font-serif-display prose-headings:font-normal prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:my-3">
                     <ReactMarkdown
                         rehypePlugins={[rehypeKatex]}
                         remarkPlugins={[remarkMath, remarkGfm]}
@@ -139,7 +139,7 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
                         <img
                             src={exercise.image}
                             alt="Illustration"
-                            className="w-full rounded-2xl border border-[#e3e2e0]"
+                            className="w-full rounded-2xl border border-[#e8dfd0]"
                         />
                     </div>
                 )}
@@ -151,8 +151,8 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
                             onClick={() => setShowCorrection(!showCorrection)}
                             className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
                                 showCorrection
-                                    ? "bg-[#37352f] text-white"
-                                    : "bg-[#f7f6f3] text-[#37352f] hover:bg-[#ebebea] border border-[#e3e2e0]"
+                                    ? "bg-[#1a1512] text-white"
+                                    : "bg-[#f5efe3] text-[#1a1512] hover:bg-[#ebebea] border border-[#e8dfd0]"
                             }`}
                         >
                             {showCorrection ? (
@@ -172,13 +172,13 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
 
                 {/* Correction content */}
                 {showCorrection && exercise.correction && (
-                    <div className="mt-4 p-6 bg-[#f7f6f3] rounded-2xl border border-[#e3e2e0]">
+                    <div className="mt-4 p-6 bg-[#f5efe3] rounded-2xl border border-[#e8dfd0]">
                         <div className="flex items-center gap-2 mb-4">
                             <CheckCircle className="w-5 h-5 text-[#10b981]" />
-                            <h4 className="font-semibold text-[#37352f]">Correction</h4>
+                            <h4 className="font-semibold text-[#1a1512]">Correction</h4>
                         </div>
 
-                        <div className="prose prose-lg max-w-none text-[#37352f] leading-relaxed">
+                        <div className="prose max-w-none text-[#1a1512] leading-relaxed prose-headings:font-serif-display prose-headings:font-normal prose-h1:text-2xl prose-h2:text-xl prose-h3:text-lg prose-p:my-3">
                             <ReactMarkdown
                                 rehypePlugins={[rehypeKatex]}
                                 remarkPlugins={[remarkMath, remarkGfm]}
@@ -193,7 +193,7 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
                                 <img
                                     src={exercise.correction.image}
                                     alt="Correction"
-                                    className="w-full rounded-2xl border border-[#e3e2e0]"
+                                    className="w-full rounded-2xl border border-[#e8dfd0]"
                                 />
                             </div>
                         )}
@@ -202,7 +202,7 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
 
                 {/* Auteur de l'exercice */}
                 {exercise.author && (
-                    <div className="mt-6 pt-4 border-t border-[#e3e2e0] flex items-center gap-2 text-xs text-gray-500 flex-wrap">
+                    <div className="mt-6 pt-4 border-t border-[#e8dfd0] flex items-center gap-2 text-xs text-gray-500 flex-wrap">
                         {exercise.author.image ? (
                             <img
                                 src={exercise.author.image}

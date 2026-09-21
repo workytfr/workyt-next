@@ -18,7 +18,7 @@ export default function PinInput({ question, value, onChange }: QuestionInputPro
 
     if (!imageUrl) {
         return (
-            <div className="p-4 rounded-xl border-2 border-dashed border-[#e3e2e0] text-sm text-[#6b6b6b]">
+            <div className="p-4 rounded-xl border-2 border-dashed border-[#e8dfd0] text-sm text-[#6b625a]">
                 Cette question n&apos;a pas d&apos;image associée.
             </div>
         );
@@ -28,7 +28,7 @@ export default function PinInput({ question, value, onChange }: QuestionInputPro
 
     return (
         <div className="space-y-3">
-            <p className="text-xs text-[#9ca3af] flex items-center gap-1.5">
+            <p className="text-xs text-[#8f857b] flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
                 Cliquez sur l&apos;image à l&apos;endroit demandé.
             </p>
@@ -43,15 +43,15 @@ export default function PinInput({ question, value, onChange }: QuestionInputPro
                         className="absolute -translate-x-1/2 -translate-y-full pointer-events-none"
                     >
                         <MapPin
-                            className="w-8 h-8 text-[#f97316] drop-shadow"
-                            fill="#f97316"
+                            className="w-8 h-8 text-[#ff6a1a] drop-shadow"
+                            fill="#ff6a1a"
                             strokeWidth={1.5}
                         />
                     </motion.span>
                 )}
             </ImageCanvas>
 
-            <p className="text-xs text-[#9ca3af]">
+            <p className="text-xs text-[#8f857b]">
                 {answer
                     ? "Cliquez à nouveau pour déplacer le marqueur."
                     : "Aucun marqueur posé pour l'instant."}

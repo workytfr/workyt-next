@@ -527,6 +527,112 @@ const badges: Partial<IBadge>[] = [
   },
 
   // ═══════════════════════════════════════
+  // SUIVI PERSONNALISE – Cote eleve
+  // Aucun badge pour le simple fait de DEMANDER un suivi : on recompense
+  // ce que l'eleve fait une fois accompagne, jamais la demande d'aide.
+  // ═══════════════════════════════════════
+  {
+    slug: 'mentorship_started_1',
+    name: 'Premier pas',
+    description: 'A commence un suivi avec un benevole de Workyt.',
+    icon: '/badge/suivi_premier_pas.svg',
+    category: 'engagement',
+    condition: { type: 'mentorship_started', value: 1 },
+    rarity: 'commun',
+  },
+  {
+    slug: 'mentorship_goal_1',
+    name: 'Objectif atteint',
+    description: 'A atteint un objectif de son plan de suivi.',
+    icon: '/badge/suivi_objectif.svg',
+    category: 'progression',
+    condition: { type: 'mentorship_goal', value: 1 },
+    rarity: 'commun',
+  },
+  {
+    slug: 'mentorship_goal_10',
+    name: 'Cap sur la reussite',
+    description: 'A atteint 10 objectifs de suivi.',
+    icon: '/badge/suivi_objectifs.svg',
+    category: 'progression',
+    condition: { type: 'mentorship_goal', value: 10 },
+    rarity: 'rare',
+  },
+  {
+    slug: 'mentorship_success_1',
+    name: 'Remontee',
+    description: 'A termine un suivi avec son objectif atteint.',
+    icon: '/badge/suivi_remontee.svg',
+    category: 'performance',
+    condition: { type: 'mentorship_success', value: 1 },
+    rarity: 'épique',
+  },
+
+  // ═══════════════════════════════════════
+  // SUIVI PERSONNALISE – La serie du binome
+  // Partagee par l'eleve ET le benevole : les deux la gagnent ensemble.
+  // ═══════════════════════════════════════
+  {
+    slug: 'mentorship_duo_4',
+    name: 'Assidus',
+    description: 'A tenu 4 semaines de serie avec son binome de suivi.',
+    icon: '/badge/suivi_binome_4.svg',
+    category: 'engagement',
+    condition: { type: 'mentorship_duo_streak', value: 4 },
+    rarity: 'rare',
+  },
+  {
+    slug: 'mentorship_duo_12',
+    name: 'Inseparables',
+    description: 'A tenu 12 semaines de serie avec son binome de suivi.',
+    icon: '/badge/suivi_binome_12.svg',
+    category: 'engagement',
+    condition: { type: 'mentorship_duo_streak', value: 12 },
+    rarity: 'légendaire',
+  },
+
+  // ═══════════════════════════════════════
+  // SUIVI PERSONNALISE – Cote benevole
+  // Des jalons calmes et non competitifs : aucun classement entre benevoles.
+  // ═══════════════════════════════════════
+  {
+    slug: 'mentor_completed_1',
+    name: 'Premier accompagnement',
+    description: 'A mene un suivi jusqu\'a son terme.',
+    icon: '/badge/mentor_1.svg',
+    category: 'engagement',
+    condition: { type: 'mentor_completed', value: 1 },
+    rarity: 'commun',
+  },
+  {
+    slug: 'mentor_completed_5',
+    name: 'Guide',
+    description: 'A mene 5 suivis jusqu\'a leur terme.',
+    icon: '/badge/mentor_5.svg',
+    category: 'engagement',
+    condition: { type: 'mentor_completed', value: 5 },
+    rarity: 'rare',
+  },
+  {
+    slug: 'mentor_completed_15',
+    name: 'Phare',
+    description: 'A mene 15 suivis jusqu\'a leur terme.',
+    icon: '/badge/mentor_15.svg',
+    category: 'engagement',
+    condition: { type: 'mentor_completed', value: 15 },
+    rarity: 'légendaire',
+  },
+  {
+    slug: 'mentor_subjects_3',
+    name: 'Touche-a-tout',
+    description: 'A accompagne des eleves dans 3 matieres differentes.',
+    icon: '/badge/mentor_polyvalent.svg',
+    category: 'special',
+    condition: { type: 'mentor_subjects', value: 3 },
+    rarity: 'rare',
+  },
+
+  // ═══════════════════════════════════════
   // EVENEMENTS SPECIAUX
   // ═══════════════════════════════════════
   {

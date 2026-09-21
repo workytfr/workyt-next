@@ -7,25 +7,25 @@
 :root {
   /* Couleurs de base */
   --notion-bg: #ffffff;
-  --notion-bg-secondary: #f7f6f3;
-  --notion-bg-hover: #f1f1ef;
+  --notion-bg-secondary: #f5efe3;
+  --notion-bg-hover: #efe6d6;
   --notion-bg-elevated: #ffffff;
   
   /* Texte */
-  --notion-text: #37352f;
-  --notion-text-secondary: #6b6b6b;
-  --notion-text-tertiary: #9ca3af;
-  --notion-text-muted: #bfbfbf;
+  --notion-text: #1a1512;
+  --notion-text-secondary: #6b625a;
+  --notion-text-tertiary: #8f857b;
+  --notion-text-muted: #b8ad9f;
   
   /* Bordures */
-  --notion-border: #e3e2e0;
-  --notion-border-light: #f1f1ef;
-  --notion-border-hover: #d1d1d1;
+  --notion-border: #e8dfd0;
+  --notion-border-light: #efe6d6;
+  --notion-border-hover: #d6cab5;
   
   /* Accents - Orange doux pour Workyt */
-  --notion-accent: #f97316;
-  --notion-accent-light: #fff7ed;
-  --notion-accent-hover: #ea580c;
+  --notion-accent: #ff6a1a;
+  --notion-accent-light: #fff1e6;
+  --notion-accent-hover: #e85a0c;
   
   /* Status colors subtiles */
   --notion-success: #10b981;
@@ -36,7 +36,8 @@
   --notion-info-light: #eff6ff;
   
   /* Typographie */
-  --notion-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  /* Charte Workyt : Montserrat pour le texte (Funnel Display pour les titres, voir plus bas) */
+  --notion-font: var(--font-montserrat), system-ui, sans-serif;
   --notion-font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
   
   /* Espacements */
@@ -70,7 +71,7 @@
 
 .notion-layout {
   min-height: 100vh;
-  background: var(--notion-bg);
+  background: var(--wk-paper);
   color: var(--notion-text);
   font-family: var(--notion-font);
   line-height: 1.6;
@@ -100,6 +101,7 @@
    ========================================== */
 
 .notion-title {
+  font-family: var(--font-funnel-display), system-ui, sans-serif;
   font-size: 2.5rem;
   font-weight: 700;
   color: var(--notion-text);
@@ -109,6 +111,7 @@
 }
 
 .notion-title-large {
+  font-family: var(--font-funnel-display), system-ui, sans-serif;
   font-size: 3rem;
   font-weight: 700;
   color: var(--notion-text);
@@ -592,7 +595,7 @@
 }
 
 .notion-callout-definition {
-  background: #fff7ed;
+  background: #fff1e6;
   border-color: rgba(249, 115, 22, 0.2);
 }
 

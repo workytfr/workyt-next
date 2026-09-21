@@ -86,6 +86,32 @@ export async function register() {
 
         console.log('[Clans] Crons programmés : formation lundi 00h05, résolution quotidienne 00h01, bilan dimanche 23h50');
 
+        // ---- Suivi personnalisé ----
+        // Chaque jour à 9h : alertes de file, relais automatique, rappels,
+        // points d'étape. 9h plutôt que minuit : les notifications arrivent
+        // à une heure où l'on peut y répondre.
+        const { runMentorshipDaily, runMentorshipWeekly } = await import('@/lib/cron/mentorship');
+        cron.default.schedule('0 9 * * *', async () => {
+            try {
+                const r = await runMentorshipDaily();
+                console.log('[Suivi] Passage quotidien :', r);
+            } catch (error) {
+                console.error('[Suivi] Erreur passage quotidien:', error);
+            }
+        }, { timezone: 'Europe/Paris' });
+
+        // Lundi 00h20 : série du binôme pour la semaine écoulée (idempotent).
+        cron.default.schedule('20 0 * * 1', async () => {
+            try {
+                const r = await runMentorshipWeekly();
+                console.log('[Suivi] Séries des binômes :', r);
+            } catch (error) {
+                console.error('[Suivi] Erreur séries des binômes:', error);
+            }
+        }, { timezone: 'Europe/Paris' });
+
+        console.log('[Suivi] Crons programmés : relances quotidiennes 9h, séries du binôme lundi 00h20');
+
         // Seed des rôles par défaut
         const { seedRoles } = await import('@/lib/roles');
         try {

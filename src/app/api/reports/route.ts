@@ -83,6 +83,19 @@ export async function POST(request: NextRequest) {
 
         await report.save();
 
+        // Un suivi est un canal privé entre un adulte et un élève souvent mineur :
+        // un signalement y alerte la modération immédiatement, sans attendre
+        // qu'elle ouvre la liste des signalements.
+        if (reportedContent.type === 'mentorship') {
+            const { notifyModerators } = await import('@/lib/mentorship/notify');
+            void notifyModerators(
+                user._id.toString(),
+                String(reportedContent.id),
+                'Signalement dans un suivi',
+                `${user.username} a signalé un suivi (${reason}). À traiter en priorité.`
+            );
+        }
+
         return NextResponse.json(
             { message: 'Signalement créé avec succès', reportId: report._id },
             { status: 201 }

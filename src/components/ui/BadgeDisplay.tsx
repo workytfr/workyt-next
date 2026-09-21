@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { Lock, Eye, EyeOff, Star } from 'lucide-react';
+import { Lock, Star, Check } from 'lucide-react';
 
 interface BadgeData {
   _id: string;
@@ -27,45 +28,25 @@ interface BadgeDisplayProps {
   showProgress?: boolean;
 }
 
+/** Rareté : couleur du contour de la tuile et de la pastille du popover. */
 const RARITY_CONFIG = {
-  commun: {
-    border: 'border-gray-200',
-    bgEarned: 'bg-white',
-    text: 'text-gray-600',
-    dot: 'bg-gray-400',
-    label: 'Commun',
-  },
-  rare: {
-    border: 'border-blue-200',
-    bgEarned: 'bg-blue-50',
-    text: 'text-blue-600',
-    dot: 'bg-blue-500',
-    label: 'Rare',
-  },
-  'épique': {
-    border: 'border-purple-200',
-    bgEarned: 'bg-purple-50',
-    text: 'text-purple-600',
-    dot: 'bg-purple-500',
-    label: 'Epique',
-  },
-  'légendaire': {
-    border: 'border-yellow-300',
-    bgEarned: 'bg-gradient-to-br from-yellow-50 to-amber-50',
-    text: 'text-yellow-700',
-    dot: 'bg-yellow-500',
-    label: 'Legendaire',
-  },
+  commun: { label: 'Commun', ring: 'rgba(26,21,18,0.12)', tint: '#ffffff', color: '#6b625c' },
+  rare: { label: 'Rare', ring: '#9fd3ec', tint: '#f1f9fd', color: '#2f86b3' },
+  'épique': { label: 'Épique', ring: '#c9b3f5', tint: '#f7f3ff', color: '#7b55d6' },
+  'légendaire': { label: 'Légendaire', ring: '#ffc56b', tint: '#fff7e8', color: '#c27a00' },
 } as const;
 
-const CATEGORY_CONFIG = {
-  progression: { label: 'Progression', emoji: '📈' },
-  engagement: { label: 'Engagement', emoji: '💬' },
-  performance: { label: 'Performance', emoji: '🏆' },
-  special: { label: 'Special', emoji: '✨' },
-} as const;
+const CATEGORY_LABEL: Record<BadgeData['category'], string> = {
+  progression: 'Progression',
+  engagement: 'Engagement',
+  performance: 'Performance',
+  special: 'Spécial',
+};
 
-type CategoryFilter = 'all' | 'progression' | 'engagement' | 'performance' | 'special';
+const CATEGORIES = ['progression', 'engagement', 'performance', 'special'] as const;
+type CategoryFilter = 'all' | BadgeData['category'];
+
+type OpenBadge = { slug: string; rect: DOMRect; pinned: boolean };
 
 export default function BadgeDisplay({
   userId,
@@ -76,306 +57,325 @@ export default function BadgeDisplay({
   const [loading, setLoading] = useState(true);
   const [showLocked, setShowLocked] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
-  const [hoveredBadge, setHoveredBadge] = useState<string | null>(null);
   const [selectedBadge, setSelectedBadge] = useState<string | null>(null);
+  const [open, setOpen] = useState<OpenBadge | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchBadges = async () => {
       try {
-        setLoading(true);
-
         const allRes = await fetch('/api/badges');
         const allData = await allRes.json();
+        if (cancelled) return;
         setAllBadges(allData.badges || []);
 
         if (userId) {
           const userRes = await fetch(`/api/badges?userId=${userId}`);
           const userData = await userRes.json();
+          if (cancelled) return;
           const slugs = (userData.userBadges || []).map((b: BadgeData) => b.slug);
           setEarnedSlugs(new Set(slugs));
-
-          if (userData.selectedBadge) {
-            setSelectedBadge(userData.selectedBadge);
-          }
+          if (userData.selectedBadge) setSelectedBadge(userData.selectedBadge);
         }
       } catch (err) {
         console.error('BadgeDisplay: Erreur:', err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
-
     fetchBadges();
+    return () => { cancelled = true; };
   }, [userId]);
 
+  // Le popover est positionné en `fixed` : on le ferme au défilement, et au
+  // clic en dehors / Échap quand il a été ouvert par un clic (mobile).
+  useEffect(() => {
+    if (!open) return;
+    const close = () => setOpen(null);
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+    const onPointer = (e: PointerEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (!t?.closest('[data-badge-tile]')) close();
+    };
+    window.addEventListener('scroll', close, true);
+    window.addEventListener('resize', close);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onPointer);
+    return () => {
+      window.removeEventListener('scroll', close, true);
+      window.removeEventListener('resize', close);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('pointerdown', onPointer);
+    };
+  }, [open]);
+
   const earnedBadges = useMemo(() => allBadges.filter(b => earnedSlugs.has(b.slug)), [allBadges, earnedSlugs]);
-  const lockedBadges = useMemo(() => allBadges.filter(b => !earnedSlugs.has(b.slug)), [allBadges, earnedSlugs]);
 
   const displayedBadges = useMemo(() => {
     const source = showLocked ? allBadges : earnedBadges;
-    if (categoryFilter === 'all') return source;
-    return source.filter(b => b.category === categoryFilter);
-  }, [showLocked, allBadges, earnedBadges, categoryFilter]);
+    const filtered = categoryFilter === 'all' ? source : source.filter(b => b.category === categoryFilter);
+    // Badges obtenus d'abord, le badge mis en avant en tête
+    return [...filtered].sort((a, b) => {
+      const score = (x: BadgeData) => (x.slug === selectedBadge ? 2 : earnedSlugs.has(x.slug) ? 1 : 0);
+      return score(b) - score(a);
+    });
+  }, [showLocked, allBadges, earnedBadges, categoryFilter, selectedBadge, earnedSlugs]);
 
-  // Group by category
-  const groupedBadges = useMemo(() => {
-    const groups: Record<string, BadgeData[]> = {};
-    for (const badge of displayedBadges) {
-      if (!groups[badge.category]) groups[badge.category] = [];
-      groups[badge.category].push(badge);
-    }
-    return groups;
-  }, [displayedBadges]);
-
-  const stats = useMemo(() => {
-    const total = allBadges.length;
-    const earned = earnedSlugs.size;
-    const byRarity: Record<string, { total: number; earned: number }> = {
-      commun: { total: 0, earned: 0 },
-      rare: { total: 0, earned: 0 },
-      'épique': { total: 0, earned: 0 },
-      'légendaire': { total: 0, earned: 0 },
-    };
+  const byRarity = useMemo(() => {
+    const out: Record<string, { total: number; earned: number }> = {};
+    for (const r of Object.keys(RARITY_CONFIG)) out[r] = { total: 0, earned: 0 };
     for (const b of allBadges) {
-      byRarity[b.rarity].total++;
-      if (earnedSlugs.has(b.slug)) byRarity[b.rarity].earned++;
+      if (!out[b.rarity]) continue;
+      out[b.rarity].total++;
+      if (earnedSlugs.has(b.slug)) out[b.rarity].earned++;
     }
-    return { total, earned, byRarity };
+    return out;
   }, [allBadges, earnedSlugs]);
+
+  const openBadge = open ? allBadges.find(b => b.slug === open.slug) : undefined;
+  const progress = allBadges.length ? Math.round((earnedSlugs.size / allBadges.length) * 100) : 0;
 
   if (loading) {
     return (
-      <div className={`space-y-4 ${className}`}>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="aspect-square bg-gray-100 rounded-xl animate-pulse" />
-          ))}
-        </div>
+      <div className={`grid grid-cols-[repeat(auto-fill,minmax(68px,1fr))] gap-2.5 ${className}`}>
+        {[...Array(8)].map((_, i) => (
+          <div key={i} className="aspect-square animate-pulse rounded-2xl bg-[var(--wk-paper-2)]" />
+        ))}
       </div>
     );
   }
 
+  const tileProps = (badge: BadgeData) => ({
+    badge,
+    earned: earnedSlugs.has(badge.slug),
+    isSelected: selectedBadge === badge.slug,
+    isOpen: open?.slug === badge.slug,
+    onPreview: (rect: DOMRect | null) =>
+      // Survol / focus : aperçu, sauf si un badge a été épinglé par un clic
+      setOpen(prev => (prev?.pinned ? prev : rect ? { slug: badge.slug, rect, pinned: false } : null)),
+    onToggle: (rect: DOMRect) =>
+      setOpen(prev => (prev?.slug === badge.slug && prev.pinned ? null : { slug: badge.slug, rect, pinned: true })),
+  });
+
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* Header: stats + toggles */}
-      <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-3">
-          <div className="text-2xl font-bold text-gray-900">
-            {stats.earned}<span className="text-base font-normal text-gray-400">/{stats.total}</span>
-          </div>
-          <div className="h-6 w-px bg-gray-200 hidden sm:block" />
-          <div className="hidden sm:flex items-center gap-2">
-            {Object.entries(stats.byRarity).map(([rarity, s]) => (
-              <div
-                key={rarity}
-                className="flex items-center gap-1"
-                title={`${RARITY_CONFIG[rarity as keyof typeof RARITY_CONFIG].label}: ${s.earned}/${s.total}`}
-              >
-                <span className={`w-2 h-2 rounded-full ${RARITY_CONFIG[rarity as keyof typeof RARITY_CONFIG].dot}`} />
-                <span className="text-xs text-gray-500">{s.earned}/{s.total}</span>
-              </div>
-            ))}
+      {/* Résumé */}
+      <div>
+        <div className="flex items-end justify-between gap-3">
+          <p className="font-serif-display text-3xl leading-none text-[var(--wk-ink)]">
+            {earnedSlugs.size}
+            <span className="text-lg text-[rgba(26,21,18,0.4)]"> / {allBadges.length}</span>
+          </p>
+          <div className="flex items-center gap-2.5">
+            {Object.entries(byRarity).map(([rarity, s]) => {
+              const cfg = RARITY_CONFIG[rarity as keyof typeof RARITY_CONFIG];
+              return (
+                <span key={rarity} className="inline-flex items-center gap-1 text-[11px] font-semibold text-[rgba(26,21,18,0.6)]" title={`${cfg.label} : ${s.earned}/${s.total}`}>
+                  <span className="h-2 w-2 rounded-full" style={{ backgroundColor: cfg.color }} />
+                  {s.earned}
+                </span>
+              );
+            })}
           </div>
         </div>
-
-        <div className="flex items-center gap-1.5">
-          {/* Toggle locked badges */}
-          <button
-            onClick={() => setShowLocked(!showLocked)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
-              showLocked
-                ? 'bg-gray-900 text-white border-gray-900'
-                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-            }`}
-            title={showLocked ? 'Masquer les badges verrouilles' : 'Voir les badges a recuperer'}
-          >
-            {showLocked ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-            <span className="hidden sm:inline">{showLocked ? 'Masquer' : 'Tout voir'}</span>
-          </button>
+        <div className="wk-xp-bar mt-3 h-1.5">
+          <div className="wk-xp-fill h-full" style={{ width: `${progress}%` }} />
         </div>
       </div>
 
-      {/* Category filter (visible when showing all) */}
-      {showLocked && (
-        <div className="flex flex-wrap gap-1">
-          {(['all', 'progression', 'engagement', 'performance', 'special'] as CategoryFilter[]).map(cat => (
+      {/* Obtenus / Tous + catégories */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <div className="inline-flex rounded-full bg-[var(--wk-paper-2)] p-0.5 text-xs font-semibold">
+          {[
+            { v: false, label: 'Obtenus' },
+            { v: true, label: 'Tous' },
+          ].map(opt => (
             <button
-              key={cat}
-              onClick={() => setCategoryFilter(cat)}
-              className={`px-2.5 py-1 text-xs rounded-full transition-colors ${
-                categoryFilter === cat
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-100'
-              }`}
+              key={opt.label}
+              type="button"
+              onClick={() => { setShowLocked(opt.v); setOpen(null); }}
+              className={`rounded-full px-3 py-1 transition ${showLocked === opt.v ? 'bg-white text-[var(--wk-ink)] shadow-sm' : 'text-[rgba(26,21,18,0.55)] hover:text-[var(--wk-ink)]'}`}
             >
-              {cat === 'all' ? 'Tous' : CATEGORY_CONFIG[cat].emoji + ' ' + CATEGORY_CONFIG[cat].label}
+              {opt.label}
             </button>
           ))}
         </div>
-      )}
-
-      {/* Earned badges (default view) or all badges */}
-      {!showLocked && earnedBadges.length === 0 && (
-        <div className="text-center py-8">
-          <p className="text-sm text-gray-400">Aucun badge obtenu pour le moment.</p>
-          <button
-            onClick={() => setShowLocked(true)}
-            className="mt-2 text-xs text-orange-500 hover:text-orange-600 font-medium"
+        {showLocked && (
+          <select
+            value={categoryFilter}
+            onChange={e => { setCategoryFilter(e.target.value as CategoryFilter); setOpen(null); }}
+            className="rounded-full border border-[rgba(26,21,18,0.12)] bg-white px-3 py-1 text-xs font-semibold text-[var(--wk-ink)] outline-none focus:border-[var(--wk-accent)]"
+            aria-label="Catégorie"
           >
-            Voir les badges a debloquer
-          </button>
-        </div>
-      )}
+            <option value="all">Toutes les catégories</option>
+            {CATEGORIES.map(c => (
+              <option key={c} value={c}>{CATEGORY_LABEL[c]}</option>
+            ))}
+          </select>
+        )}
+      </div>
 
-      {categoryFilter === 'all' && Object.keys(groupedBadges).length > 0 ? (
-        Object.entries(groupedBadges).map(([category, badges]) => (
-          <div key={category}>
-            <div className="flex items-center gap-2 mb-2.5">
-              <span className="text-sm">{CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.emoji}</span>
-              <h4 className="text-sm font-semibold text-gray-700">
-                {CATEGORY_CONFIG[category as keyof typeof CATEGORY_CONFIG]?.label}
-              </h4>
-              {showLocked && (
-                <span className="text-xs text-gray-400">
-                  {badges.filter(b => earnedSlugs.has(b.slug)).length}/{badges.length}
-                </span>
-              )}
-            </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
-              {badges.map(badge => (
-                <BadgeCard
-                  key={badge.slug}
-                  badge={badge}
-                  earned={earnedSlugs.has(badge.slug)}
-                  hovered={hoveredBadge === badge.slug}
-                  onHover={setHoveredBadge}
-                  isSelected={selectedBadge === badge.slug}
-                />
-              ))}
-            </div>
-          </div>
-        ))
-      ) : categoryFilter !== 'all' && displayedBadges.length > 0 ? (
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3">
+      {/* Grille */}
+      {displayedBadges.length > 0 ? (
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(68px,1fr))] gap-2.5">
           {displayedBadges.map(badge => (
-            <BadgeCard
-              key={badge.slug}
-              badge={badge}
-              earned={earnedSlugs.has(badge.slug)}
-              hovered={hoveredBadge === badge.slug}
-              onHover={setHoveredBadge}
-              isSelected={selectedBadge === badge.slug}
-            />
+            <BadgeTile key={badge.slug} {...tileProps(badge)} />
           ))}
         </div>
-      ) : showLocked && displayedBadges.length === 0 ? (
-        <div className="text-center py-8 text-sm text-gray-400">
-          Aucun badge dans cette categorie.
+      ) : (
+        <div className="rounded-2xl border border-dashed border-[rgba(26,21,18,0.18)] px-4 py-8 text-center">
+          <p className="text-sm text-[rgba(26,21,18,0.55)]">
+            {showLocked ? 'Aucun badge dans cette catégorie.' : 'Aucun badge obtenu pour le moment.'}
+          </p>
+          {!showLocked && (
+            <button type="button" onClick={() => setShowLocked(true)} className="mt-2 text-xs font-semibold text-[var(--wk-accent)] hover:underline">
+              Voir les badges à débloquer
+            </button>
+          )}
         </div>
-      ) : null}
+      )}
+
+      <p className="text-center text-[11px] text-[rgba(26,21,18,0.45)]">Survole ou touche un badge pour voir son détail.</p>
+
+      {open && openBadge && typeof document !== 'undefined' &&
+        createPortal(
+          <BadgePopover
+            badge={openBadge}
+            rect={open.rect}
+            earned={earnedSlugs.has(openBadge.slug)}
+            isSelected={selectedBadge === openBadge.slug}
+          />,
+          document.body
+        )}
     </div>
   );
 }
 
-function BadgeCard({
+function BadgeTile({
   badge,
   earned,
-  hovered,
-  onHover,
-  isSelected = false,
+  isSelected,
+  isOpen,
+  onPreview,
+  onToggle,
 }: {
   badge: BadgeData;
   earned: boolean;
-  hovered: boolean;
-  onHover: (slug: string | null) => void;
-  isSelected?: boolean;
+  isSelected: boolean;
+  isOpen: boolean;
+  onPreview: (rect: DOMRect | null) => void;
+  onToggle: (rect: DOMRect) => void;
 }) {
-  const rarity = RARITY_CONFIG[badge.rarity];
+  const ref = useRef<HTMLButtonElement>(null);
+  const rarity = RARITY_CONFIG[badge.rarity] ?? RARITY_CONFIG.commun;
+  const rect = () => ref.current!.getBoundingClientRect();
+
+  return (
+    <button
+      ref={ref}
+      type="button"
+      data-badge-tile
+      aria-label={`${badge.name}${earned ? '' : ' (non obtenu)'}`}
+      aria-expanded={isOpen}
+      onMouseEnter={() => onPreview(rect())}
+      onMouseLeave={() => onPreview(null)}
+      onFocus={() => onPreview(rect())}
+      onBlur={() => onPreview(null)}
+      onClick={() => onToggle(rect())}
+      className={`group relative flex aspect-square items-center justify-center rounded-2xl border-2 p-2.5 transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--wk-accent)] focus-visible:ring-offset-2 ${
+        earned ? 'hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(26,21,18,0.1)]' : 'border-dashed'
+      } ${isOpen ? '-translate-y-0.5 shadow-[0_10px_24px_rgba(26,21,18,0.1)]' : ''}`}
+      style={
+        earned
+          ? { borderColor: isSelected ? 'var(--wk-accent)' : rarity.ring, backgroundColor: rarity.tint }
+          : { borderColor: 'rgba(26,21,18,0.12)', backgroundColor: 'var(--wk-paper)' }
+      }
+    >
+      {badge.icon ? (
+        <Image
+          src={badge.icon}
+          alt=""
+          width={64}
+          height={64}
+          className={`h-full w-full object-contain transition ${earned ? 'group-hover:scale-105' : 'opacity-30 grayscale'}`}
+          onError={e => { e.currentTarget.style.display = 'none'; }}
+        />
+      ) : (
+        <span className={`text-3xl ${earned ? '' : 'opacity-30 grayscale'}`}>🏅</span>
+      )}
+
+      {!earned && (
+        <span className="absolute bottom-1 right-1 flex h-5 w-5 items-center justify-center rounded-full bg-white shadow-sm">
+          <Lock className="h-3 w-3 text-[rgba(26,21,18,0.45)]" />
+        </span>
+      )}
+      {isSelected && (
+        <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-[var(--wk-accent)] shadow-sm" title="Mis en avant sur le profil">
+          <Star className="h-3 w-3 fill-white text-white" />
+        </span>
+      )}
+    </button>
+  );
+}
+
+const POPOVER_WIDTH = 256;
+
+function BadgePopover({ badge, rect, earned, isSelected }: { badge: BadgeData; rect: DOMRect; earned: boolean; isSelected: boolean }) {
+  const rarity = RARITY_CONFIG[badge.rarity] ?? RARITY_CONFIG.commun;
+  // Centré sur la tuile, gardé dans l'écran ; au-dessus s'il y a la place, sinon en dessous
+  const margin = 12;
+  const vw = window.innerWidth;
+  const left = Math.min(Math.max(margin, rect.left + rect.width / 2 - POPOVER_WIDTH / 2), vw - POPOVER_WIDTH - margin);
+  const above = rect.top > 200;
+  const arrowLeft = Math.min(Math.max(16, rect.left + rect.width / 2 - left), POPOVER_WIDTH - 16);
 
   return (
     <div
-      className="relative group"
-      onMouseEnter={() => onHover(badge.slug)}
-      onMouseLeave={() => onHover(null)}
+      role="tooltip"
+      className="pointer-events-none fixed z-[400] rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white p-4 shadow-[0_18px_48px_rgba(26,21,18,0.16)]"
+      style={{
+        width: POPOVER_WIDTH,
+        left,
+        ...(above ? { bottom: window.innerHeight - rect.top + 10 } : { top: rect.bottom + 10 }),
+      }}
     >
-      <div
-        className={`
-          relative aspect-square rounded-xl border-2 p-2 sm:p-3 flex flex-col items-center justify-center gap-1.5
-          transition-all duration-200 cursor-default
-          ${earned
-            ? `${isSelected ? 'border-orange-400 ring-2 ring-orange-200' : rarity.border} ${rarity.bgEarned} hover:shadow-md hover:scale-[1.03]`
-            : 'border-gray-100 bg-gray-50 opacity-40 grayscale'
-          }
-          ${badge.rarity === 'légendaire' && earned && !isSelected ? 'shadow-sm shadow-yellow-200' : ''}
-        `}
-      >
-        {/* Selected star indicator */}
-        {isSelected && (
-          <div className="absolute top-1 left-1 z-10">
-            <Star className="w-3.5 h-3.5 text-orange-500 fill-orange-500" />
-          </div>
+      <div className="flex items-start gap-3">
+        {badge.icon && (
+          <Image src={badge.icon} alt="" width={44} height={44} className={`h-11 w-11 shrink-0 object-contain ${earned ? '' : 'opacity-40 grayscale'}`} />
         )}
-
-        {/* Rarity dot */}
-        <div className={`absolute top-1.5 right-1.5 w-2 h-2 rounded-full ${earned ? rarity.dot : 'bg-gray-300'}`} />
-
-        {/* Icon */}
-        <div className={`w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center ${!earned ? 'relative' : ''}`}>
-          {badge.icon ? (
-            <Image
-              src={badge.icon}
-              alt={badge.name}
-              width={48}
-              height={48}
-              className="w-10 h-10 sm:w-12 sm:h-12 object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          ) : (
-            <span className="text-2xl">🏅</span>
-          )}
-          {!earned && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Lock className="w-4 h-4 text-gray-400" />
-            </div>
-          )}
-        </div>
-
-        {/* Name */}
-        <p className={`text-[10px] sm:text-xs font-medium text-center leading-tight line-clamp-2 ${
-          earned ? 'text-gray-800' : 'text-gray-400'
-        }`}>
-          {badge.name}
-        </p>
-      </div>
-
-      {/* Tooltip on hover */}
-      {hovered && (
-        <div className="absolute z-50 bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-white rounded-xl shadow-xl border border-gray-100 pointer-events-none">
-          <p className="text-sm font-semibold text-gray-900">{badge.name}</p>
-          <p className="text-xs text-gray-500 mt-1">{badge.description}</p>
-          <div className="flex items-center gap-2 mt-2">
-            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${rarity.text}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${rarity.dot}`} />
+        <div className="min-w-0">
+          <p className="font-serif-display text-lg leading-tight text-[var(--wk-ink)]">{badge.name}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold">
+            <span className="inline-flex items-center gap-1" style={{ color: rarity.color }}>
+              <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: rarity.color }} />
               {rarity.label}
             </span>
-            <span className="text-[10px] text-gray-400">
-              {CATEGORY_CONFIG[badge.category]?.label}
-            </span>
+            <span className="text-[rgba(26,21,18,0.35)]">·</span>
+            <span className="text-[rgba(26,21,18,0.55)]">{CATEGORY_LABEL[badge.category] ?? badge.category}</span>
           </div>
-          {earned ? (
-            isSelected ? (
-              <p className="text-[10px] text-orange-500 font-medium mt-1.5">Affiche sur le profil</p>
-            ) : (
-              <p className="text-[10px] text-green-600 font-medium mt-1.5">Obtenu</p>
-            )
-          ) : (
-            <p className="text-[10px] text-gray-400 mt-1.5">Non obtenu</p>
-          )}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 w-2 h-2 bg-white border-r border-b border-gray-100 rotate-45 -mt-1" />
         </div>
+      </div>
+
+      {badge.description && (
+        <p className="mt-3 text-sm leading-relaxed text-[rgba(26,21,18,0.7)]">{badge.description}</p>
       )}
+
+      <div className="mt-3 border-t border-[rgba(26,21,18,0.06)] pt-2.5 text-xs font-semibold">
+        {earned ? (
+          isSelected ? (
+            <span className="inline-flex items-center gap-1 text-[var(--wk-accent)]"><Star className="h-3.5 w-3.5 fill-current" /> Mis en avant sur le profil</span>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-emerald-700"><Check className="h-3.5 w-3.5" /> Obtenu</span>
+          )
+        ) : (
+          <span className="inline-flex items-center gap-1 text-[rgba(26,21,18,0.5)]"><Lock className="h-3.5 w-3.5" /> À débloquer</span>
+        )}
+      </div>
+
+      <span
+        className={`absolute h-3 w-3 rotate-45 border-[rgba(26,21,18,0.1)] bg-white ${above ? '-bottom-1.5 border-b border-r' : '-top-1.5 border-l border-t'}`}
+        style={{ left: arrowLeft - 6 }}
+      />
     </div>
   );
 }

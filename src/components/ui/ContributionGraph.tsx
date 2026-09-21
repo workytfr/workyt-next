@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Calendar, TrendingUp } from 'lucide-react';
 
 interface Contribution {
@@ -29,6 +29,13 @@ export default function ContributionGraph({ userId }: ContributionGraphProps) {
     const [stats, setStats] = useState<ContributionStats | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const scrollRef = useRef<HTMLDivElement>(null);
+
+    // Sur petit écran, on ouvre le graphique sur les semaines les plus récentes
+    useEffect(() => {
+        const el = scrollRef.current;
+        if (el) el.scrollLeft = el.scrollWidth;
+    }, [contributions]);
 
     useEffect(() => {
         const fetchContributions = async () => {
@@ -112,7 +119,7 @@ export default function ContributionGraph({ userId }: ContributionGraphProps) {
     }
 
     const first = new Date(firstDate + 'T12:00:00');
-    let firstMonday = new Date(first);
+    const firstMonday = new Date(first);
     const dayOfWeek = first.getDay();
     const daysToMonday = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
     firstMonday.setDate(first.getDate() - daysToMonday);
@@ -121,7 +128,7 @@ export default function ContributionGraph({ userId }: ContributionGraphProps) {
     const grid: (Contribution | null)[][] = [];
     for (let row = 0; row < 7; row++) grid.push([]);
 
-    let currentMonday = new Date(firstMonday);
+    const currentMonday = new Date(firstMonday);
     const endDate = new Date(lastDate + 'T12:00:00');
 
     while (currentMonday <= endDate) {
@@ -146,27 +153,30 @@ export default function ContributionGraph({ userId }: ContributionGraphProps) {
                 </div>
             )}
 
-            {/* Graphique style GitHub : Lun-Dim en lignes, label aligné avec chaque ligne */}
-            <div className="flex flex-col gap-[2px] w-full">
-                {grid.map((row, rowIndex) => (
-                    <div key={rowIndex} className="flex items-center gap-2">
-                        <div className="w-8 shrink-0 text-[10px] text-gray-400 flex items-center">
-                            {DAY_LABELS[rowIndex]}
+            {/* Graphique style GitHub : Lun-Dim en lignes. Sur téléphone, 53 semaines ne
+                tiennent pas : la zone défile (calée sur les semaines récentes) et les jours
+                restent collés à gauche. */}
+            <div ref={scrollRef} className="overflow-x-auto pb-1 [scrollbar-width:thin]">
+                <div className="flex flex-col gap-[2px]" style={{ minWidth: `${40 + grid[0].length * 10}px` }}>
+                    {grid.map((row, rowIndex) => (
+                        <div key={rowIndex} className="flex items-center gap-2">
+                            <div className="sticky left-0 z-[1] flex w-8 shrink-0 items-center bg-white text-[10px] text-gray-400">
+                                {DAY_LABELS[rowIndex]}
+                            </div>
+                            <div className="flex min-w-0 flex-1 gap-[2px]">
+                                {row.map((contrib, colIndex) => (
+                                    <div
+                                        key={colIndex}
+                                        className={`aspect-square min-w-[8px] flex-1 rounded-[2px] transition-colors hover:ring-2 hover:ring-gray-300 cursor-pointer ${contrib ? getLevelColor(contrib.level) : 'bg-gray-100'}`}
+                                        title={contrib ? getTooltipText(contrib) : undefined}
+                                    />
+                                ))}
+                            </div>
                         </div>
-                        <div className="flex gap-[2px] flex-1 min-w-0">
-                            {row.map((contrib, colIndex) => (
-                                <div
-                                    key={colIndex}
-                                    className={`aspect-square w-full min-w-[8px] rounded-[2px] transition-colors hover:ring-2 hover:ring-gray-300 cursor-pointer ${contrib ? getLevelColor(contrib.level) : 'bg-gray-100'}`}
-                                    title={contrib ? getTooltipText(contrib) : undefined}
-                                />
-                            ))}
-                        </div>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </div>
 
-            {/* Légende compacte */}
             <div className="flex items-center justify-between text-[10px] text-gray-400">
                 <span className="flex items-center gap-1">
                     <Calendar className="h-3 w-3" />

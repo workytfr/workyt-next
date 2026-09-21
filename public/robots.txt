@@ -4,6 +4,7 @@ Allow: /
 # Pages publiques à indexer
 Allow: /cours
 Allow: /forum
+Allow: /suivi$
 Allow: /fiches
 Allow: /recompenses
 Allow: /gems
@@ -23,6 +24,8 @@ Allow: /api/file-proxy
 
 # Pages privées / authentifiées à ne pas indexer
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /evaluation
@@ -49,6 +52,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth
@@ -62,6 +67,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth
@@ -75,6 +82,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth
@@ -88,6 +97,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth
@@ -101,6 +112,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth
@@ -114,6 +127,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth
@@ -127,6 +142,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth
@@ -140,6 +157,8 @@ Allow: /api/cours/
 Allow: /api/fiches/
 Allow: /api/forum/questions/
 Disallow: /dashboard
+Disallow: /suivi/
+Disallow: /api/suivi
 Disallow: /compte
 Disallow: /admin
 Disallow: /api/auth

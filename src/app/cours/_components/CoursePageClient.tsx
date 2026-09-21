@@ -18,7 +18,9 @@ import CourseCompetencies from "./CourseCompetencies";
 import CourseEvaluation from "./CourseEvaluation";
 import { useCourseNavigation, navigableToSelected } from "./hooks/useCourseNavigation";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight, HelpCircle, FileCheck, BadgeCheck, Users } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, Menu, BookOpen, FileText, Trophy, ChevronRight, HelpCircle, FileCheck, BadgeCheck, Users, Play, PartyPopper, HeartHandshake, Layers } from "lucide-react";
+import { SubjectLabel, LevelChip } from "@/components/wk/primitives";
 import {
     Drawer,
     DrawerContent,
@@ -30,8 +32,8 @@ import "./styles/notion-theme.css";
 function LoadingSkeleton() {
     return (
         <div className="flex h-[calc(100dvh-48px)] bg-white overflow-hidden">
-            <div className="hidden md:block w-72 bg-[#f7f6f3] border-r border-[#e3e2e0] flex-shrink-0">
-                <div className="p-4 border-b border-[#e3e2e0]">
+            <div className="hidden md:block w-72 bg-[#f5efe3] border-r border-[#e8dfd0] flex-shrink-0">
+                <div className="p-4 border-b border-[#e8dfd0]">
                     <Skeleton className="h-5 w-3/4" />
                 </div>
                 <div className="p-4 space-y-3">
@@ -61,8 +63,8 @@ function ErrorMessage({ error }: { error: string | null }) {
                 <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-red-600 text-xl">!</span>
                 </div>
-                <h2 className="text-lg font-semibold text-[#37352f] mb-2">Erreur</h2>
-                <p className="text-[#6b6b6b]">{error || "Cours introuvable"}</p>
+                <h2 className="text-lg font-semibold text-[#1a1512] mb-2">Erreur</h2>
+                <p className="text-[#6b625a]">{error || "Cours introuvable"}</p>
             </div>
         </div>
     );
@@ -138,7 +140,7 @@ function ContentView({ content, onBack, courseId }: { content: SelectedContent; 
                 ) : content.kind === 'quizzes' ? (
                     <QuizList quizzes={quizzes} title={content.sectionTitle} onStartQuiz={handleStartQuiz} isLoading={false} />
                 ) : (
-                    <p className="text-[#6b6b6b]">Aucun contenu disponible.</p>
+                    <p className="text-[#6b625a]">Aucun contenu disponible.</p>
                 )}
             </div>
         </div>
@@ -151,13 +153,13 @@ function ExerciseList({ exercises, title }: { exercises: Exercise[]; title: stri
 
     return (
         <div className="max-w-3xl">
-            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e3e2e0]">
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-[#e8dfd0]">
                 <div className="w-12 h-12 bg-[#ecfdf5] rounded-2xl flex items-center justify-center">
                     <FileText className="w-6 h-6 text-[#10b981]" />
                 </div>
                 <div>
-                    <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium">Exercices</p>
-                    <h1 className="text-xl font-semibold text-[#37352f]">{title}</h1>
+                    <p className="font-mono-ui text-[11px] uppercase tracking-[0.18em] text-[#ff6a1a]">Exercices</p>
+                    <h1 className="font-serif-display text-3xl leading-tight text-[#1a1512]">{title}</h1>
                 </div>
             </div>
 
@@ -209,14 +211,14 @@ function QuizList({ quizzes, title, onStartQuiz, isLoading }: {
 
     return (
         <div className="max-w-3xl">
-            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#e3e2e0]">
+            <div className="flex items-center justify-between mb-6 pb-4 border-b border-[#e8dfd0]">
                 <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-[#fffbeb] rounded-2xl flex items-center justify-center">
                         <Trophy className="w-6 h-6 text-[#f59e0b]" />
                     </div>
                     <div>
-                        <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium">Quiz</p>
-                        <h1 className="text-xl font-semibold text-[#37352f]">{title}</h1>
+                        <p className="font-mono-ui text-[11px] uppercase tracking-[0.18em] text-[#ff6a1a]">Quiz</p>
+                        <h1 className="font-serif-display text-3xl leading-tight text-[#1a1512]">{title}</h1>
                     </div>
                 </div>
             </div>
@@ -293,14 +295,20 @@ function CourseStats({ courseId }: { courseId: string }) {
     );
 }
 
-// Aperçu du cours
+// Aperçu du cours : en-tête, reprise, table des chapitres, entrées d'aide
 function CourseOverview({
     cours,
+    fullCourse,
+    flatItems,
+    onNavigate,
     onOpenSidebar,
     progress,
     onResume,
 }: {
     cours: Course;
+    fullCourse: Course | null;
+    flatItems: NavigableItem[];
+    onNavigate: (item: NavigableItem) => void;
     onOpenSidebar?: () => void;
     progress?: {
         percentage: number;
@@ -310,96 +318,156 @@ function CourseOverview({
     } | null;
     onResume?: () => void;
 }) {
+    const canResume = !!(progress?.lastLessonId && progress.percentage > 0 && progress.percentage < 100 && onResume);
+    const done = !!progress && progress.totalLessons > 0 && progress.percentage === 100;
+    const first = flatItems[0];
+
+    // Les chapitres, avec leur contenu quand le cours complet est chargé
+    const chapters = (fullCourse ?? cours).sections.map((section, index) => {
+        const firstItem = flatItems.find((i) => i.sectionId === section._id);
+        return {
+            id: section._id,
+            index,
+            title: section.title,
+            lessons: section.lessons?.length ?? 0,
+            exercises: section.exercises?.length ?? 0,
+            quizzes: section.quizzes?.length ?? 0,
+            known: !!fullCourse,
+            firstItem,
+        };
+    });
+
+    const helpQs = new URLSearchParams({ subject: cours.matiere, level: cours.niveau });
+
     return (
-        <div className="max-w-3xl">
+        <div>
             <CourseHeader cours={cours} />
 
-            {/* Progression de l'élève dans le cours */}
-            {progress && progress.totalLessons > 0 && (
-                <div className="mt-6 p-4 bg-[#f7f6f3] border border-[#e3e2e0] rounded-xl">
-                    <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm font-medium text-[#37352f]">
-                            Votre progression
+            {/* Commencer / reprendre + progression */}
+            <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+                <div className="flex flex-col justify-between gap-5 rounded-3xl bg-[var(--wk-ink)] p-6 text-[var(--wk-paper)]">
+                    <div>
+                        <p className="font-mono-ui text-[11px] uppercase tracking-[0.18em] text-white/55">
+                            {done ? "Cours terminé" : canResume ? "Ta progression" : "Prêt à commencer ?"}
                         </p>
-                        <p className="text-sm text-[#6b6b6b]">
-                            {progress.lessonsReadCount}/{progress.totalLessons} leçons · {progress.percentage}%
-                        </p>
+                        {progress && progress.totalLessons > 0 ? (
+                            <>
+                                <p className="font-serif-display mt-2 text-3xl leading-none">
+                                    {progress.percentage}%{" "}
+                                    <span className="text-base text-white/60">
+                                        · {progress.lessonsReadCount}/{progress.totalLessons} leçons lues
+                                    </span>
+                                </p>
+                                <div className="mt-4 h-2.5 overflow-hidden rounded-full bg-white/15">
+                                    <div className="wk-xp-fill" style={{ width: `${progress.percentage}%` }} />
+                                </div>
+                            </>
+                        ) : (
+                            <p className="font-serif-display mt-2 text-3xl leading-tight">
+                                {chapters.length} chapitre{chapters.length > 1 ? "s" : ""} à ton rythme.
+                            </p>
+                        )}
                     </div>
-                    <div className="h-2 bg-[#e3e2e0] rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-[#f97316] rounded-full transition-all duration-500"
-                            style={{ width: `${progress.percentage}%` }}
-                        />
+                    <div className="flex flex-wrap gap-2">
+                        {canResume ? (
+                            <button type="button" onClick={onResume} className="wk-btn-orange !py-2.5 text-sm">
+                                <Play className="h-4 w-4" /> Reprendre où j&apos;en étais
+                            </button>
+                        ) : first ? (
+                            <button type="button" onClick={() => onNavigate(first)} className="wk-btn-orange !py-2.5 text-sm">
+                                <Play className="h-4 w-4" /> {done ? "Revoir le cours" : "Commencer le cours"}
+                            </button>
+                        ) : (
+                            <button type="button" onClick={onOpenSidebar} className="wk-btn-orange !py-2.5 text-sm md:hidden">
+                                <Menu className="h-4 w-4" /> Voir le sommaire
+                            </button>
+                        )}
+                        {done && <span className="inline-flex items-center gap-1.5 self-center text-sm font-semibold text-[var(--wk-accent-2)]"><PartyPopper className="h-4 w-4" /> Bravo !</span>}
                     </div>
-                    {progress.lastLessonId && progress.percentage < 100 && onResume && (
-                        <button
-                            onClick={onResume}
-                            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-[#f97316] hover:underline"
-                        >
-                            <ChevronRight className="w-4 h-4" />
-                            Reprendre là où vous étiez
-                        </button>
-                    )}
-                    {progress.percentage === 100 && (
-                        <p className="mt-3 text-sm font-medium text-emerald-600">
-                            🎉 Cours terminé, bravo !
-                        </p>
-                    )}
                 </div>
-            )}
 
-            <div className="notion-divider" />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                    <Link
+                        href={`/forum/creer?subject=${encodeURIComponent(cours.matiere)}&classLevel=${encodeURIComponent(cours.niveau)}`}
+                        className="group flex items-center gap-4 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[rgba(26,21,18,0.2)]"
+                    >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--wk-paper-2)] text-[var(--wk-ink)]">
+                            <HelpCircle className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block font-semibold">Une question sur ce cours ?</span>
+                            <span className="block text-sm text-[rgba(26,21,18,0.6)]">La communauté du forum te répond.</span>
+                        </span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.35)] transition group-hover:translate-x-0.5" />
+                    </Link>
+                    <Link
+                        href={`/suivi?${helpQs}#demande`}
+                        className="group flex items-center gap-4 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 transition hover:-translate-y-0.5 hover:border-[var(--wk-accent)]"
+                    >
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[var(--wk-accent)] text-white">
+                            <HeartHandshake className="h-5 w-5" />
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block font-semibold">Besoin d&apos;être accompagné ?</span>
+                            <span className="block text-sm text-[rgba(26,21,18,0.6)]">Un bénévole te suit sur ce chapitre.</span>
+                        </span>
+                        <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.35)] transition group-hover:translate-x-0.5" />
+                    </Link>
+                </div>
+            </div>
 
             {/* Stats questions + fiches */}
-            <CourseStats courseId={cours._id} />
-
-            {/* Sections visibles sur mobile */}
-            <div className="md:hidden mb-6">
-                <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-medium text-[#9ca3af] uppercase tracking-wide">
-                        Sections du cours
-                    </h3>
-                    <span className="text-xs text-[#9ca3af]">{cours.sections.length} sections</span>
-                </div>
-                <div className="space-y-2">
-                    {cours.sections.slice(0, 5).map((section, index) => (
-                        <button
-                            key={section._id}
-                            onClick={onOpenSidebar}
-                            className="w-full flex items-center gap-3 p-3 bg-white border border-[#e3e2e0] rounded-xl hover:border-[#f97316] hover:bg-[#fff7ed] transition-colors text-left"
-                        >
-                            <div className="w-8 h-8 bg-[#f7f6f3] rounded-lg flex items-center justify-center text-sm font-medium text-[#6b6b6b]">
-                                {index + 1}
-                            </div>
-                            <span className="text-sm font-medium text-[#37352f] truncate flex-1">
-                                {section.title}
-                            </span>
-                            <ChevronRight className="w-4 h-4 text-[#bfbfbf]" />
-                        </button>
-                    ))}
-                    {cours.sections.length > 5 && (
-                        <button
-                            onClick={onOpenSidebar}
-                            className="w-full py-2.5 text-sm text-[#f97316] font-medium hover:underline"
-                        >
-                            + {cours.sections.length - 5} autres sections
-                        </button>
-                    )}
-                </div>
+            <div className="mt-6">
+                <CourseStats courseId={cours._id} />
             </div>
 
-            <div className="bg-[#f7f6f3] rounded-2xl p-8 text-center">
-                <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm">
-                    <BookOpen className="w-7 h-7 text-[#9ca3af]" />
+            {/* Table des chapitres */}
+            <section className="mt-10" aria-label="Chapitres du cours">
+                <div className="mb-4 flex items-baseline justify-between">
+                    <h2 className="font-serif-display text-3xl">Les chapitres</h2>
+                    <span className="text-sm text-[rgba(26,21,18,0.55)]">{chapters.length} au total</span>
                 </div>
-                <h3 className="text-base font-medium text-[#37352f] mb-2">
-                    Commencez votre apprentissage
-                </h3>
-                <p className="text-sm text-[#6b6b6b] max-w-md mx-auto">
-                    Sélectionnez une section dans le menu de gauche pour accéder aux leçons,
-                    exercices et quiz.
-                </p>
-            </div>
+                <ol className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                    {chapters.map((c) => {
+                        const clickable = !!c.firstItem;
+                        const inner = (
+                            <>
+                                <span className="font-serif-display w-10 shrink-0 text-3xl leading-none text-[var(--wk-accent)]">
+                                    {String(c.index + 1).padStart(2, "0")}
+                                </span>
+                                <span className="min-w-0 flex-1">
+                                    <span className="block font-semibold leading-snug">{c.title}</span>
+                                    {c.known && (
+                                        <span className="mt-1.5 flex flex-wrap gap-x-3 gap-y-1 text-xs text-[rgba(26,21,18,0.55)]">
+                                            {c.lessons > 0 && (
+                                                <span className="inline-flex items-center gap-1"><BookOpen className="h-3.5 w-3.5" /> {c.lessons} leçon{c.lessons > 1 ? "s" : ""}</span>
+                                            )}
+                                            {c.exercises > 0 && (
+                                                <span className="inline-flex items-center gap-1"><FileText className="h-3.5 w-3.5" /> {c.exercises} exercice{c.exercises > 1 ? "s" : ""}</span>
+                                            )}
+                                            {c.quizzes > 0 && (
+                                                <span className="inline-flex items-center gap-1"><Trophy className="h-3.5 w-3.5" /> {c.quizzes} quiz</span>
+                                            )}
+                                        </span>
+                                    )}
+                                </span>
+                                <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)] transition group-hover:translate-x-0.5 group-hover:text-[var(--wk-accent)]" />
+                            </>
+                        );
+                        const cls = "group flex w-full items-center gap-4 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 text-left transition hover:-translate-y-0.5 hover:border-[rgba(26,21,18,0.2)] hover:shadow-[0_12px_32px_rgba(26,21,18,0.07)]";
+                        return (
+                            <li key={c.id}>
+                                {clickable ? (
+                                    <button type="button" onClick={() => onNavigate(c.firstItem!)} className={cls}>{inner}</button>
+                                ) : (
+                                    // Contenu pas encore chargé (ou chapitre vide) : on ouvre le sommaire
+                                    <button type="button" onClick={onOpenSidebar} className={cls}>{inner}</button>
+                                )}
+                            </li>
+                        );
+                    })}
+                </ol>
+            </section>
         </div>
     );
 }
@@ -407,38 +475,37 @@ function CourseOverview({
 // En-tête de l'aperçu
 function CourseHeader({ cours }: { cours: Course }) {
     return (
-        <div>
-            <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium mb-2">
-                {cours.matiere} • {cours.niveau}
-            </p>
-            <h1 className="text-3xl md:text-4xl font-bold text-[#37352f] mb-4 tracking-tight">
-                {cours.title}
-            </h1>
-            {cours.description && (
-                <div className="text-sm text-[#6b6b6b] leading-relaxed">
-                    <CourseDescription content={cours.description} />
-                </div>
-            )}
-            
-            <div className="flex flex-wrap items-center gap-4 mt-6 text-sm text-[#9ca3af]">
-                <span className="flex items-center gap-1.5">
-                    <BookOpen className="w-4 h-4" />
-                    {cours.sections.length} section{cours.sections.length > 1 ? 's' : ''}
-                </span>
-                {cours.authors && cours.authors.length > 0 && (
-                    <span className="flex items-center gap-1.5">
-                        <Users className="w-4 h-4" />
-                        Par {cours.authors.map((a) => a.username).join(", ")}
-                    </span>
-                )}
+        <header>
+            <div className="flex flex-wrap items-center gap-2.5">
+                <SubjectLabel subject={cours.matiere} />
+                <LevelChip level={cours.niveau} />
                 {cours.verifiedBy && (
-                    <span className="flex items-center gap-1.5 text-emerald-600">
-                        <BadgeCheck className="w-4 h-4" />
-                        Vérifié par {cours.verifiedBy.username}
+                    <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">
+                        <BadgeCheck className="h-3.5 w-3.5" /> Vérifié par {cours.verifiedBy.username}
                     </span>
                 )}
             </div>
-        </div>
+            <h1 className="font-serif-display mt-4 max-w-4xl text-[clamp(2.2rem,4.5vw,3.75rem)] leading-[0.98] text-[var(--wk-ink)]">
+                {cours.title}
+            </h1>
+            {cours.description && (
+                <div className="mt-5 max-w-3xl text-base leading-relaxed text-[rgba(26,21,18,0.68)]">
+                    <CourseDescription content={cours.description} />
+                </div>
+            )}
+            <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-[rgba(26,21,18,0.55)]">
+                <span className="inline-flex items-center gap-1.5">
+                    <Layers className="h-4 w-4" />
+                    {cours.sections.length} chapitre{cours.sections.length > 1 ? "s" : ""}
+                </span>
+                {cours.authors && cours.authors.length > 0 && (
+                    <span className="inline-flex items-center gap-1.5">
+                        <Users className="h-4 w-4" />
+                        Écrit par {cours.authors.map((a) => a.username).join(", ")}
+                    </span>
+                )}
+            </div>
+        </header>
     );
 }
 
@@ -453,12 +520,12 @@ export function SidebarWrapper({
     readLessons?: Set<string>;
 }) {
     return (
-        <div className="h-full flex flex-col bg-[#f7f6f3]">
-            <div className="flex-shrink-0 p-4 border-b border-[#e3e2e0]">
-                <p className="text-xs text-[#9ca3af] uppercase tracking-wide font-medium mb-1">
+        <div className="h-full flex flex-col bg-[#f5efe3]">
+            <div className="flex-shrink-0 p-4 border-b border-[#e8dfd0]">
+                <p className="font-mono-ui mb-1.5 text-[10px] uppercase tracking-[0.18em] text-[#8f857b]">
                     Sommaire
                 </p>
-                <h2 className="text-sm font-semibold text-[#37352f] line-clamp-2">
+                <h2 className="font-serif-display text-lg leading-tight text-[#1a1512] line-clamp-2">
                     {course.title}
                 </h2>
             </div>
@@ -497,7 +564,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
     } | null>(null);
     const markReadTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-    const { prev, next } = useCourseNavigation(fullCourse, selectedContent);
+    const { prev, next, flatItems } = useCourseNavigation(fullCourse, selectedContent);
 
     const updateUrl = useCallback((content: SelectedContent | null) => {
         const url = new URL(window.location.href);
@@ -745,7 +812,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
     const currentStatusLabel = statusLabel[(cours as any)?.status] ?? "Non publié";
 
     return (
-        <div className="flex flex-col h-[calc(100dvh-48px)] bg-white overflow-hidden">
+        <div className="flex flex-col h-[calc(100dvh-48px)] bg-[var(--wk-paper)] text-[var(--wk-ink)] overflow-hidden">
             {/* Bannière prévisualisation pour les cours non publiés */}
             {isUnpublished && (
                 <div className="flex-shrink-0 bg-amber-50 border-b border-amber-200 px-4 py-2.5 flex items-center justify-center gap-2 text-sm">
@@ -760,7 +827,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
 
             <div className="flex flex-1 overflow-hidden">
             {/* Sidebar desktop */}
-            <div className="hidden md:block w-72 flex-shrink-0 bg-[#f7f6f3] border-r border-[#e3e2e0]">
+            <div className="hidden md:block w-80 flex-shrink-0 bg-[#f5efe3] border-r border-[#e8dfd0]">
                 <SidebarWrapper
                     course={cours}
                     onSelectContent={handleSelectContent}
@@ -770,7 +837,8 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
 
             {/* Main content */}
             <main className="flex-1 overflow-y-auto overflow-x-hidden notion-scrollbar">
-                <div className="max-w-4xl mx-auto px-6 md:px-12 py-8 md:py-12">
+                {/* Accueil du cours : pleine largeur ; leçon, exercices, quiz : largeur de lecture */}
+                <div className={`${selectedContent ? "max-w-4xl" : "max-w-6xl"} mx-auto px-5 md:px-10 xl:px-14 py-8 md:py-12`}>
                     {/* Breadcrumb */}
                     <div className="mb-6">
                         <CourseBreadcrumb
@@ -802,6 +870,9 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
                     ) : (
                         <CourseOverview
                             cours={cours}
+                            fullCourse={fullCourse}
+                            flatItems={flatItems}
+                            onNavigate={handleNavigate}
                             onOpenSidebar={() => setDrawerOpen(true)}
                             progress={courseProgress}
                             onResume={handleResumeCourse}
@@ -835,7 +906,7 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
                 <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
                     <DrawerTrigger asChild>
                         <button
-                            className="fixed z-50 left-4 bottom-6 pl-3 pr-4 py-3 bg-[#f97316] text-white rounded-full shadow-lg flex items-center gap-2 hover:bg-[#ea580c] transition-all"
+                            className="fixed z-50 left-4 bottom-6 pl-3 pr-4 py-3 bg-[#ff6a1a] text-white rounded-full shadow-lg flex items-center gap-2 hover:bg-[#e85a0c] transition-all"
                             aria-label="Ouvrir le sommaire"
                         >
                             <Menu className="w-5 h-5" />

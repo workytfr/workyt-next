@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
+import ProfileAvatar from '@/components/ui/profile';
 import { toast } from 'sonner';
 import {
     Users,
@@ -11,7 +12,6 @@ import {
     Loader2,
     Check
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 type RelationStatus =
     | 'self'
@@ -160,8 +160,8 @@ export default function ProfileFriends({ userId, username, variant = 'section' }
     // Pastille compacte pour la ligne de stats du profil
     if (variant === 'pill') {
         return (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-700">
-                <Users className="h-3.5 w-3.5" />
+            <span className="wk-chip !px-3.5 !py-2 text-sm">
+                <Users className="h-4 w-4" />
                 {loading ? '—' : `${count} ami${count > 1 ? 's' : ''}`}
             </span>
         );
@@ -172,100 +172,91 @@ export default function ProfileFriends({ userId, username, variant = 'section' }
 
         if (relation === 'friends') {
             return (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-sm font-semibold text-emerald-700 ring-1 ring-emerald-200">
-                    <Check className="h-4 w-4" /> Vous êtes amis
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                    <Check className="h-3.5 w-3.5" /> Vous êtes amis
                 </span>
             );
         }
 
         if (relation === 'pending_sent') {
             return (
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1.5 text-sm font-semibold text-amber-700 ring-1 ring-amber-200">
-                    <Clock className="h-4 w-4" /> Demande envoyée
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#fff4e0] px-3 py-1.5 text-xs font-semibold text-[#9a5d00]">
+                    <Clock className="h-3.5 w-3.5" /> Demande envoyée
                 </span>
             );
         }
 
         if (relation === 'pending_received') {
             return (
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-500">t&apos;a envoyé une demande</span>
-                    <Button size="sm" disabled={busy} onClick={() => respond(true)} className="bg-emerald-600 hover:bg-emerald-700">
-                        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserCheck className="mr-1 h-4 w-4" /> Accepter</>}
-                    </Button>
-                    <Button size="sm" variant="ghost" disabled={busy} onClick={() => respond(false)} className="text-gray-500">
+                <div className="flex w-full flex-wrap items-center gap-2 rounded-2xl bg-[var(--wk-paper)] p-3">
+                    <span className="flex-1 text-sm text-[rgba(26,21,18,0.7)]">{username} t&apos;a envoyé une demande</span>
+                    <button type="button" disabled={busy} onClick={() => respond(true)} className="wk-btn-ink !px-3.5 !py-1.5 text-sm disabled:opacity-50">
+                        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserCheck className="h-4 w-4" /> Accepter</>}
+                    </button>
+                    <button type="button" disabled={busy} onClick={() => respond(false)} className="rounded-full px-3 py-1.5 text-sm font-semibold text-[rgba(26,21,18,0.55)] hover:bg-white">
                         Refuser
-                    </Button>
+                    </button>
                 </div>
             );
         }
 
         return (
-            <Button size="sm" disabled={busy} onClick={addFriend}>
-                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="mr-1 h-4 w-4" /> Ajouter en ami</>}
-            </Button>
+            <button type="button" disabled={busy} onClick={addFriend} className="wk-btn-orange !px-3.5 !py-1.5 text-sm disabled:opacity-50">
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <><UserPlus className="h-4 w-4" /> Ajouter</>}
+            </button>
         );
     };
 
     return (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+        <section className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
-                <h3 className="flex items-center gap-2 text-lg font-semibold text-gray-800">
-                    <Users className="h-5 w-5 text-indigo-600" />
+                <h2 className="font-serif-display flex items-center gap-2.5 text-2xl">
+                    <Users className="h-5 w-5 text-[var(--wk-accent)]" />
                     Amis
-                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-sm font-bold text-indigo-700">
-                        {loading ? '—' : count}
-                    </span>
-                </h3>
-                {!loading && renderAction()}
+                    <span className="text-base text-[rgba(26,21,18,0.45)]">({loading ? '—' : count})</span>
+                </h2>
+                {!loading && relation !== 'pending_received' && renderAction()}
             </div>
+            {!loading && relation === 'pending_received' && <div className="mt-3">{renderAction()}</div>}
 
             {!loading && preview.length > 0 && (
-                <div className="mt-4 flex flex-wrap gap-3">
+                <ul className="mt-4 grid grid-cols-[repeat(auto-fill,minmax(64px,1fr))] gap-3">
                     {preview.map((f) => (
-                        <Link
-                            key={f.friendshipId}
-                            href={`/compte/${f.userId}`}
-                            className="group flex w-16 flex-col items-center gap-1"
-                            title={`${f.username} — niveau ${f.heroLevel}`}
-                        >
-                            <span className="relative">
-                                {f.avatar ? (
-                                    // eslint-disable-next-line @next/next/no-img-element
-                                    <img
-                                        src={f.avatar}
-                                        alt={f.username}
-                                        className="h-12 w-12 rounded-full border-2 border-white object-cover shadow-sm transition-transform group-hover:scale-105"
-                                    />
-                                ) : (
-                                    <span className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-white bg-gradient-to-br from-indigo-500 to-purple-600 text-lg font-bold text-white shadow-sm transition-transform group-hover:scale-105">
-                                        {f.username.charAt(0).toUpperCase()}
+                        <li key={f.friendshipId}>
+                            <Link
+                                href={`/compte/${f.userId}`}
+                                className="group flex flex-col items-center gap-1.5"
+                                title={`${f.username} — niveau ${f.heroLevel}`}
+                            >
+                                <span className="relative">
+                                    <span className="block rounded-full ring-2 ring-transparent transition group-hover:ring-[var(--wk-accent)]">
+                                        <ProfileAvatar username={f.username} userId={f.userId} image={f.avatar ?? undefined} size="small" showPoints={false} />
                                     </span>
-                                )}
-                                {f.isOnline && (
-                                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" />
-                                )}
-                            </span>
-                            <span className="w-full truncate text-center text-xs text-gray-600">
-                                {f.username}
-                            </span>
-                        </Link>
+                                    {f.isOnline && (
+                                        <span className="absolute bottom-0 right-0 z-20 h-3 w-3 rounded-full bg-emerald-500 ring-2 ring-white" title="En ligne" />
+                                    )}
+                                </span>
+                                <span className="w-full truncate text-center text-xs font-semibold text-[rgba(26,21,18,0.7)] group-hover:text-[var(--wk-ink)]">
+                                    {f.username}
+                                </span>
+                            </Link>
+                        </li>
                     ))}
-                </div>
+                </ul>
             )}
 
             {!loading && count === 0 && (
-                <p className="mt-3 text-sm text-gray-400">Aucun ami pour l&apos;instant.</p>
+                <p className="mt-3 text-sm text-[rgba(26,21,18,0.55)]">Aucun ami pour l&apos;instant.</p>
             )}
 
             {!loading && relation === 'self' && (
                 <Link
                     href="/amis"
-                    className="mt-4 inline-block text-sm font-medium text-indigo-600 hover:underline"
+                    className="mt-4 inline-block text-sm font-semibold text-[var(--wk-accent)] hover:underline"
                 >
                     Gérer mes amis →
                 </Link>
             )}
-        </div>
+        </section>
     );
 }

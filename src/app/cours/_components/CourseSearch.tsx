@@ -72,18 +72,18 @@ export default function CourseSearch({ courseId, onSelectResult }: CourseSearchP
     return (
         <div ref={containerRef} className="relative">
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8f857b]" />
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => handleChange(e.target.value)}
                     placeholder="Rechercher..."
-                    className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-[#e3e2e0] rounded-md focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] placeholder-[#bfbfbf] transition-all"
+                    className="w-full pl-9 pr-8 py-2 text-sm bg-white border border-[#e8dfd0] rounded-md focus:outline-none focus:border-[#ff6a1a] focus:ring-1 focus:ring-[#ff6a1a] placeholder-[#b8ad9f] transition-all"
                 />
                 {query && (
                     <button
                         onClick={() => { setQuery(""); setResults([]); setShowResults(false); }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#9ca3af] hover:text-[#6b6b6b]"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-[#8f857b] hover:text-[#6b625a]"
                     >
                         <X className="w-3.5 h-3.5" />
                     </button>
@@ -92,14 +92,14 @@ export default function CourseSearch({ courseId, onSelectResult }: CourseSearchP
 
             {/* Résultats */}
             {showResults && (
-                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#e3e2e0] rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto notion-scrollbar">
+                <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-[#e8dfd0] rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto notion-scrollbar">
                     {isSearching ? (
-                        <div className="flex items-center justify-center p-4 text-[#6b6b6b] text-sm">
+                        <div className="flex items-center justify-center p-4 text-[#6b625a] text-sm">
                             <Loader2 className="w-4 h-4 animate-spin mr-2" />
                             Recherche...
                         </div>
                     ) : results.length === 0 ? (
-                        <div className="p-4 text-[#9ca3af] text-sm text-center">
+                        <div className="p-4 text-[#8f857b] text-sm text-center">
                             Aucun résultat trouvé
                         </div>
                     ) : (
@@ -107,14 +107,14 @@ export default function CourseSearch({ courseId, onSelectResult }: CourseSearchP
                             <button
                                 key={result.lessonId}
                                 onClick={() => handleSelect(result)}
-                                className="w-full text-left p-3 hover:bg-[#f7f6f3] border-b border-[#f1f1ef] last:border-b-0 transition-colors"
+                                className="w-full text-left p-3 hover:bg-[#f5efe3] border-b border-[#efe6d6] last:border-b-0 transition-colors"
                             >
                                 <div className="flex items-start gap-2">
-                                    <FileText className="w-4 h-4 text-[#f97316] mt-0.5 flex-shrink-0" />
+                                    <FileText className="w-4 h-4 text-[#ff6a1a] mt-0.5 flex-shrink-0" />
                                     <div className="min-w-0">
-                                        <p className="text-sm font-medium text-[#37352f] truncate">{result.lessonTitle}</p>
-                                        <p className="text-xs text-[#9ca3af] mb-1">{result.sectionTitle}</p>
-                                        <p className="text-xs text-[#6b6b6b] line-clamp-2">{result.snippet}</p>
+                                        <p className="text-sm font-medium text-[#1a1512] truncate">{result.lessonTitle}</p>
+                                        <p className="text-xs text-[#8f857b] mb-1">{result.sectionTitle}</p>
+                                        <p className="text-xs text-[#6b625a] line-clamp-2">{result.snippet}</p>
                                     </div>
                                 </div>
                             </button>

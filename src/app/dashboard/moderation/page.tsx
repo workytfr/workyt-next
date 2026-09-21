@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { AlertCircle, CheckCircle, XCircle, Clock, Flag, MessageSquare, ExternalLink, Shield, Trash2, Search, Filter, AlertTriangle, FileText, BookOpen, MoreHorizontal } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Flag, MessageSquare, ExternalLink, Shield, Trash2, Search, Filter, AlertTriangle, FileText, BookOpen, MoreHorizontal, HeartHandshake } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
@@ -31,7 +31,7 @@ interface Report {
         email: string;
     };
     reportedContent: {
-        type: 'revision' | 'course' | 'forum_answer' | 'forum_question';
+        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship';
         id: string;
     };
     reason: string;
@@ -87,14 +87,16 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
     revision: 'Fiche de révision',
     course: 'Cours',
     forum_answer: 'Réponse forum',
-    forum_question: 'Question forum'
+    forum_question: 'Question forum',
+    mentorship: 'Suivi personnalisé'
 };
 
 const CONTENT_TYPE_ICONS: Record<string, React.ReactNode> = {
     revision: <FileText className="w-4 h-4" />,
     course: <BookOpen className="w-4 h-4" />,
     forum_answer: <MessageSquare className="w-4 h-4" />,
-    forum_question: <MessageSquare className="w-4 h-4" />
+    forum_question: <MessageSquare className="w-4 h-4" />,
+    mentorship: <HeartHandshake className="w-4 h-4" />
 };
 
 export default function ModerationPage() {
@@ -301,6 +303,9 @@ export default function ModerationPage() {
                 return `/forum/${id}`;
             case 'forum_answer':
                 return questionId ? `/forum/${questionId}` : `/forum`;
+            case 'mentorship':
+                // La modération relit la conversation complète dans l'espace du suivi
+                return `/suivi/${id}`;
             default:
                 return '#';
         }
@@ -436,6 +441,7 @@ export default function ModerationPage() {
                                 <SelectItem value="course">Cours</SelectItem>
                                 <SelectItem value="forum_question">Question forum</SelectItem>
                                 <SelectItem value="forum_answer">Réponse forum</SelectItem>
+                                <SelectItem value="mentorship">Suivi personnalisé</SelectItem>
                             </SelectContent>
                         </Select>
                         
@@ -673,7 +679,7 @@ export default function ModerationPage() {
                                                                     )}
                                                                     
                                                                     {/* Bouton suppression uniquement pour les signalements actifs (en_attente ou en_cours) et uniquement si le contenu est signalé */}
-                                                                    {report.reportedContent.type !== 'course' && 
+                                                                    {report.reportedContent.type !== 'course' && report.reportedContent.type !== 'mentorship' && 
                                                                      (report.status === 'en_attente' || report.status === 'en_cours') && (
                                                                         <Button
                                                                             variant="outline"

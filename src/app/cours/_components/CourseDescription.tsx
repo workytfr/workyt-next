@@ -17,7 +17,7 @@ export default function CourseDescription({ content, maxLength, className = "" }
     // Si pas de maxLength défini, afficher tout le contenu
     if (!maxLength || content.length <= maxLength) {
         return (
-            <div className={`prose prose-lg max-w-none text-[#6b6b6b] ${className}`}>
+            <div className={`prose prose-lg max-w-none text-[#6b625a] ${className}`}>
                 <ReactMarkdown
                     rehypePlugins={[rehypeKatex]}
                     remarkPlugins={[remarkMath, remarkGfm]}
@@ -63,7 +63,7 @@ export default function CourseDescription({ content, maxLength, className = "" }
     }
 
     return (
-        <div className={`prose prose-sm max-w-none text-[#6b6b6b] line-clamp-2 ${className}`}>
+        <div className={`prose prose-sm max-w-none text-[#6b625a] line-clamp-2 ${className}`}>
             <ReactMarkdown
                 rehypePlugins={[rehypeKatex]}
                 remarkPlugins={[remarkMath, remarkGfm]}

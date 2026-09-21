@@ -4,11 +4,10 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
-import TimeAgo from "@/components/ui/TimeAgo";
-import { FaThumbsUp, FaCheckCircle, FaMedal, FaRegComment, FaQuoteRight } from "react-icons/fa";
+import { relativeTime } from "./forumUi";
+import { ThumbsUp, CheckCircle2, Medal, MessageCircle, Quote } from "lucide-react";
 import MentionMarkdown from "./MentionMarkdown";
 import { useSession } from "next-auth/react";
-import Image from "next/image";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
 import ReportButton from "@/components/ReportButton";
 import "katex/dist/katex.min.css";
@@ -102,25 +101,24 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
     };
 
     return (
-        <div className="mt-8 w-full max-w-5xl">
-            <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                    <FaRegComment className="text-indigo-600" />
-                    Réponses <span className="ml-1.5 text-indigo-600">{updatedAnswers.length}</span>
-                </h3>
-                <div className="text-sm text-gray-500">
-                    {updatedAnswers.length === 0 ? "Soyez le premier à répondre !" : ""}
-                </div>
+        <section aria-label="Réponses">
+            <div className="mb-4 flex items-baseline justify-between">
+                <h2 className="font-serif-display text-3xl">
+                    Réponses <span className="text-[var(--wk-accent)]">{updatedAnswers.length}</span>
+                </h2>
+                {updatedAnswers.length === 0 && (
+                    <span className="text-sm text-[rgba(26,21,18,0.55)]">Sois le premier à répondre !</span>
+                )}
             </div>
 
             {updatedAnswers.length === 0 ? (
-                <div className="bg-gray-50 border border-gray-200 rounded-xl p-8 text-center">
-                    <div className="text-gray-400 text-5xl mb-4">💬</div>
-                    <p className="text-gray-600 mb-2">Aucune réponse pour l&apos;instant.</p>
-                    <p className="text-gray-500 text-sm">Partagez votre expertise et aidez cette personne !</p>
+                <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-12 text-center">
+                    <MessageCircle className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                    <p className="mt-3 font-semibold">Aucune réponse pour l&apos;instant</p>
+                    <p className="mt-1 text-sm text-[rgba(26,21,18,0.6)]">Partage ce que tu sais : une piste suffit souvent à débloquer.</p>
                 </div>
             ) : (
-                <div className="space-y-6">
+                <div className="space-y-4">
                     {updatedAnswers.map((answer) => {
                         const isQuestionOwner = question?.user && session?.user.id === question.user._id;
                         const isStaff = session?.user.role && ["Admin", "Helpeur"].includes(session.user.role);
@@ -129,67 +127,65 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
                         const hasLiked = answer.likedBy.includes(session?.user.username);
 
                         return (
-                            <div
+                            <article
                                 key={answer._id}
-                                className={`bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden
-                                    ${isBestAnswer ? "border-green-500" : isValidated ? "border-orange-400" : "border-gray-200"}`}
+                                className={`overflow-hidden rounded-3xl border bg-white transition ${
+                                    isBestAnswer
+                                        ? "border-emerald-300 shadow-[0_12px_32px_rgba(16,185,129,0.12)]"
+                                        : isValidated
+                                          ? "border-[#bfe3f2] shadow-[0_12px_32px_rgba(110,193,228,0.14)]"
+                                          : "border-[rgba(26,21,18,0.08)]"
+                                }`}
                             >
-                                {/* Bannière de statut en haut */}
+                                {/* Bannière de statut */}
                                 {(isBestAnswer || isValidated) && (
-                                    <div className={`py-1.5 px-4 text-white text-xs font-medium flex items-center gap-1.5
-                                        ${isBestAnswer ? "bg-green-500" : "bg-orange-400"}`}>
+                                    <div
+                                        className={`flex items-center gap-1.5 px-5 py-2 text-xs font-semibold ${
+                                            isBestAnswer ? "bg-emerald-50 text-emerald-800" : "bg-[#eaf6fb] text-[#2f86b3]"
+                                        }`}
+                                    >
                                         {isBestAnswer ? (
                                             <>
-                                                <FaMedal /> Meilleure réponse choisie par l&apos;auteur
+                                                <Medal className="h-3.5 w-3.5" /> Meilleure réponse choisie par l&apos;auteur
                                             </>
                                         ) : (
                                             <>
-                                                <FaCheckCircle /> Réponse validée par l&apos;équipe
+                                                <CheckCircle2 className="h-3.5 w-3.5" /> Réponse validée par l&apos;équipe
                                             </>
                                         )}
                                     </div>
                                 )}
 
-                                {/* Contenu de la réponse */}
-                                <div className="p-6">
-                                    {/* Utilisateur et métadonnées */}
-                                    <div className="flex items-center gap-3 mb-4">
+                                <div className="p-5 sm:p-6">
+                                    <div className="flex items-center gap-3">
                                         <ProfileAvatar username={answer.user.username} points={answer.user.points} size="small" userId={answer.user._id} />
-                                        <div>
-                                            <Link href={`/compte/${answer.user._id}`}>
-                                                <UsernameDisplay 
-                                                    username={answer.user.username}
-                                                    userId={answer.user._id}
-                                                    className="block font-medium hover:underline cursor-pointer"
-                                                />
+                                        <div className="leading-tight">
+                                            <Link href={`/compte/${answer.user._id}`} className="hover:underline">
+                                                <UsernameDisplay username={answer.user.username} userId={answer.user._id} className="text-sm font-semibold" />
                                             </Link>
-                                            <TimeAgo date={answer.createdAt} />
+                                            <span className="block text-xs text-[rgba(26,21,18,0.5)]">{relativeTime(answer.createdAt)}</span>
                                         </div>
                                     </div>
 
-                                    {/* Contenu de la réponse avec style amélioré */}
                                     <MentionMarkdown
                                         content={answer.content}
-                                        knownUsers={[
-                                            question?.user,
-                                            ...updatedAnswers.map((a: any) => a.user),
-                                        ].filter(Boolean)}
-                                        className="mt-2 prose prose-indigo prose-sm max-w-none text-gray-800 overflow-x-auto"
+                                        knownUsers={[question?.user, ...updatedAnswers.map((a: any) => a.user)].filter(Boolean)}
+                                        className="prose prose-sm mt-4 max-w-none overflow-x-auto text-[rgba(26,21,18,0.88)]"
                                     />
 
                                     {/* Actions */}
-                                    <div className="mt-6 pt-4 border-t border-gray-100 flex flex-wrap items-center gap-4">
+                                    <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-[rgba(26,21,18,0.06)] pt-4">
                                         <button
-                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
-                                                hasLiked
-                                                    ? "bg-blue-100 text-blue-700"
-                                                    : "bg-gray-100 text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                                            }`}
+                                            type="button"
                                             onClick={() => handleLike(answer._id)}
+                                            aria-pressed={hasLiked}
+                                            className={`wk-chip !py-1.5 transition ${
+                                                hasLiked ? "!border-[var(--wk-accent)] !bg-[rgba(255,106,26,0.1)] text-[#c24a0a]" : "hover:border-[rgba(26,21,18,0.3)]"
+                                            }`}
                                         >
-                                            <FaThumbsUp size={14} />
-                                            <span>{answer.likes}</span>
-                                            <span className="sr-only sm:not-sr-only sm:ml-1">J&apos;aime</span>
+                                            <ThumbsUp className="h-3.5 w-3.5" />
+                                            {answer.likes}
+                                            <span className="sr-only sm:not-sr-only">J&apos;aime</span>
                                         </button>
 
                                         {(isQuestionOwner || isStaff) && question.status !== "Résolue" && !isBestAnswer && (
@@ -197,24 +193,19 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
                                                 <Tooltip>
                                                     <TooltipTrigger asChild>
                                                         <button
-                                                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full transition-colors ${
-                                                                isValidated
-                                                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
-                                                                    : "bg-gray-100 text-gray-700 hover:bg-green-100 hover:text-green-700"
-                                                            }`}
+                                                            type="button"
                                                             onClick={() => !isValidated && handleValidate(answer._id)}
                                                             disabled={isValidated}
+                                                            className={`wk-chip !py-1.5 transition ${
+                                                                isValidated ? "cursor-not-allowed opacity-50" : "hover:!border-emerald-400 hover:text-emerald-700"
+                                                            }`}
                                                         >
-                                                            <FaCheckCircle size={14} />
-                                                            <span className="sr-only sm:not-sr-only">
-                                                                {isValidated ? "Déjà validée" : "Valider cette réponse"}
-                                                            </span>
+                                                            <CheckCircle2 className="h-3.5 w-3.5" />
+                                                            <span className="sr-only sm:not-sr-only">{isValidated ? "Déjà validée" : "Valider cette réponse"}</span>
                                                         </button>
                                                     </TooltipTrigger>
                                                     <TooltipContent>
-                                                        {isValidated
-                                                            ? "Cette réponse a déjà été validée"
-                                                            : "Marquer cette réponse comme validée"}
+                                                        {isValidated ? "Cette réponse a déjà été validée" : "Marquer cette réponse comme validée"}
                                                     </TooltipContent>
                                                 </Tooltip>
                                             </TooltipProvider>
@@ -223,53 +214,37 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
                                         {onQuote && (
                                             <button
                                                 type="button"
-                                                onClick={() =>
-                                                    onQuote(
-                                                        answer.content || "",
-                                                        String(answer.user?._id ?? ""),
-                                                        answer.user?.username ?? "auteur",
-                                                    )
-                                                }
-                                                className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-100 text-gray-700 hover:bg-orange-50 hover:text-orange-700 transition-colors"
+                                                onClick={() => onQuote(answer.content || "", String(answer.user?._id ?? ""), answer.user?.username ?? "auteur")}
+                                                className="wk-chip !py-1.5 transition hover:border-[rgba(26,21,18,0.3)]"
                                                 title="Citer cette réponse"
                                             >
-                                                <FaQuoteRight size={12} />
+                                                <Quote className="h-3.5 w-3.5" />
                                                 <span className="sr-only sm:not-sr-only">Citer</span>
                                             </button>
                                         )}
 
-                                        <ReportButton
-                                            contentId={answer._id}
-                                            contentType="forum_answer"
-                                            questionId={question?._id}
-                                            variant="dropdown"
-                                        />
+                                        <div className="ml-auto">
+                                            <ReportButton contentId={answer._id} contentType="forum_answer" questionId={question?._id} variant="dropdown" />
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </article>
                         );
                     })}
                 </div>
             )}
 
-            {/* Snackbar notifications */}
+            {/* Notification */}
             {snackbarMessage && (
-                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl z-50 flex items-center animate-fade-in">
-                    <span className="mr-2">✓</span>
+                <div
+                    role="status"
+                    className="fixed bottom-6 left-1/2 z-50 flex -translate-x-1/2 items-center gap-2 rounded-full bg-[var(--wk-ink)] px-5 py-3 text-sm font-medium text-[var(--wk-paper)] shadow-xl"
+                >
+                    <CheckCircle2 className="h-4 w-4 text-[var(--wk-accent-2)]" />
                     {snackbarMessage}
                 </div>
             )}
-
-            <style jsx>{`
-                @keyframes fadeIn {
-                    from { opacity: 0; transform: translate(-50%, 20px); }
-                    to { opacity: 1; transform: translate(-50%, 0); }
-                }
-                .animate-fade-in {
-                    animation: fadeIn 0.3s ease-out forwards;
-                }
-            `}</style>
-        </div>
+        </section>
     );
 };
 

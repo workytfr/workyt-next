@@ -52,9 +52,9 @@ const STATUS_CONFIG = {
     },
     not_started: {
         label: "Non commencé",
-        color: "text-[#9ca3af]",
-        bg: "bg-[#f7f6f3]",
-        border: "border-[#e3e2e0]",
+        color: "text-[#8f857b]",
+        bg: "bg-[#f5efe3]",
+        border: "border-[#e8dfd0]",
         icon: Circle,
     },
 };
@@ -119,7 +119,7 @@ export default function CourseCompetencies({ courseId }: CourseCompetenciesProps
     };
 
     return (
-        <div className="mt-12 pt-8 border-t border-[#e3e2e0]">
+        <div className="mt-12 pt-8 border-t border-[#e8dfd0]">
             {/* Header — même style que CourseFichesSection */}
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
@@ -127,10 +127,10 @@ export default function CourseCompetencies({ courseId }: CourseCompetenciesProps
                         <Target className="w-5 h-5 text-orange-600" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-semibold text-[#37352f]">
+                        <h3 className="font-serif-display text-2xl text-[#1a1512]">
                             Compétences du programme
                         </h3>
-                        <p className="text-sm text-[#9ca3af]">
+                        <p className="text-sm text-[#8f857b]">
                             {mastered}/{total} compétence{total > 1 ? "s" : ""} maîtrisée{mastered > 1 ? "s" : ""} &middot; {percent}%
                         </p>
                     </div>
@@ -138,7 +138,7 @@ export default function CourseCompetencies({ courseId }: CourseCompetenciesProps
             </div>
 
             {/* Barre de progression */}
-            <div className="w-full h-2.5 bg-[#f7f6f3] rounded-full overflow-hidden flex mb-4">
+            <div className="w-full h-2.5 bg-[#f5efe3] rounded-full overflow-hidden flex mb-4">
                 {mastered > 0 && (
                     <div
                         className="h-full bg-emerald-400 transition-all duration-500"
@@ -173,7 +173,7 @@ export default function CourseCompetencies({ courseId }: CourseCompetenciesProps
                     </span>
                 )}
                 {notStarted > 0 && (
-                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f7f6f3] text-[#9ca3af] text-xs font-medium rounded-full">
+                    <span className="flex items-center gap-1.5 px-3 py-1.5 bg-[#f5efe3] text-[#8f857b] text-xs font-medium rounded-full">
                         <Circle className="w-3.5 h-3.5" /> {notStarted} non commencée{notStarted > 1 ? "s" : ""}
                     </span>
                 )}
@@ -192,18 +192,18 @@ export default function CourseCompetencies({ courseId }: CourseCompetenciesProps
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: themeIdx * 0.05 }}
-                            className="bg-[#f7f6f3] rounded-xl overflow-hidden"
+                            className="bg-[#f5efe3] rounded-xl overflow-hidden"
                         >
                             <button
                                 onClick={() => toggleTheme(theme)}
                                 className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-[#efeeeb] transition-colors text-left"
                             >
                                 {isOpen ? (
-                                    <ChevronDown className="w-4 h-4 text-[#9ca3af] flex-shrink-0" />
+                                    <ChevronDown className="w-4 h-4 text-[#8f857b] flex-shrink-0" />
                                 ) : (
-                                    <ChevronRight className="w-4 h-4 text-[#9ca3af] flex-shrink-0" />
+                                    <ChevronRight className="w-4 h-4 text-[#8f857b] flex-shrink-0" />
                                 )}
-                                <span className="text-sm font-semibold text-[#37352f] flex-1">{theme}</span>
+                                <span className="text-sm font-semibold text-[#1a1512] flex-1">{theme}</span>
                                 <div className="flex items-center gap-2">
                                     <div className="w-16 h-1.5 bg-white/60 rounded-full overflow-hidden">
                                         <div
@@ -211,7 +211,7 @@ export default function CourseCompetencies({ courseId }: CourseCompetenciesProps
                                             style={{ width: `${themePercent}%` }}
                                         />
                                     </div>
-                                    <span className="text-xs text-[#9ca3af] font-medium tabular-nums">
+                                    <span className="text-xs text-[#8f857b] font-medium tabular-nums">
                                         {themeMastered}/{skills.length}
                                     </span>
                                 </div>
@@ -247,7 +247,7 @@ export default function CourseCompetencies({ courseId }: CourseCompetenciesProps
                                                             </span>
                                                         )}
                                                     </div>
-                                                    <p className="text-sm text-[#37352f] leading-snug">
+                                                    <p className="text-sm text-[#1a1512] leading-snug">
                                                         {skill.description}
                                                     </p>
                                                 </div>

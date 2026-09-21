@@ -1,4 +1,3 @@
-import '@radix-ui/themes/styles.css';
 import HeroBackdrop from "@/components/home/hero-backdrop";
 import Hero2026 from "@/components/home/hero-2026";
 import NosServices from "@/components/home/nos-services";

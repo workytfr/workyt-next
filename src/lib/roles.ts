@@ -43,6 +43,10 @@ export const ALL_PERMISSIONS = {
     'forum.moderate': 'Modérer le forum',
     'forum.validate_answer': 'Valider une réponse du forum',
 
+    // Suivi personnalisé
+    'mentorship.take': 'Accompagner des élèves en suivi',
+    'mentorship.manage': 'Piloter et modérer les suivis',
+
     // Utilisateurs
     'user.manage': 'Gérer les utilisateurs',
     'user.ban': 'Bannir un utilisateur',
@@ -76,6 +80,7 @@ export const PERMISSION_GROUPS: Record<string, Permission[]> = {
     'Fiches': ['fiche.create', 'fiche.edit', 'fiche.delete'],
     'Quiz': ['quiz.create', 'quiz.edit', 'quiz.delete'],
     'Forum': ['forum.moderate', 'forum.validate_answer'],
+    'Suivi': ['mentorship.take', 'mentorship.manage'],
     'Utilisateurs': ['user.manage', 'user.ban', 'user.change_role'],
     'Rôles': ['role.manage'],
     'Administration': ['admin.panel', 'admin.stats', 'admin.newsletter', 'admin.partners'],
@@ -123,6 +128,7 @@ export const DEFAULT_ROLES: Array<{
             'evaluation.grade',
             'forum.validate_answer',
             'fiche.edit',
+            'mentorship.take',
         ],
         isSystem: false,
         isDefault: false,
@@ -185,6 +191,7 @@ export const DEFAULT_ROLES: Array<{
             'forum.validate_answer',
             'user.ban',
             'fiche.edit', 'fiche.delete',
+            'mentorship.take', 'mentorship.manage',
         ],
         isSystem: false,
         isDefault: false,

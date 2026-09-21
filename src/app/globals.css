@@ -413,9 +413,17 @@
 @layer base {
   body {
     font-family: var(--font-funnel-display), system-ui, sans-serif;
+    /* Fond papier Workyt : c'est lui qu'on voit autour de la navbar (pilule
+       flottante sur un bandeau sans fond) et derrière la vague du footer.
+       En blanc, ces deux bandes tranchaient avec les pages sur fond papier. */
+    background-color: var(--wk-paper);
   }
 
-  p, span, li, td, th, label, input, textarea, select, button, a {
+  /* `span` volontairement absent de cette liste : il hérite de son parent.
+     Sinon, un mot en <span> dans un titre en Funnel Display repassait en
+     Montserrat (titres de l'accueil, du forum, du suivi). Un span dans un
+     paragraphe ou un lien reste en Montserrat, par héritage. */
+  p, li, td, th, label, input, textarea, select, button, a {
     font-family: var(--font-montserrat), system-ui, sans-serif;
   }
 

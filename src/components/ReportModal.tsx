@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 
 interface ReportModalProps {
     contentId: string;
-    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question';
+    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship';
     questionId?: string; // ID de la question parente (pour les réponses forum)
     trigger?: React.ReactNode;
 }

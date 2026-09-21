@@ -45,9 +45,9 @@ export function Sidebar({ course, onSelectContent, readLessons }: SidebarProps) 
     return (
         <div className="h-full flex flex-col">
             {/* Recherche */}
-            <div className="px-4 py-3 border-b border-[#e3e2e0]">
+            <div className="px-4 py-3 border-b border-[#e8dfd0]">
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#9ca3af] w-4 h-4" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-[#8f857b] w-4 h-4" />
                     <CourseSearch courseId={course._id} onSelectResult={handleSearchResult} />
                 </div>
             </div>
@@ -73,7 +73,7 @@ export function Sidebar({ course, onSelectContent, readLessons }: SidebarProps) 
             <RelatedContentPanel courseId={course._id} />
 
             {/* Footer info */}
-            <div className="px-4 py-3 border-t border-[#e3e2e0] text-xs text-[#9ca3af] flex-shrink-0">
+            <div className="px-4 py-3 border-t border-[#e8dfd0] text-xs text-[#8f857b] flex-shrink-0">
                 {course.sections.length} section{course.sections.length > 1 ? 's' : ''}
             </div>
         </div>

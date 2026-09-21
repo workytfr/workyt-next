@@ -16,6 +16,7 @@ import '../models/Streak';
 import '../models/MushroomTransaction';
 import '../models/CalendarClaim';
 import '../models/UserLeague';
+import '../models/Mentorship';
 
 export class BadgeService {
   /**
@@ -103,6 +104,24 @@ export class BadgeService {
 
       case 'clan_win':
         return await this.checkClanWins(user._id.toString(), value);
+
+      case 'mentorship_started':
+        return await this.checkMentorshipStarted(user._id.toString(), value);
+
+      case 'mentorship_goal':
+        return await this.checkMentorshipGoals(user._id.toString(), value);
+
+      case 'mentorship_success':
+        return await this.checkMentorshipSuccess(user._id.toString(), value);
+
+      case 'mentorship_duo_streak':
+        return await this.checkMentorshipDuoStreak(user._id.toString(), value);
+
+      case 'mentor_completed':
+        return await this.checkMentorCompleted(user._id.toString(), value);
+
+      case 'mentor_subjects':
+        return await this.checkMentorSubjects(user._id.toString(), value);
 
       case 'event':
         return false;
@@ -306,6 +325,112 @@ export class BadgeService {
       return (league?.wins || 0) >= requiredCount;
     } catch (error) {
       console.error('Erreur lors de la verification des victoires de clan:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Suivi personnalisé — nombre de suivis commencés en tant qu'élève
+   * (un suivi est « commencé » dès qu'un bénévole l'a pris).
+   */
+  private static async checkMentorshipStarted(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Mentorship = mongoose.model('Mentorship');
+      const count = await Mentorship.countDocuments({ student: userId, matchedAt: { $exists: true } });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des suivis commences:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Suivi personnalisé — objectifs atteints (tous suivis confondus, en tant qu'élève)
+   */
+  private static async checkMentorshipGoals(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Mentorship = mongoose.model('Mentorship');
+      const rows = await Mentorship.aggregate([
+        { $match: { student: new mongoose.Types.ObjectId(userId) } },
+        { $unwind: '$goals' },
+        { $match: { 'goals.rewarded': true } },
+        { $count: 'n' }
+      ]);
+      return (rows[0]?.n || 0) >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des objectifs de suivi:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Suivi personnalisé — suivis terminés avec l'objectif atteint (en tant qu'élève)
+   */
+  private static async checkMentorshipSuccess(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Mentorship = mongoose.model('Mentorship');
+      const count = await Mentorship.countDocuments({
+        student: userId,
+        status: 'closed',
+        'closure.outcome': 'goal_reached'
+      });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des suivis reussis:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Suivi personnalisé — meilleure série du binôme, que l'on soit l'élève ou le
+   * bénévole. Pour le bénévole, seule compte une série tenue avec LUI : un
+   * suivi repris après un relais garde sa série, mais pas au crédit de
+   * l'ancien bénévole (il n'est plus `mentor`).
+   */
+  private static async checkMentorshipDuoStreak(userId: string, requiredWeeks: number): Promise<boolean> {
+    try {
+      const Mentorship = mongoose.model('Mentorship');
+      const found = await Mentorship.exists({
+        $or: [{ student: userId }, { mentor: userId }],
+        'duoStreak.best': { $gte: requiredWeeks }
+      });
+      return !!found;
+    } catch (error) {
+      console.error('Erreur lors de la verification de la serie du binome:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Suivi personnalisé — suivis menés à leur terme en tant que bénévole.
+   * « À leur terme » = clôturés par une vraie issue (objectif atteint ou
+   * partiellement), jamais une rupture : on ne récompense pas le volume.
+   */
+  private static async checkMentorCompleted(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Mentorship = mongoose.model('Mentorship');
+      const count = await Mentorship.countDocuments({
+        mentor: userId,
+        status: 'closed',
+        'closure.outcome': { $in: ['goal_reached', 'partial'] }
+      });
+      return count >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des suivis menes:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Suivi personnalisé — matières distinctes accompagnées en tant que bénévole
+   */
+  private static async checkMentorSubjects(userId: string, requiredCount: number): Promise<boolean> {
+    try {
+      const Mentorship = mongoose.model('Mentorship');
+      const subjects = await Mentorship.distinct('subject', { 'mentorHistory.mentor': userId });
+      return subjects.length >= requiredCount;
+    } catch (error) {
+      console.error('Erreur lors de la verification des matieres accompagnees:', error);
       return false;
     }
   }

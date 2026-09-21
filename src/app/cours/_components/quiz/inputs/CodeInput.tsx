@@ -46,8 +46,8 @@ export default function CodeInput({ question, value, onChange }: QuestionInputPr
     const shell = (hint: string, children: React.ReactNode, padded: boolean) => (
         <div className="space-y-3">
             <div className="flex items-center gap-2">
-                <Code2 className="w-4 h-4 text-[#9ca3af]" />
-                <span className="text-xs text-[#9ca3af]">{hint}</span>
+                <Code2 className="w-4 h-4 text-[#8f857b]" />
+                <span className="text-xs text-[#8f857b]">{hint}</span>
             </div>
 
             <div className="wk-code" data-language={language ?? "plaintext"}>
@@ -85,7 +85,7 @@ export default function CodeInput({ question, value, onChange }: QuestionInputPr
                             }
                             autoComplete="off"
                             spellCheck={false}
-                            className="inline-block bg-[#2d2a26] border border-[#f97316] rounded px-2 py-0.5 text-[#f97316] font-mono text-sm min-w-[80px] focus:outline-none focus:ring-1 focus:ring-[#f97316] placeholder-[#6b6258]"
+                            className="inline-block bg-[#2d2a26] border border-[#ff6a1a] rounded px-2 py-0.5 text-[#ff6a1a] font-mono text-sm min-w-[80px] focus:outline-none focus:ring-1 focus:ring-[#ff6a1a] placeholder-[#6b6258]"
                             style={{ width: blankWidth(values[index] || "", blankCount > 1 ? 80 : 100) }}
                         />
                     )}

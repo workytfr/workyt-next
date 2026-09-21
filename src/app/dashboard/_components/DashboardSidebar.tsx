@@ -31,6 +31,7 @@ import {
   KanbanSquare,
   IdCard,
   CalendarClock,
+  HeartHandshake,
 } from "lucide-react";
 import TutorialModal from "./TutorialModal";
 import "../styles/dashboard-theme.css";
@@ -56,6 +57,12 @@ interface NavItem {
 const navItems: NavItem[] = [
   { name: "Dashboard", href: "/dashboard", icon: Home },
   { name: "Kanban", href: "/dashboard/kanban", icon: KanbanSquare },
+  {
+    name: "Suivis",
+    href: "/dashboard/suivis",
+    icon: HeartHandshake,
+    roles: ["Helpeur", "Modérateur", "Admin"],
+  },
   {
     name: "Cours",
     href: "/dashboard/cours",
@@ -102,7 +109,7 @@ const navItems: NavItem[] = [
 const navGroups = [
   {
     title: "Général",
-    items: ["Dashboard", "Kanban"],
+    items: ["Dashboard", "Kanban", "Suivis"],
   },
   {
     title: "Contenu",

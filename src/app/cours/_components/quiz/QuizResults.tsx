@@ -99,7 +99,7 @@ export default function QuizResults({
         <div className="w-full">
             <button
                 onClick={onClose}
-                className="flex items-center gap-2 text-sm text-[#6b6b6b] hover:text-[#37352f] transition-colors mb-6"
+                className="flex items-center gap-2 text-sm text-[#6b625a] hover:text-[#1a1512] transition-colors mb-6"
             >
                 <ChevronLeft className="w-4 h-4" />
                 Retour aux quiz
@@ -120,7 +120,7 @@ export default function QuizResults({
                     <AnimatedPercent value={percent} />%
                 </div>
 
-                <p className="text-[#6b6b6b] text-sm sm:text-base">
+                <p className="text-[#6b625a] text-sm sm:text-base">
                     {results.score}/{results.maxScore} points — {correctCount}/
                     {results.answers.length} bonne{correctCount > 1 ? "s" : ""} réponse
                     {correctCount > 1 ? "s" : ""}
@@ -160,13 +160,13 @@ export default function QuizResults({
                 </div>
 
                 {isCompleted && !results.isNewBest && results.bestScore !== undefined && (
-                    <p className="text-xs text-[#9ca3af] mt-3">
+                    <p className="text-xs text-[#8f857b] mt-3">
                         Meilleur score conservé : {results.bestScore}/{results.maxScore} — les
                         points ne sont gagnés qu&apos;à la première complétion
                     </p>
                 )}
 
-                <div className="flex items-center justify-center gap-2 mt-3 text-sm text-[#9ca3af]">
+                <div className="flex items-center justify-center gap-2 mt-3 text-sm text-[#8f857b]">
                     <Clock className="w-4 h-4" />
                     {formatTime(timeSpent)}
                 </div>
@@ -192,7 +192,7 @@ export default function QuizResults({
             )}
 
             {/* --- Détail des réponses --- */}
-            <h3 className="text-lg font-semibold text-[#37352f] mb-4">Détail des réponses</h3>
+            <h3 className="text-lg font-semibold text-[#1a1512] mb-4">Détail des réponses</h3>
 
             <div className="space-y-3">
                 {results.answers.map((answer, index) => {
@@ -228,7 +228,7 @@ export default function QuizResults({
 
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center justify-between gap-2 mb-1">
-                                        <span className="font-medium text-[#37352f] text-sm sm:text-base">
+                                        <span className="font-medium text-[#1a1512] text-sm sm:text-base">
                                             Question {index + 1}
                                         </span>
                                         <span className="flex items-center gap-2 flex-shrink-0">
@@ -237,13 +237,13 @@ export default function QuizResults({
                                                 {(question.point || 0) > 1 ? "s" : ""}
                                             </Badge>
                                             <ChevronDown
-                                                className={`w-4 h-4 text-[#9ca3af] transition-transform ${
+                                                className={`w-4 h-4 text-[#8f857b] transition-transform ${
                                                     isOpen ? "rotate-180" : ""
                                                 }`}
                                             />
                                         </span>
                                     </div>
-                                    <p className="text-sm text-[#6b6b6b]">
+                                    <p className="text-sm text-[#6b625a]">
                                         <LatexText text={question.question} />
                                     </p>
                                 </div>
@@ -260,7 +260,7 @@ export default function QuizResults({
                                     >
                                         <div className="px-4 sm:px-5 pb-4 sm:pb-5 pl-12 sm:pl-13 space-y-3">
                                             <div className="text-sm p-2.5 bg-white/70 rounded-lg">
-                                                <span className="text-[#9ca3af]">
+                                                <span className="text-[#8f857b]">
                                                     Votre réponse :{" "}
                                                 </span>
                                                 <span
@@ -278,7 +278,7 @@ export default function QuizResults({
                                                 answer.correctAnswer !== undefined &&
                                                 (isCode ? (
                                                     <div>
-                                                        <p className="text-sm text-[#9ca3af] mb-1">
+                                                        <p className="text-sm text-[#8f857b] mb-1">
                                                             Bonne réponse :
                                                         </p>
                                                         <CodeBlock
@@ -291,7 +291,7 @@ export default function QuizResults({
                                                     </div>
                                                 ) : (
                                                     <div className="text-sm p-2.5 bg-white/70 rounded-lg">
-                                                        <span className="text-[#9ca3af]">
+                                                        <span className="text-[#8f857b]">
                                                             Bonne réponse :{" "}
                                                         </span>
                                                         <span className="text-emerald-700 font-medium">

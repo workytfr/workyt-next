@@ -37,7 +37,7 @@ export default function MatchingInput({ question, value, onChange }: QuestionInp
 
     return (
         <div className="space-y-3">
-            <p className="text-xs text-[#9ca3af] mb-3 flex items-center gap-1.5">
+            <p className="text-xs text-[#8f857b] mb-3 flex items-center gap-1.5">
                 <Link2 className="w-3.5 h-3.5" />
                 Associez chaque élément de gauche à son correspondant de droite.
             </p>
@@ -45,9 +45,9 @@ export default function MatchingInput({ question, value, onChange }: QuestionInp
             {leftItems.map((leftItem, leftIdx) => (
                 <div
                     key={leftIdx}
-                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 rounded-xl border-2 border-[#e3e2e0] bg-white"
+                    className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 p-3 rounded-xl border-2 border-[#e8dfd0] bg-white"
                 >
-                    <div className="flex-1 text-sm sm:text-base text-[#37352f] font-medium">
+                    <div className="flex-1 text-sm sm:text-base text-[#1a1512] font-medium">
                         <LatexText text={leftItem} />
                     </div>
 
@@ -59,8 +59,8 @@ export default function MatchingInput({ question, value, onChange }: QuestionInp
                             aria-label={`Correspondance pour « ${leftItem} »`}
                             className={`w-full sm:w-48 p-2.5 rounded-lg border-2 text-sm transition-colors ${
                                 selections[leftIdx]
-                                    ? "border-[#f97316] bg-[#fff7ed] text-[#37352f]"
-                                    : "border-[#e3e2e0] bg-[#fafaf9] text-[#6b6b6b]"
+                                    ? "border-[#ff6a1a] bg-[#fff1e6] text-[#1a1512]"
+                                    : "border-[#e8dfd0] bg-[#fafaf9] text-[#6b625a]"
                             }`}
                         >
                             <option value="">Choisir...</option>

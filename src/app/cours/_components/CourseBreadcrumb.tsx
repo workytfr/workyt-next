@@ -27,7 +27,7 @@ export default function CourseBreadcrumb({
         <nav className="notion-breadcrumb flex-wrap" aria-label="Breadcrumb">
             <Link
                 href="/cours"
-                className="flex items-center gap-1 hover:text-[#37352f] transition-colors"
+                className="flex items-center gap-1 hover:text-[#1a1512] transition-colors"
             >
                 <Home className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">Cours</span>
@@ -37,7 +37,7 @@ export default function CourseBreadcrumb({
 
             <button
                 onClick={onNavigateToOverview}
-                className="hover:text-[#37352f] transition-colors truncate max-w-[200px] sm:max-w-[300px]"
+                className="hover:text-[#1a1512] transition-colors truncate max-w-[200px] sm:max-w-[300px]"
                 title={courseTitle}
             >
                 {courseTitle}
@@ -55,7 +55,7 @@ export default function CourseBreadcrumb({
             {(contentTitle || kindLabel) && (
                 <>
                     <ChevronRight className="w-3.5 h-3.5 notion-breadcrumb-separator flex-shrink-0" />
-                    <span className="text-[#f97316] font-medium truncate max-w-[200px]" title={contentTitle || kindLabel || ""}>
+                    <span className="text-[#ff6a1a] font-medium truncate max-w-[200px]" title={contentTitle || kindLabel || ""}>
                         {contentTitle || kindLabel}
                     </span>
                 </>

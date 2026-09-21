@@ -14,6 +14,7 @@ import '../models/Revision';
 import '../models/Course';
 import '../models/Section';
 import '../models/Quiz';
+import '../models/Mentorship';
 import OwnedCosmetic from '../models/OwnedCosmetic';
 import { MushroomService } from './mushroomService';
 import { StreakService } from './streakService';
@@ -108,6 +109,14 @@ export class QuestService {
         }
       ]
     });
+
+    // Quêtes du suivi personnalisé (« termine les ressources de ton bénévole ») :
+    // impossibles sans suivi, donc proposées uniquement aux élèves suivis.
+    if (quests.some((q: any) => q.audience === 'mentored')) {
+      const Mentorship = mongoose.model('Mentorship');
+      const mentored = await Mentorship.exists({ student: userId, status: { $in: ['active', 'paused'] } });
+      if (!mentored) quests = quests.filter((q: any) => q.audience !== 'mentored');
+    }
 
     // Pour les quêtes journalières, sélectionner 3 quêtes (ou 4 si boost quest_extra actif)
     // La sélection est déterministe basée sur la date pour que tous les utilisateurs

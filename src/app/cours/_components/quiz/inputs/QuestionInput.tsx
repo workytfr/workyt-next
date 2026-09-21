@@ -42,7 +42,7 @@ export default function QuestionInput({ question, value, onChange }: QuestionInp
 
     if (!Input) {
         return (
-            <div className="p-4 rounded-xl border-2 border-dashed border-[#e3e2e0] text-sm text-[#6b6b6b]">
+            <div className="p-4 rounded-xl border-2 border-dashed border-[#e8dfd0] text-sm text-[#6b625a]">
                 Ce type de question ({question.questionType}) n&apos;est pas encore pris en
                 charge par le lecteur.
             </div>

@@ -95,15 +95,15 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
     if (data && totalItems === 0) return null;
 
     return (
-        <div className="border-t border-[#e3e2e0] flex-shrink-0">
+        <div className="border-t border-[#e8dfd0] flex-shrink-0">
             {/* Toggle bar */}
             <button
                 onClick={() => setIsOpen(prev => !prev)}
                 className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-[#f0efec] transition-colors group"
             >
                 <div className="flex items-center gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-[#f97316]" />
-                    <span className="text-xs font-medium text-[#37352f]">
+                    <Sparkles className="w-3.5 h-3.5 text-[#ff6a1a]" />
+                    <span className="text-xs font-medium text-[#1a1512]">
                         Ressources liées
                     </span>
                 </div>
@@ -112,35 +112,35 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                         <span className="w-1.5 h-1.5 bg-orange-400 rounded-full animate-pulse" />
                     )}
                     {data && totalItems > 0 && (
-                        <span className="text-[10px] font-medium text-[#9ca3af] bg-[#e3e2e0] px-1.5 py-0.5 rounded-full">
+                        <span className="text-[10px] font-medium text-[#8f857b] bg-[#e8dfd0] px-1.5 py-0.5 rounded-full">
                             {totalItems}
                         </span>
                     )}
                     {isOpen
-                        ? <ChevronDown className="w-3.5 h-3.5 text-[#9ca3af]" />
-                        : <ChevronUp className="w-3.5 h-3.5 text-[#9ca3af]" />
+                        ? <ChevronDown className="w-3.5 h-3.5 text-[#8f857b]" />
+                        : <ChevronUp className="w-3.5 h-3.5 text-[#8f857b]" />
                     }
                 </div>
             </button>
 
             {/* Panel déroulant */}
             {isOpen && data && (
-                <div className="bg-white border-t border-[#e3e2e0]">
+                <div className="bg-white border-t border-[#e8dfd0]">
                     {/* Onglets */}
                     <div className="flex">
                         <button
                             onClick={() => setActiveTab("fiches")}
                             className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-medium border-b-2 transition-colors ${
                                 activeTab === "fiches"
-                                    ? "border-[#f97316] text-[#f97316] bg-[#fff7ed]"
-                                    : "border-transparent text-[#9ca3af] hover:text-[#6b6b6b] hover:bg-[#f7f6f3]"
+                                    ? "border-[#ff6a1a] text-[#ff6a1a] bg-[#fff1e6]"
+                                    : "border-transparent text-[#8f857b] hover:text-[#6b625a] hover:bg-[#f5efe3]"
                             }`}
                         >
                             <FileText className="w-3.5 h-3.5" />
                             Fiches
                             {fichesCount > 0 && (
                                 <span className={`text-[9px] px-1 py-0.5 rounded-full ${
-                                    activeTab === "fiches" ? "bg-[#f97316] text-white" : "bg-[#e3e2e0] text-[#6b6b6b]"
+                                    activeTab === "fiches" ? "bg-[#ff6a1a] text-white" : "bg-[#e8dfd0] text-[#6b625a]"
                                 }`}>
                                     {fichesCount}
                                 </span>
@@ -151,14 +151,14 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                             className={`flex-1 flex items-center justify-center gap-1.5 py-2 text-[11px] font-medium border-b-2 transition-colors ${
                                 activeTab === "forum"
                                     ? "border-[#3b82f6] text-[#3b82f6] bg-[#eff6ff]"
-                                    : "border-transparent text-[#9ca3af] hover:text-[#6b6b6b] hover:bg-[#f7f6f3]"
+                                    : "border-transparent text-[#8f857b] hover:text-[#6b625a] hover:bg-[#f5efe3]"
                             }`}
                         >
                             <MessageCircle className="w-3.5 h-3.5" />
                             Forum
                             {questionsCount > 0 && (
                                 <span className={`text-[9px] px-1 py-0.5 rounded-full ${
-                                    activeTab === "forum" ? "bg-[#3b82f6] text-white" : "bg-[#e3e2e0] text-[#6b6b6b]"
+                                    activeTab === "forum" ? "bg-[#3b82f6] text-white" : "bg-[#e8dfd0] text-[#6b625a]"
                                 }`}>
                                     {questionsCount}
                                 </span>
@@ -186,39 +186,39 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                                                 <Link
                                                     key={f.id}
                                                     href={`/fiches/${buildIdSlug(f.id, f.title)}`}
-                                                    className="block p-2.5 rounded-lg hover:bg-[#f7f6f3] transition-colors group"
+                                                    className="block p-2.5 rounded-lg hover:bg-[#f5efe3] transition-colors group"
                                                 >
                                                     <div className="flex items-start gap-2">
                                                         <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${status.bg}`}>
                                                             <StatusIcon className={`w-3 h-3 ${status.color}`} />
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-[11px] font-medium text-[#37352f] line-clamp-2 leading-tight group-hover:text-[#f97316] transition-colors">
+                                                            <p className="text-[11px] font-medium text-[#1a1512] line-clamp-2 leading-tight group-hover:text-[#ff6a1a] transition-colors">
                                                                 {f.title}
                                                             </p>
                                                             <div className="flex items-center gap-2 mt-1">
-                                                                <span className="text-[10px] text-[#9ca3af]">
+                                                                <span className="text-[10px] text-[#8f857b]">
                                                                     {f.author}
                                                                 </span>
                                                                 <span className="text-[10px] text-[#d1d5db]">·</span>
-                                                                <span className="flex items-center gap-0.5 text-[10px] text-[#9ca3af]">
+                                                                <span className="flex items-center gap-0.5 text-[10px] text-[#8f857b]">
                                                                     <Heart className="w-2.5 h-2.5" />
                                                                     {f.likes}
                                                                 </span>
                                                                 <span className="text-[10px] text-[#d1d5db]">·</span>
-                                                                <span className="text-[10px] text-[#9ca3af]">
+                                                                <span className="text-[10px] text-[#8f857b]">
                                                                     {timeAgo(f.createdAt)}
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        <ExternalLink className="w-3 h-3 text-[#d1d5db] group-hover:text-[#9ca3af] flex-shrink-0 mt-0.5" />
+                                                        <ExternalLink className="w-3 h-3 text-[#d1d5db] group-hover:text-[#8f857b] flex-shrink-0 mt-0.5" />
                                                     </div>
                                                 </Link>
                                             );
                                         })}
                                         <Link
                                             href="/fiches"
-                                            className="flex items-center justify-center gap-1 py-2 text-[10px] font-medium text-[#f97316] hover:bg-[#fff7ed] rounded-lg transition-colors"
+                                            className="flex items-center justify-center gap-1 py-2 text-[10px] font-medium text-[#ff6a1a] hover:bg-[#fff1e6] rounded-lg transition-colors"
                                         >
                                             Voir toutes les fiches
                                             <ChevronDown className="w-3 h-3 rotate-[-90deg]" />
@@ -245,7 +245,7 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                                                 <Link
                                                     key={q.id}
                                                     href={`/forum/${buildIdSlug(q.id, q.title)}`}
-                                                    className="block p-2.5 rounded-lg hover:bg-[#f7f6f3] transition-colors group"
+                                                    className="block p-2.5 rounded-lg hover:bg-[#f5efe3] transition-colors group"
                                                 >
                                                     <div className="flex items-start gap-2">
                                                         <div className={`mt-0.5 w-5 h-5 rounded flex items-center justify-center flex-shrink-0 ${
@@ -257,14 +257,14 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                                                             }
                                                         </div>
                                                         <div className="flex-1 min-w-0">
-                                                            <p className="text-[11px] font-medium text-[#37352f] line-clamp-2 leading-tight group-hover:text-[#3b82f6] transition-colors">
+                                                            <p className="text-[11px] font-medium text-[#1a1512] line-clamp-2 leading-tight group-hover:text-[#3b82f6] transition-colors">
                                                                 {q.title}
                                                             </p>
                                                             <div className="flex items-center gap-2 mt-1">
                                                                 <span className={`text-[9px] font-medium px-1.5 py-0.5 rounded-full ${status.bg} ${status.color} ${status.border} border`}>
                                                                     {status.label}
                                                                 </span>
-                                                                <span className="flex items-center gap-0.5 text-[10px] text-[#9ca3af]">
+                                                                <span className="flex items-center gap-0.5 text-[10px] text-[#8f857b]">
                                                                     <MessageCircle className="w-2.5 h-2.5" />
                                                                     {q.answersCount}
                                                                 </span>
@@ -274,7 +274,7 @@ export default function RelatedContentPanel({ courseId }: RelatedContentPanelPro
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        <ExternalLink className="w-3 h-3 text-[#d1d5db] group-hover:text-[#9ca3af] flex-shrink-0 mt-0.5" />
+                                                        <ExternalLink className="w-3 h-3 text-[#d1d5db] group-hover:text-[#8f857b] flex-shrink-0 mt-0.5" />
                                                     </div>
                                                 </Link>
                                             );
@@ -306,10 +306,10 @@ function EmptyState({ icon, text, linkText, linkHref }: {
     return (
         <div className="py-6 px-4 text-center">
             <div className="flex justify-center mb-2">{icon}</div>
-            <p className="text-[11px] text-[#9ca3af] mb-2">{text}</p>
+            <p className="text-[11px] text-[#8f857b] mb-2">{text}</p>
             <Link
                 href={linkHref}
-                className="text-[10px] font-medium text-[#f97316] hover:underline"
+                className="text-[10px] font-medium text-[#ff6a1a] hover:underline"
             >
                 {linkText}
             </Link>

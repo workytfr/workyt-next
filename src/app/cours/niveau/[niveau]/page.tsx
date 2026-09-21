@@ -1,10 +1,12 @@
 import { Metadata } from 'next'
-import Link from 'next/link'
+import CourseHub from '@/app/cours/_components/CourseHub'
+import { plainExcerpt } from '@/app/forum/_components/forumUi'
+import { type CourseItem } from '@/app/cours/matiere/[matiere]/niveau-filter'
 import { notFound } from 'next/navigation'
 import dbConnect from '@/lib/mongodb'
 import Course from '@/models/Course'
 import { buildIdSlug } from '@/utils/slugify'
-import { getAllLevelSlugs, slugToLevel } from '@/utils/subjectSlug'
+import { getAllLevelSlugs, slugToLevel, levelToSlug } from '@/utils/subjectSlug'
 
 interface PageProps {
     params: Promise<{ niveau: string }>
@@ -51,13 +53,24 @@ export default async function NiveauCoursPage({ params }: PageProps) {
             new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout DB')), 5000)),
         ])
         courses = await Course.find({ status: 'publie', niveau: level })
-            .select('_id title slug description matiere image updatedAt')
+            .select('_id title slug description matiere niveau image updatedAt')
             .sort({ updatedAt: -1 })
             .limit(60)
             .lean()
     } catch (err) {
         console.error('Hub cours/niveau DB error:', err)
     }
+
+    const courseItems: CourseItem[] = courses.map((c: any) => ({
+        id: c._id.toString(),
+        href: `/cours/${buildIdSlug(c._id.toString(), c.slug || c.title)}`,
+        title: c.title,
+        description: plainExcerpt(c.description ?? '', 180),
+        niveau: c.niveau ?? level,
+        niveauSlug: levelToSlug(c.niveau ?? level),
+        matiere: c.matiere,
+        image: c.image || undefined,
+    }))
 
     const url = `https://workyt.fr/cours/niveau/${slug}`
     const collectionLd = {
@@ -94,46 +107,7 @@ export default async function NiveauCoursPage({ params }: PageProps) {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-            <main className="mx-auto max-w-[1200px] px-6 py-10">
-                <nav aria-label="Fil d'Ariane" className="mb-6 text-sm text-gray-500">
-                    <Link href="/" className="hover:text-orange-500">Accueil</Link>
-                    {' › '}
-                    <Link href="/cours" className="hover:text-orange-500">Cours</Link>
-                    {' › '}
-                    <span className="text-gray-900">{level}</span>
-                </nav>
-                <header className="mb-8">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-                        Cours niveau {level}
-                    </h1>
-                    <p className="mt-3 text-gray-600 max-w-2xl">
-                        Retrouve tous les cours gratuits du niveau <strong>{level}</strong> publiés
-                        par les bénévoles de Workyt. Toutes matières confondues, structurés en
-                        chapitres avec exercices et quiz.
-                    </p>
-                </header>
-                {courses.length === 0 ? (
-                    <p className="text-gray-500">
-                        Aucun cours {level} publié pour le moment.{' '}
-                        <Link href="/cours" className="text-orange-500 underline">Voir tous les cours</Link>.
-                    </p>
-                ) : (
-                    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                        {courses.map((c: any) => {
-                            const href = `/cours/${buildIdSlug(c._id.toString(), c.slug || c.title)}`
-                            return (
-                                <li key={c._id.toString()} className="rounded-2xl border border-gray-100 bg-white p-5 hover:border-orange-200 hover:shadow-sm transition">
-                                    <Link href={href} className="block">
-                                        <div className="text-xs uppercase tracking-wider text-gray-400 mb-2">{c.matiere}</div>
-                                        <h2 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2">{c.title}</h2>
-                                        <p className="text-sm text-gray-500 line-clamp-3">{c.description}</p>
-                                    </Link>
-                                </li>
-                            )
-                        })}
-                    </ul>
-                )}
-            </main>
+            <CourseHub kind="niveau" label={level} courses={courseItems} />
         </>
     )
 }

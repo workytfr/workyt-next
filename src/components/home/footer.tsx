@@ -126,6 +126,7 @@ const Footer: React.FC = () => {
                                     { href: "/cours", label: "Cours" },
                                     { href: "/fiches", label: "Fiches" },
                                     { href: "/forum", label: "Forum" },
+                                    { href: "/suivi", label: "Suivi personnalisé" },
                                     { href: "/amis", label: "Mes amis" },
                                     { href: "/clan", label: "Guerre des Clans" },
                                     { href: "https://blog.workyt.fr/", label: "Blog" },

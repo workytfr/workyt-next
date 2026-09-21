@@ -1,29 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import Image from "next/image";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from "@/components/ui/Pagination";
-import { PiFireSimpleFill } from "react-icons/pi";
-import { MdSearch, MdInsertComment, MdInfoOutline } from "react-icons/md";
-import { FiPlusCircle, FiBookmark } from "react-icons/fi";
-import { SlidersHorizontal, ArrowUpDown, X, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, FileText, Sparkles, Bookmark, ArrowUpDown } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
-import SubjectIcon from "@/components/fiches/SubjectIcon";
+import { educationData, getSubjectIconComponent } from "@/data/educationData";
+import { PAGE_CONTAINER } from "@/components/wk/primitives";
+import { subjectToSlug } from "@/utils/subjectSlug";
 import InfoDrawer from "@/app/fiches/_components/InfoDrawer";
-import { educationData, subjectGradients } from "@/data/educationData";
-import { buildIdSlug } from "@/utils/slugify";
+import { FicheTile } from "./ficheUi";
 
 interface Fiche {
     id: string;
@@ -38,535 +23,399 @@ interface Fiche {
     createdAt: string;
 }
 
+const today = () => new Date().toISOString().split("T")[0];
+
+/** Périodes proposées dans le filtre de date */
+const PERIODS = [
+    { label: "Toutes", range: () => ({ startDate: "", endDate: "" }) },
+    { label: "Aujourd'hui", range: () => ({ startDate: today(), endDate: today() }) },
+    { label: "Cette semaine", range: () => ({ startDate: new Date(Date.now() - new Date().getDay() * 86400000).toISOString().split("T")[0], endDate: today() }) },
+    { label: "Ce mois", range: () => ({ startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0], endDate: today() }) },
+    { label: "Cette année", range: () => ({ startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0], endDate: today() }) },
+];
+
+const SORTS = [
+    { value: "recent", label: "Récentes" },
+    { value: "popular", label: "Populaires" },
+    { value: "comments", label: "Commentées" },
+    { value: "oldest", label: "Anciennes" },
+];
+
+/**
+ * Le catalogue des fiches : recherche, filtres (niveau, matière, période),
+ * tri, pagination. Même mise en page que le forum et les cours.
+ */
 export default function FichesPageClient() {
     const [fiches, setFiches] = useState<Fiche[]>([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [showFilters, setShowFilters] = useState(false);
+    const [search, setSearch] = useState("");
+    const [query, setQuery] = useState("");
+    const [subject, setSubject] = useState("");
+    const [level, setLevel] = useState("");
+    const [period, setPeriod] = useState("Toutes");
     const [sortBy, setSortBy] = useState("recent");
-    const [pagination, setPagination] = useState({ page: 1, totalPages: 1 });
-    const [filters, setFilters] = useState({
-        query: "",
-        level: "",
-        subject: "",
-        startDate: "",
-        endDate: "",
-    });
-    const [activeSubjectFilter, setActiveSubjectFilter] = useState<string>("");
-
-    const subjectScrollRef = useRef<HTMLDivElement>(null);
-    const [canScrollLeft, setCanScrollLeft] = useState(false);
-    const [canScrollRight, setCanScrollRight] = useState(false);
-
-    const dateRangeOptions = [
-        { label: "Tout", startDate: "", endDate: "" },
-        { label: "Aujourd'hui", startDate: new Date().toISOString().split("T")[0], endDate: new Date().toISOString().split("T")[0] },
-        { label: "Cette semaine", startDate: new Date(Date.now() - new Date().getDay() * 86400000).toISOString().split("T")[0], endDate: new Date().toISOString().split("T")[0] },
-        { label: "Ce mois", startDate: new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split("T")[0], endDate: new Date().toISOString().split("T")[0] },
-        { label: "Cette année", startDate: new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0], endDate: new Date().toISOString().split("T")[0] },
-    ];
-
-    const checkScrollability = useCallback(() => {
-        const el = subjectScrollRef.current;
-        if (el) {
-            setCanScrollLeft(el.scrollLeft > 0);
-            setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
-        }
-    }, []);
+    const [page, setPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [total, setTotal] = useState<number | null>(null);
+    const [showFilters, setShowFilters] = useState(false);
 
     useEffect(() => {
-        checkScrollability();
-        const el = subjectScrollRef.current;
-        if (el) {
-            el.addEventListener("scroll", checkScrollability);
-            window.addEventListener("resize", checkScrollability);
-            return () => {
-                el.removeEventListener("scroll", checkScrollability);
-                window.removeEventListener("resize", checkScrollability);
-            };
-        }
-    }, [checkScrollability]);
+        let alive = true;
+        const { startDate, endDate } = (PERIODS.find((p) => p.label === period) || PERIODS[0]).range();
+        const params = new URLSearchParams({ query, level, subject, startDate, endDate, page: String(page) });
 
-    const scrollSubjects = (direction: "left" | "right") => {
-        const el = subjectScrollRef.current;
-        if (el) {
-            el.scrollBy({ left: direction === "left" ? -200 : 200, behavior: "smooth" });
-        }
-    };
+        fetch(`/api/fiches/search?${params}`)
+            .then((r) => r.json())
+            .then((data) => {
+                if (!alive) return;
+                if (!data.success) {
+                    setError("Erreur lors de la récupération des fiches.");
+                    return;
+                }
+                setError(null);
+                setFiches(data.data);
+                setTotalPages(data.pagination?.totalPages || 1);
+                setTotal(typeof data.pagination?.total === "number" ? data.pagination.total : null);
+            })
+            .catch(() => alive && setError("Erreur lors de la récupération des données."))
+            .finally(() => alive && setLoading(false));
+        return () => {
+            alive = false;
+        };
+    }, [query, level, subject, period, page]);
 
-    const fetchFilteredData = async () => {
-        setLoading(true);
-        setError(null);
-
-        try {
-            const queryString = new URLSearchParams({
-                query: filters.query || "",
-                level: filters.level || "",
-                subject: filters.subject || "",
-                startDate: filters.startDate || "",
-                endDate: filters.endDate || "",
-                page: pagination.page.toString(),
-            }).toString();
-
-            const response = await fetch(`/api/fiches/search?${queryString}`);
-            const data = await response.json();
-
-            if (!data.success) {
-                setError("Erreur lors de la récupération des fiches.");
-                return;
-            }
-
-            setFiches(data.data);
-            setPagination((prev) => ({
-                ...prev,
-                totalPages: data.pagination.totalPages,
-            }));
-        } catch (err) {
-            setError("Erreur lors de la récupération des données.");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchFilteredData();
-    }, [pagination.page]);
-
-    const sortedFiches = [...fiches].sort((a, b) => {
+    // Le tri porte sur la page affichée (l'API renvoie les plus récentes d'abord)
+    const sorted = [...fiches].sort((a, b) => {
         switch (sortBy) {
             case "popular": return b.likes - a.likes;
             case "comments": return b.comments - a.comments;
             case "oldest": return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-            case "recent":
             default: return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
         }
     });
 
-    const handleDateRangeChange = (value: string) => {
-        const selectedOption = dateRangeOptions.find((option) => option.label === value);
-        if (selectedOption) {
-            setFilters((prev) => ({ ...prev, startDate: selectedOption.startDate, endDate: selectedOption.endDate }));
-        }
+    const change = (fn: () => void) => {
+        setLoading(true);
+        fn();
+        setPage(1);
     };
 
-    const handleFilterChange = (key: string, value: string) => {
-        setFilters((prev) => ({ ...prev, [key]: value }));
+    // Recherche en direct, avec un léger délai pour ne pas interroger l'API à chaque touche
+    const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const onSearch = (value: string) => {
+        setSearch(value);
+        if (timer.current) clearTimeout(timer.current);
+        timer.current = setTimeout(() => change(() => setQuery(value.trim())), 350);
+    };
+    useEffect(() => () => {
+        if (timer.current) clearTimeout(timer.current);
+    }, []);
+
+    const goTo = (p: number) => {
+        setLoading(true);
+        setPage(p);
+        document.getElementById("catalogue")?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
 
-    const handleSubjectChipClick = (subject: string) => {
-        if (activeSubjectFilter === subject) {
-            setActiveSubjectFilter("");
-            setFilters((prev) => ({ ...prev, subject: "" }));
-        } else {
-            setActiveSubjectFilter(subject);
-            setFilters((prev) => ({ ...prev, subject }));
-        }
-        setPagination((prev) => ({ ...prev, page: 1 }));
-        setTimeout(() => fetchFilteredData(), 0);
-    };
+    const activeCount = [subject, level, period !== "Toutes" ? period : ""].filter(Boolean).length;
+    const hasFilters = activeCount > 0 || !!query;
+    const clearAll = () =>
+        change(() => {
+            setSearch("");
+            setQuery("");
+            setSubject("");
+            setLevel("");
+            setPeriod("Toutes");
+        });
 
-    const handleSearch = () => {
-        setPagination((prev) => ({ ...prev, page: 1 }));
-        setActiveSubjectFilter(filters.subject);
-        fetchFilteredData();
-    };
-
-    const handlePageChange = (page: number) => {
-        if (page >= 1 && page <= pagination.totalPages) {
-            setPagination((prev) => ({ ...prev, page }));
-        }
-    };
-
-    const clearAllFilters = () => {
-        setFilters({ query: "", level: "", subject: "", startDate: "", endDate: "" });
-        setActiveSubjectFilter("");
-        setPagination((prev) => ({ ...prev, page: 1 }));
-        setTimeout(() => fetchFilteredData(), 0);
-    };
-
-    const hasActiveFilters = filters.query || filters.level || filters.subject || filters.startDate;
+    const filters = (
+        <Filters
+            subject={subject}
+            level={level}
+            period={period}
+            sortBy={sortBy}
+            onSubject={(v) => change(() => setSubject(v))}
+            onLevel={(v) => change(() => setLevel(v))}
+            onPeriod={(v) => change(() => setPeriod(v))}
+            onSort={setSortBy}
+        />
+    );
 
     return (
-        <div className="min-h-screen bg-white">
-            {/* Hero */}
-            {/* Barre d'action : recherche + dépôt.
-                Le titre/description (H1 SEO) sont déjà affichés dans le hero serveur (page.tsx)
-                — on évite ainsi le doublon d'en-tête et le double <h1>. */}
-            <section className="border-b border-gray-100">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-                        {/* Search bar */}
-                        <div className="relative flex items-center flex-1 max-w-2xl">
-                            <MdSearch size={20} className="absolute left-3.5 text-gray-400" />
-                            <input
-                                type="text"
-                                placeholder="Rechercher une fiche..."
-                                className="w-full pl-10 pr-28 py-3 border border-gray-200 rounded-xl text-sm bg-white focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
-                                value={filters.query}
-                                onChange={(e) => handleFilterChange("query", e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-                            />
-                            <div className="absolute right-2 flex items-center gap-1.5">
-                                <button
-                                    className={`p-2 rounded-lg transition-colors ${showFilters ? 'bg-orange-100 text-orange-500' : 'hover:bg-gray-100 text-gray-400'}`}
-                                    onClick={() => setShowFilters(!showFilters)}
-                                >
-                                    <SlidersHorizontal size={16} />
-                                </button>
-                                <button
-                                    className="px-4 py-1.5 rounded-lg bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors"
-                                    onClick={handleSearch}
-                                >
-                                    Rechercher
-                                </button>
-                            </div>
-                        </div>
-                        {/* Déposer une fiche */}
-                        <Link href="/fiches/creer" className="shrink-0">
-                            <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors">
-                                <FiPlusCircle size={16} />
-                                Déposer une fiche
-                            </button>
-                        </Link>
-                    </div>
-                </div>
-            </section>
-
-            {/* Subject chips */}
-            <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-gray-100">
-                <div className="max-w-7xl mx-auto flex items-stretch">
-                    {canScrollLeft && (
+        <div id="catalogue" className={`${PAGE_CONTAINER} scroll-mt-20 py-8 md:py-10`}>
+            {/* Recherche */}
+            <div className="flex items-center gap-3">
+                <div className="relative flex-1">
+                    <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[rgba(26,21,18,0.4)]" />
+                    <input
+                        type="search"
+                        value={search}
+                        onChange={(e) => onSearch(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                if (timer.current) clearTimeout(timer.current);
+                                change(() => setQuery(search.trim()));
+                            }
+                        }}
+                        placeholder="Rechercher une fiche… (ex. Pythagore, guerre froide, subjonctif)"
+                        aria-label="Rechercher une fiche"
+                        className="w-full rounded-full border border-[rgba(26,21,18,0.12)] bg-white py-3.5 pl-11 pr-11 text-sm outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]"
+                    />
+                    {search && (
                         <button
                             type="button"
-                            onClick={() => scrollSubjects("left")}
-                            className="shrink-0 flex items-center justify-center w-10 hover:bg-gray-50 transition-colors"
+                            onClick={() => onSearch("")}
+                            className="absolute right-4 top-1/2 -translate-y-1/2 text-[rgba(26,21,18,0.4)] hover:text-[var(--wk-ink)]"
+                            aria-label="Effacer la recherche"
                         >
-                            <ChevronLeft size={18} className="text-gray-400" />
-                        </button>
-                    )}
-                    <div
-                        ref={subjectScrollRef}
-                        className="flex-1 flex items-center gap-1.5 px-4 sm:px-6 py-2.5 overflow-x-auto min-w-0"
-                        style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                    >
-                        <button
-                            onClick={() => handleSubjectChipClick("")}
-                            className={`shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                !activeSubjectFilter
-                                    ? "bg-gray-900 text-white"
-                                    : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                            }`}
-                        >
-                            Toutes
-                        </button>
-                        {educationData.subjects.map((subject) => (
-                            <button
-                                key={subject}
-                                onClick={() => handleSubjectChipClick(subject)}
-                                className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                    activeSubjectFilter === subject
-                                        ? "bg-gray-900 text-white"
-                                        : "bg-gray-50 text-gray-600 hover:bg-gray-100"
-                                }`}
-                            >
-                                <SubjectIcon
-                                    subject={subject}
-                                    size={12}
-                                    className={activeSubjectFilter === subject ? "text-white" : "text-gray-400"}
-                                />
-                                <span className="whitespace-nowrap">{subject.length > 25 ? subject.split("(")[0].trim() : subject}</span>
-                            </button>
-                        ))}
-                    </div>
-                    {canScrollRight && (
-                        <button
-                            type="button"
-                            onClick={() => scrollSubjects("right")}
-                            className="shrink-0 flex items-center justify-center w-10 hover:bg-gray-50 transition-colors"
-                        >
-                            <ChevronRight size={18} className="text-gray-400" />
+                            <X className="h-4 w-4" />
                         </button>
                     )}
                 </div>
+                <button
+                    type="button"
+                    onClick={() => setShowFilters((v) => !v)}
+                    aria-expanded={showFilters}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-3 text-sm font-semibold transition lg:hidden ${
+                        showFilters || activeCount > 0
+                            ? "border-[var(--wk-accent)] bg-[rgba(255,106,26,0.08)] text-[#c24a0a]"
+                            : "border-[rgba(26,21,18,0.12)] bg-white"
+                    }`}
+                >
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filtres
+                    {activeCount > 0 && (
+                        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[var(--wk-accent)] text-xs text-white">{activeCount}</span>
+                    )}
+                </button>
             </div>
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-12 pt-6">
-                {/* Advanced filters */}
-                {showFilters && (
-                    <div className="p-4 sm:p-5 rounded-2xl bg-gray-50/80 border border-gray-100 mb-5 animate-in slide-in-from-top-2">
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
-                                <SlidersHorizontal size={12} /> Filtres avancés
-                            </span>
-                            <button onClick={() => setShowFilters(false)} className="text-gray-400 hover:text-gray-600">
-                                <X size={16} />
+            {showFilters && <div className="mt-4 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 lg:hidden">{filters}</div>}
+
+            <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[260px_minmax(0,1fr)] xl:gap-10">
+                <aside className="hidden lg:block">
+                    <div className="sticky top-24 space-y-6">{filters}</div>
+                </aside>
+
+                <section aria-label="Fiches de révision" className="min-w-0">
+                    <div className="mb-5 flex flex-wrap items-center gap-2">
+                        <span className="mr-2 text-sm text-[rgba(26,21,18,0.6)]">
+                            {loading ? "Chargement…" : total !== null ? `${total.toLocaleString("fr-FR")} fiche${total > 1 ? "s" : ""}` : ""}
+                        </span>
+                        {query && <ActiveChip label={`« ${query} »`} onClear={() => onSearch("")} />}
+                        {subject && <ActiveChip label={subject} onClear={() => change(() => setSubject(""))} />}
+                        {level && <ActiveChip label={level} onClear={() => change(() => setLevel(""))} />}
+                        {period !== "Toutes" && <ActiveChip label={period} onClear={() => change(() => setPeriod("Toutes"))} />}
+                        {hasFilters && (
+                            <button type="button" onClick={clearAll} className="text-xs font-semibold text-[rgba(26,21,18,0.55)] hover:text-[var(--wk-accent)]">
+                                Tout effacer
                             </button>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                            <Select
-                                value={filters.level || "all"}
-                                onValueChange={(value) => handleFilterChange("level", value === "all" ? "" : value)}
-                            >
-                                <SelectTrigger className="h-10 rounded-xl text-sm text-black">
-                                    <SelectValue placeholder="Tous les niveaux" className="text-black" />
-                                </SelectTrigger>
-                                <SelectContent className="text-black">
-                                    <SelectItem value="all" className="text-black">Tous les niveaux</SelectItem>
-                                    {educationData.levels.map((level) => (
-                                        <SelectItem key={level} value={level} className="text-black">{level}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <Select
-                                value={filters.startDate && filters.endDate ? "Autre" : "Tout"}
-                                onValueChange={handleDateRangeChange}
-                            >
-                                <SelectTrigger className="h-10 rounded-xl text-sm text-black">
-                                    <SelectValue placeholder="Filtrer par date" className="text-black" />
-                                </SelectTrigger>
-                                <SelectContent className="text-black">
-                                    {dateRangeOptions.map((option) => (
-                                        <SelectItem key={option.label} value={option.label} className="text-black">{option.label}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            {hasActiveFilters && (
-                                <Button
-                                    variant="outline"
-                                    onClick={clearAllFilters}
-                                    className="h-10 rounded-xl text-gray-600 gap-2 text-sm"
-                                >
-                                    <X size={14} /> Effacer
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-                )}
-
-                {/* Action bar */}
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-5">
-                    <div className="flex items-center gap-2.5 flex-wrap">
-                        {!loading && fiches.length > 0 && (
-                            <span className="text-sm text-gray-500">
-                                <span className="font-medium text-gray-800">{fiches.length}</span> fiche{fiches.length > 1 ? "s" : ""}
-                            </span>
                         )}
-                        {activeSubjectFilter && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
-                                <SubjectIcon subject={activeSubjectFilter} size={10} className="text-gray-500" />
-                                {activeSubjectFilter.length > 20 ? activeSubjectFilter.split("(")[0].trim() : activeSubjectFilter}
-                                <button onClick={() => handleSubjectChipClick("")} className="ml-0.5 hover:text-gray-900">
-                                    <X size={10} />
-                                </button>
-                            </span>
-                        )}
-                        {filters.level && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-gray-100 text-xs text-gray-600">
-                                {filters.level}
-                                <button onClick={() => { handleFilterChange("level", ""); handleSearch(); }} className="ml-0.5 hover:text-gray-900">
-                                    <X size={10} />
-                                </button>
-                            </span>
-                        )}
-                    </div>
-
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <div className="flex items-center gap-1.5 border border-gray-200 rounded-lg px-2.5 py-1.5">
-                            <ArrowUpDown size={12} className="text-gray-400" />
-                            <select
-                                className="text-xs bg-transparent outline-none text-gray-600 cursor-pointer"
-                                value={sortBy}
-                                onChange={(e) => setSortBy(e.target.value)}
-                            >
-                                <option value="recent">Récents</option>
-                                <option value="popular">Populaires</option>
-                                <option value="comments">Commentés</option>
-                                <option value="oldest">Anciens</option>
-                            </select>
-                        </div>
-                        <InfoDrawer />
-                        <Link href="/fiches/favoris">
-                            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-medium text-gray-600 hover:bg-gray-50 transition-colors">
-                                <FiBookmark size={12} />
-                                <span className="hidden sm:inline">Favoris</span>
-                            </button>
-                        </Link>
-                    </div>
-                </div>
-
-                {/* Cards grid */}
-                {loading ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {[...Array(6)].map((_, i) => (
-                            <div key={i} className="rounded-2xl border border-gray-100 overflow-hidden animate-pulse">
-                                <div className="h-20 bg-gray-100" />
-                                <div className="p-4 space-y-3">
-                                    <div className="h-4 bg-gray-100 rounded w-3/4" />
-                                    <div className="h-3 bg-gray-100 rounded w-full" />
-                                    <div className="h-3 bg-gray-100 rounded w-5/6" />
-                                    <div className="flex justify-between pt-3 border-t border-gray-50">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 bg-gray-100 rounded-full" />
-                                            <div className="h-3 w-14 bg-gray-100 rounded" />
-                                        </div>
-                                        <div className="flex gap-3">
-                                            <div className="h-3 w-6 bg-gray-100 rounded" />
-                                            <div className="h-3 w-6 bg-gray-100 rounded" />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : error ? (
-                    <div className="text-center py-16 text-red-500 text-sm">{error}</div>
-                ) : fiches.length === 0 ? (
-                    <div className="text-center py-20">
-                        <div className="w-16 h-16 rounded-2xl bg-gray-50 flex items-center justify-center mx-auto mb-4">
-                            <MdSearch size={28} className="text-gray-300" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-800 mb-1">Aucune fiche trouvée</h3>
-                        <p className="text-sm text-gray-500 mb-5">Modifiez vos critères ou créez la première fiche</p>
-                        <div className="flex items-center justify-center gap-3">
-                            {hasActiveFilters && (
-                                <button onClick={clearAllFilters} className="text-sm font-medium text-gray-600 hover:text-gray-800 px-4 py-2 rounded-lg border border-gray-200">
-                                    Effacer les filtres
-                                </button>
-                            )}
-                            <Link href="/fiches/creer">
-                                <button className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gray-900 text-white text-sm font-medium hover:bg-gray-800 transition-colors">
-                                    <FiPlusCircle size={14} />
-                                    Créer une fiche
-                                </button>
-                            </Link>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {sortedFiches.map((fiche) => {
-                            const gradient = subjectGradients[fiche.subject] || "from-gray-500 to-gray-400";
-                            return (
-                                <Link
-                                    key={fiche.id}
-                                    href={`/fiches/${buildIdSlug(fiche.id, fiche.title)}`}
-                                    className="group flex flex-col rounded-2xl border border-gray-100 bg-white hover:border-gray-200 hover:shadow-[0_2px_12px_rgba(0,0,0,0.04)] transition-all duration-200 overflow-hidden"
-                                >
-                                    {/* Colored header */}
-                                    <div className={`relative bg-gradient-to-r ${gradient} px-4 py-4`}>
-                                        <div className="flex items-center justify-between">
-                                            <SubjectIcon subject={fiche.subject} size={20} className="text-white/90" />
-                                            {fiche.status !== "Non Certifiée" && (
-                                                <Image
-                                                    src={`/badge/${fiche.status}.svg`}
-                                                    alt={fiche.status}
-                                                    width={22}
-                                                    height={22}
-                                                    className="drop-shadow-md"
-                                                />
-                                            )}
-                                        </div>
-                                        <div className="flex flex-wrap gap-1.5 mt-2.5">
-                                            <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-sm text-white font-medium">
-                                                {fiche.level}
-                                            </span>
-                                            <span className="text-[11px] px-2 py-0.5 rounded-md bg-white/20 backdrop-blur-sm text-white font-medium">
-                                                {fiche.subject.length > 25 ? fiche.subject.split("(")[0].trim() : fiche.subject}
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    {/* Content */}
-                                    <div className="flex-1 p-4 flex flex-col">
-                                        <h2 className="text-sm font-semibold text-gray-900 group-hover:text-orange-600 transition-colors line-clamp-2 mb-1.5">
-                                            {fiche.title}
-                                        </h2>
-                                        <p className="text-xs text-gray-500 line-clamp-2 mb-3 flex-1">
-                                            {fiche.content}
-                                        </p>
-
-                                        <div className="flex items-center justify-between pt-3 border-t border-gray-50">
-                                            <div className="flex items-center gap-2 min-w-0">
-                                                <ProfileAvatar
-                                                    username={fiche.authors?.username || "Inconnu"}
-                                                    points={fiche.authors?.points || 0}
-                                                    userId={fiche.authors?._id}
-                                                    size="small"
-                                                />
-                                                <span className="text-xs text-gray-500 truncate">
-                                                    {fiche.authors?.username || "Inconnu"}
-                                                </span>
-                                            </div>
-                                            <div className="flex items-center gap-3 text-xs text-gray-400 shrink-0">
-                                                <span className="inline-flex items-center gap-1">
-                                                    <PiFireSimpleFill className="text-orange-400" size={12} />
-                                                    {fiche.likes}
-                                                </span>
-                                                <span className="inline-flex items-center gap-1">
-                                                    <MdInsertComment className="text-blue-400" size={12} />
-                                                    {fiche.comments}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
+                        <span className="ml-auto flex items-center gap-1">
+                            {subject && (
+                                <Link href={`/fiches/matiere/${subjectToSlug(subject)}`} className="mr-2 text-xs font-semibold text-[var(--wk-accent)] hover:underline">
+                                    Page {subject} →
                                 </Link>
-                            );
-                        })}
+                            )}
+                            <Link href="/fiches/favoris" className="wk-chip !py-1.5 transition hover:border-[var(--wk-accent)]">
+                                <Bookmark className="h-3.5 w-3.5" /> Mes favoris
+                            </Link>
+                            <InfoDrawer />
+                        </span>
                     </div>
-                )}
 
-                {/* Pagination */}
-                {fiches.length > 0 && pagination.totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-1 mt-10 pt-8 border-t border-gray-100">
-                        <button
-                            onClick={() => pagination.page > 1 && handlePageChange(pagination.page - 1)}
-                            disabled={pagination.page === 1}
-                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                            <span className="hidden sm:inline">Précédent</span>
-                        </button>
-
-                        <div className="flex items-center gap-1 px-2">
-                            {[...Array(Math.min(pagination.totalPages, 5))].map((_, index) => {
-                                let pageNum: number;
-                                if (pagination.totalPages <= 5) {
-                                    pageNum = index + 1;
-                                } else if (pagination.page <= 3) {
-                                    pageNum = index + 1;
-                                } else if (pagination.page >= pagination.totalPages - 2) {
-                                    pageNum = pagination.totalPages - 4 + index;
-                                } else {
-                                    pageNum = pagination.page - 2 + index;
-                                }
-                                return (
-                                    <button
-                                        key={pageNum}
-                                        onClick={() => handlePageChange(pageNum)}
-                                        className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                                            pageNum === pagination.page
-                                                ? "bg-gray-900 text-white"
-                                                : "text-gray-600 hover:bg-gray-100"
-                                        }`}
-                                    >
-                                        {pageNum}
-                                    </button>
-                                );
-                            })}
+                    {loading ? (
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="h-[240px] animate-pulse rounded-3xl border border-[rgba(26,21,18,0.06)] bg-white/70" />
+                            ))}
                         </div>
+                    ) : error ? (
+                        <div className="rounded-3xl border border-red-200 bg-red-50 px-6 py-10 text-center text-sm text-red-700">{error}</div>
+                    ) : sorted.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                            {sorted.map((f) => (
+                                <FicheTile
+                                    key={f.id}
+                                    f={{ id: f.id, title: f.title, subject: f.subject, level: f.level, status: f.status, content: f.content, likes: f.likes, comments: f.comments }}
+                                    author={
+                                        <>
+                                            <ProfileAvatar username={f.authors?.username || "Inconnu"} points={f.authors?.points || 0} userId={f.authors?._id} size="small" />
+                                            <span className="truncate text-xs font-semibold text-[rgba(26,21,18,0.7)]">{f.authors?.username || "Inconnu"}</span>
+                                        </>
+                                    }
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-16 text-center">
+                            <FileText className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                            <h3 className="font-serif-display mt-4 text-2xl">Aucune fiche ne correspond</h3>
+                            <p className="mx-auto mt-2 max-w-md text-sm text-[rgba(26,21,18,0.6)]">
+                                Essaie d&apos;autres mots ou d&apos;autres filtres — ou dépose la première fiche sur le sujet.
+                            </p>
+                            <div className="mt-6 flex flex-wrap justify-center gap-3">
+                                {hasFilters && (
+                                    <button type="button" onClick={clearAll} className="wk-btn-ghost !py-2.5 text-sm">Effacer les filtres</button>
+                                )}
+                                <Link href="/fiches/creer" className="wk-btn-orange !py-2.5 text-sm">Déposer une fiche</Link>
+                            </div>
+                        </div>
+                    )}
 
-                        <button
-                            onClick={() => pagination.page < pagination.totalPages && handlePageChange(pagination.page + 1)}
-                            disabled={pagination.page >= pagination.totalPages}
-                            className="inline-flex items-center gap-1 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-                        >
-                            <span className="hidden sm:inline">Suivant</span>
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-                )}
+                    {!loading && sorted.length > 0 && totalPages > 1 && (
+                        <nav className="mt-10 flex items-center justify-center gap-1 border-t border-[rgba(26,21,18,0.08)] pt-8" aria-label="Pagination">
+                            <button
+                                type="button"
+                                onClick={() => goTo(Math.max(page - 1, 1))}
+                                disabled={page <= 1}
+                                className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <ChevronLeft className="h-4 w-4" />
+                                <span className="hidden sm:inline">Précédent</span>
+                            </button>
+                            <div className="flex items-center gap-1 px-2">
+                                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                                    .filter((p) => p === 1 || p === totalPages || Math.abs(p - page) <= 1)
+                                    .map((p, i, arr) => (
+                                        <React.Fragment key={p}>
+                                            {i > 0 && arr[i - 1] !== p - 1 && <span className="px-1.5 text-[rgba(26,21,18,0.3)]">…</span>}
+                                            <button
+                                                type="button"
+                                                onClick={() => goTo(p)}
+                                                aria-current={page === p ? "page" : undefined}
+                                                className={`h-10 w-10 rounded-full text-sm font-semibold transition ${
+                                                    page === p ? "bg-[var(--wk-ink)] text-[var(--wk-paper)]" : "hover:bg-white"
+                                                }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        </React.Fragment>
+                                    ))}
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => goTo(Math.min(page + 1, totalPages))}
+                                disabled={page >= totalPages}
+                                className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                            >
+                                <span className="hidden sm:inline">Suivant</span>
+                                <ChevronRight className="h-4 w-4" />
+                            </button>
+                        </nav>
+                    )}
+                </section>
             </div>
         </div>
+    );
+}
+
+function Filters({
+    subject,
+    level,
+    period,
+    sortBy,
+    onSubject,
+    onLevel,
+    onPeriod,
+    onSort,
+}: {
+    subject: string;
+    level: string;
+    period: string;
+    sortBy: string;
+    onSubject: (v: string) => void;
+    onLevel: (v: string) => void;
+    onPeriod: (v: string) => void;
+    onSort: (v: string) => void;
+}) {
+    const title = "font-mono-ui mb-2.5 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.5)]";
+    return (
+        <div className="space-y-6">
+            <div>
+                <div className={title}><ArrowUpDown className="h-3 w-3" /> Trier par</div>
+                <div className="flex flex-wrap gap-1.5">
+                    {SORTS.map((s) => (
+                        <Pill key={s.value} active={sortBy === s.value} onClick={() => onSort(s.value)}>{s.label}</Pill>
+                    ))}
+                </div>
+            </div>
+            <div>
+                <div className={title}>Période</div>
+                <div className="flex flex-wrap gap-1.5">
+                    {PERIODS.map((p) => (
+                        <Pill key={p.label} active={period === p.label} onClick={() => onPeriod(p.label)}>{p.label}</Pill>
+                    ))}
+                </div>
+            </div>
+            <div>
+                <div className={title}>Niveau</div>
+                <div className="flex flex-wrap gap-1.5">
+                    <Pill active={!level} onClick={() => onLevel("")}>Tous</Pill>
+                    {educationData.levels.map((l) => (
+                        <Pill key={l} active={level === l} onClick={() => onLevel(l)}>{l}</Pill>
+                    ))}
+                </div>
+            </div>
+            <div>
+                <div className={title}>Matière</div>
+                <ul className="max-h-[340px] space-y-0.5 overflow-y-auto pr-1">
+                    <li>
+                        <SubjectRow active={!subject} onClick={() => onSubject("")} label="Toutes les matières" />
+                    </li>
+                    {educationData.subjects.map((s) => (
+                        <li key={s}>
+                            <SubjectRow active={subject === s} onClick={() => onSubject(s)} label={s} subject={s} />
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        </div>
+    );
+}
+
+function Pill({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-pressed={active}
+            className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                active
+                    ? "border-[var(--wk-ink)] bg-[var(--wk-ink)] text-[var(--wk-paper)]"
+                    : "border-[rgba(26,21,18,0.12)] bg-white text-[rgba(26,21,18,0.75)] hover:border-[rgba(26,21,18,0.3)]"
+            }`}
+        >
+            {children}
+        </button>
+    );
+}
+
+function SubjectRow({ active, onClick, label, subject }: { active: boolean; onClick: () => void; label: string; subject?: string }) {
+    const icon = subject ? getSubjectIconComponent(subject) : Sparkles;
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            aria-pressed={active}
+            className={`flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2 text-left text-sm transition ${
+                active ? "bg-white font-semibold text-[var(--wk-ink)] shadow-[0_2px_10px_rgba(26,21,18,0.06)]" : "text-[rgba(26,21,18,0.7)] hover:bg-white/70"
+            }`}
+        >
+            {React.createElement(icon, { className: `h-4 w-4 shrink-0 ${active ? "text-[var(--wk-accent)]" : "text-[rgba(26,21,18,0.4)]"}` })}
+            <span className="truncate">{label}</span>
+        </button>
+    );
+}
+
+function ActiveChip({ label, onClear }: { label: string; onClear: () => void }) {
+    return (
+        <span className="wk-chip">
+            {label}
+            <button type="button" onClick={onClear} className="text-[rgba(26,21,18,0.5)] hover:text-[var(--wk-ink)]" aria-label={`Retirer ${label}`}>
+                <X className="h-3 w-3" />
+            </button>
+        </span>
     );
 }

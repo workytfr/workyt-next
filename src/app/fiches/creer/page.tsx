@@ -207,32 +207,33 @@ export default function UploadForm() {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-orange-50/40 via-white to-white text-black">
-            <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
+        <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
+            <div className="mx-auto w-full max-w-[1440px] px-4 pb-16 pt-8 sm:px-6 lg:px-10">
                 <Link
                     href="/fiches"
-                    className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-black mb-6 transition-colors"
+                    className="mb-8 inline-flex items-center gap-2 text-sm font-semibold text-[rgba(26,21,18,0.55)] transition-colors hover:text-[var(--wk-ink)]"
                 >
                     <ArrowLeft size={16} /> Retour aux fiches
                 </Link>
 
-                {/* Hero */}
-                <header className="max-w-3xl mx-auto text-center mb-10">
-                    <div className="inline-flex items-center gap-2 bg-orange-100 text-orange-700 px-3 py-1 rounded-full text-xs font-medium mb-4">
-                        <Sparkles size={14} /> Partage tes notes avec la communauté
+                {/* En-tête */}
+                <header className="mb-10 max-w-3xl">
+                    <div className="font-mono-ui inline-flex items-center gap-3 text-[11px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.6)]">
+                        <span className="inline-block w-8 border-t border-[rgba(26,21,18,0.3)]" />
+                        <Sparkles size={13} /> Partage tes notes avec la communauté
                     </div>
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">
-                        Publier une fiche de révision
+                    <h1 className="font-serif-display mt-5 text-[clamp(2.4rem,5.5vw,4.25rem)] leading-[0.95]">
+                        Publier une fiche<span className="text-[var(--wk-accent)]">.</span>
                     </h1>
-                    <p className="mt-3 text-gray-600 sm:text-lg">
+                    <p className="mt-5 max-w-[56ch] text-lg leading-relaxed text-[rgba(26,21,18,0.68)]">
                         Rédige une courte présentation, puis ajoute ta fiche en pièce jointe :
                         <b> dessin</b>, <b>fichier existant</b>, ou <b>texte + LaTeX</b> converti en PDF.
                     </p>
                 </header>
 
                 {/* Étapes */}
-                <section className="max-w-5xl mx-auto mb-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <section className="mb-8">
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <Step n={1} icon={<BookOpen size={20} />} title="Décris ta fiche" text="Titre, matière, niveau et une petite intro." />
                         <Step n={2} icon={<PenLine size={20} />} title="Ajoute le contenu" text="En pièce jointe : dessin, fichier importé, ou PDF généré depuis l'éditeur." />
                         <Step n={3} icon={<Send size={20} />} title="Publie" text="Brouillon enregistré automatiquement. Publie quand c'est prêt." />
@@ -242,7 +243,7 @@ export default function UploadForm() {
                 {/* Formulaire */}
                 <form
                     onSubmit={handleSubmit}
-                    className="max-w-5xl mx-auto bg-white border border-gray-200 rounded-xl shadow-sm p-5 sm:p-8 space-y-10"
+                    className="space-y-10 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-8 lg:p-10"
                 >
                     <div className="flex items-center justify-between flex-wrap gap-2 -mt-2">
                         <span className="text-sm text-gray-500">Tout est enregistré dans ton navigateur en continu.</span>
@@ -293,7 +294,7 @@ export default function UploadForm() {
                                 placeholder="Ex. Les théorèmes de Thalès — 3ème"
                                 value={title}
                                 onChange={(e) => setTitle(e.target.value)}
-                                className="w-full p-4 border border-gray-300 rounded bg-white text-black"
+                                className="w-full rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white p-4 text-[var(--wk-ink)] outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]"
                                 maxLength={120}
                             />
                             <p className="mt-1 text-xs text-gray-500">{title.length}/120 caractères.</p>
@@ -308,7 +309,7 @@ export default function UploadForm() {
                                     id="subject"
                                     value={subject}
                                     onChange={(e) => setSubject(e.target.value)}
-                                    className="w-full p-4 border border-gray-300 rounded bg-white text-black"
+                                    className="w-full rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white p-4 text-[var(--wk-ink)] outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]"
                                 >
                                     <option value="" disabled>Choisir une matière</option>
                                     {educationData.subjects.map((s, i) => (
@@ -324,7 +325,7 @@ export default function UploadForm() {
                                     id="level"
                                     value={level}
                                     onChange={(e) => setLevel(e.target.value)}
-                                    className="w-full p-4 border border-gray-300 rounded bg-white text-black"
+                                    className="w-full rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white p-4 text-[var(--wk-ink)] outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]"
                                 >
                                     <option value="" disabled>Choisir un niveau</option>
                                     {educationData.levels.map((l, i) => (
@@ -463,16 +464,16 @@ export default function UploadForm() {
 
 function Step({ n, icon, title, text }: { n: number; icon: React.ReactNode; title: string; text: string }) {
     return (
-        <div className="rounded-xl border border-gray-200 bg-white p-5 hover:border-gray-300 transition-colors">
+        <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 transition-colors hover:border-[rgba(26,21,18,0.18)]">
             <div className="flex items-center gap-3 mb-2">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-black text-white text-sm font-bold">
+                <span className="font-mono-ui inline-flex h-8 w-8 items-center justify-center rounded-full bg-[var(--wk-ink)] text-sm font-bold text-[var(--wk-paper)]">
                     {n}
                 </span>
-                <span className="inline-flex items-center justify-center w-9 h-9 rounded-lg bg-orange-100 text-orange-700">
+                <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-[rgba(255,106,26,0.12)] text-[var(--wk-accent)]">
                     {icon}
                 </span>
             </div>
-            <h3 className="font-semibold text-base">{title}</h3>
+            <h3 className="font-serif-display text-xl">{title}</h3>
             <p className="text-sm text-gray-600 mt-1">{text}</p>
         </div>
     );
@@ -481,11 +482,11 @@ function Step({ n, icon, title, text }: { n: number; icon: React.ReactNode; titl
 function SectionHeader({ n, title, subtitle }: { n: number; title: string; subtitle?: string }) {
     return (
         <div className="flex items-start gap-3">
-            <span className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-black text-white text-sm font-semibold shrink-0 mt-0.5">
+            <span className="mt-0.5 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[var(--wk-ink)] text-sm font-semibold text-[var(--wk-paper)]">
                 {n}
             </span>
             <div>
-                <h3 className="text-lg font-semibold">{title}</h3>
+                <h3 className="font-serif-display text-2xl">{title}</h3>
                 {subtitle && <p className="text-sm text-gray-600">{subtitle}</p>}
             </div>
         </div>

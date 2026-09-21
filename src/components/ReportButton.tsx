@@ -14,7 +14,7 @@ import ReportModal from './ReportModal';
 
 interface ReportButtonProps {
     contentId: string;
-    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question';
+    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship';
     questionId?: string; // ID de la question parente (pour les réponses forum)
     variant?: 'button' | 'dropdown';
     size?: 'sm' | 'default' | 'lg';

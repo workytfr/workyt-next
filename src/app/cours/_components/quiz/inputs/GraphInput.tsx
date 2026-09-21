@@ -78,13 +78,13 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
 
     return (
         <div className="space-y-3">
-            <p className="text-xs text-[#9ca3af] flex items-center gap-1.5">
+            <p className="text-xs text-[#8f857b] flex items-center gap-1.5">
                 <LineChart className="w-3.5 h-3.5" />
                 Cliquez sur le repère pour placer vos points — recliquez sur un point pour
                 l&apos;enlever.
             </p>
 
-            <div className="bg-white border-2 border-[#e3e2e0] rounded-xl p-2">
+            <div className="bg-white border-2 border-[#e8dfd0] rounded-xl p-2">
                 <svg
                     ref={svgRef}
                     viewBox={`0 0 ${SIZE + PADDING * 2} ${SIZE + PADDING * 2}`}
@@ -102,7 +102,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                             y1={PADDING}
                             x2={toSvgX(x)}
                             y2={PADDING + SIZE}
-                            stroke="#f1f1ef"
+                            stroke="#efe6d6"
                             strokeWidth={1}
                         />
                     ))}
@@ -113,7 +113,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                             y1={toSvgY(y)}
                             x2={PADDING + SIZE}
                             y2={toSvgY(y)}
-                            stroke="#f1f1ef"
+                            stroke="#efe6d6"
                             strokeWidth={1}
                         />
                     ))}
@@ -125,7 +125,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                         width={SIZE}
                         height={SIZE}
                         fill="none"
-                        stroke="#e3e2e0"
+                        stroke="#e8dfd0"
                         strokeWidth={1.5}
                     />
 
@@ -136,7 +136,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                             y1={toSvgY(0)}
                             x2={PADDING + SIZE}
                             y2={toSvgY(0)}
-                            stroke="#9ca3af"
+                            stroke="#8f857b"
                             strokeWidth={1.5}
                         />
                     )}
@@ -146,7 +146,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                             y1={PADDING}
                             x2={toSvgX(0)}
                             y2={PADDING + SIZE}
-                            stroke="#9ca3af"
+                            stroke="#8f857b"
                             strokeWidth={1.5}
                         />
                     )}
@@ -159,7 +159,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                             y={PADDING + SIZE + 16}
                             textAnchor="middle"
                             fontSize={10}
-                            fill="#9ca3af"
+                            fill="#8f857b"
                         >
                             {parseFloat(x.toFixed(4))}
                         </text>
@@ -171,7 +171,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                             y={toSvgY(y) + 3}
                             textAnchor="end"
                             fontSize={10}
-                            fill="#9ca3af"
+                            fill="#8f857b"
                         >
                             {parseFloat(y.toFixed(4))}
                         </text>
@@ -186,7 +186,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                             transition={{ type: "spring", stiffness: 500, damping: 25 }}
                             cx={toSvgX(point.x)}
                             cy={toSvgY(point.y)}
-                            fill="#f97316"
+                            fill="#ff6a1a"
                             stroke="#ffffff"
                             strokeWidth={2}
                         />
@@ -194,7 +194,7 @@ export default function GraphInput({ question, value, onChange }: QuestionInputP
                 </svg>
             </div>
 
-            <p className="text-xs text-[#9ca3af]">
+            <p className="text-xs text-[#8f857b]">
                 {points.length === 0
                     ? "Aucun point placé."
                     : `${points.length} point${points.length > 1 ? "s" : ""} placé${

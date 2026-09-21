@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useRef, useEffect } from "react";
-import { FaBook, FaLightbulb, FaBookOpen, FaCalculator, FaExclamationCircle, FaInfoCircle, FaClock, FaVolumeUp, FaPause, FaPlay } from "react-icons/fa";
+import { FaBook, FaClock, FaVolumeUp, FaPause, FaPlay } from "react-icons/fa";
 import LessonTableOfContents, { addHeadingIds, extractHeadings } from "./LessonTableOfContents";
 import LessonQASection from "./LessonQASection";
 import { estimateReadingTime } from "./utils/readingTime";
@@ -20,6 +20,7 @@ import "katex/dist/katex.min.css";
 import { highlightCodeBlocks } from "@/lib/codeHighlight";
 import { useCodeBlockCopy } from "@/components/ui/CodeBlock";
 import "@/components/ui/code-block.css";
+import "./styles/lesson-blocks.css";
 
 interface LessonViewProps {
     title: string;
@@ -30,64 +31,51 @@ interface LessonViewProps {
     sectionId?: string;
 }
 
-// Configuration des blocs
+// Configuration des blocs pédagogiques — le style est dans styles/lesson-blocks.css
 const blockTypeConfig = {
-    "definition": {
-        icon: FaBookOpen,
-        title: "Définition",
-        color: "#f97316",
-        bgColor: "#fff7ed"
-    },
-    "propriete": {
-        icon: FaCalculator,
-        title: "Propriété",
-        color: "#3b82f6",
-        bgColor: "#eff6ff"
-    },
-    "theoreme": {
-        icon: FaLightbulb,
-        title: "Théorème",
-        color: "#10b981",
-        bgColor: "#ecfdf5"
-    },
-    "remarque": {
-        icon: FaInfoCircle,
-        title: "Remarque",
-        color: "#6b7280",
-        bgColor: "#f9fafb"
-    },
-    "attention": {
-        icon: FaExclamationCircle,
-        title: "Attention",
-        color: "#ef4444",
-        bgColor: "#fef2f2"
-    },
-    "exemple": {
-        icon: FaBook,
-        title: "Exemple",
-        color: "#8b5cf6",
-        bgColor: "#f5f3ff"
-    }
+    definition: { title: "Définition" },
+    propriete: { title: "Propriété" },
+    theoreme: { title: "Théorème" },
+    remarque: { title: "Remarque" },
+    attention: { title: "Attention" },
+    exemple: { title: "Exemple" },
 };
 
-// SVG icons
+// Icônes (trait `currentColor` : la couleur vient de la variante CSS du bloc)
 function getIconSVG(type: string) {
+    const svg = (paths: string) =>
+        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
     switch (type) {
         case "definition":
-            return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#f97316" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`;
+            return svg(`<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`);
         case "propriete":
-            return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M5 12h14M12 5v14"/></svg>`;
+            return svg(`<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="12" y2="16"/>`);
         case "theoreme":
-            return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#10b981" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`;
+            return svg(`<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>`);
         case "remarque":
-            return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6b7280" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>`;
+            return svg(`<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>`);
         case "attention":
-            return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
+            return svg(`<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>`);
         case "exemple":
-            return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>`;
+            return svg(`<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>`);
         default:
-            return `<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#6b7280" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
+            return svg(`<circle cx="12" cy="12" r="10"/>`);
     }
+}
+
+function escapeHtml(s: string) {
+    return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+/**
+ * En-tête d'un bloc : type en capitales, et le titre personnalisé en dessous
+ * seulement s'il apporte quelque chose (« Définition » sous « DÉFINITION » : non).
+ */
+function blockHeadHtml(type: string, label: string, title: string) {
+    const custom = title.trim() && title.trim().toLowerCase() !== label.toLowerCase();
+    return `<div class="wk-block__head"><span class="wk-block__icon">${getIconSVG(type)}</span><span class="wk-block__heading"><span class="wk-block__label">${escapeHtml(label)}</span>${
+        custom ? `<span class="wk-block__title">${escapeHtml(title.trim())}</span>` : ""
+    }</span></div>`;
 }
 
 function enhancedStylePlugin() {
@@ -173,42 +161,21 @@ function enhancedStylePlugin() {
                         }
                     }
 
-                    const iconSvg = getIconSVG(blockType);
-
+                    // Même balisage que le chemin HTML ci-dessous (voir styles/lesson-blocks.css)
                     node.children = [
+                        { type: 'raw', value: blockHeadHtml(blockType, config.title, title) },
                         {
                             type: 'element',
                             tagName: 'div',
-                            properties: { 
-                                className: ['flex items-center gap-2 mb-2 font-semibold text-sm'],
-                                style: `color: ${config.color}`
-                            },
-                            children: [
-                                {
-                                    type: 'element',
-                                    tagName: 'span',
-                                    properties: { className: ['flex-shrink-0'] },
-                                    children: [{ type: 'raw', value: iconSvg }]
-                                },
-                                {
-                                    type: 'element',
-                                    tagName: 'span',
-                                    children: [{ type: 'text', value: title }]
-                                }
-                            ]
-                        },
-                        {
-                            type: 'element',
-                            tagName: 'div',
-                            properties: { className: ['text-[#37352f]'] },
+                            properties: { className: ['wk-block__body'] },
                             children: remainingChildren
                         }
                     ];
 
                     node.properties = {
                         ...node.properties,
-                        className: ['my-6 p-4 rounded-lg border-l-4'],
-                        style: `background-color: ${config.bgColor}; border-color: ${config.color}`
+                        className: ['wk-block', `wk-block--${blockType}`],
+                        style: undefined
                     };
                 }
             }
@@ -411,14 +378,11 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
                         blockContent = blockContent.replace(/^<strong>([^<]*)<\/strong>\s*/, '');
                     }
 
-                    const iconSvg = getIconSVG(blockType);
-                    const transformedHtml = `<div class="my-6 p-4 rounded-lg border-l-4" style="background-color: ${config.bgColor}; border-color: ${config.color}">
-                        <div class="flex items-center gap-2 mb-2 font-semibold text-sm" style="color: ${config.color}">
-                            <span class="flex-shrink-0">${iconSvg}</span>
-                            <span>${blockTitle}</span>
-                        </div>
-                        <div class="text-[#37352f]">${blockContent}</div>
-                    </div>`;
+                    // Le titre vient du HTML (déjà échappé) : on le décode avant que
+                    // blockHeadHtml ne l'échappe, sinon « & » s'afficherait « &amp; ».
+                    const plainTitle = blockTitle
+                        .replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, "&");
+                    const transformedHtml = `<div class="wk-block wk-block--${blockType}">${blockHeadHtml(blockType, config.title, plainTitle)}<div class="wk-block__body">${blockContent}</div></div>`;
 
                     result = result.substring(0, start) + transformedHtml + result.substring(end);
                 }
@@ -480,8 +444,8 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
     return (
         <article className="max-w-none">
             {/* En-tête de la leçon */}
-            <header className="mb-8 pb-6 border-b border-[#e3e2e0]">
-                <div className="flex items-center gap-2 text-xs text-[#9ca3af] uppercase tracking-wide font-medium mb-3">
+            <header className="mb-8 pb-6 border-b border-[#e8dfd0]">
+                <div className="flex items-center gap-2 text-xs text-[#8f857b] uppercase tracking-wide font-medium mb-3">
                     <FaBook className="w-4 h-4" />
                     <span>Leçon</span>
                     <span className="mx-1">•</span>
@@ -489,7 +453,7 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
                     <span>~{readingTime} min de lecture</span>
                 </div>
 
-                <h1 className="text-2xl md:text-3xl font-bold text-[#37352f] tracking-tight leading-tight">
+                <h1 className="font-serif-display text-3xl md:text-[2.6rem] text-[#1a1512] leading-[1.05]">
                     {title}
                 </h1>
 

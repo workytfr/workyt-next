@@ -23,25 +23,25 @@ export default function SliderInput({ question, value, onChange }: QuestionInput
     return (
         <div className="space-y-4">
             <div className="flex items-center gap-2">
-                <SlidersHorizontal className="w-4 h-4 text-[#9ca3af]" />
-                <span className="text-xs text-[#9ca3af]">
+                <SlidersHorizontal className="w-4 h-4 text-[#8f857b]" />
+                <span className="text-xs text-[#8f857b]">
                     Ajustez le curseur pour donner votre estimation
                     {tolerance > 0 && ` (tolérance : ±${tolerance}${unit})`}
                 </span>
             </div>
 
-            <div className="bg-white border-2 border-[#e3e2e0] rounded-xl p-5">
+            <div className="bg-white border-2 border-[#e8dfd0] rounded-xl p-5">
                 <div className="text-center mb-4">
                     <motion.span
                         key={currentValue}
                         initial={{ scale: 1.08 }}
                         animate={{ scale: 1 }}
                         transition={{ duration: 0.12 }}
-                        className="inline-block text-3xl font-bold text-[#f97316]"
+                        className="inline-block text-3xl font-bold text-[#ff6a1a]"
                     >
                         {currentValue}
                     </motion.span>
-                    {unit && <span className="text-lg text-[#6b6b6b] ml-1">{unit}</span>}
+                    {unit && <span className="text-lg text-[#6b625a] ml-1">{unit}</span>}
                 </div>
 
                 <input
@@ -53,13 +53,13 @@ export default function SliderInput({ question, value, onChange }: QuestionInput
                     onChange={(e) => onChange(parseFloat(e.target.value))}
                     aria-label="Votre estimation"
                     aria-valuetext={`${currentValue}${unit}`}
-                    className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#f97316]"
+                    className="w-full h-2 rounded-lg appearance-none cursor-pointer accent-[#ff6a1a]"
                     style={{
-                        background: `linear-gradient(to right, #f97316 ${ratio * 100}%, #e3e2e0 ${ratio * 100}%)`,
+                        background: `linear-gradient(to right, #ff6a1a ${ratio * 100}%, #e8dfd0 ${ratio * 100}%)`,
                     }}
                 />
 
-                <div className="flex justify-between text-xs text-[#9ca3af] mt-2">
+                <div className="flex justify-between text-xs text-[#8f857b] mt-2">
                     <span>
                         {min}
                         {unit}

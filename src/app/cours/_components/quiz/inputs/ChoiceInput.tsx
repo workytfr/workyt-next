@@ -36,7 +36,7 @@ export default function ChoiceInput({ question, value, onChange }: QuestionInput
     return (
         <div className="space-y-2.5">
             {isMultiple && (
-                <p className="text-xs text-[#9ca3af] mb-3">
+                <p className="text-xs text-[#8f857b] mb-3">
                     Plusieurs réponses sont attendues.
                 </p>
             )}
@@ -56,8 +56,8 @@ export default function ChoiceInput({ question, value, onChange }: QuestionInput
                         aria-pressed={selected}
                         className={`w-full text-left p-4 rounded-xl border-2 transition-colors duration-150 flex items-start gap-3 ${
                             selected
-                                ? "border-[#f97316] bg-[#fff7ed] shadow-sm"
-                                : "border-[#e3e2e0] bg-white hover:border-[#d1d0ce] hover:bg-[#fafaf9]"
+                                ? "border-[#ff6a1a] bg-[#fff1e6] shadow-sm"
+                                : "border-[#e8dfd0] bg-white hover:border-[#d1d0ce] hover:bg-[#fafaf9]"
                         }`}
                     >
                         <span
@@ -65,8 +65,8 @@ export default function ChoiceInput({ question, value, onChange }: QuestionInput
                                 isMultiple ? "rounded-md" : "rounded-full"
                             } ${
                                 selected
-                                    ? "border-[#f97316] bg-[#f97316] text-white"
-                                    : "border-[#d1d0ce] text-[#9ca3af]"
+                                    ? "border-[#ff6a1a] bg-[#ff6a1a] text-white"
+                                    : "border-[#d1d0ce] text-[#8f857b]"
                             }`}
                         >
                             {selected ? (
@@ -82,7 +82,7 @@ export default function ChoiceInput({ question, value, onChange }: QuestionInput
                             )}
                         </span>
 
-                        <span className="text-[#37352f] text-sm sm:text-base leading-relaxed">
+                        <span className="text-[#1a1512] text-sm sm:text-base leading-relaxed">
                             <LatexText text={answer} />
                         </span>
                     </motion.button>

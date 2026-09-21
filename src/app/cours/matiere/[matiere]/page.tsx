@@ -1,12 +1,12 @@
 import { Metadata } from 'next'
-import Link from 'next/link'
-import { Suspense } from 'react'
+import CourseHub from '@/app/cours/_components/CourseHub'
+import { plainExcerpt } from '@/app/forum/_components/forumUi'
 import { notFound } from 'next/navigation'
 import dbConnect from '@/lib/mongodb'
 import Course from '@/models/Course'
 import { buildIdSlug } from '@/utils/slugify'
 import { getAllSubjectSlugs, slugToSubject, levelToSlug } from '@/utils/subjectSlug'
-import NiveauFilter, { CourseGrid, type CourseItem } from './niveau-filter'
+import { type CourseItem } from './niveau-filter'
 
 interface PageProps {
     params: Promise<{ matiere: string }>
@@ -65,7 +65,8 @@ export default async function MatiereCoursPage({ params }: PageProps) {
         id: c._id.toString(),
         href: `/cours/${buildIdSlug(c._id.toString(), c.slug || c.title)}`,
         title: c.title,
-        description: c.description ?? '',
+        description: plainExcerpt(c.description ?? '', 180),
+        image: c.image || undefined,
         niveau: c.niveau ?? '',
         niveauSlug: c.niveau ? levelToSlug(c.niveau) : '',
     }))
@@ -100,35 +101,7 @@ export default async function MatiereCoursPage({ params }: PageProps) {
         <>
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
             <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
-            <main className="mx-auto max-w-[1200px] px-6 py-10">
-                <nav aria-label="Fil d'Ariane" className="mb-6 text-sm text-gray-500">
-                    <Link href="/" className="hover:text-orange-500">Accueil</Link>
-                    {' › '}
-                    <Link href="/cours" className="hover:text-orange-500">Cours</Link>
-                    {' › '}
-                    <span className="text-gray-900">{subject}</span>
-                </nav>
-                <header className="mb-8">
-                    <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
-                        Cours de {subject}
-                    </h1>
-                    <p className="mt-3 text-gray-600 max-w-2xl">
-                        Retrouve tous les cours gratuits de <strong>{subject}</strong> publiés
-                        par les bénévoles de Workyt. Du collège au supérieur, structurés en
-                        chapitres avec exercices, quiz et fiches associées.
-                    </p>
-                </header>
-                {courses.length === 0 ? (
-                    <p className="text-gray-500">
-                        Aucun cours de {subject} publié pour le moment.{' '}
-                        <Link href="/cours" className="text-orange-500 underline">Voir tous les cours</Link>.
-                    </p>
-                ) : (
-                    <Suspense fallback={<CourseGrid courses={courseItems} />}>
-                        <NiveauFilter courses={courseItems} />
-                    </Suspense>
-                )}
-            </main>
+            <CourseHub kind="matiere" label={subject} courses={courseItems} />
         </>
     )
 }

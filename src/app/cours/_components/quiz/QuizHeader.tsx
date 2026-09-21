@@ -49,17 +49,17 @@ export default function QuizHeader({
         timeSpent > (quiz.timePenalty?.maxTime ?? 0);
 
     return (
-        <div className="bg-[#f7f6f3] rounded-2xl p-5 sm:p-6 mb-6">
+        <div className="bg-[#f5efe3] rounded-2xl p-5 sm:p-6 mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm flex-shrink-0">
                         <Trophy className="w-5 h-5 text-amber-500" />
                     </div>
                     <div className="min-w-0">
-                        <h2 className="font-semibold text-[#37352f] text-lg leading-tight line-clamp-1">
+                        <h2 className="font-semibold text-[#1a1512] text-lg leading-tight line-clamp-1">
                             {quiz.title}
                         </h2>
-                        <div className="flex items-center gap-3 mt-0.5 text-xs text-[#9ca3af]">
+                        <div className="flex items-center gap-3 mt-0.5 text-xs text-[#8f857b]">
                             <span
                                 className={`flex items-center gap-1 ${
                                     inBonus
@@ -114,11 +114,11 @@ export default function QuizHeader({
 
             {/* Compétences visées */}
             {quiz.competencies && quiz.competencies.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-[#e3e2e0]">
+                <div className="mt-4 pt-4 border-t border-[#e8dfd0]">
                     <button
                         onClick={onToggleCompetencies}
                         aria-expanded={showCompetencies}
-                        className="flex items-center gap-2 text-sm text-[#6b6b6b] hover:text-[#f97316] transition-colors w-full"
+                        className="flex items-center gap-2 text-sm text-[#6b625a] hover:text-[#ff6a1a] transition-colors w-full"
                     >
                         <Award className="w-4 h-4 text-orange-500" />
                         <span className="flex-1 text-left">
@@ -162,9 +162,9 @@ export default function QuizHeader({
             )}
 
             {/* Progression */}
-            <div className="h-1.5 bg-[#e3e2e0] rounded-full overflow-hidden mt-4 mb-3">
+            <div className="h-1.5 bg-[#e8dfd0] rounded-full overflow-hidden mt-4 mb-3">
                 <motion.div
-                    className="h-full bg-[#f97316] rounded-full"
+                    className="h-full bg-[#ff6a1a] rounded-full"
                     initial={false}
                     animate={{ width: `${progress}%` }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
@@ -185,10 +185,10 @@ export default function QuizHeader({
                             aria-current={isCurrent}
                             className={`w-7 h-7 rounded-lg text-xs font-medium transition-all flex items-center justify-center ${
                                 isCurrent
-                                    ? "bg-[#f97316] text-white shadow-sm ring-2 ring-[#f97316]/25"
+                                    ? "bg-[#ff6a1a] text-white shadow-sm ring-2 ring-[#ff6a1a]/25"
                                     : answered
                                       ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-200"
-                                      : "bg-white text-[#6b6b6b] hover:bg-[#eae9e6] border border-[#e3e2e0]"
+                                      : "bg-white text-[#6b625a] hover:bg-[#eae9e6] border border-[#e8dfd0]"
                             }`}
                         >
                             {answered && !isCurrent ? (

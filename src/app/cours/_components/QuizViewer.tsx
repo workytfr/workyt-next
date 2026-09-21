@@ -232,7 +232,7 @@ export default function QuizViewer({
         <div className="w-full">
             <button
                 onClick={onClose}
-                className="flex items-center gap-2 text-sm text-[#6b6b6b] hover:text-[#37352f] transition-colors mb-6"
+                className="flex items-center gap-2 text-sm text-[#6b625a] hover:text-[#1a1512] transition-colors mb-6"
             >
                 <ChevronLeft className="w-4 h-4" />
                 Retour aux quiz
@@ -279,9 +279,9 @@ export default function QuizViewer({
                         transition={{ duration: 0.2, ease: "easeInOut" }}
                     >
                         <div className="flex items-center justify-between gap-3 mb-4">
-                            <h3 className="text-base sm:text-lg font-semibold text-[#37352f]">
+                            <h3 className="text-base sm:text-lg font-semibold text-[#1a1512]">
                                 Question {currentQuestion + 1}
-                                <span className="text-[#9ca3af] font-normal">
+                                <span className="text-[#8f857b] font-normal">
                                     {" "}
                                     / {quiz.questions.length}
                                 </span>
@@ -291,7 +291,7 @@ export default function QuizViewer({
                             </Badge>
                         </div>
 
-                        <div className="text-[#37352f] text-sm sm:text-base leading-relaxed mb-5">
+                        <div className="text-[#1a1512] text-sm sm:text-base leading-relaxed mb-5">
                             <LatexText text={currentQ.question} />
                         </div>
 
@@ -300,7 +300,7 @@ export default function QuizViewer({
                             <img
                                 src={currentQ.questionPic}
                                 alt="Illustration de la question"
-                                className="max-w-full h-auto rounded-xl shadow-sm mb-5 border border-[#e3e2e0]"
+                                className="max-w-full h-auto rounded-xl shadow-sm mb-5 border border-[#e8dfd0]"
                             />
                         )}
 
@@ -315,7 +315,7 @@ export default function QuizViewer({
                 </AnimatePresence>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-[#e3e2e0]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-4 border-t border-[#e8dfd0]">
                 <Button
                     variant="outline"
                     onClick={handlePrevious}

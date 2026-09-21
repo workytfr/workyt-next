@@ -33,7 +33,7 @@ export default function TrueFalseInput({ value, onChange }: QuestionInputProps) 
                                 ? isTrue
                                     ? "border-emerald-400 bg-emerald-50 text-emerald-700 shadow-sm"
                                     : "border-red-400 bg-red-50 text-red-700 shadow-sm"
-                                : "border-[#e3e2e0] bg-white hover:border-[#d1d0ce] hover:bg-[#fafaf9] text-[#37352f]"
+                                : "border-[#e8dfd0] bg-white hover:border-[#d1d0ce] hover:bg-[#fafaf9] text-[#1a1512]"
                         }`}
                     >
                         <Icon

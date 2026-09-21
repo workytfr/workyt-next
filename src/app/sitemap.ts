@@ -23,6 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1 },
     { url: `${baseUrl}/cours`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
     { url: `${baseUrl}/forum`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${baseUrl}/suivi`, lastModified: now, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${baseUrl}/fiches`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/recompenses`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.7 },
     { url: `${baseUrl}/gems`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.6 },

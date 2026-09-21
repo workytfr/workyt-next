@@ -10,7 +10,7 @@ export interface CreateNotificationData {
     type: INotification['type'];
     recipientId: string;
     senderId: string;
-    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation' | 'kanban_card' | 'user' | 'challenge' | 'clan';
+    relatedEntityType?: 'question' | 'answer' | 'fiche' | 'comment' | 'quest' | 'evaluation' | 'kanban_card' | 'user' | 'challenge' | 'clan' | 'mentorship';
     relatedEntityId: string;
     title: string;
     message: string;

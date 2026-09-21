@@ -72,7 +72,7 @@ export default function LessonQASection({
 
     return (
         <>
-            <div className="mt-12 pt-8 border-t border-[#e3e2e0]">
+            <div className="mt-12 pt-8 border-t border-[#e8dfd0]">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
@@ -80,10 +80,10 @@ export default function LessonQASection({
                             <HelpCircle className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
-                            <h3 className="text-lg font-semibold text-[#37352f]">
+                            <h3 className="text-lg font-semibold text-[#1a1512]">
                                 Questions & Aide
                             </h3>
-                            <p className="text-sm text-[#9ca3af]">
+                            <p className="text-sm text-[#8f857b]">
                                 {total > 0
                                     ? `${total} question${total > 1 ? "s" : ""} sur cette leçon`
                                     : "Aucune question pour le moment"}
@@ -108,7 +108,7 @@ export default function LessonQASection({
                         {[...Array(2)].map((_, i) => (
                             <div
                                 key={i}
-                                className="h-20 bg-[#f7f6f3] rounded-xl animate-pulse"
+                                className="h-20 bg-[#f5efe3] rounded-xl animate-pulse"
                             />
                         ))}
                     </div>
@@ -123,16 +123,16 @@ export default function LessonQASection({
                                 onClick={() =>
                                     router.push(`/forum/${buildIdSlug(q._id, q.title)}`)
                                 }
-                                className="group flex items-center gap-4 p-4 bg-[#f7f6f3] hover:bg-[#efeeeb] rounded-xl cursor-pointer transition-colors"
+                                className="group flex items-center gap-4 p-4 bg-[#f5efe3] hover:bg-[#efeeeb] rounded-xl cursor-pointer transition-colors"
                             >
                                 <div className="flex-shrink-0 w-8 h-8 bg-white rounded-lg flex items-center justify-center">
                                     <MessageCircle className="w-4 h-4 text-purple-500" />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-[#37352f] truncate group-hover:text-purple-700 transition-colors">
+                                    <p className="text-sm font-medium text-[#1a1512] truncate group-hover:text-purple-700 transition-colors">
                                         {q.title}
                                     </p>
-                                    <div className="flex items-center gap-3 mt-1 text-xs text-[#9ca3af]">
+                                    <div className="flex items-center gap-3 mt-1 text-xs text-[#8f857b]">
                                         <span>{q.user.username}</span>
                                         <span>
                                             <TimeAgo date={q.createdAt} />
@@ -145,7 +145,7 @@ export default function LessonQASection({
                                 >
                                     {q.status}
                                 </span>
-                                <ChevronRight className="w-4 h-4 text-[#bfbfbf] group-hover:text-purple-500 transition-colors" />
+                                <ChevronRight className="w-4 h-4 text-[#b8ad9f] group-hover:text-purple-500 transition-colors" />
                             </motion.div>
                         ))}
 
@@ -164,14 +164,14 @@ export default function LessonQASection({
                         )}
                     </div>
                 ) : (
-                    <div className="text-center py-8 bg-[#f7f6f3] rounded-xl">
+                    <div className="text-center py-8 bg-[#f5efe3] rounded-xl">
                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3">
-                            <MessageCircle className="w-6 h-6 text-[#9ca3af]" />
+                            <MessageCircle className="w-6 h-6 text-[#8f857b]" />
                         </div>
-                        <p className="text-sm text-[#6b6b6b] mb-1">
+                        <p className="text-sm text-[#6b625a] mb-1">
                             Aucune question sur cette leçon
                         </p>
-                        <p className="text-xs text-[#9ca3af]">
+                        <p className="text-xs text-[#8f857b]">
                             Soyez le premier à poser une question !
                         </p>
                     </div>

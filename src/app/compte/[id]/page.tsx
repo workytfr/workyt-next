@@ -1,45 +1,41 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/Label";
-import { Textarea } from "@/components/ui/Textarea";
-import { Separator } from "@/components/ui/Separator";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Badge } from "@/components/ui/Badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
     Crown,
     Gift,
     Activity,
     Settings,
-    File,
+    FileText,
     HelpCircle,
     MessageCircle,
-    Gem,
     Mail,
+    CalendarDays,
+    ChevronLeft,
+    ChevronRight,
+    Pencil,
+    ThumbsUp,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import UserRank from "@/components/ui/UserRank";
-import BadgeProgress from "@/components/ui/BadgeProgress";
 import BadgeDisplay from "@/components/ui/BadgeDisplay";
 import ContributionGraph from "@/components/ui/ContributionGraph";
-import FicheCard from "@/components/fiches/FicheCard";
 import ProfileFriends from "@/components/friends/ProfileFriends";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Toast } from "@/components/ui/UseToast";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/Pagination";
 import { calculateUserRank } from "@/lib/rankSystem";
 import { useRankUp } from "@/hooks/useRankUp";
-import { FlameIcon, getFlameLevel, FLAME_CONFIGS } from "@/components/ui/StreakIndicator";
+import { FlameIcon, getFlameLevel } from "@/components/ui/StreakIndicator";
 import useSWR from "swr";
 import { buildIdSlug } from "@/utils/slugify";
 import AccountCompetencies from "../_components/AccountCompetencies";
+import { PAGE_CONTAINER, Eyebrow, SubjectLabel, LevelChip } from "@/components/wk/primitives";
+import { StatusChip, plainExcerpt, relativeTime } from "@/app/forum/_components/forumUi";
+import { FicheTile } from "@/app/fiches/_components/ficheUi";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
@@ -259,17 +255,17 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
 
             const data = await res.json();
             if (res.ok) {
-                Toast({ title: "Success", content: "User updated successfully." });
+                Toast({ title: "Profil mis à jour" });
                 setUser(data.data);
                 setIsEditing(false);
             } else {
-                Toast({ title: "Error", content: data.error, variant: "destructive" });
+                Toast({ title: "Enregistrement impossible", content: data.error, variant: "destructive" });
             }
         } catch (error) {
             console.error("Failed to save user:", error);
             Toast({
-                title: "Error",
-                content: "Unable to save user data.",
+                title: "Enregistrement impossible",
+                content: "Impossible d'enregistrer le profil.",
                 variant: "destructive",
             });
         }
@@ -278,441 +274,471 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const isOwner = session?.user?.id === id;
     const isAdmin = session?.user?.role === "Admin";
 
+
     if (loading || !id) {
         return (
-            <div className="bg-gray-50 min-h-screen">
-                <div className="container mx-auto mt-6 space-y-6 px-4">
-                    <Skeleton className="w-full h-48 rounded-2xl" />
-                    <div className="flex items-center space-x-4">
-                        <Skeleton className="w-24 h-24 rounded-full" />
-                        <div>
-                            <Skeleton className="w-48 h-6 mb-2" />
-                            <Skeleton className="w-32 h-4" />
+            <div className="min-h-screen bg-[var(--wk-paper)]">
+                <div className={`${PAGE_CONTAINER} py-10`}>
+                    <div className="flex items-center gap-5">
+                        <Skeleton className="h-24 w-24 rounded-full" />
+                        <div className="space-y-3">
+                            <Skeleton className="h-10 w-64 rounded-2xl" />
+                            <Skeleton className="h-4 w-40 rounded-full" />
                         </div>
                     </div>
-                    <Separator className="my-4" />
-                    <div className="space-y-4">
-                        <Skeleton className="w-full h-10" />
-                        <Skeleton className="w-full h-10" />
-                        <Skeleton className="w-full h-24" />
+                    <div className="mt-10 grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_380px]">
+                        <Skeleton className="h-[420px] rounded-3xl" />
+                        <Skeleton className="h-[420px] rounded-3xl" />
                     </div>
                 </div>
             </div>
         );
     }
 
+    const card = "rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white";
+    const cardTitle = "font-serif-display flex items-center gap-2.5 text-2xl";
+    const flameLevel = getFlameLevel(currentStreak);
+    const memberSince = user?.createdAt
+        ? new Date(user.createdAt).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+        : null;
+
+    const stats = [
+        { icon: FileText, value: pagination.totalRevisions, label: "fiches créées", color: "text-[var(--wk-accent)]" },
+        { icon: HelpCircle, value: pagination.totalQuestions, label: "questions posées", color: "text-[#2f86b3]" },
+        { icon: MessageCircle, value: pagination.totalAnswers, label: "réponses données", color: "text-emerald-600" },
+        { icon: Gift, value: formData.badges?.length || 0, label: "badges gagnés", color: "text-[#9b6ef3]" },
+    ];
+
     return (
-        <div className="bg-gray-50 min-h-screen">
-            <div className="container mx-auto px-4 pt-6 pb-8">
-                {/* Photo de profil en haut */}
-                <div className="flex flex-col items-center mb-6">
-                    <ProfileAvatar
-                        username={formData.username}
-                        size="large"
-                        userId={id}
-                        role={user?.role}
-                        points={formData.points}
-                    />
-                </div>
-
-                {/* Stats pills */}
-                <div className="flex items-center justify-center gap-3 flex-wrap mb-4">
-                        <span
-                            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium"
-                            style={{
-                                backgroundColor: `${userRank.color}18`,
-                                color: userRank.color,
-                                border: `1px solid ${userRank.color}30`,
-                            }}
-                        >
-                            {userRank.badge} {userRank.name} · Nv {userRank.level}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                            <Image src="/badge/points.png" alt="Points" width={14} height={14} className="object-contain" />
-                            {formatPoints(formData.points)}
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                            <Image src="/badge/diamond.png" alt="Diamants" width={14} height={14} className="object-contain" />
-                            {gems}
-                        </span>
-                        <span className={`inline-flex items-center gap-1 bg-gray-100 px-3 py-1 rounded-full text-sm font-medium ${FLAME_CONFIGS[getFlameLevel(currentStreak) as keyof typeof FLAME_CONFIGS].textClass}`}>
-                            <FlameIcon level={getFlameLevel(currentStreak)} size={16} />
-                            <span className="text-gray-700">{currentStreak}j</span>
-                        </span>
-                        <span className="inline-flex items-center gap-1.5 bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-sm font-medium">
-                            🏆 {formData.badges?.length || 0} badges
-                        </span>
-                        {id && formData.username && (
-                            <ProfileFriends userId={id} username={formData.username} variant="pill" />
-                        )}
-                </div>
-
-                {/* Bio */}
-                {formData.bio && (
-                    <p className="text-gray-500 text-sm text-center max-w-2xl mx-auto mb-6">{formData.bio}</p>
-                )}
-
-                {/* Content */}
-                <div className="space-y-6 pb-8">
-                    {/* Amis : compteur, bouton d'ajout et aperçu de la liste */}
-                    {id && formData.username && (
-                        <ProfileFriends userId={id} username={formData.username} />
-                    )}
-
-                    {/* Rank Section */}
-                    <Card className="border border-gray-200 rounded-2xl shadow-sm">
-                        <CardHeader className="bg-white border-b border-gray-100">
-                            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <Crown className="w-5 h-5 text-gray-400" />
-                                Progression & Niveau
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <UserRank points={formData.points} />
-                        </CardContent>
-                    </Card>
-
-                    {/* Badges Section */}
-                    <Card className="border border-gray-200 rounded-2xl shadow-sm">
-                        <CardHeader className="bg-white border-b border-gray-100">
-                            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <Gift className="w-5 h-5 text-gray-400" />
-                                Badges & Récompenses
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                            <BadgeDisplay userId={id} />
-                        </CardContent>
-                    </Card>
-
-                    {/* Compétences — uniquement visible par le propriétaire */}
-                    {isOwner && <AccountCompetencies />}
-
-                    {/* Contribution Graph Section - compact style GitHub */}
-                    <Card className="border border-gray-200 rounded-2xl shadow-sm">
-                        <CardHeader className="bg-white border-b border-gray-100 py-4">
-                            <CardTitle className="text-base font-semibold text-gray-800 flex items-center gap-2">
-                                <Activity className="w-4 h-4 text-gray-400" />
-                                Activité & Contributions
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-4 space-y-4">
-                            {/* Stats d'activité */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                    <File className="w-5 h-5 text-amber-500" />
-                                    <div>
-                                        <p className="text-2xl font-bold text-gray-900">{pagination.totalRevisions}</p>
-                                        <p className="text-xs text-gray-500">Fiches créées</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                    <HelpCircle className="w-5 h-5 text-blue-500" />
-                                    <div>
-                                        <p className="text-2xl font-bold text-gray-900">{pagination.totalQuestions}</p>
-                                        <p className="text-xs text-gray-500">Questions posées</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                    <MessageCircle className="w-5 h-5 text-emerald-500" />
-                                    <div>
-                                        <p className="text-2xl font-bold text-gray-900">{pagination.totalAnswers}</p>
-                                        <p className="text-xs text-gray-500">Réponses données</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-xl">
-                                    <Crown className="w-5 h-5 text-purple-500" />
-                                    <div>
-                                        <p className="text-2xl font-bold text-gray-900">
-                                            {user?.createdAt
-                                                ? new Date(user.createdAt).toLocaleDateString("fr-FR", { month: "short", year: "numeric" })
-                                                : "—"}
-                                        </p>
-                                        <p className="text-xs text-gray-500">Membre depuis</p>
-                                    </div>
-                                </div>
+        <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
+            {/* ─── En-tête ─── */}
+            <header className="relative overflow-hidden border-b border-[rgba(26,21,18,0.08)]">
+                <div className="wk-dotgrid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+                <div className={`${PAGE_CONTAINER} relative pb-10 pt-10 md:pb-14 md:pt-14`}>
+                    <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+                        <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
+                            <div className="shrink-0">
+                                <ProfileAvatar username={formData.username} size="large" userId={id} role={user?.role} points={formData.points} />
                             </div>
-                            <ContributionGraph userId={id} />
-                        </CardContent>
-                    </Card>
-
-                    {/* Editable Fields - Only for owner or admin */}
-                    {(isOwner || isAdmin) && (
-                        <Card className="border border-gray-200 rounded-2xl shadow-sm">
-                            <CardHeader className="bg-white border-b border-gray-100">
-                                <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                    <Settings className="w-5 h-5 text-gray-400" />
-                                    Paramètres du profil
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="p-6">
-                            <div className="space-y-4">
-                                <div>
-                                    <Label htmlFor="name">Nom</Label>
-                                    <Input
-                                        id="name"
-                                        value={formData.name}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, name: e.target.value })
-                                        }
-                                        disabled={!isEditing}
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="username">Nom d&apos;utilisateur</Label>
-                                    <Input
-                                        id="username"
-                                        value={formData.username}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, username: e.target.value })
-                                        }
-                                        disabled={!isEditing}
-                                    />
-                                </div>
-                                <div>
-                                    <Label htmlFor="bio">Bio</Label>
-                                    <Textarea
-                                        id="bio"
-                                        value={formData.bio}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, bio: e.target.value })
-                                        }
-                                        disabled={!isEditing}
-                                    />
-                                </div>
-                                {/* Newsletter Preferences */}
-                                {newsletterPrefs !== null && (
-                                    <div className="space-y-2">
-                                        <div className="flex items-center gap-2 mb-3">
-                                            <Mail className="w-5 h-5 text-indigo-500" />
-                                            <p className="text-sm font-semibold text-gray-800">Preferences newsletter</p>
-                                        </div>
-                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-800">Newsletter hebdomadaire</p>
-                                                <p className="text-xs text-gray-500">Recap de ton activite et du nouveau contenu chaque semaine</p>
-                                            </div>
-                                            <button
-                                                onClick={() => toggleNewsletterPref('hebdo')}
-                                                disabled={newsletterLoading}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                                                    newsletterPrefs.hebdo ? 'bg-indigo-600' : 'bg-gray-300'
-                                                } ${newsletterLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                                                        newsletterPrefs.hebdo ? 'translate-x-6' : 'translate-x-1'
-                                                    }`}
-                                                />
-                                            </button>
-                                        </div>
-                                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-800">Newsletters classiques</p>
-                                                <p className="text-xs text-gray-500">Annonces, nouveautes et actualites de Workyt</p>
-                                            </div>
-                                            <button
-                                                onClick={() => toggleNewsletterPref('classique')}
-                                                disabled={newsletterLoading}
-                                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none ${
-                                                    newsletterPrefs.classique ? 'bg-indigo-600' : 'bg-gray-300'
-                                                } ${newsletterLoading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                                            >
-                                                <span
-                                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${
-                                                        newsletterPrefs.classique ? 'translate-x-6' : 'translate-x-1'
-                                                    }`}
-                                                />
-                                            </button>
-                                        </div>
-
-                                        {/* Declaration des 15 ans — demandee UNE fois, au
-                                            moment de s'abonner, jamais a l'inscription au
-                                            site. C'est le seul traitement fonde sur le
-                                            consentement, donc le seul ou l'age compte. */}
-                                        {attenteAge && (
-                                            <div className="p-4 rounded-xl border-2 border-indigo-200 bg-indigo-50/60 space-y-3">
-                                                <p className="text-sm text-gray-700">
-                                                    La newsletter repose sur ton consentement. En France, la
-                                                    majorite numerique est fixee a 15 ans : en dessous, un parent
-                                                    doit faire la demande a{' '}
-                                                    <a href="mailto:admin@workyt.fr" className="text-indigo-600 underline">
-                                                        admin@workyt.fr
-                                                    </a>.
-                                                </p>
-                                                <label className="flex items-start gap-2 text-sm font-medium text-gray-800 cursor-pointer">
-                                                    <input
-                                                        type="checkbox"
-                                                        checked={ageCoche}
-                                                        onChange={(e) => setAgeCoche(e.target.checked)}
-                                                        className="mt-0.5 h-4 w-4 accent-indigo-600"
-                                                    />
-                                                    Je declare avoir 15 ans ou plus.
-                                                </label>
-                                                <div className="flex gap-2">
-                                                    <Button
-                                                        onClick={() => envoyerPref(attenteAge, true, true)}
-                                                        disabled={!ageCoche || newsletterLoading}
-                                                    >
-                                                        Confirmer mon inscription
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        onClick={() => { setAttenteAge(null); setAgeCoche(false); }}
-                                                    >
-                                                        Annuler
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
-
-                                <div className="flex justify-end gap-4">
-                                    {isEditing ? (
-                                        <>
-                                            <Button variant="outline" onClick={handleCancel}>
-                                                Annuler
-                                            </Button>
-                                            <Button onClick={handleSave}>Sauvegarder</Button>
-                                        </>
-                                    ) : (
-                                        <Button onClick={() => setIsEditing(true)}>Modifier</Button>
+                            <div className="min-w-0">
+                                <Eyebrow>{isOwner ? "Mon profil" : "Profil"}</Eyebrow>
+                                <h1 className="font-serif-display mt-3 break-words text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95]">
+                                    {formData.username}
+                                    <span className="text-[var(--wk-accent)]">.</span>
+                                </h1>
+                                <div className="mt-4 flex flex-wrap items-center gap-2">
+                                    <span
+                                        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
+                                        style={{ backgroundColor: `${userRank.color}18`, color: userRank.color, border: `1px solid ${userRank.color}30` }}
+                                    >
+                                        {userRank.badge} {userRank.name} · Niv. {userRank.level}
+                                    </span>
+                                    {memberSince && (
+                                        <span className="inline-flex items-center gap-1.5 text-sm text-[rgba(26,21,18,0.55)]">
+                                            <CalendarDays className="h-4 w-4" /> Membre depuis {memberSince}
+                                        </span>
                                     )}
                                 </div>
+                                {formData.bio && (
+                                    <p className="mt-4 max-w-[60ch] leading-relaxed text-[rgba(26,21,18,0.68)]">{formData.bio}</p>
+                                )}
                             </div>
-                            </CardContent>
-                        </Card>
-                    )}
+                        </div>
 
-                    {/* User Revisions */}
-                    <Card className="border border-gray-200 rounded-2xl shadow-sm">
-                        <CardHeader className="bg-white border-b border-gray-100">
-                            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <File className="w-5 h-5 text-gray-400" />
-                                Fiches de révision
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                        {revisions.length > 0 ? (
-                            <div className="space-y-4">
-                                {revisions.map((fiche) => (
-                                    <FicheCard key={fiche._id} fiche={fiche} username={formData.username} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <File className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                                <p className="text-sm text-gray-400">Aucune fiche de révision publiée.</p>
-                            </div>
-                        )}
-                        </CardContent>
-                    </Card>
+                        {/* Chiffres clés */}
+                        <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+                            <span className="wk-chip !px-3.5 !py-2 text-sm" title="Points">
+                                <Image src="/badge/points.png" alt="" width={16} height={16} className="object-contain" />
+                                {formatPoints(formData.points)} pts
+                            </span>
+                            {isOwner && (
+                                <span className="wk-chip !px-3.5 !py-2 text-sm" title="Gemmes">
+                                    <Image src="/badge/diamond.png" alt="" width={16} height={16} className="object-contain" />
+                                    {gems}
+                                </span>
+                            )}
+                            <span className="wk-chip !px-3.5 !py-2 text-sm" title="Série de jours d'activité">
+                                <FlameIcon level={flameLevel} size={16} />
+                                {currentStreak} j
+                            </span>
+                            {id && formData.username && <ProfileFriends userId={id} username={formData.username} variant="pill" />}
+                            {(isOwner || isAdmin) && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsEditing(true);
+                                        document.getElementById("parametres")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                                    }}
+                                    className="wk-btn-ink !py-2 text-sm"
+                                >
+                                    <Pencil className="h-4 w-4" /> Modifier le profil
+                                </button>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </header>
 
-                    {/* Questions posées */}
-                    <Card className="border border-gray-200 rounded-2xl shadow-sm">
-                        <CardHeader className="bg-white border-b border-gray-100">
-                            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <HelpCircle className="w-5 h-5 text-gray-400" />
-                                Questions posées
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                        {questions.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {questions.map((question) => (
-                                    <div
-                                        key={question._id}
-                                        className="p-4 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition cursor-pointer"
-                                        onClick={() => router.push(`/forum/${buildIdSlug(question._id, question.title)}`)}
-                                    >
-                                        <h3 className="font-semibold text-gray-800 line-clamp-2">{question.title}</h3>
-                                        <div className="flex justify-between items-center text-sm text-gray-500 mt-2">
-                                            <span>{question.answersCount} réponse(s)</span>
-                                            <span className="text-gray-400">{new Date(question.createdAt).toLocaleDateString()}</span>
-                                        </div>
+            <div className={`${PAGE_CONTAINER} py-8 md:py-10`}>
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_380px] xl:gap-10">
+                    {/* ─── Colonne principale ─── */}
+                    <main className="min-w-0 space-y-6">
+                        {/* Activité */}
+                        <section className={`${card} p-5 sm:p-6`}>
+                            <h2 className={cardTitle}>
+                                <Activity className="h-5 w-5 text-[var(--wk-accent)]" /> Activité
+                            </h2>
+                            <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+                                {stats.map((s) => (
+                                    <div key={s.label} className="rounded-2xl bg-[var(--wk-paper)] p-4">
+                                        <s.icon className={`h-5 w-5 ${s.color}`} />
+                                        <p className="font-serif-display mt-2 text-3xl leading-none">{s.value}</p>
+                                        <p className="mt-1 text-xs text-[rgba(26,21,18,0.55)]">{s.label}</p>
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <HelpCircle className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                                <p className="text-sm text-gray-400">Aucune question posée.</p>
+                            <div className="mt-5">
+                                <ContributionGraph userId={id} />
                             </div>
-                        )}
-                        </CardContent>
-                    </Card>
+                        </section>
 
-                    {/* Réponses données */}
-                    <Card className="border border-gray-200 rounded-2xl shadow-sm">
-                        <CardHeader className="bg-white border-b border-gray-100">
-                            <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                                <MessageCircle className="w-5 h-5 text-gray-400" />
-                                Réponses données
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="p-6">
-                        {answers.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {answers.map((answer) => (
-                                    <div
-                                        key={answer._id}
-                                        className="p-4 bg-white rounded-xl border border-gray-200 hover:border-gray-300 transition cursor-pointer"
-                                        onClick={() => router.push(`/forum/${buildIdSlug(answer.question?._id || '', answer.question?.title || '')}`)}
-                                    >
-                                        <h3 className="font-semibold text-gray-800 line-clamp-2">{answer.question?.title}</h3>
-                                        <p className="text-sm text-gray-600 mt-2 line-clamp-2">{answer.content.substring(0, 100)}...</p>
-                                        <div className="text-right text-gray-400 text-xs mt-2">
-                                            {new Date(answer.createdAt).toLocaleDateString()}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-8">
-                                <MessageCircle className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                                <p className="text-sm text-gray-400">Aucune réponse donnée.</p>
-                            </div>
-                        )}
-                        </CardContent>
-                    </Card>
+                        {/* Compétences — uniquement visibles par le propriétaire */}
+                        {isOwner && <AccountCompetencies />}
 
-                    {/* Pagination */}
-                    <Pagination>
-                        <PaginationContent>
-                            <PaginationItem>
-                                <PaginationPrevious
-                                    href="#"
+                        {/* Fiches */}
+                        <section>
+                            <h2 className={`${cardTitle} mb-4`}>
+                                <FileText className="h-5 w-5 text-[var(--wk-accent)]" /> Fiches de révision
+                                <span className="text-base text-[rgba(26,21,18,0.45)]">({pagination.totalRevisions})</span>
+                            </h2>
+                            {revisions.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    {revisions.map((f) => (
+                                        <FicheTile
+                                            key={f._id}
+                                            f={{
+                                                id: String(f._id),
+                                                title: f.title,
+                                                subject: f.subject,
+                                                level: f.level,
+                                                status: f.status,
+                                                content: f.content,
+                                                likes: f.likes,
+                                                comments: f.comments,
+                                                date: f.createdAt,
+                                            }}
+                                        />
+                                    ))}
+                                </div>
+                            ) : (
+                                <Empty icon={FileText} text={isOwner ? "Tu n'as pas encore publié de fiche." : "Aucune fiche publiée."} href={isOwner ? "/fiches/creer" : undefined} cta="Déposer une fiche" />
+                            )}
+                        </section>
+
+                        {/* Questions */}
+                        <section>
+                            <h2 className={`${cardTitle} mb-4`}>
+                                <HelpCircle className="h-5 w-5 text-[#2f86b3]" /> Questions posées
+                                <span className="text-base text-[rgba(26,21,18,0.45)]">({pagination.totalQuestions})</span>
+                            </h2>
+                            {questions.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    {questions.map((q) => (
+                                        <Link
+                                            key={q._id}
+                                            href={`/forum/${buildIdSlug(q._id, q.title)}`}
+                                            className={`${card} group flex min-w-0 flex-col p-5 transition hover:-translate-y-0.5 hover:border-[rgba(26,21,18,0.18)] hover:shadow-[0_12px_32px_rgba(26,21,18,0.07)]`}
+                                        >
+                                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+                                                {q.subject && <SubjectLabel subject={q.subject} className="min-w-0" />}
+                                                {q.classLevel && <LevelChip level={q.classLevel} />}
+                                                <StatusChip status={q.status} className="ml-auto" />
+                                            </div>
+                                            <h3 className="font-serif-display mt-3 text-xl leading-snug line-clamp-2 [overflow-wrap:anywhere] group-hover:text-[#c24a0a]">{q.title}</h3>
+                                            <div className="mt-auto flex items-center gap-3 pt-4 text-xs text-[rgba(26,21,18,0.55)]">
+                                                <span className="inline-flex items-center gap-1"><MessageCircle className="h-3.5 w-3.5" /> {q.answersCount ?? 0} réponse{(q.answersCount ?? 0) > 1 ? "s" : ""}</span>
+                                                <span className="ml-auto">{relativeTime(q.createdAt)}</span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Empty icon={HelpCircle} text="Aucune question posée." />
+                            )}
+                        </section>
+
+                        {/* Réponses */}
+                        <section>
+                            <h2 className={`${cardTitle} mb-4`}>
+                                <MessageCircle className="h-5 w-5 text-emerald-600" /> Réponses données
+                                <span className="text-base text-[rgba(26,21,18,0.45)]">({pagination.totalAnswers})</span>
+                            </h2>
+                            {answers.length > 0 ? (
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    {answers.map((a) => (
+                                        <Link
+                                            key={a._id}
+                                            href={`/forum/${buildIdSlug(a.question?._id || "", a.question?.title || "")}`}
+                                            className={`${card} group flex min-w-0 flex-col p-5 transition hover:-translate-y-0.5 hover:border-[rgba(26,21,18,0.18)] hover:shadow-[0_12px_32px_rgba(26,21,18,0.07)]`}
+                                        >
+                                            <span className="font-mono-ui text-[10px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.5)]">En réponse à</span>
+                                            <h3 className="mt-1 font-semibold leading-snug line-clamp-2 [overflow-wrap:anywhere] group-hover:text-[#c24a0a]">{a.question?.title || "Question supprimée"}</h3>
+                                            <p className="mt-2 text-sm leading-relaxed text-[rgba(26,21,18,0.62)] line-clamp-3 [overflow-wrap:anywhere]">{plainExcerpt(a.content, 160)}</p>
+                                            <div className="mt-auto flex items-center gap-3 pt-4 text-xs text-[rgba(26,21,18,0.55)]">
+                                                {typeof a.likes === "number" && (
+                                                    <span className="inline-flex items-center gap-1"><ThumbsUp className="h-3.5 w-3.5" /> {a.likes}</span>
+                                                )}
+                                                {a.status === "Meilleure Réponse" && <span className="font-semibold text-emerald-700">Meilleure réponse</span>}
+                                                {a.status === "Validée" && <span className="font-semibold text-[#2f86b3]">Validée</span>}
+                                                <span className="ml-auto">{relativeTime(a.createdAt)}</span>
+                                            </div>
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <Empty icon={MessageCircle} text="Aucune réponse donnée." />
+                            )}
+                        </section>
+
+                        {/* Pagination commune aux fiches, questions et réponses */}
+                        {pagination.totalPages > 1 && (
+                            <nav className="flex items-center justify-center gap-1 border-t border-[rgba(26,21,18,0.08)] pt-6" aria-label="Pagination">
+                                <button
+                                    type="button"
                                     onClick={() => handlePageChange(pagination.page - 1)}
-                                    className={pagination.page === 1 ? "opacity-50 pointer-events-none" : ""}
+                                    disabled={pagination.page <= 1}
+                                    className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    Précédent
-                                </PaginationPrevious>
-                            </PaginationItem>
-                            {Array.from({ length: pagination.totalPages }, (_, index) => (
-                                <PaginationItem key={index}>
-                                    <PaginationLink
-                                        href="#"
-                                        isActive={pagination.page === index + 1}
-                                        onClick={() => handlePageChange(index + 1)}
-                                    >
-                                        {index + 1}
-                                    </PaginationLink>
-                                </PaginationItem>
-                            ))}
-                            <PaginationItem>
-                                <PaginationNext
-                                    href="#"
+                                    <ChevronLeft className="h-4 w-4" /> <span className="hidden sm:inline">Précédent</span>
+                                </button>
+                                {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                                    .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - pagination.page) <= 1)
+                                    .map((p, i, arr) => (
+                                        <React.Fragment key={p}>
+                                            {i > 0 && arr[i - 1] !== p - 1 && <span className="px-1 text-[rgba(26,21,18,0.3)]">…</span>}
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePageChange(p)}
+                                                aria-current={pagination.page === p ? "page" : undefined}
+                                                className={`h-10 w-10 rounded-full text-sm font-semibold transition ${
+                                                    pagination.page === p ? "bg-[var(--wk-ink)] text-[var(--wk-paper)]" : "hover:bg-white"
+                                                }`}
+                                            >
+                                                {p}
+                                            </button>
+                                        </React.Fragment>
+                                    ))}
+                                <button
+                                    type="button"
                                     onClick={() => handlePageChange(pagination.page + 1)}
-                                    className={pagination.page === pagination.totalPages ? "opacity-50 pointer-events-none" : ""}
+                                    disabled={pagination.page >= pagination.totalPages}
+                                    className="inline-flex items-center gap-1 rounded-full px-3 py-2 text-sm font-semibold hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
                                 >
-                                    Suivant
-                                </PaginationNext>
-                            </PaginationItem>
-                        </PaginationContent>
-                    </Pagination>
+                                    <span className="hidden sm:inline">Suivant</span> <ChevronRight className="h-4 w-4" />
+                                </button>
+                            </nav>
+                        )}
+                    </main>
+
+                    {/* ─── Colonne latérale ─── */}
+                    <aside className="min-w-0 space-y-6">
+                        <section className={`${card} p-5 sm:p-6`}>
+                            <h2 className={cardTitle}>
+                                <Crown className="h-5 w-5 text-[var(--wk-accent)]" /> Progression
+                            </h2>
+                            <div className="mt-4">
+                                <UserRank points={formData.points} />
+                            </div>
+                        </section>
+
+                        <section className={`${card} p-5 sm:p-6`}>
+                            <h2 className={cardTitle}>
+                                <Gift className="h-5 w-5 text-[var(--wk-accent)]" /> Badges
+                            </h2>
+                            <div className="mt-4">
+                                <BadgeDisplay userId={id} />
+                            </div>
+                        </section>
+
+                        {id && formData.username && <ProfileFriends userId={id} username={formData.username} />}
+
+                        {/* Paramètres — propriétaire ou administrateur */}
+                        {(isOwner || isAdmin) && (
+                            <section id="parametres" className={`${card} scroll-mt-24 p-5 sm:p-6`}>
+                                <h2 className={cardTitle}>
+                                    <Settings className="h-5 w-5 text-[var(--wk-accent)]" /> Paramètres
+                                </h2>
+                                <div className="mt-5 space-y-4">
+                                    <Field label="Nom" id="name">
+                                        <input
+                                            id="name"
+                                            value={formData.name}
+                                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                            disabled={!isEditing}
+                                            className={fieldClass}
+                                        />
+                                    </Field>
+                                    <Field label="Nom d'utilisateur" id="username">
+                                        <input
+                                            id="username"
+                                            value={formData.username}
+                                            onChange={(e) => setFormData({ ...formData, username: e.target.value })}
+                                            disabled={!isEditing}
+                                            className={fieldClass}
+                                        />
+                                    </Field>
+                                    <Field label="Bio" id="bio">
+                                        <textarea
+                                            id="bio"
+                                            value={formData.bio}
+                                            onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                                            disabled={!isEditing}
+                                            rows={3}
+                                            className={`${fieldClass} resize-y`}
+                                        />
+                                    </Field>
+
+                                    <div className="flex justify-end gap-2">
+                                        {isEditing ? (
+                                            <>
+                                                <button type="button" onClick={handleCancel} className="wk-btn-ghost !py-2 text-sm">Annuler</button>
+                                                <button type="button" onClick={handleSave} className="wk-btn-orange !py-2 text-sm">Enregistrer</button>
+                                            </>
+                                        ) : (
+                                            <button type="button" onClick={() => setIsEditing(true)} className="wk-btn-ink !py-2 text-sm">
+                                                <Pencil className="h-4 w-4" /> Modifier
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Newsletter */}
+                                    {newsletterPrefs !== null && (
+                                        <div className="space-y-2 border-t border-[rgba(26,21,18,0.06)] pt-5">
+                                            <p className="flex items-center gap-2 text-sm font-semibold">
+                                                <Mail className="h-4 w-4 text-[var(--wk-accent)]" /> Newsletter
+                                            </p>
+                                            <Toggle
+                                                label="Newsletter hebdomadaire"
+                                                hint="Le récap de ton activité et du nouveau contenu, chaque semaine"
+                                                checked={newsletterPrefs.hebdo}
+                                                disabled={newsletterLoading}
+                                                onToggle={() => toggleNewsletterPref("hebdo")}
+                                            />
+                                            <Toggle
+                                                label="Newsletters classiques"
+                                                hint="Annonces, nouveautés et actualités de Workyt"
+                                                checked={newsletterPrefs.classique}
+                                                disabled={newsletterLoading}
+                                                onToggle={() => toggleNewsletterPref("classique")}
+                                            />
+
+                                            {/* Déclaration des 15 ans — demandée UNE fois, au moment
+                                                de s'abonner, jamais à l'inscription au site. C'est le
+                                                seul traitement fondé sur le consentement, donc le seul
+                                                où l'âge compte. */}
+                                            {attenteAge && (
+                                                <div className="space-y-3 rounded-2xl border border-[rgba(255,106,26,0.3)] bg-[rgba(255,106,26,0.05)] p-4">
+                                                    <p className="text-sm text-[rgba(26,21,18,0.75)]">
+                                                        La newsletter repose sur ton consentement. En France, la majorité numérique est fixée à
+                                                        15 ans : en dessous, un parent doit faire la demande à{" "}
+                                                        <a href="mailto:admin@workyt.fr" className="font-semibold text-[#c24a0a] underline">admin@workyt.fr</a>.
+                                                    </p>
+                                                    <label className="flex cursor-pointer items-start gap-2 text-sm font-semibold">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={ageCoche}
+                                                            onChange={(e) => setAgeCoche(e.target.checked)}
+                                                            className="mt-0.5 h-4 w-4 accent-[#ff6a1a]"
+                                                        />
+                                                        Je déclare avoir 15 ans ou plus.
+                                                    </label>
+                                                    <div className="flex flex-wrap gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => envoyerPref(attenteAge, true, true)}
+                                                            disabled={!ageCoche || newsletterLoading}
+                                                            className="wk-btn-orange !py-2 text-sm disabled:opacity-50"
+                                                        >
+                                                            Confirmer mon inscription
+                                                        </button>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => { setAttenteAge(null); setAgeCoche(false); }}
+                                                            className="wk-btn-ghost !py-2 text-sm"
+                                                        >
+                                                            Annuler
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            </section>
+                        )}
+                    </aside>
                 </div>
             </div>
+        </div>
+    );
+}
+
+const fieldClass =
+    "w-full rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white px-4 py-2.5 text-sm outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)] disabled:bg-[var(--wk-paper)] disabled:text-[rgba(26,21,18,0.7)]";
+
+function Field({ label, id, children }: { label: string; id: string; children: React.ReactNode }) {
+    return (
+        <div>
+            <label htmlFor={id} className="mb-1.5 block text-sm font-semibold">{label}</label>
+            {children}
+        </div>
+    );
+}
+
+function Toggle({ label, hint, checked, disabled, onToggle }: { label: string; hint: string; checked: boolean; disabled: boolean; onToggle: () => void }) {
+    return (
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-[var(--wk-paper)] p-4">
+            <div>
+                <p className="text-sm font-semibold">{label}</p>
+                <p className="text-xs text-[rgba(26,21,18,0.55)]">{hint}</p>
+            </div>
+            <button
+                type="button"
+                role="switch"
+                aria-checked={checked}
+                aria-label={label}
+                onClick={onToggle}
+                disabled={disabled}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                    checked ? "bg-[var(--wk-accent)]" : "bg-[rgba(26,21,18,0.2)]"
+                } ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`}
+            >
+                <span className={`inline-block h-4 w-4 rounded-full bg-white transition-transform ${checked ? "translate-x-6" : "translate-x-1"}`} />
+            </button>
+        </div>
+    );
+}
+
+function Empty({
+    icon: Icon,
+    text,
+    href,
+    cta,
+}: {
+    icon: React.ComponentType<{ className?: string }>;
+    text: string;
+    href?: string;
+    cta?: string;
+}) {
+    return (
+        <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-10 text-center">
+            <Icon className="mx-auto h-7 w-7 text-[rgba(26,21,18,0.3)]" />
+            <p className="mt-3 text-sm text-[rgba(26,21,18,0.6)]">{text}</p>
+            {href && cta && (
+                <Link href={href} className="mt-4 inline-block text-sm font-semibold text-[var(--wk-accent)] hover:underline">
+                    {cta}
+                </Link>
+            )}
         </div>
     );
 }

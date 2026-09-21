@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { X, Upload, AlertCircle, Loader2, HelpCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useBackdropDismiss } from "@/hooks/useBackdropDismiss";
 
 interface ContextualQuestionModalProps {
     isOpen: boolean;
@@ -23,6 +24,7 @@ export default function ContextualQuestionModal({
 }: ContextualQuestionModalProps) {
     const { data: session } = useSession();
     const router = useRouter();
+    const backdrop = useBackdropDismiss(onClose);
     const [title, setTitle] = useState("");
     const [whatIDid, setWhatIDid] = useState("");
     const [whatINeed, setWhatINeed] = useState("");
@@ -116,9 +118,7 @@ export default function ContextualQuestionModal({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
-                    onClick={(e) => {
-                        if (e.target === e.currentTarget) onClose();
-                    }}
+                    {...backdrop}
                 >
                     <motion.div
                         ref={modalRef}
