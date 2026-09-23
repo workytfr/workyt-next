@@ -53,6 +53,14 @@ export interface IClanDailyResult extends Document {
   healedCount: number;
 
   events: IWarEvent[];
+
+  /** Détail par porte — alimente le « rapport de la veille » du tableau de bord.
+   *  Optionnel : les journées résolues avant cet ajout n'en ont pas. */
+  gatesDealt?: { gate: string; damage: number; fell: boolean }[];
+  gatesTaken?: { gate: string; damage: number; fell: boolean }[];
+  keepDealt?: number;
+  keepTaken?: number;
+
   createdAt: Date;
 }
 
@@ -63,6 +71,16 @@ const WarEventSchema = new Schema<IWarEvent>(
     gate: { type: String, enum: ['nord', 'est', 'sud'] },
     amount: { type: Number },
     user: { type: Schema.Types.ObjectId, ref: 'User' }
+  },
+  { _id: false }
+);
+
+/** Une porte frappée dans la journée : combien, et est-elle tombée. */
+const GateHitSchema = new Schema(
+  {
+    gate: { type: String, enum: ['nord', 'est', 'sud'], required: true },
+    damage: { type: Number, default: 0 },
+    fell: { type: Boolean, default: false }
   },
   { _id: false }
 );
@@ -85,6 +103,11 @@ const ClanDailyResultSchema = new Schema<IClanDailyResult>({
   healedCount: { type: Number, default: 0 },
 
   events: { type: [WarEventSchema], default: [] },
+
+  gatesDealt: { type: [GateHitSchema], default: undefined },
+  gatesTaken: { type: [GateHitSchema], default: undefined },
+  keepDealt: { type: Number },
+  keepTaken: { type: Number },
   createdAt: { type: Date, default: Date.now }
 });
 

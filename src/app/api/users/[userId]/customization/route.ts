@@ -40,7 +40,8 @@ export async function GET(
         customization: customization || {
           usernameColor: { type: 'solid', value: '#3B82F6', isActive: false },
           profileImage: { filename: '', isActive: false },
-          profileBorder: { filename: '', isActive: false }
+          profileBorder: { filename: '', isActive: false },
+          customPhoto: { url: '', isActive: false }
         },
         selectedBadgeIcon,
       }

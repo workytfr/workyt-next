@@ -234,6 +234,12 @@ const STYLES: Record<string, NotificationStyle> = {
     className: 'bg-rose-100 text-rose-600',
     category: 'suivi'
   },
+  moderation_action: {
+    icon: ShieldAlert,
+    label: 'Modération',
+    className: 'bg-red-100 text-red-600',
+    category: 'other'
+  },
   mentorship_alert: {
     icon: ShieldAlert,
     label: 'Modération suivi',

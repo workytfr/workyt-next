@@ -547,6 +547,16 @@ async function persistSide(
     rallyBonus,
     woundedCount: woundedIds.length,
     healedCount: allHealed.length,
+    // Détail par porte : c'est ce qui permet au tableau de bord de dire
+    // « hier, on a frappé ici, et on a encaissé là ».
+    gatesDealt: outcomesOnEnemy
+      .filter((o) => o.damage > 0 || o.justFell)
+      .map((o) => ({ gate: o.gate, damage: o.damage, fell: o.justFell })),
+    gatesTaken: outcomesOnMe
+      .filter((o) => o.damage > 0 || o.justFell)
+      .map((o) => ({ gate: o.gate, damage: o.damage, fell: o.justFell })),
+    keepDealt,
+    keepTaken,
     events
   });
 

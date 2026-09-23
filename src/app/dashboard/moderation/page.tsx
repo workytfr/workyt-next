@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/Select';
 import { Textarea } from '@/components/ui/Textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog';
-import { AlertCircle, CheckCircle, XCircle, Clock, Flag, MessageSquare, ExternalLink, Shield, Trash2, Search, Filter, AlertTriangle, FileText, BookOpen, MoreHorizontal, HeartHandshake } from 'lucide-react';
+import { AlertCircle, CheckCircle, XCircle, Clock, Flag, MessageSquare, ExternalLink, Shield, Trash2, Search, Filter, AlertTriangle, FileText, BookOpen, MoreHorizontal, HeartHandshake, Camera } from 'lucide-react';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
 import {
@@ -31,7 +31,7 @@ interface Report {
         email: string;
     };
     reportedContent: {
-        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship';
+        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo';
         id: string;
     };
     reason: string;
@@ -88,7 +88,8 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
     course: 'Cours',
     forum_answer: 'Réponse forum',
     forum_question: 'Question forum',
-    mentorship: 'Suivi personnalisé'
+    mentorship: 'Suivi personnalisé',
+    profile_photo: 'Photo de profil'
 };
 
 const CONTENT_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -96,7 +97,8 @@ const CONTENT_TYPE_ICONS: Record<string, React.ReactNode> = {
     course: <BookOpen className="w-4 h-4" />,
     forum_answer: <MessageSquare className="w-4 h-4" />,
     forum_question: <MessageSquare className="w-4 h-4" />,
-    mentorship: <HeartHandshake className="w-4 h-4" />
+    mentorship: <HeartHandshake className="w-4 h-4" />,
+    profile_photo: <Camera className="w-4 h-4" />
 };
 
 export default function ModerationPage() {
@@ -258,6 +260,10 @@ export default function ModerationPage() {
                 case 'forum_answer':
                     endpoint = `/api/forum/answers/${id}`;
                     break;
+                case 'profile_photo':
+                    // Ici, « supprimer » retire la photo du membre, pas le compte
+                    endpoint = `/api/users/${id}/photo`;
+                    break;
                 default:
                     toast.error('Type de contenu non supporté pour la suppression');
                     return;
@@ -306,6 +312,8 @@ export default function ModerationPage() {
             case 'mentorship':
                 // La modération relit la conversation complète dans l'espace du suivi
                 return `/suivi/${id}`;
+            case 'profile_photo':
+                return `/compte/${id}`;
             default:
                 return '#';
         }
@@ -442,6 +450,7 @@ export default function ModerationPage() {
                                 <SelectItem value="forum_question">Question forum</SelectItem>
                                 <SelectItem value="forum_answer">Réponse forum</SelectItem>
                                 <SelectItem value="mentorship">Suivi personnalisé</SelectItem>
+                                <SelectItem value="profile_photo">Photo de profil</SelectItem>
                             </SelectContent>
                         </Select>
                         

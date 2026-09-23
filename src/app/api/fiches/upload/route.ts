@@ -20,12 +20,14 @@ const s3 = new S3Client({
 const BUCKET = process.env.S3_BUCKET_NAME!;
 const PUBLIC_BASE = process.env.R2_PUBLIC_URL || process.env.S3_ENDPOINT || "";
 
-type Kind = "img" | "draw" | "attach";
+type Kind = "img" | "draw" | "attach" | "avatar";
 
 const LIMITS: Record<Kind, { maxBytes: number; mime: RegExp }> = {
     img: { maxBytes: 5 * 1024 * 1024, mime: /^image\/(png|jpe?g|webp|gif|svg\+xml)$/ },
     draw: { maxBytes: 5 * 1024 * 1024, mime: /^image\/(png|svg\+xml)$|^application\/json$/ },
     attach: { maxBytes: 20 * 1024 * 1024, mime: /^(application\/pdf|image\/.+|text\/plain)$/ },
+    // Photo de profil : ni SVG (scriptable) ni GIF (animé), 3 Mo maximum
+    avatar: { maxBytes: 3 * 1024 * 1024, mime: /^image\/(png|jpe?g|webp)$/ },
 };
 
 function sanitize(name: string) {
@@ -70,7 +72,8 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const key = `fiches/${kind}/${uuidv4()}-${sanitize(filename)}`;
+        const prefix = kind === "avatar" ? "avatars" : `fiches/${kind}`;
+        const key = `${prefix}/${uuidv4()}-${sanitize(filename)}`;
 
         const uploadUrl = await getSignedUrl(
             s3,

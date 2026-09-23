@@ -29,6 +29,7 @@ import {
     MessageSquare,
     Megaphone,
     Send,
+    FileDown,
 } from "lucide-react";
 import PartnershipForm from "./PartnershipForm";
 import { getInstagramFollowers, formatFollowers } from "@/lib/instagram";
@@ -71,7 +72,7 @@ const channels = [
     { icon: Youtube, name: "YouTube", formats: "Tutos, formats courts, lives (chaîne en lancement)", link: "@workytfr" },
     { icon: Instagram, name: "Instagram", formats: "Reels, stories, posts", link: "@workyt" },
     { icon: Music2, name: "TikTok", formats: "Démos courtes, avis", link: "À venir" },
-    { icon: MessageCircle, name: "Discord", formats: "Relais communauté, retours", link: "700+ membres" },
+    { icon: MessageCircle, name: "Discord", formats: "Relais communauté, retours", link: "900+ membres" },
 ];
 
 const offers = [
@@ -518,6 +519,35 @@ export default async function KitMediaPage() {
                                 </div>
                             ))}
                         </div>
+                    </section>
+
+                    {/* ===== DOSSIER PARTENAIRES (PDF) ===== */}
+                    <section className="mb-20">
+                        <SectionTitle kicker="Tout est expliqué" title="Le dossier partenaires" />
+                        <a
+                            href="/documents/dossier-partenaires-workyt.pdf"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="group flex flex-col sm:flex-row sm:items-center gap-5 bg-white border border-[#e3e2e0] rounded-2xl p-6 transition hover:border-orange-300 hover:shadow-lg hover:shadow-orange-100/60"
+                        >
+                            <div className="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center shrink-0">
+                                <FileDown className="w-7 h-7 text-[#f97316]" />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="text-lg font-bold text-[#37352f] mb-1">
+                                    Dossier partenaires — 8 pages (PDF)
+                                </h3>
+                                <p className="text-sm text-[#6b6b6b] leading-relaxed">
+                                    Qui nous sommes, notre audience et nos canaux, les cinq formats de
+                                    partenariat, le fonctionnement de Workyt Award, nos engagements et les
+                                    étapes pour se lancer. À partager en interne.
+                                </p>
+                            </div>
+                            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#37352f] text-white text-sm font-semibold shrink-0 group-hover:bg-black transition-colors">
+                                Télécharger
+                                <FileDown className="w-4 h-4" />
+                            </span>
+                        </a>
                     </section>
 
                     {/* ===== CONTACT + FORMULAIRE ===== */}

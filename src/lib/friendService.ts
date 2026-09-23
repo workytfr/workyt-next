@@ -211,14 +211,20 @@ function friendLookupStages(otherIdField: string) {
         localField: otherIdField,
         foreignField: 'user',
         as: 'custom',
-        pipeline: [{ $project: { profileImage: 1 } }]
+        pipeline: [{ $project: { profileImage: 1, customPhoto: 1 } }]
       }
     }
   ];
 }
 
+/** Photo perso d'abord, puis image de profil de la boutique. */
+function avatarOf(custom: any): string | null {
+  if (custom?.customPhoto?.isActive && custom.customPhoto.url) return custom.customPhoto.url;
+  const img = custom?.profileImage;
+  return img?.isActive && img?.filename ? `/profile/${img.filename}` : null;
+}
+
 function shapeFriend(doc: any, now: number): FriendSummary {
-  const custom = doc.custom?.[0]?.profileImage;
   return {
     friendshipId: doc._id.toString(),
     userId: doc.u._id.toString(),
@@ -226,7 +232,7 @@ function shapeFriend(doc: any, now: number): FriendSummary {
     points: doc.u.points ?? 0,
     role: doc.u.role ?? 'Apprenti',
     heroLevel: doc.hero?.[0]?.level ?? 1,
-    avatar: custom?.isActive && custom?.filename ? `/profile/${custom.filename}` : null,
+    avatar: avatarOf(doc.custom?.[0]),
     isOnline: doc.u.lastSeenAt
       ? now - new Date(doc.u.lastSeenAt).getTime() < ONLINE_WINDOW_MS
       : false,
@@ -418,7 +424,7 @@ export async function searchUsers(
         localField: '_id',
         foreignField: 'user',
         as: 'custom',
-        pipeline: [{ $project: { profileImage: 1 } }]
+        pipeline: [{ $project: { profileImage: 1, customPhoto: 1 } }]
       }
     }
   ]);
@@ -427,12 +433,11 @@ export async function searchUsers(
     .filter((u: any) => !excluded.has(u._id.toString()))
     .slice(0, 10)
     .map((u: any) => {
-      const img = u.custom?.[0]?.profileImage;
       return {
         userId: u._id.toString(),
         username: u.username,
         points: u.points ?? 0,
-        avatar: img?.isActive && img?.filename ? `/profile/${img.filename}` : null
+        avatar: avatarOf(u.custom?.[0])
       };
     });
 }

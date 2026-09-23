@@ -564,8 +564,22 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
       .sort({ totalPoints: -1 })
       .lean<any[]>(),
     getRoleRankings(clan._id.toString()),
-    ClanDailyResult.findOne({ clan: clan._id }).sort({ day: -1 }).select('events day').lean<any>()
+    ClanDailyResult.findOne({ clan: clan._id })
+      .sort({ day: -1 })
+      .select('events day outcome damageDealt damageTaken ratioDealt ratioTaken woundedCount healedCount gatesDealt gatesTaken keepDealt keepTaken')
+      .lean<any>()
   ]);
+
+  // Garnison : ce qui part à l'assaut, ce qui tient les murs. On le montre
+  // dans le rapport pour comprendre d'où viennent les dégâts.
+  const garrison = await ClanSoldier.aggregate([
+    { $match: { clan: clan._id, cancelled: false } },
+    { $group: { _id: '$stance', count: { $sum: 1 } } }
+  ]);
+  const garrisonCount = {
+    assaut: garrison.find((g: any) => g._id === 'assaut')?.count ?? 0,
+    garnison: garrison.find((g: any) => g._id === 'garnison')?.count ?? 0
+  };
 
   // Ma place dans le classement de mon rôle — ce qui décidera de mon
   // multiplicateur demain.
@@ -576,6 +590,24 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
     season,
     day: warDay(now),
     feed: lastResult?.events ?? [],
+    /** Rapport de la dernière bataille résolue — « hier », côté mon clan */
+    yesterday: lastResult
+      ? {
+          day: lastResult.day,
+          outcome: lastResult.outcome,
+          damageDealt: lastResult.damageDealt ?? 0,
+          damageTaken: lastResult.damageTaken ?? 0,
+          ratioDealt: lastResult.ratioDealt ?? 0,
+          ratioTaken: lastResult.ratioTaken ?? 0,
+          woundedCount: lastResult.woundedCount ?? 0,
+          healedCount: lastResult.healedCount ?? 0,
+          gatesDealt: lastResult.gatesDealt ?? [],
+          gatesTaken: lastResult.gatesTaken ?? [],
+          keepDealt: lastResult.keepDealt ?? 0,
+          keepTaken: lastResult.keepTaken ?? 0
+        }
+      : null,
+    garrison: garrisonCount,
     me: {
       /** Mon identifiant — le tchat s'en sert pour repérer ce qui m'est adressé */
       userId,

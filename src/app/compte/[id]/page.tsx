@@ -33,6 +33,7 @@ import { FlameIcon, getFlameLevel } from "@/components/ui/StreakIndicator";
 import useSWR from "swr";
 import { buildIdSlug } from "@/utils/slugify";
 import AccountCompetencies from "../_components/AccountCompetencies";
+import ReportButton from "@/components/ReportButton";
 import { PAGE_CONTAINER, Eyebrow, SubjectLabel, LevelChip } from "@/components/wk/primitives";
 import { StatusChip, plainExcerpt, relativeTime } from "@/app/forum/_components/forumUi";
 import { FicheTile } from "@/app/fiches/_components/ficheUi";
@@ -164,6 +165,16 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     };
 
     const userRank = calculateUserRank(formData.points);
+
+    // Photo envoyée par le membre : signalable par les autres
+    const [hasCustomPhoto, setHasCustomPhoto] = useState(false);
+    useEffect(() => {
+        if (!id) return;
+        fetch(`/api/users/${id}/customization`)
+            .then((r) => r.json())
+            .then((d) => setHasCustomPhoto(!!d?.data?.customization?.customPhoto?.isActive))
+            .catch(() => {});
+    }, [id]);
     useRankUp(formData.points);
 
     // Resolve params promise
@@ -319,6 +330,11 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
                             <div className="shrink-0">
                                 <ProfileAvatar username={formData.username} size="large" userId={id} role={user?.role} points={formData.points} />
+                                {!isOwner && hasCustomPhoto && (
+                                    <div className="mt-2 flex justify-center">
+                                        <ReportButton contentId={id} contentType="profile_photo" className="text-xs" />
+                                    </div>
+                                )}
                             </div>
                             <div className="min-w-0">
                                 <Eyebrow>{isOwner ? "Mon profil" : "Profil"}</Eyebrow>

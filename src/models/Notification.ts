@@ -6,7 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
  */
 export interface INotification extends Document {
     notificationId: string;
-    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout' | 'kanban_assigned' | 'kanban_comment' | 'friend_request' | 'friend_accepted' | 'challenge_received' | 'challenge_result' | 'clan_result' | 'mentorship_request' | 'mentorship_matched' | 'mentorship_message' | 'mentorship_resource' | 'mentorship_checkin' | 'mentorship_update' | 'mentorship_alert';
+    type: 'forum_answer' | 'fiche_comment' | 'answer_liked' | 'comment_liked' | 'answer_validated' | 'quest_completed' | 'evaluation_submitted' | 'evaluation_graded' | 'evaluation_timeout' | 'kanban_assigned' | 'kanban_comment' | 'friend_request' | 'friend_accepted' | 'challenge_received' | 'challenge_result' | 'clan_result' | 'mentorship_request' | 'mentorship_matched' | 'mentorship_message' | 'mentorship_resource' | 'mentorship_checkin' | 'mentorship_update' | 'mentorship_alert' | 'moderation_action';
     recipient: Types.ObjectId; // Utilisateur qui reçoit la notification
     sender: Types.ObjectId; // Utilisateur qui déclenche la notification
     title: string;
@@ -33,7 +33,7 @@ const NotificationSchema: Schema<INotification> = new Schema({
     },
     type: {
         type: String,
-        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated', 'quest_completed', 'evaluation_submitted', 'evaluation_graded', 'evaluation_timeout', 'kanban_assigned', 'kanban_comment', 'friend_request', 'friend_accepted', 'challenge_received', 'challenge_result', 'clan_result', 'mentorship_request', 'mentorship_matched', 'mentorship_message', 'mentorship_resource', 'mentorship_checkin', 'mentorship_update', 'mentorship_alert'],
+        enum: ['forum_answer', 'fiche_comment', 'answer_liked', 'comment_liked', 'answer_validated', 'quest_completed', 'evaluation_submitted', 'evaluation_graded', 'evaluation_timeout', 'kanban_assigned', 'kanban_comment', 'friend_request', 'friend_accepted', 'challenge_received', 'challenge_result', 'clan_result', 'mentorship_request', 'mentorship_matched', 'mentorship_message', 'mentorship_resource', 'mentorship_checkin', 'mentorship_update', 'mentorship_alert', 'moderation_action'],
         required: true
     },
     recipient: {

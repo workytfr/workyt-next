@@ -54,6 +54,11 @@ export async function GET(req: NextRequest) {
           profileBorder: customization?.profileBorder || {
             filename: '',
             isActive: false
+          },
+          // Photo envoyée par le membre : prioritaire sur l'image de boutique
+          customPhoto: {
+            url: customization?.customPhoto?.url || '',
+            isActive: !!customization?.customPhoto?.isActive
           }
         }
       }

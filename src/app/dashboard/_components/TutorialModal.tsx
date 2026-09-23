@@ -79,7 +79,7 @@ function SimButton({ children, variant = "primary", small = false }: {
 // ─── DEMO 1 : Formulaire de cours (Input + Select animés) ─────────────────────
 
 const COURSE_FIELDS = [
-    { label: "Titre du cours *", placeholder: "ex: Les fonctions affines", value: "Les fonctions affines — Chapitre 4", type: "input" },
+    { label: "Titre du cours *", placeholder: "ex: Les fonctions affines", value: "Les fonctions affines", type: "input" },
     { label: "Matière *", placeholder: "Sélectionner une matière", value: "Mathématiques", type: "select", options: ["Mathématiques", "Physique-Chimie", "Histoire-Géographie", "Français", "SVT"] },
     { label: "Niveau *", placeholder: "Sélectionner un niveau", value: "Troisième (3ème)", type: "select", options: ["Sixième (6ème)", "Cinquième (5ème)", "Quatrième (4ème)", "Troisième (3ème)", "Seconde"] },
 ];
@@ -222,7 +222,7 @@ function SectionsDndDemo() {
 // ─── DEMO 3 : Sélection cascade Cours → Section (leçon) ──────────────────────
 
 const LESSON_SELECTS = [
-    { label: "Cours *", options: ["Les fonctions affines — Ch.4", "Le théorème de Pythagore", "Les proportionnalités"], value: "Les fonctions affines — Ch.4" },
+    { label: "Cours *", options: ["Les fonctions affines", "Le théorème de Pythagore", "Les proportionnalités"], value: "Les fonctions affines" },
     { label: "Section *", options: ["Introduction et rappels", "Définition et propriétés", "Applications pratiques"], value: "Définition et propriétés" },
 ];
 
@@ -1214,7 +1214,7 @@ const TRACKS: TTrack[] = [
                 icon: <BookOpen className="w-9 h-9 text-indigo-500" />,
                 title: "Renseigner titre, matière et niveau",
                 desc: "Dans le menu Cours → Créer un cours, remplissez les trois champs obligatoires. Le formulaire utilise une liste déroulante pour la matière et le niveau — voyez l'animation ci-dessous.",
-                tip: "Un titre précis aide les élèves à trouver votre cours : préférez « Chapitre 3 — Les proportionnalités » à juste « Maths ».",
+                tip: "Un titre précis aide les élèves à trouver votre cours : donnez le nom de la notion, « Les proportionnalités », plutôt qu'un numéro comme « Chapitre 3 » ou un titre vague comme « Maths ».",
                 cta: { label: "Créer un cours", href: "/dashboard/cours/nouveau" },
                 demo: <CourseFormDemo />,
             },

@@ -1,6 +1,6 @@
 import { compressImage } from "./imageCompression";
 
-export type UploadKind = "img" | "draw" | "attach";
+export type UploadKind = "img" | "draw" | "attach" | "avatar";
 
 export interface UploadResult {
     publicUrl: string;

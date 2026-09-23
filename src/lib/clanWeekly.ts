@@ -126,13 +126,13 @@ export async function resolveWeek(now: Date = new Date()): Promise<WeekResolutio
 
     if (verdict === 'draw') {
       // Aucun ne monte ni ne descend, chacun touche la compensation
-      players += await settleClan(clan, 'draw', now);
-      players += await settleClan(rival, 'draw', now);
+      players += await settleClan(clan, 'draw', now, rival.name, rival.daysWon ?? 0);
+      players += await settleClan(rival, 'draw', now, clan.name, clan.daysWon ?? 0);
     } else {
       const winner = verdict === 'a' ? clan : rival;
       const loser = verdict === 'a' ? rival : clan;
-      players += await settleClan(winner, 'win', now);
-      players += await settleClan(loser, 'loss', now);
+      players += await settleClan(winner, 'win', now, loser.name, loser.daysWon ?? 0);
+      players += await settleClan(loser, 'loss', now, winner.name, winner.daysWon ?? 0);
     }
     pairs++;
   }
@@ -145,7 +145,9 @@ export async function resolveWeek(now: Date = new Date()): Promise<WeekResolutio
 async function settleClan(
   clan: any,
   outcome: 'win' | 'loss' | 'draw',
-  now: Date
+  now: Date,
+  rivalName?: string,
+  rivalDaysWon = 0
 ): Promise<number> {
   // Verrou AVANT toute distribution : le passage de resolved à true est
   // atomique et conditionné à false. Un second passage du cron — ou une reprise
@@ -182,11 +184,27 @@ async function settleClan(
     const contributed = (m.totalPoints || 0) > 0;
 
     // --- coffres (vainqueur uniquement) ---
+    // Butin gardé en mémoire : le joueur le rejouera à sa prochaine visite,
+    // animation comprise. Les coffres sont ouverts ici, pas par le joueur :
+    // un absent ne doit pas perdre sa récompense.
+    const loot: any[] = [];
+    let compensation = 0;
+    let leftoverShare = 0;
+
     if (outcome === 'win') {
       const chests = isMvp ? rewards.mvp : rewards.winner;
       for (const type of chests) {
         try {
-          await grantChest(userId, type);
+          const res = await grantChest(userId, type);
+          if (res) {
+            loot.push({
+              chestType: type,
+              rewardType: res.rewardType,
+              amount: res.amount,
+              cosmeticType: res.cosmeticType,
+              cosmeticId: res.cosmeticId
+            });
+          }
         } catch (err) {
           console.error('[Clans] Erreur ouverture coffre:', err);
         }
@@ -197,6 +215,7 @@ async function settleClan(
       // deviendrait un revenu passif pour les enrôlés inactifs.
       try {
         await addPointsWithBoost(userId, rewards.loserPoints, 'completeQuiz');
+        compensation = rewards.loserPoints;
       } catch (err) {
         console.error('[Clans] Erreur points de compensation:', err);
       }
@@ -208,6 +227,7 @@ async function settleClan(
       if (share > 0) {
         try {
           await addPointsWithBoost(userId, share, 'completeQuiz');
+          leftoverShare = share;
         } catch { /* le reliquat est un bonus, il ne doit rien bloquer */ }
       }
     }
@@ -247,6 +267,35 @@ async function settleClan(
       } catch (err) {
         console.error('[Clans] Erreur verification badges:', err);
       }
+    }
+
+    // --- récapitulatif à rejouer ---
+    try {
+      const { default: ClanWeeklyReward } = await import('@/models/ClanWeeklyReward');
+      await ClanWeeklyReward.findOneAndUpdate(
+        { user: oid(userId), season: clan.season },
+        {
+          $set: {
+            clan: clan._id,
+            clanName: clan.name,
+            rivalName,
+            outcome,
+            isMvp,
+            daysWon: clan.daysWon ?? 0,
+            rivalDaysWon,
+            tier,
+            tierName: TIERS[tier - 1],
+            loot,
+            points: compensation,
+            leftover: leftoverShare,
+            tierDelta: delta,
+            createdAt: now
+          }
+        },
+        { upsert: true }
+      );
+    } catch (err) {
+      console.error('[Clans] Erreur enregistrement du butin:', err);
     }
 
     // --- notification ---

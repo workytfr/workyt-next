@@ -222,27 +222,27 @@ export default function ClanChat({
   };
 
   return (
-    <section className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <h2 className="mb-1 flex items-center gap-2 font-bold text-gray-800">
+    <section className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5">
+      <h2 className="mb-1 flex items-center gap-2 font-bold text-[var(--wk-ink)]">
         <MessageSquare className="h-5 w-5 text-orange-500" />
         Tchat du clan
       </h2>
-      <p className="mb-3 flex items-center gap-1.5 text-xs text-gray-500">
-        <Trash2 className="h-3.5 w-3.5 shrink-0 text-gray-400" />
+      <p className="mb-3 flex items-center gap-1.5 text-xs text-[rgba(26,21,18,0.55)]">
+        <Trash2 className="h-3.5 w-3.5 shrink-0 text-[rgba(26,21,18,0.45)]" />
         Messages à composer, effacés chaque nuit — rien n&apos;est conservé.
       </p>
 
       <div
         ref={listRef}
         onScroll={onScroll}
-        className="mb-3 h-72 space-y-2 overflow-y-auto rounded-xl bg-gray-50 p-3"
+        className="mb-3 h-72 space-y-2 overflow-y-auto rounded-xl bg-[var(--wk-paper)] p-3"
       >
         {loading ? (
           <div className="flex h-full items-center justify-center">
             <Loader2 className="h-5 w-5 animate-spin text-orange-400" />
           </div>
         ) : messages.length === 0 ? (
-          <p className="flex h-full items-center justify-center px-4 text-center text-sm text-gray-400">
+          <p className="flex h-full items-center justify-center px-4 text-center text-sm text-[rgba(26,21,18,0.45)]">
             Personne n&apos;a encore parlé aujourd&apos;hui. Annonce ta porte, ton clan suivra.
           </p>
         ) : (
@@ -253,19 +253,19 @@ export default function ClanChat({
                 <div
                   className={`max-w-[85%] rounded-2xl px-3 py-2 ${
                     m.mine
-                      ? 'bg-orange-500 text-white'
+                      ? 'bg-[var(--wk-accent)] text-white'
                       : pourMoi
-                        ? 'bg-white text-gray-800 shadow-sm ring-2 ring-orange-300'
-                        : 'bg-white text-gray-800 shadow-sm'
+                        ? 'bg-white text-[var(--wk-ink)] shadow-sm ring-2 ring-orange-300'
+                        : 'bg-white text-[var(--wk-ink)] shadow-sm'
                   }`}
                 >
                   {!m.mine && (
-                    <p className="mb-0.5 text-[11px] font-bold text-orange-600">{m.username}</p>
+                    <p className="mb-0.5 text-[11px] font-bold text-[#c24a0a]">{m.username}</p>
                   )}
                   <p className="break-words text-sm leading-snug">{m.text}</p>
                   <p
                     className={`mt-0.5 text-right text-[10px] tabular-nums ${
-                      m.mine ? 'text-orange-100' : 'text-gray-400'
+                      m.mine ? 'text-orange-100' : 'text-[rgba(26,21,18,0.45)]'
                     }`}
                   >
                     {heure(m.createdAt)}
@@ -279,14 +279,14 @@ export default function ClanChat({
 
       {/* ── Le compositeur ── */}
       {epuise ? (
-        <p className="rounded-xl border border-dashed border-gray-300 p-3 text-center text-sm text-gray-400">
+        <p className="rounded-xl border border-dashed border-gray-300 p-3 text-center text-sm text-[rgba(26,21,18,0.45)]">
           Quota du jour atteint. Le compteur repart à minuit.
         </p>
       ) : !draft ? (
         <div className="space-y-3">
           {Object.entries(PAR_CATEGORIE).map(([cat, list]) => (
             <div key={cat}>
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-400">
+              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[rgba(26,21,18,0.45)]">
                 {CATEGORY_LABEL[cat as keyof typeof CATEGORY_LABEL]}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -299,7 +299,7 @@ export default function ClanChat({
                       key={t.key}
                       onClick={() => { setDraft(t); setSlots({}); }}
                       disabled={impossible}
-                      className="rounded-full border border-gray-200 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-orange-300 hover:bg-orange-50 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="rounded-full border border-[rgba(26,21,18,0.1)] px-3 py-1.5 text-xs font-medium text-[var(--wk-ink)] transition-colors hover:border-orange-300 hover:bg-[rgba(255,106,26,0.08)] disabled:cursor-not-allowed disabled:opacity-40"
                     >
                       {t.label}
                     </button>
@@ -310,12 +310,12 @@ export default function ClanChat({
           ))}
         </div>
       ) : (
-        <div className="space-y-3 rounded-xl border-2 border-orange-200 bg-orange-50/40 p-3">
+        <div className="space-y-3 rounded-xl border-2 border-orange-200 bg-[rgba(255,106,26,0.08)]/40 p-3">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-semibold text-gray-800">{apercu}</p>
+            <p className="text-sm font-semibold text-[var(--wk-ink)]">{apercu}</p>
             <button
               onClick={annuler}
-              className="shrink-0 rounded-lg p-1 text-gray-400 transition-colors hover:bg-white hover:text-gray-700"
+              className="shrink-0 rounded-lg p-1 text-[rgba(26,21,18,0.45)] transition-colors hover:bg-white hover:text-[var(--wk-ink)]"
               aria-label="Annuler"
             >
               <X className="h-4 w-4" />
@@ -324,7 +324,7 @@ export default function ClanChat({
 
           {draft.slots.map((kind) => (
             <div key={kind}>
-              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-gray-500">
+              <p className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-[rgba(26,21,18,0.55)]">
                 {SLOT_TITRE[kind]}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -336,8 +336,8 @@ export default function ClanChat({
                       onClick={() => setSlots((s) => ({ ...s, [kind]: o.value }))}
                       className={`rounded-full border-2 px-3 py-1 text-xs font-semibold capitalize transition-colors ${
                         actif
-                          ? 'border-orange-500 bg-orange-500 text-white'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-orange-300'
+                          ? 'border-orange-500 bg-[var(--wk-accent)] text-white'
+                          : 'border-[rgba(26,21,18,0.1)] bg-white text-[rgba(26,21,18,0.62)] hover:border-orange-300'
                       }`}
                     >
                       {o.label}
@@ -358,7 +358,7 @@ export default function ClanChat({
           <button
             onClick={send}
             disabled={!complet || dejaDit || sending}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-200"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--wk-accent)] px-4 py-2 text-sm font-bold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-200"
           >
             {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
             Envoyer
@@ -367,7 +367,7 @@ export default function ClanChat({
       )}
 
       {remaining !== null && !epuise && (
-        <p className="mt-2 text-right text-[11px] tabular-nums text-gray-400">
+        <p className="mt-2 text-right text-[11px] tabular-nums text-[rgba(26,21,18,0.45)]">
           {remaining} / {max} message{remaining > 1 ? 's' : ''} restant{remaining > 1 ? 's' : ''} aujourd&apos;hui
         </p>
       )}

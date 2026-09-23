@@ -64,6 +64,9 @@ export const ALL_PERMISSIONS = {
     // Curriculum
     'curriculum.manage': 'Gérer le curriculum scolaire',
 
+    // Profil
+    'profile.custom_photo': 'Utiliser sa propre photo de profil',
+
     // TTS
     'tts.generate': 'Générer de l\'audio TTS',
 } as const;
@@ -84,6 +87,7 @@ export const PERMISSION_GROUPS: Record<string, Permission[]> = {
     'Utilisateurs': ['user.manage', 'user.ban', 'user.change_role'],
     'Rôles': ['role.manage'],
     'Administration': ['admin.panel', 'admin.stats', 'admin.newsletter', 'admin.partners'],
+    'Profil': ['profile.custom_photo'],
     'Autre': ['curriculum.manage', 'tts.generate'],
 };
 
@@ -129,6 +133,7 @@ export const DEFAULT_ROLES: Array<{
             'forum.validate_answer',
             'fiche.edit',
             'mentorship.take',
+            'profile.custom_photo',
         ],
         isSystem: false,
         isDefault: false,
@@ -151,6 +156,7 @@ export const DEFAULT_ROLES: Array<{
             'fiche.create', 'fiche.edit',
             'quiz.create', 'quiz.edit',
             'tts.generate',
+            'profile.custom_photo',
         ],
         isSystem: false,
         isDefault: false,
@@ -172,6 +178,7 @@ export const DEFAULT_ROLES: Array<{
             'evaluation.grade',
             'fiche.edit',
             'quiz.edit',
+            'profile.custom_photo',
         ],
         isSystem: false,
         isDefault: false,
@@ -191,6 +198,7 @@ export const DEFAULT_ROLES: Array<{
             'forum.validate_answer',
             'user.ban',
             'fiche.edit', 'fiche.delete',
+            'profile.custom_photo',
             'mentorship.take', 'mentorship.manage',
         ],
         isSystem: false,

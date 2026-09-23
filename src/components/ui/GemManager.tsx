@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { Sparkles, Palette, Crown, Coins, Award, Star, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import ProfileAvatar from '@/components/ui/profile';
+import CustomPhotoCard from '@/components/ui/CustomPhotoCard';
 
 interface GemData {
   balance: number;
@@ -326,10 +327,10 @@ const GemManager: React.FC = () => {
     const equippedNow = cosmeticType ? isEquipped(cosmeticType, itemValue) : false;
 
     if (equippedNow) {
-      return { label: 'Équipé ✓', className: 'bg-green-600 hover:bg-green-700', disabled: false, showGemIcon: false, price: 0 };
+      return { label: 'Équipé ✓', className: 'bg-[var(--wk-accent-4)] !text-[var(--wk-ink)] hover:brightness-95', disabled: false, showGemIcon: false, price: 0 };
     }
     if (owned) {
-      return { label: 'Équiper', className: 'bg-blue-600 hover:bg-blue-700', disabled: false, showGemIcon: false, price: 0 };
+      return { label: 'Équiper', className: 'bg-[var(--wk-ink)] hover:bg-black', disabled: false, showGemIcon: false, price: 0 };
     }
     return {
       label: `Acheter (${price}`,
@@ -359,17 +360,17 @@ const GemManager: React.FC = () => {
       'pending': { label: 'En attente', color: 'bg-yellow-100 text-yellow-800' },
       'completed': { label: 'Terminé', color: 'bg-green-100 text-green-800' },
       'failed': { label: 'Échoué', color: 'bg-red-100 text-red-800' },
-      'cancelled': { label: 'Annulé', color: 'bg-gray-100 text-gray-600' }
+      'cancelled': { label: 'Annulé', color: 'bg-[var(--wk-paper-2)] text-[rgba(26,21,18,0.62)]' }
     };
-    return statuses[status as keyof typeof statuses] || { label: status, color: 'bg-gray-100 text-gray-600' };
+    return statuses[status as keyof typeof statuses] || { label: status, color: 'bg-[var(--wk-paper-2)] text-[rgba(26,21,18,0.62)]' };
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Chargement...</p>
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-[rgba(26,21,18,0.12)] border-t-[var(--wk-accent)] mx-auto mb-4"></div>
+          <p className="text-[rgba(26,21,18,0.62)]">Chargement…</p>
         </div>
       </div>
     );
@@ -378,7 +379,7 @@ const GemManager: React.FC = () => {
   if (!session?.user) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600">Veuillez vous connecter pour accéder au gestionnaire de gemmes.</p>
+        <p className="text-[rgba(26,21,18,0.62)]">Veuillez vous connecter pour accéder au gestionnaire de gemmes.</p>
       </div>
     );
   }
@@ -386,42 +387,42 @@ const GemManager: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* En-tête avec solde */}
-      <div className="notion-card p-6 md:p-8">
+      <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">
         <div className="flex items-center gap-2 mb-1">
           <Image src="/badge/diamond.png" alt="" width={20} height={20} className="object-contain" />
-          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Solde de gemmes</h2>
+          <h2 className="font-serif-display text-2xl leading-none" style={{ marginBottom: 0 }}>Solde de gemmes</h2>
         </div>
-        <p className="notion-text-secondary mb-6">Votre portefeuille de gemmes</p>
+        <p className="text-[rgba(26,21,18,0.62)] mb-6">Votre portefeuille de gemmes</p>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="text-center p-5 rounded-2xl" style={{ background: 'var(--notion-info-light)' }}>
-            <div className="text-3xl font-bold" style={{ color: 'var(--notion-info)' }}>{gemData?.balance || 0}</div>
-            <div className="notion-text-small mt-1">Gemmes disponibles</div>
+          <div className="text-center p-5 rounded-2xl" style={{ background: '#eaf6fb' }}>
+            <div className="text-3xl font-bold" style={{ color: '#2f86b3' }}>{gemData?.balance || 0}</div>
+            <div className="text-xs text-[rgba(26,21,18,0.55)] mt-1">Gemmes disponibles</div>
           </div>
-          <div className="text-center p-5 rounded-2xl" style={{ background: 'var(--notion-success-light)' }}>
-            <div className="text-3xl font-bold" style={{ color: 'var(--notion-success)' }}>{gemData?.totalEarned || 0}</div>
-            <div className="notion-text-small mt-1">Total gagnées</div>
+          <div className="text-center p-5 rounded-2xl" style={{ background: '#ecfdf5' }}>
+            <div className="text-3xl font-bold" style={{ color: '#047857' }}>{gemData?.totalEarned || 0}</div>
+            <div className="text-xs text-[rgba(26,21,18,0.55)] mt-1">Total gagnées</div>
           </div>
-          <div className="text-center p-5 rounded-2xl" style={{ background: 'var(--notion-accent-light)' }}>
-            <div className="text-3xl font-bold" style={{ color: 'var(--notion-accent)' }}>{gemData?.totalSpent || 0}</div>
-            <div className="notion-text-small mt-1">Total dépensées</div>
+          <div className="text-center p-5 rounded-2xl" style={{ background: 'rgba(255,106,26,0.1)' }}>
+            <div className="text-3xl font-bold" style={{ color: 'var(--wk-accent)' }}>{gemData?.totalSpent || 0}</div>
+            <div className="text-xs text-[rgba(26,21,18,0.55)] mt-1">Total dépensées</div>
           </div>
         </div>
       </div>
 
       {/* Conversion de points */}
-      <div className="notion-card p-6 md:p-8">
+      <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">
         <div className="flex items-center gap-2 mb-1">
-          <Coins className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
-          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Convertir des points</h2>
+          <Coins className="h-5 w-5" style={{ color: 'var(--wk-accent)' }} />
+          <h2 className="font-serif-display text-2xl leading-none" style={{ marginBottom: 0 }}>Convertir des points</h2>
         </div>
-        <p className="notion-text-secondary mb-6">Ratio : 100 points = 1 gemme</p>
+        <p className="text-[rgba(26,21,18,0.62)] mb-6">Ratio : 100 points = 1 gemme</p>
         <div>
           <div className="space-y-6">
             {/* Slider pour la conversion */}
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <Label htmlFor="points-slider">Points à convertir</Label>
-                <div className="text-lg font-semibold text-blue-600">
+                <div className="text-lg font-semibold text-[#2f86b3]">
                   {pointsToConvert} points
                 </div>
               </div>
@@ -436,22 +437,22 @@ const GemManager: React.FC = () => {
                 className="w-full"
               />
               
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex justify-between text-sm text-[rgba(26,21,18,0.55)]">
                 <span>100 points</span>
                 <span>{Math.min(userData?.points || 100, 10000)} points</span>
               </div>
             </div>
 
             {/* Résumé de la conversion */}
-            <div className="rounded-2xl p-5" style={{ background: 'var(--notion-bg-secondary)' }}>
+            <div className="rounded-2xl p-5" style={{ background: 'var(--bg-[var(--wk-paper-2)])' }}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <div className="text-center">
-                  <div className="text-sm text-gray-600 mb-1">Points à convertir</div>
-                  <div className="text-2xl font-bold text-blue-600">{pointsToConvert}</div>
+                  <div className="text-sm text-[rgba(26,21,18,0.62)] mb-1">Points à convertir</div>
+                  <div className="text-2xl font-bold text-[#2f86b3]">{pointsToConvert}</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-sm text-gray-600 mb-1">Gemmes obtenues</div>
-                  <div className="text-2xl font-bold text-green-600">
+                  <div className="text-sm text-[rgba(26,21,18,0.62)] mb-1">Gemmes obtenues</div>
+                  <div className="text-2xl font-bold text-emerald-700">
                     {Math.floor(pointsToConvert / 100)}
                   </div>
                 </div>
@@ -470,7 +471,7 @@ const GemManager: React.FC = () => {
             </div>
 
             {/* Informations supplémentaires */}
-            <div className="text-center text-sm text-gray-600">
+            <div className="text-center text-sm text-[rgba(26,21,18,0.62)]">
               Points disponibles: <span className="font-semibold">{userData?.points || 0}</span>
               {pointsToConvert > (userData?.points || 0) && (
                 <div className="mt-2 text-red-600 font-medium">
@@ -482,13 +483,16 @@ const GemManager: React.FC = () => {
         </div>
       </div>
 
+      {/* Photo de profil du membre (bénévoles) — prioritaire sur tout le reste */}
+      <CustomPhotoCard onChange={loadGemData} />
+
       {/* Personnalisations */}
-      <div className="notion-card p-6 md:p-8">
+      <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">
         <div className="flex items-center gap-2 mb-1">
-          <Palette className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
-          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Personnalisations</h2>
+          <Palette className="h-5 w-5" style={{ color: 'var(--wk-accent)' }} />
+          <h2 className="font-serif-display text-2xl leading-none" style={{ marginBottom: 0 }}>Personnalisations</h2>
         </div>
-        <p className="notion-text-secondary mb-6">Achetez des personnalisations avec vos gemmes</p>
+        <p className="text-[rgba(26,21,18,0.62)] mb-6">Achetez des personnalisations avec vos gemmes</p>
         <div className="space-y-6">
           {/* Couleurs de nom d'utilisateur */}
           <div className="space-y-3">
@@ -521,19 +525,19 @@ const GemManager: React.FC = () => {
                 { type: 'custom', label: 'Personnalisée', price: 8, color: customColor, rarity: 'common' }
               ].map((option) => (
                 <div key={option.type} className={`border rounded-lg p-3 text-center relative ${
-                  option.rarity === 'common' ? 'border-gray-200' :
+                  option.rarity === 'common' ? 'border-[rgba(26,21,18,0.1)]' :
                   option.rarity === 'rare' ? 'border-blue-300' :
                   option.rarity === 'epic' ? 'border-purple-400' :
                   option.rarity === 'legendary' ? 'border-orange-400' :
-                  'border-gray-300'
+                  'border-[rgba(26,21,18,0.14)]'
                 }`}>
                   {/* Badge de rareté */}
                   <div className={`absolute -top-2 -right-2 px-2 py-1 text-xs font-bold rounded-full ${
-                    option.rarity === 'common' ? 'bg-gray-100 text-gray-600' :
-                    option.rarity === 'rare' ? 'bg-blue-100 text-blue-600' :
+                    option.rarity === 'common' ? 'bg-[var(--wk-paper-2)] text-[rgba(26,21,18,0.62)]' :
+                    option.rarity === 'rare' ? 'bg-blue-100 text-[#2f86b3]' :
                     option.rarity === 'epic' ? 'bg-purple-100 text-purple-600' :
                     option.rarity === 'legendary' ? 'bg-orange-100 text-orange-600' :
-                    'bg-gray-100 text-gray-600'
+                    'bg-[var(--wk-paper-2)] text-[rgba(26,21,18,0.62)]'
                   }`}>
                     {option.rarity === 'common' ? '★' :
                      option.rarity === 'rare' ? '★★' :
@@ -581,12 +585,12 @@ const GemManager: React.FC = () => {
                   />
                   
                   <div className="text-sm font-medium mb-1">{option.label}</div>
-                  <div className="text-xs text-gray-600 mb-2 flex items-center justify-center gap-1">{option.price} <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></div>
+                  <div className="text-xs text-[rgba(26,21,18,0.62)] mb-2 flex items-center justify-center gap-1">{option.price} <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></div>
                   
                   {/* Aperçu animé du nom */}
                   {option.animated && (
                     <div className="bg-white rounded p-1 mb-2 border text-center">
-                      <div className="text-xs text-gray-500 mb-1">Aperçu:</div>
+                      <div className="text-xs text-[rgba(26,21,18,0.55)] mb-1">Aperçu:</div>
                       <span 
                         className="text-sm font-medium"
                         style={{
@@ -620,7 +624,7 @@ const GemManager: React.FC = () => {
                   {/* Aperçu pour couleurs non-animées */}
                   {!option.animated && (
                     <div className="bg-white rounded p-1 mb-2 border text-center">
-                      <div className="text-xs text-gray-500 mb-1">Aperçu:</div>
+                      <div className="text-xs text-[rgba(26,21,18,0.55)] mb-1">Aperçu:</div>
                       <span 
                         className="text-sm font-medium"
                         style={{
@@ -669,7 +673,7 @@ const GemManager: React.FC = () => {
             </div>
             
             {/* Sélecteur de couleur personnalisée */}
-            <div className="flex items-center gap-3 mt-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center gap-3 mt-4 p-4 bg-[var(--wk-paper)] rounded-lg">
               <Label htmlFor="customColor" className="font-medium">Couleur personnalisée :</Label>
               <Input
                 id="customColor"
@@ -678,7 +682,7 @@ const GemManager: React.FC = () => {
                 onChange={(e) => setCustomColor(e.target.value)}
                 className="w-20 h-10"
               />
-              <span className="text-sm text-gray-600 flex items-center gap-1">15 <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></span>
+              <span className="text-sm text-[rgba(26,21,18,0.62)] flex items-center gap-1">15 <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></span>
             </div>
           </div>
 
@@ -707,7 +711,7 @@ const GemManager: React.FC = () => {
                         Partenaire
                       </div>
                     )}
-                    <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center">
+                    <div className="w-16 h-16 mx-auto mb-2 rounded-full overflow-hidden bg-[var(--wk-paper-2)] flex items-center justify-center">
                       <Image
                         src={`/profile/${img.filename}`}
                         alt={img.label}
@@ -718,13 +722,13 @@ const GemManager: React.FC = () => {
                     </div>
                     <div className="text-sm font-medium mb-1">{img.label}</div>
                     {img.link ? (
-                      <a href={img.link} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mb-2 block">
+                      <a href={img.link} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2f86b3] hover:underline mb-2 block">
                         {img.desc}
                       </a>
                     ) : (
-                      <div className="text-xs text-gray-600 mb-2">{img.desc}</div>
+                      <div className="text-xs text-[rgba(26,21,18,0.62)] mb-2">{img.desc}</div>
                     )}
-                    {img.partner && <div className="text-xs text-blue-600 font-semibold mb-2">Partenaires</div>}
+                    {img.partner && <div className="text-xs text-[#2f86b3] font-semibold mb-2">Partenaires</div>}
                     <Button
                       size="sm"
                       onClick={() => purchaseCustomization('profileImage', img.filename)}
@@ -754,7 +758,7 @@ const GemManager: React.FC = () => {
               ].map((border) => {
                 const bp = getItemButtonProps('profileBorder', border.id, border.price);
                 const rarityBadge = border.rarity === 'common' ? { stars: '★', bg: 'bg-orange-100 text-orange-600' }
-                  : border.rarity === 'rare' ? { stars: '★★', bg: 'bg-blue-100 text-blue-600' }
+                  : border.rarity === 'rare' ? { stars: '★★', bg: 'bg-blue-100 text-[#2f86b3]' }
                   : border.rarity === 'epic' ? { stars: '★★★', bg: 'bg-purple-100 text-purple-600' }
                   : border.rarity === 'legendary' ? { stars: '★★★★', bg: 'bg-orange-100 text-orange-600' }
                   : null;
@@ -779,7 +783,7 @@ const GemManager: React.FC = () => {
                         />
                       </div>
                     ) : null}
-                    <div className="text-sm text-gray-600 mb-1">{border.label}</div>
+                    <div className="text-sm text-[rgba(26,21,18,0.62)] mb-1">{border.label}</div>
                     {border.animated && <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>}
                     {border.partner && <div className="text-xs text-pink-500 mb-2 font-semibold">🌸 Partenaire</div>}
                     <Button
@@ -799,12 +803,12 @@ const GemManager: React.FC = () => {
       </div>
 
       {/* Badge de profil */}
-      <div className="notion-card p-6 md:p-8">
+      <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">
         <div className="flex items-center gap-2 mb-1">
-          <Award className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
-          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Badge de profil</h2>
+          <Award className="h-5 w-5" style={{ color: 'var(--wk-accent)' }} />
+          <h2 className="font-serif-display text-2xl leading-none" style={{ marginBottom: 0 }}>Badge de profil</h2>
         </div>
-        <p className="notion-text-secondary mb-4">
+        <p className="text-[rgba(26,21,18,0.62)] mb-4">
           Affichez un badge a cote de votre pseudo.
           {!badgeFeatureUnlocked && (
             <> Deblocage : 5 <Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain" /> (une seule fois). </>
@@ -816,11 +820,11 @@ const GemManager: React.FC = () => {
         {selectedBadge && (() => {
           const badge = earnedBadges.find(b => b.slug === selectedBadge);
           return badge ? (
-            <div className="flex items-center gap-3 p-3 rounded-xl mb-4" style={{ background: 'var(--notion-bg-secondary)', border: '1px solid var(--notion-border)' }}>
+            <div className="flex items-center gap-3 p-3 rounded-xl mb-4" style={{ background: 'var(--bg-[var(--wk-paper-2)])', border: '1px solid rgba(26,21,18,0.08)' }}>
               <Image src={badge.icon} alt={badge.name} width={32} height={32} className="w-8 h-8 object-contain" />
               <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: 'var(--notion-text)' }}>{badge.name}</p>
-                <p className="text-xs" style={{ color: 'var(--notion-text-secondary)' }}>Badge actuel</p>
+                <p className="text-sm font-medium" style={{ color: 'var(--text-[var(--wk-ink)])' }}>{badge.name}</p>
+                <p className="text-xs" style={{ color: 'var(--text-[rgba(26,21,18,0.62)])' }}>Badge actuel</p>
               </div>
               <Button
                 size="sm"
@@ -850,7 +854,7 @@ const GemManager: React.FC = () => {
                   className={`relative aspect-square rounded-xl border-2 p-2 flex flex-col items-center justify-center gap-1.5 transition-all duration-200 ${
                     isActive
                       ? 'border-orange-400 ring-2 ring-orange-200 bg-orange-50'
-                      : 'border-gray-200 bg-white hover:shadow-md hover:scale-[1.03] hover:border-orange-300'
+                      : 'border-[rgba(26,21,18,0.1)] bg-white hover:shadow-md hover:scale-[1.03] hover:border-orange-300'
                   } disabled:opacity-60`}
                 >
                   {isActive && (
@@ -866,7 +870,7 @@ const GemManager: React.FC = () => {
                     className="w-10 h-10 object-contain"
                     onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
-                  <p className="text-[10px] sm:text-xs font-medium text-center leading-tight line-clamp-2 text-gray-800">
+                  <p className="text-[10px] sm:text-xs font-medium text-center leading-tight line-clamp-2 text-[var(--wk-ink)]">
                     {badge.name}
                   </p>
                 </button>
@@ -874,21 +878,21 @@ const GemManager: React.FC = () => {
             })}
           </div>
         ) : (
-          <div className="text-center py-6 rounded-xl" style={{ background: 'var(--notion-bg-secondary)' }}>
+          <div className="text-center py-6 rounded-xl" style={{ background: 'var(--bg-[var(--wk-paper-2)])' }}>
             <Award className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-            <p className="text-sm" style={{ color: 'var(--notion-text-secondary)' }}>Aucun badge obtenu pour le moment.</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--notion-text-secondary)' }}>Completez des objectifs pour debloquer des badges !</p>
+            <p className="text-sm" style={{ color: 'var(--text-[rgba(26,21,18,0.62)])' }}>Aucun badge obtenu pour le moment.</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-[rgba(26,21,18,0.62)])' }}>Completez des objectifs pour debloquer des badges !</p>
           </div>
         )}
       </div>
 
       {/* Aperçu du profil */}
-      <div className="notion-card p-6 md:p-8">
+      <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
-          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Aperçu de votre profil</h2>
+          <Sparkles className="h-5 w-5" style={{ color: 'var(--wk-accent)' }} />
+          <h2 className="font-serif-display text-2xl leading-none" style={{ marginBottom: 0 }}>Aperçu de votre profil</h2>
         </div>
-        <div className="flex items-center justify-center p-6 rounded-2xl" style={{ background: 'var(--notion-bg-secondary)' }}>
+        <div className="flex items-center justify-center p-6 rounded-2xl" style={{ background: 'var(--bg-[var(--wk-paper-2)])' }}>
           <ProfileAvatar
             username={userData?.username || ''}
             points={userData?.points || 0}
@@ -913,12 +917,12 @@ const GemManager: React.FC = () => {
       )}
 
       {/* Historique des transactions */}
-      <div className="notion-card p-6 md:p-8">
+      <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">
         <div className="flex items-center gap-2 mb-1">
-          <Coins className="h-5 w-5" style={{ color: 'var(--notion-accent)' }} />
-          <h2 className="notion-heading" style={{ marginBottom: 0 }}>Historique des transactions</h2>
+          <Coins className="h-5 w-5" style={{ color: 'var(--wk-accent)' }} />
+          <h2 className="font-serif-display text-2xl leading-none" style={{ marginBottom: 0 }}>Historique des transactions</h2>
         </div>
-        <p className="notion-text-secondary mb-6">Suivez toutes vos transactions de gemmes</p>
+        <p className="text-[rgba(26,21,18,0.62)] mb-6">Suivez toutes vos transactions de gemmes</p>
         <Button
           onClick={toggleHistory}
           variant="outline"
@@ -931,37 +935,37 @@ const GemManager: React.FC = () => {
           <div className="space-y-3">
             {historyLoading ? (
               <div className="text-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--notion-accent)' }}></div>
-                <p className="notion-text-secondary">Chargement de l&apos;historique...</p>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--wk-accent)' }}></div>
+                <p className="text-[rgba(26,21,18,0.62)]">Chargement de l&apos;historique...</p>
               </div>
             ) : transactions.length > 0 ? (
               transactions.map((transaction) => {
                 const status = formatTransactionStatus(transaction.status);
                 return (
-                  <div key={transaction.id} className="rounded-xl p-4" style={{ background: 'var(--notion-bg-secondary)', border: '1px solid var(--notion-border)' }}>
+                  <div key={transaction.id} className="rounded-xl p-4" style={{ background: 'var(--bg-[var(--wk-paper-2)])', border: '1px solid rgba(26,21,18,0.08)' }}>
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${status.color}`}>
                           {status.label}
                         </span>
-                        <span className="notion-text-secondary text-sm">
+                        <span className="text-[rgba(26,21,18,0.62)] text-sm">
                           {formatTransactionType(transaction.type)}
                         </span>
                       </div>
                       <div className={`text-sm font-medium ${
-                        transaction.gems > 0 ? 'text-green-600' : 'text-red-600'
+                        transaction.gems > 0 ? 'text-emerald-700' : 'text-red-600'
                       }`}>
                         {transaction.gems > 0 ? '+' : ''}{transaction.gems} gemmes
                       </div>
                     </div>
 
-                    <p className="text-sm mb-2" style={{ color: 'var(--notion-text)' }}>{transaction.description}</p>
+                    <p className="text-sm mb-2" style={{ color: 'var(--text-[var(--wk-ink)])' }}>{transaction.description}</p>
 
-                    <div className="flex items-center justify-between notion-text-small">
+                    <div className="flex items-center justify-between text-xs text-[rgba(26,21,18,0.55)]">
                       <span>{new Date(transaction.createdAt).toLocaleDateString('fr-FR')}</span>
 
                       {transaction.partnerName && (
-                        <span style={{ color: 'var(--notion-info)' }}>Partenaire: {transaction.partnerName}</span>
+                        <span style={{ color: '#2f86b3' }}>Partenaire: {transaction.partnerName}</span>
                       )}
 
                       {transaction.promoCode && (
@@ -970,7 +974,7 @@ const GemManager: React.FC = () => {
                     </div>
 
                     {transaction.justification && (
-                      <div className="mt-2 p-2 rounded-lg text-xs" style={{ background: 'var(--notion-info-light)', color: 'var(--notion-info)' }}>
+                      <div className="mt-2 p-2 rounded-lg text-xs" style={{ background: '#eaf6fb', color: '#2f86b3' }}>
                         <strong>Justification:</strong> {transaction.justification}
                       </div>
                     )}
@@ -978,7 +982,7 @@ const GemManager: React.FC = () => {
                 );
               })
             ) : (
-              <div className="text-center py-8 notion-text-secondary">
+              <div className="text-center py-8 text-[rgba(26,21,18,0.62)]">
                 Aucune transaction trouvée
               </div>
             )}

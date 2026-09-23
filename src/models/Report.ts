@@ -6,7 +6,7 @@ import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 export interface IReport extends Document {
     reporter: Types.ObjectId; // Utilisateur qui fait le signalement
     reportedContent: {
-        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship';
+        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo';
         id: Types.ObjectId; // ID du contenu signalé
     };
     reason: 'erreur_contenu' | 'langage_inapproprie' | 'contenu_incomprehensible' | 'contenu_illisible' | 'spam' | 'harcelement' | 'contenu_offensant' | 'violation_droits' | 'autre';
@@ -32,7 +32,7 @@ const ReportSchema = new Schema<IReport>({
     reportedContent: {
         type: {
             type: String,
-            enum: ['revision', 'course', 'forum_answer', 'forum_question', 'mentorship'],
+            enum: ['revision', 'course', 'forum_answer', 'forum_question', 'mentorship', 'profile_photo'],
             required: true
         },
         id: {

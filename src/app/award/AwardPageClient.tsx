@@ -3,12 +3,10 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/Badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
+import Image from "next/image";
 import NoSSR from "@/components/NoSSR";
+import { PAGE_CONTAINER, Eyebrow } from "@/components/wk/primitives";
+import { useBackdropDismiss } from "@/hooks/useBackdropDismiss";
 import {
     Store,
     MapPin,
@@ -20,12 +18,12 @@ import {
     Copy,
     CheckCircle,
     AlertTriangle,
-    Gift,
-    Gem,
-    ArrowRight,
+    ArrowUpRight,
     Package,
+    Sparkles,
+    Lock,
+    X,
 } from "lucide-react";
-import "@/app/cours/_components/styles/notion-theme.css";
 
 interface Partner {
     _id: string;
@@ -85,66 +83,68 @@ interface UserPromoCode {
 }
 
 const categories = [
-    { value: 'restauration', label: 'Restauration', color: 'bg-orange-100 text-orange-800', icon: '\uD83C\uDF7D\uFE0F' },
-    { value: 'sport', label: 'Sport', color: 'bg-blue-100 text-blue-800', icon: '\uD83C\uDFC3' },
-    { value: 'culture', label: 'Culture', color: 'bg-purple-100 text-purple-800', icon: '\uD83C\uDFAD' },
-    { value: 'tech', label: 'Tech', color: 'bg-green-100 text-green-800', icon: '\uD83D\uDCBB' },
-    { value: 'bien-etre', label: 'Bien-\u00EAtre', color: 'bg-pink-100 text-pink-800', icon: '\uD83E\uDDD8' },
-    { value: 'loisirs', label: 'Loisirs', color: 'bg-yellow-100 text-yellow-800', icon: '\uD83C\uDFAE' },
-    { value: 'autre', label: 'Autre', color: 'bg-gray-100 text-gray-800', icon: '\uD83C\uDFAF' }
+    { value: 'restauration', label: 'Restauration', icon: '🍽️' },
+    { value: 'sport', label: 'Sport', icon: '🏃' },
+    { value: 'culture', label: 'Culture', icon: '🎭' },
+    { value: 'tech', label: 'Tech', icon: '💻' },
+    { value: 'bien-etre', label: 'Bien-être', icon: '🧘' },
+    { value: 'loisirs', label: 'Loisirs', icon: '🎮' },
+    { value: 'autre', label: 'Autre', icon: '🎯' },
 ];
 
-// Filtres
+const categoryOf = (value: string) => categories.find((c) => c.value === value);
+
+/** Libellé de la remise, quel que soit son type. */
+const offerLabel = (offer?: { type: string; value: number; description: string }) => {
+    if (!offer) return '';
+    if (offer.type === 'percentage') return `${offer.value} % de réduction`;
+    if (offer.type === 'fixed') return `${offer.value} € de réduction`;
+    return offer.description;
+};
+
+const CARD = "rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white";
+const FIELD =
+    "w-full rounded-full border border-[rgba(26,21,18,0.12)] bg-white px-4 py-2.5 text-sm outline-none transition focus:border-[var(--wk-accent)] focus:ring-4 focus:ring-[rgba(255,106,26,0.12)]";
+
+/* ─── Filtres ─── */
 const PartnersFilters = ({
     searchTerm, setSearchTerm,
     selectedCity, setSelectedCity,
     selectedCategory, setSelectedCategory,
-    cities, filteredCount
+    cities, filteredCount,
 }: {
     searchTerm: string; setSearchTerm: (v: string) => void;
     selectedCity: string; setSelectedCity: (v: string) => void;
     selectedCategory: string; setSelectedCategory: (v: string) => void;
     cities: string[]; filteredCount: number;
 }) => (
-    <div className="bg-[#f7f6f3] rounded-2xl p-4 md:p-5 mb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                <Input
-                    placeholder="Rechercher un partenaire..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                />
-            </div>
-            <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger><SelectValue placeholder="Toutes les villes" /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Toutes les villes</SelectItem>
-                    {cities.map(city => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger><SelectValue placeholder="Toutes les catégories" /></SelectTrigger>
-                <SelectContent>
-                    <SelectItem value="all">Toutes les catégories</SelectItem>
-                    {categories.map(cat => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                            {cat.icon} {cat.label}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-            <div className="text-sm text-gray-500 flex items-center justify-center">
-                {filteredCount} partenaire{filteredCount > 1 ? 's' : ''}
-            </div>
+    <div className="mb-6 flex flex-col gap-3 md:flex-row md:items-center">
+        <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[rgba(26,21,18,0.4)]" />
+            <input
+                type="search"
+                placeholder="Rechercher un partenaire…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={`${FIELD} pl-11`}
+                aria-label="Rechercher un partenaire"
+            />
         </div>
+        <select value={selectedCity || 'all'} onChange={(e) => setSelectedCity(e.target.value)} className={`${FIELD} md:w-48`} aria-label="Ville">
+            <option value="all">Toutes les villes</option>
+            {cities.map((city) => <option key={city} value={city}>{city}</option>)}
+        </select>
+        <select value={selectedCategory || 'all'} onChange={(e) => setSelectedCategory(e.target.value)} className={`${FIELD} md:w-52`} aria-label="Catégorie">
+            <option value="all">Toutes les catégories</option>
+            {categories.map((cat) => <option key={cat.value} value={cat.value}>{cat.icon} {cat.label}</option>)}
+        </select>
+        <span className="shrink-0 text-sm text-[rgba(26,21,18,0.55)] md:ml-2">
+            {filteredCount} partenaire{filteredCount > 1 ? 's' : ''}
+        </span>
     </div>
 );
 
-// Carte partenaire
+/* ─── Carte partenaire ─── */
 const PartnerCard = ({ partner, userCodes, onClaim, claiming }: {
     partner: Partner;
     userCodes: UserPromoCode[];
@@ -152,13 +152,14 @@ const PartnerCard = ({ partner, userCodes, onClaim, claiming }: {
     claiming: boolean;
 }) => {
     const [copied, setCopied] = useState(false);
-    const myCode = userCodes.find(c => c.partnerId?._id === partner._id) || null;
+    const myCode = userCodes.find((c) => c.partnerId?._id === partner._id) || null;
     const isMyPartner = !!myCode;
     const freeEnabled = partner.offersEnabled?.free !== false && partner.offers?.free;
     const premiumEnabled = partner.offersEnabled?.premium !== false && partner.offers?.premium;
     const freeStock = partner.availableCodes?.free ?? 0;
     const premiumStock = partner.availableCodes?.premium ?? 0;
     const totalStock = freeStock + premiumStock;
+    const cat = categoryOf(partner.category);
 
     const copyCode = () => {
         if (myCode?.code) {
@@ -169,164 +170,185 @@ const PartnerCard = ({ partner, userCodes, onClaim, claiming }: {
     };
 
     return (
-        <Card className="notion-card overflow-hidden">
-            <div className="h-40 bg-gray-200 relative">
-                <img src={partner.image} alt={partner.name} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent" />
-                <div className="absolute top-3 left-3">
-                    <Badge className={categories.find(c => c.value === partner.category)?.color}>
-                        {categories.find(c => c.value === partner.category)?.icon} {categories.find(c => c.value === partner.category)?.label}
-                    </Badge>
-                </div>
-                {isMyPartner && (
-                    <div className="absolute top-3 right-3">
-                        <Badge className="bg-green-500 text-white">
-                            <CheckCircle className="w-3 h-3 mr-1" /> Mon code
-                        </Badge>
-                    </div>
-                )}
-                {!isMyPartner && totalStock > 0 && (
-                    <div className="absolute bottom-3 left-3">
-                        <Badge className="bg-green-500 text-white text-xs shadow-sm">
-                            <Ticket className="w-3 h-3 mr-1" />
-                            {totalStock} code{totalStock > 1 ? 's' : ''} dispo
-                        </Badge>
-                    </div>
-                )}
-                {!isMyPartner && totalStock === 0 && (freeEnabled || premiumEnabled) && (
-                    <div className="absolute bottom-3 left-3">
-                        <Badge className="bg-gray-500/80 text-white text-xs">Rupture de stock</Badge>
-                    </div>
-                )}
+        <article className={`${CARD} flex min-w-0 flex-col overflow-hidden transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,21,18,0.18)] hover:shadow-[0_16px_40px_rgba(26,21,18,0.09)]`}>
+            <div className="relative aspect-[16/9] shrink-0 overflow-hidden bg-[var(--wk-paper-2)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={partner.image} alt="" className="h-full w-full object-cover" />
+                <span className="absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-semibold text-[var(--wk-ink)]">
+                    {cat?.icon} {cat?.label}
+                </span>
+                {isMyPartner ? (
+                    <span className="absolute right-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white">
+                        <CheckCircle className="h-3 w-3" /> Mon code
+                    </span>
+                ) : totalStock > 0 ? (
+                    <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-[var(--wk-ink)] px-2.5 py-1 text-[11px] font-semibold text-[var(--wk-paper)]">
+                        <Ticket className="h-3 w-3" /> {totalStock} code{totalStock > 1 ? 's' : ''} dispo
+                    </span>
+                ) : (freeEnabled || premiumEnabled) ? (
+                    <span className="absolute bottom-3 left-3 rounded-full bg-white/90 px-2.5 py-1 text-[11px] font-semibold text-[rgba(26,21,18,0.6)]">
+                        Rupture de stock
+                    </span>
+                ) : null}
             </div>
 
-            <CardHeader className="pb-3">
+            <div className="flex flex-1 flex-col p-5">
                 <div className="flex items-center gap-3">
-                    <img src={partner.logo} alt={`Logo ${partner.name}`} className="w-10 h-10 rounded-full object-cover border-2 border-gray-200" />
-                    <div>
-                        <CardTitle className="text-base">{partner.name}</CardTitle>
-                        <div className="flex items-center gap-1 text-sm text-gray-500">
-                            <MapPin className="w-4 h-4" />{partner.city}
-                        </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={partner.logo} alt="" className="h-11 w-11 shrink-0 rounded-full border border-[rgba(26,21,18,0.1)] object-cover" />
+                    <div className="min-w-0">
+                        <h2 className="font-serif-display truncate text-[1.25rem] leading-tight">{partner.name}</h2>
+                        <p className="flex items-center gap-1 text-xs text-[rgba(26,21,18,0.55)]">
+                            <MapPin className="h-3.5 w-3.5" /> {partner.city}
+                        </p>
                     </div>
                 </div>
-            </CardHeader>
 
-            <CardContent className="space-y-3">
-                <p className="text-sm text-gray-600 line-clamp-2">{partner.description}</p>
+                <p className="mt-3 text-sm leading-relaxed text-[rgba(26,21,18,0.62)] line-clamp-2">{partner.description}</p>
 
-                {/* Code de l'utilisateur pour ce partenaire */}
+                {/* Mon code pour ce partenaire */}
                 {isMyPartner && myCode && (
-                    <div className="bg-green-50 p-4 rounded-lg border-2 border-green-300">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Ticket className="w-4 h-4 text-green-700" />
-                            <span className="text-sm font-semibold text-green-800">Votre code promo personnel</span>
-                        </div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <div className="flex-1 text-lg font-mono font-bold text-green-900 bg-white px-3 py-2 rounded border-2 border-green-200 text-center tracking-wider">
+                    <div className="mt-4 rounded-2xl bg-emerald-50 p-4">
+                        <p className="flex items-center gap-1.5 text-xs font-semibold text-emerald-800">
+                            <Ticket className="h-3.5 w-3.5" /> Ton code personnel
+                        </p>
+                        <div className="mt-2 flex items-center gap-2">
+                            <span className="font-mono-ui flex-1 rounded-xl bg-white px-3 py-2 text-center text-base font-bold tracking-[0.12em] text-emerald-900">
                                 {myCode.code}
-                            </div>
-                            <Button size="sm" variant="outline" onClick={copyCode} className="border-green-300 text-green-700 hover:bg-green-100">
-                                {copied ? <CheckCircle className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            </Button>
+                            </span>
+                            <button
+                                type="button"
+                                onClick={copyCode}
+                                className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-emerald-700 transition hover:bg-emerald-100"
+                                aria-label="Copier le code"
+                            >
+                                {copied ? <CheckCircle className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                            </button>
                         </div>
-                        <p className="text-xs text-green-600">{partner.offers?.[myCode.offerType]?.promoDescription}</p>
-                        <p className="text-xs text-green-500 mt-1">Obtenu le {new Date(myCode.assignedAt).toLocaleDateString('fr-FR')}</p>
+                        <p className="mt-2 text-xs text-emerald-700">{partner.offers?.[myCode.offerType]?.promoDescription}</p>
+                        <p className="mt-1 text-[11px] text-emerald-600">
+                            Obtenu le {new Date(myCode.assignedAt).toLocaleDateString('fr-FR')}
+                        </p>
                     </div>
                 )}
 
-                {/* Boutons pour réclamer */}
+                {/* Offres disponibles */}
                 {!isMyPartner && (
-                    <>
+                    <div className="mt-4 space-y-2.5">
                         {freeEnabled && partner.offers.free && (
-                            <div className="bg-green-50 p-3 rounded-lg border border-green-200">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-green-800">Offre gratuite</span>
-                                    <Badge variant="secondary" className="bg-green-100 text-green-800">0 gemmes</Badge>
+                            <div className="rounded-2xl bg-[var(--wk-paper)] p-3.5">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-sm font-semibold">Offre gratuite</span>
+                                    <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-800">0 gemme</span>
                                 </div>
-                                <div className="text-sm text-green-700 mb-2">
-                                    {partner.offers.free.type === 'percentage' && `${partner.offers.free.value}% de réduction`}
-                                    {partner.offers.free.type === 'fixed' && `${partner.offers.free.value}\u20AC de réduction`}
-                                    {partner.offers.free.type === 'welcome' && partner.offers.free.description}
-                                </div>
+                                <p className="mt-1 text-sm text-[rgba(26,21,18,0.7)]">{offerLabel(partner.offers.free)}</p>
                                 {partner.offers.free.promoDescription && (
-                                    <p className="text-xs text-green-600 mb-2">{partner.offers.free.promoDescription}</p>
+                                    <p className="mt-1 text-xs text-[rgba(26,21,18,0.55)]">{partner.offers.free.promoDescription}</p>
                                 )}
                                 {freeStock > 0 ? (
                                     <>
-                                        <Button size="sm" className="w-full bg-green-600 hover:bg-green-700" onClick={() => onClaim(partner, 'free')} disabled={claiming}>
-                                            <Ticket className="w-4 h-4 mr-2" />
-                                            {claiming ? 'Attribution...' : 'Obtenir mon code promo'}
-                                        </Button>
-                                        <p className="text-xs text-green-500 mt-1 text-center">{freeStock} code{freeStock > 1 ? 's' : ''} restant{freeStock > 1 ? 's' : ''}</p>
+                                        <button type="button" onClick={() => onClaim(partner, 'free')} disabled={claiming} className="wk-btn-ink mt-3 w-full justify-center !py-2 text-sm disabled:opacity-50">
+                                            <Ticket className="h-4 w-4" /> {claiming ? 'Attribution…' : 'Obtenir mon code'}
+                                        </button>
+                                        <p className="mt-1.5 text-center text-[11px] text-[rgba(26,21,18,0.5)]">
+                                            {freeStock} code{freeStock > 1 ? 's' : ''} restant{freeStock > 1 ? 's' : ''}
+                                        </p>
                                     </>
                                 ) : (
-                                    <div className="text-xs text-red-500 text-center p-2 bg-red-50 rounded border border-red-200">Plus de codes disponibles pour le moment</div>
+                                    <p className="mt-3 rounded-xl bg-white px-3 py-2 text-center text-xs text-[rgba(26,21,18,0.55)]">
+                                        Plus de codes pour le moment
+                                    </p>
                                 )}
                             </div>
                         )}
 
                         {premiumEnabled && partner.offers.premium && (
-                            <div className="bg-purple-50 p-3 rounded-lg border border-purple-200">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-sm font-medium text-purple-800">Offre premium</span>
-                                    <Badge variant="secondary" className="bg-purple-100 text-purple-800">
-                                        <img src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mr-1" />
+                            <div className="rounded-2xl bg-[rgba(255,106,26,0.07)] p-3.5">
+                                <div className="flex items-center justify-between gap-2">
+                                    <span className="text-sm font-semibold">Offre premium</span>
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#c24a0a]">
+                                        <Image src="/badge/diamond.png" alt="" width={12} height={12} className="object-contain" />
                                         {partner.offers.premium.gemsCost} gemmes
-                                    </Badge>
+                                    </span>
                                 </div>
-                                <div className="text-sm text-purple-700 mb-2">
-                                    {partner.offers.premium.type === 'percentage' && `${partner.offers.premium.value}% de réduction`}
-                                    {partner.offers.premium.type === 'fixed' && `${partner.offers.premium.value}\u20AC de réduction`}
-                                    {partner.offers.premium.type === 'welcome' && partner.offers.premium.description}
-                                </div>
+                                <p className="mt-1 text-sm text-[rgba(26,21,18,0.7)]">{offerLabel(partner.offers.premium)}</p>
                                 {partner.offers.premium.promoDescription && (
-                                    <p className="text-xs text-purple-600 mb-2">{partner.offers.premium.promoDescription}</p>
+                                    <p className="mt-1 text-xs text-[rgba(26,21,18,0.55)]">{partner.offers.premium.promoDescription}</p>
                                 )}
                                 {partner.offers.premium.additionalBenefits && partner.offers.premium.additionalBenefits.length > 0 && (
-                                    <div className="text-xs text-purple-700 mb-2">
-                                        <div className="font-medium">Avantages :</div>
-                                        <ul className="list-disc list-inside space-y-1">
-                                            {partner.offers.premium.additionalBenefits.map((b, i) => <li key={i}>{b}</li>)}
-                                        </ul>
-                                    </div>
+                                    <ul className="mt-2 space-y-0.5 text-xs text-[rgba(26,21,18,0.62)]">
+                                        {partner.offers.premium.additionalBenefits.map((b, i) => (
+                                            <li key={i} className="flex gap-1.5"><Sparkles className="mt-0.5 h-3 w-3 shrink-0 text-[var(--wk-accent)]" /> {b}</li>
+                                        ))}
+                                    </ul>
                                 )}
                                 {premiumStock > 0 ? (
                                     <>
-                                        <Button size="sm" variant="outline" className="w-full border-purple-300 text-purple-700 hover:bg-purple-100" onClick={() => onClaim(partner, 'premium')} disabled={claiming}>
-                                            <Ticket className="w-4 h-4 mr-2" />
-                                            {claiming ? 'Attribution...' : `Obtenir avec ${partner.offers.premium.gemsCost} gemmes`}
-                                        </Button>
-                                        <p className="text-xs text-purple-500 mt-1 text-center">{premiumStock} code{premiumStock > 1 ? 's' : ''} restant{premiumStock > 1 ? 's' : ''}</p>
+                                        <button type="button" onClick={() => onClaim(partner, 'premium')} disabled={claiming} className="wk-btn-orange mt-3 w-full justify-center !py-2 text-sm disabled:opacity-50">
+                                            <Ticket className="h-4 w-4" />
+                                            {claiming ? 'Attribution…' : `Échanger ${partner.offers.premium.gemsCost} gemmes`}
+                                        </button>
+                                        <p className="mt-1.5 text-center text-[11px] text-[rgba(26,21,18,0.5)]">
+                                            {premiumStock} code{premiumStock > 1 ? 's' : ''} restant{premiumStock > 1 ? 's' : ''}
+                                        </p>
                                     </>
                                 ) : (
-                                    <div className="text-xs text-red-500 text-center p-2 bg-red-50 rounded border border-red-200">Plus de codes disponibles pour le moment</div>
+                                    <p className="mt-3 rounded-xl bg-white px-3 py-2 text-center text-xs text-[rgba(26,21,18,0.55)]">
+                                        Plus de codes pour le moment
+                                    </p>
                                 )}
                             </div>
                         )}
-                    </>
+                    </div>
                 )}
 
                 {/* Contact */}
-                <div className="space-y-1 text-xs text-gray-500">
+                <div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-[rgba(26,21,18,0.06)] pt-3.5 text-[11px] text-[rgba(26,21,18,0.55)]">
                     {partner.website && (
-                        <div className="flex items-center gap-2">
-                            <Globe className="w-3 h-3" />
-                            <a href={partner.website} target="_blank" rel="noopener noreferrer" className="hover:underline">Site web</a>
-                        </div>
+                        <a href={partner.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-semibold text-[var(--wk-accent)] hover:underline">
+                            <Globe className="h-3 w-3" /> Site
+                        </a>
                     )}
-                    {partner.phone && (
-                        <div className="flex items-center gap-2"><Phone className="w-3 h-3" />{partner.phone}</div>
-                    )}
-                    {partner.email && (
-                        <div className="flex items-center gap-2"><Mail className="w-3 h-3" />{partner.email}</div>
-                    )}
-                    <div className="flex items-center gap-2"><MapPin className="w-3 h-3" />{partner.address}</div>
+                    {partner.phone && <span className="inline-flex items-center gap-1"><Phone className="h-3 w-3" /> {partner.phone}</span>}
+                    {partner.email && <span className="inline-flex items-center gap-1"><Mail className="h-3 w-3" /> {partner.email}</span>}
+                    <span className="inline-flex min-w-0 items-center gap-1"><MapPin className="h-3 w-3 shrink-0" /> <span className="truncate">{partner.address}</span></span>
                 </div>
-            </CardContent>
-        </Card>
+            </div>
+        </article>
     );
 };
+
+/* ─── Comment ça marche ─── */
+const HowItWorks = () => (
+    <section className="mb-8" aria-label="Comment ça marche">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+            {[
+                { n: '01', t: 'Tu travailles', d: 'Cours, fiches, forum, quiz : chaque action utile sur Workyt te rapporte des points.' },
+                { n: '02', t: 'Tu convertis', d: '100 points = 1 gemme, depuis la boutique. Les offres gratuites, elles, ne coûtent rien.' },
+                { n: '03', t: 'Tu choisis une offre', d: 'Un code promo unique et personnel t’est attribué chez le partenaire.' },
+                { n: '04', t: 'Tu en profites', d: 'Tu entres ton code au moment du paiement, chez le partenaire.' },
+            ].map((s) => (
+                <div key={s.n} className={`${CARD} p-5`}>
+                    <span className="font-serif-display text-2xl leading-none text-[var(--wk-accent)]">{s.n}</span>
+                    <h3 className="mt-2 font-semibold">{s.t}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-[rgba(26,21,18,0.62)]">{s.d}</p>
+                </div>
+            ))}
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="rounded-2xl bg-[var(--wk-paper-2)] px-4 py-3 text-sm">
+                <b>Un seul code par partenaire.</b> <span className="text-[rgba(26,21,18,0.62)]">Ton code reste affiché sur sa carte.</span>
+            </div>
+            <div className="rounded-2xl bg-[var(--wk-paper-2)] px-4 py-3 text-sm">
+                <b>Les stocks sont limités.</b> <span className="text-[rgba(26,21,18,0.62)]">Chaque partenaire fournit un nombre de codes défini.</span>
+            </div>
+            <div className="rounded-2xl bg-[var(--wk-paper-2)] px-4 py-3 text-sm">
+                <b>Ton code est personnel.</b> <span className="text-[rgba(26,21,18,0.62)]">Ne le partage pas : il est à usage unique.</span>
+            </div>
+        </div>
+    </section>
+);
 
 export default function AwardPageClient() {
     const { data: session } = useSession();
@@ -337,6 +359,7 @@ export default function AwardPageClient() {
     const [selectedCategory, setSelectedCategory] = useState('');
     const [cities, setCities] = useState<string[]>([]);
     const [claiming, setClaiming] = useState(false);
+    const [gemBalance, setGemBalance] = useState<number | null>(null);
 
     const [userCodes, setUserCodes] = useState<UserPromoCode[]>([]);
     const [loadingUserCode, setLoadingUserCode] = useState(true);
@@ -350,10 +373,20 @@ export default function AwardPageClient() {
     const [successPartner, setSuccessPartner] = useState<Partner | null>(null);
     const [copiedSuccess, setCopiedSuccess] = useState(false);
 
+    const confirmBackdrop = useBackdropDismiss(() => setShowConfirmModal(false), claiming);
+    const successBackdrop = useBackdropDismiss(() => setShowSuccessModal(false));
+
     useEffect(() => { fetchPartners(); }, []);
     useEffect(() => {
-        if (session?.user?.email) fetchUserCode();
-        else setLoadingUserCode(false);
+        if (session?.user?.email) {
+            fetchUserCode();
+            fetch('/api/gems/balance')
+                .then((r) => r.json())
+                .then((d) => { if (d?.success) setGemBalance(d.data.gems.balance ?? 0); })
+                .catch(() => {});
+        } else {
+            setLoadingUserCode(false);
+        }
     }, [session]);
 
     const fetchUserCode = async () => {
@@ -389,7 +422,7 @@ export default function AwardPageClient() {
 
     const handleClaim = (partner: Partner, offerType: 'free' | 'premium') => {
         if (!session) { alert('Vous devez être connecté pour obtenir un code promo'); return; }
-        const existing = userCodes.find(c => c.partnerId?._id === partner._id);
+        const existing = userCodes.find((c) => c.partnerId?._id === partner._id);
         if (existing) { alert('Vous avez déjà un code promo pour ce partenaire.'); return; }
         setConfirmPartner(partner);
         setConfirmOfferType(offerType);
@@ -417,6 +450,10 @@ export default function AwardPageClient() {
                     setShowSuccessModal(true);
                     await fetchUserCode();
                     await fetchPartners();
+                    fetch('/api/gems/balance')
+                        .then((r) => r.json())
+                        .then((d) => { if (d?.success) setGemBalance(d.data.gems.balance ?? 0); })
+                        .catch(() => {});
                 }
             } else {
                 alert(`Erreur : ${data.error}`);
@@ -435,7 +472,7 @@ export default function AwardPageClient() {
         setTimeout(() => setCopiedSuccess(false), 2000);
     };
 
-    const filteredPartners = partners.filter(partner => {
+    const filteredPartners = partners.filter((partner) => {
         if (searchTerm && !partner.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
             !partner.description.toLowerCase().includes(searchTerm.toLowerCase())) return false;
         if (selectedCity && selectedCity !== 'all' && partner.city !== selectedCity) return false;
@@ -449,99 +486,76 @@ export default function AwardPageClient() {
         return sum + free + premium;
     }, 0);
 
-    if (loading) {
-        return (
-            <div className="notion-layout notion-animate-fade-in min-h-screen">
-                <div className="notion-container-wide py-8">
-                    <div className="text-center py-20">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto" style={{ borderColor: 'var(--notion-accent)' }}></div>
-                        <p className="mt-4 notion-text-secondary">Chargement...</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <NoSSR>
-            <div className="notion-layout notion-animate-fade-in min-h-screen">
-                {/* Header */}
-                <header className="bg-gradient-to-r from-orange-500 via-orange-400 to-amber-400 text-white">
-                    <div className="notion-container-wide py-12 md:py-16">
-                        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                            <div className="flex items-start gap-4">
-                                <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
-                                    <img src="/badge/diamond.png" alt="" width={36} height={36} className="object-contain" />
-                                </div>
-                                <div>
-                                    <h1 className="text-3xl md:text-4xl font-bold mb-2">Workyt Award</h1>
-                                    <p className="text-white/90 text-base md:text-lg max-w-xl">
-                                        Obtenez des codes promo exclusifs chez nos partenaires.
-                                        Échangez vos gemmes ou profitez d'offres gratuites !
-                                    </p>
-                                </div>
-                            </div>
-                            <div className="flex flex-col items-end gap-2 shrink-0">
+            <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
+                {/* En-tête */}
+                <header className="relative overflow-hidden border-b border-[rgba(26,21,18,0.08)]">
+                    <div className="wk-dotgrid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+                    <div className={`${PAGE_CONTAINER} relative grid grid-cols-1 gap-8 pb-10 pt-10 md:pb-14 md:pt-14 lg:grid-cols-12 lg:items-end`}>
+                        <div className="lg:col-span-8">
+                            <Eyebrow>Workyt Award</Eyebrow>
+                            <h1 className="font-serif-display mt-3 text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95]">
+                                Ton travail te fait économiser<span className="text-[var(--wk-accent)]">.</span>
+                            </h1>
+                            <p className="mt-5 max-w-[58ch] text-lg leading-relaxed text-[rgba(26,21,18,0.68)]">
+                                Réviser sur Workyt rapporte des points, les points deviennent des gemmes, et les gemmes
+                                ouvrent des codes promo chez nos partenaires. Certaines offres sont même gratuites.
+                            </p>
+                        </div>
+                        <div className="lg:col-span-4">
+                            <div className="flex flex-wrap gap-2 lg:justify-end">
                                 {totalCodes > 0 && (
-                                    <div className="flex items-center gap-2 px-5 py-2.5 bg-white/20 backdrop-blur-sm rounded-full">
-                                        <Package className="w-5 h-5" />
-                                        <span className="text-lg font-bold">{totalCodes}</span>
-                                        <span className="text-sm">code{totalCodes > 1 ? 's' : ''} disponible{totalCodes > 1 ? 's' : ''}</span>
-                                    </div>
+                                    <span className="wk-chip !px-3.5 !py-2 text-sm">
+                                        <Package className="h-4 w-4" /> {totalCodes} code{totalCodes > 1 ? 's' : ''} disponible{totalCodes > 1 ? 's' : ''}
+                                    </span>
                                 )}
-                                <Link href="/gems" className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm rounded-full text-sm transition-colors">
-                                    <Gem className="w-4 h-4" />
-                                    Gérer mes gemmes
-                                    <ArrowRight className="w-3.5 h-3.5" />
+                                {gemBalance !== null && (
+                                    <span className="wk-chip !px-3.5 !py-2 text-sm">
+                                        <Image src="/badge/diamond.png" alt="" width={16} height={16} className="object-contain" />
+                                        {gemBalance} gemme{gemBalance > 1 ? 's' : ''}
+                                    </span>
+                                )}
+                                <Link href="/gems" className="wk-btn-ink !py-2 text-sm">
+                                    Mes gemmes <ArrowUpRight className="h-4 w-4" />
                                 </Link>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <div className="notion-container-wide py-8 md:py-12">
-                    {/* Bandeau codes actifs */}
-                    {session && userCodes.length > 0 && (
-                        <div className="rounded-2xl p-4 mb-6 bg-green-50 border border-green-200">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                    <Ticket className="w-5 h-5 text-green-600" />
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-green-800">Mes codes promo ({userCodes.length})</h4>
-                                    <p className="text-sm text-green-600">Retrouvez vos codes sur les cartes partenaires ci-dessous</p>
-                                </div>
-                            </div>
-                        </div>
-                    )}
+                <div className={`${PAGE_CONTAINER} py-8 md:py-10`}>
+                    <HowItWorks />
 
-                    {session && userCodes.length === 0 && (
-                        <div className="rounded-2xl p-4 mb-6 bg-blue-50 border border-blue-200">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <Ticket className="w-5 h-5 text-blue-600" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-blue-800">Pas encore de code promo</h4>
-                                    <p className="text-sm text-blue-600">Choisissez un partenaire ci-dessous pour obtenir un code promo unique et personnel.</p>
-                                </div>
-                            </div>
+                    {/* Rappel de situation */}
+                    {!session ? (
+                        <div className={`${CARD} mb-6 flex flex-wrap items-center gap-3 p-4`}>
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--wk-paper-2)]">
+                                <Lock className="h-5 w-5 text-[rgba(26,21,18,0.5)]" />
+                            </span>
+                            <p className="flex-1 text-sm">
+                                <b>Connecte-toi pour obtenir un code.</b>{' '}
+                                <span className="text-[rgba(26,21,18,0.62)]">Les offres restent visibles sans compte.</span>
+                            </p>
+                            <button
+                                type="button"
+                                onClick={() => window.dispatchEvent(new Event("workyt:open-auth"))}
+                                className="wk-btn-orange !py-2 text-sm"
+                            >
+                                Se connecter
+                            </button>
                         </div>
-                    )}
-
-                    {!session && (
-                        <div className="rounded-2xl p-4 mb-6 bg-amber-50 border border-amber-200">
-                            <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
-                                    <AlertTriangle className="w-5 h-5 text-amber-600" />
-                                </div>
-                                <div>
-                                    <h4 className="font-medium text-amber-800">Connectez-vous</h4>
-                                    <p className="text-sm text-amber-600">Vous devez être connecté pour obtenir un code promo.</p>
-                                </div>
-                            </div>
+                    ) : !loadingUserCode && userCodes.length > 0 ? (
+                        <div className="mb-6 flex flex-wrap items-center gap-3 rounded-3xl bg-emerald-50 p-4">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white">
+                                <Ticket className="h-5 w-5 text-emerald-700" />
+                            </span>
+                            <p className="flex-1 text-sm">
+                                <b className="text-emerald-900">Tu as {userCodes.length} code{userCodes.length > 1 ? 's' : ''} promo.</b>{' '}
+                                <span className="text-emerald-700">Ils apparaissent sur les cartes des partenaires concernés.</span>
+                            </p>
                         </div>
-                    )}
+                    ) : null}
 
                     <PartnersFilters
                         searchTerm={searchTerm} setSearchTerm={setSearchTerm}
@@ -551,101 +565,136 @@ export default function AwardPageClient() {
                     />
 
                     {/* Grille des partenaires */}
-                    <div className="notion-grid notion-grid-3">
-                        {filteredPartners.map((partner) => (
-                            <PartnerCard
-                                key={partner._id}
-                                partner={partner}
-                                userCodes={userCodes}
-                                onClaim={handleClaim}
-                                claiming={claiming}
-                            />
-                        ))}
+                    {loading ? (
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="h-[380px] animate-pulse rounded-3xl border border-[rgba(26,21,18,0.06)] bg-white/70" />
+                            ))}
+                        </div>
+                    ) : filteredPartners.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2 2xl:grid-cols-3">
+                            {filteredPartners.map((partner) => (
+                                <PartnerCard
+                                    key={partner._id}
+                                    partner={partner}
+                                    userCodes={userCodes}
+                                    onClaim={handleClaim}
+                                    claiming={claiming}
+                                />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-12 text-center">
+                            <Store className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                            <p className="font-serif-display mt-3 text-xl">Aucun partenaire trouvé</p>
+                            <p className="mt-1 text-sm text-[rgba(26,21,18,0.6)]">Essaie de modifier ta recherche ou tes filtres.</p>
+                        </div>
+                    )}
+
+                    {/* Appel aux marques */}
+                    <div className="wk-grain group relative mt-8 flex flex-col gap-5 overflow-hidden rounded-3xl bg-[var(--wk-ink)] p-6 text-[var(--wk-paper)] sm:flex-row sm:items-center sm:p-7">
+                        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/10">
+                            <Store className="h-7 w-7 text-[var(--wk-accent-2)]" />
+                        </span>
+                        <span className="flex-1">
+                            <span className="font-mono-ui block text-[11px] uppercase tracking-[0.18em] text-white/60">Vous êtes une marque ?</span>
+                            <span className="font-serif-display mt-1 block text-2xl leading-tight">Proposez une offre à nos membres</span>
+                            <span className="mt-2 block max-w-[70ch] text-sm leading-relaxed text-white/70">
+                                Vous fournissez les codes, nous gérons l&apos;attribution, les limites et le suivi.
+                            </span>
+                        </span>
+                        <Link href="/kit-media#contact" className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-[var(--wk-ink)]">
+                            Devenir partenaire <ArrowUpRight className="h-4 w-4" />
+                        </Link>
                     </div>
-
-                    {filteredPartners.length === 0 && (
-                        <div className="notion-empty">
-                            <Store className="notion-empty-icon mx-auto" />
-                            <h3 className="notion-empty-title">Aucun partenaire trouvé</h3>
-                            <p className="notion-empty-text">Essayez de modifier vos critères de recherche</p>
-                        </div>
-                    )}
-
-                    {/* Modal de confirmation */}
-                    {showConfirmModal && confirmPartner && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-xl max-w-md w-full p-6">
-                                <div className="flex items-center gap-3 mb-4">
-                                    <img src={confirmPartner.logo} alt={confirmPartner.name} className="w-12 h-12 rounded-full object-cover border-2 border-gray-200" />
-                                    <div>
-                                        <h3 className="text-lg font-semibold">{confirmPartner.name}</h3>
-                                        <p className="text-sm text-gray-600">{confirmPartner.city}</p>
-                                    </div>
-                                </div>
-                                <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 mb-4">
-                                    <div className="flex items-start gap-2">
-                                        <AlertTriangle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                                        <div>
-                                            <p className="text-sm font-medium text-amber-800">Confirmation</p>
-                                            <p className="text-xs text-amber-700 mt-1">
-                                                Un seul code promo par partenaire.
-                                                {confirmOfferType === 'premium' && ' Le coût en gemmes sera débité de votre solde.'}
-                                            </p>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div className={`p-3 rounded-lg border mb-4 ${confirmOfferType === 'free' ? 'bg-green-50 border-green-200' : 'bg-purple-50 border-purple-200'}`}>
-                                    <p className="text-sm font-medium mb-1">
-                                        {confirmOfferType === 'free' ? 'Offre gratuite' : `Offre premium (${confirmPartner.offers.premium?.gemsCost ?? 0} gemmes)`}
-                                    </p>
-                                    <p className="text-sm text-gray-600">{confirmPartner.offers[confirmOfferType]?.description}</p>
-                                </div>
-                                <div className="flex gap-3">
-                                    <Button variant="outline" className="flex-1" onClick={() => setShowConfirmModal(false)}>Annuler</Button>
-                                    <Button
-                                        className={`flex-1 ${confirmOfferType === 'free' ? 'bg-green-600 hover:bg-green-700' : 'bg-purple-600 hover:bg-purple-700'}`}
-                                        onClick={confirmClaim} disabled={claiming}
-                                    >
-                                        <Ticket className="w-4 h-4 mr-2" />
-                                        {claiming ? 'Attribution...' : 'Confirmer'}
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Modal de succès */}
-                    {showSuccessModal && successPartner && (
-                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-xl max-w-md w-full p-6 text-center">
-                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <CheckCircle className="w-8 h-8 text-green-600" />
-                                </div>
-                                <h3 className="text-xl font-bold text-green-800 mb-2">Code promo attribué !</h3>
-                                <p className="text-gray-600 mb-4">
-                                    Voici votre code promo unique chez <strong>{successPartner.name}</strong>
-                                </p>
-                                <div className="bg-green-50 p-4 rounded-xl border-2 border-green-300 mb-4">
-                                    <div className="text-3xl font-mono font-bold text-green-900 tracking-wider mb-2">{successCode}</div>
-                                    <Button size="sm" variant="outline" onClick={copySuccessCode} className="border-green-300 text-green-700 hover:bg-green-100">
-                                        {copiedSuccess ? <><CheckCircle className="w-4 h-4 mr-2" /> Copié !</> : <><Copy className="w-4 h-4 mr-2" /> Copier le code</>}
-                                    </Button>
-                                </div>
-                                <div className="bg-gray-50 p-3 rounded-lg text-left text-sm text-gray-600 mb-4">
-                                    <p className="font-medium mb-1">Comment l&apos;utiliser :</p>
-                                    <ul className="space-y-1 text-xs">
-                                        <li>1. Allez sur le site du partenaire</li>
-                                        <li>2. Ajoutez vos articles au panier</li>
-                                        <li>3. Entrez votre code promo au moment du paiement</li>
-                                    </ul>
-                                </div>
-                                <Button className="w-full" onClick={() => { setShowSuccessModal(false); setSuccessCode(''); setSuccessPartner(null); }}>
-                                    Compris !
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                 </div>
+
+                {/* Confirmation */}
+                {showConfirmModal && confirmPartner && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 p-4" {...confirmBackdrop}>
+                        <div className="w-full max-w-md rounded-3xl bg-white p-6">
+                            <div className="flex items-center gap-3">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={confirmPartner.logo} alt="" className="h-12 w-12 rounded-full border border-[rgba(26,21,18,0.1)] object-cover" />
+                                <div className="min-w-0">
+                                    <h3 className="font-serif-display truncate text-xl">{confirmPartner.name}</h3>
+                                    <p className="text-sm text-[rgba(26,21,18,0.55)]">{confirmPartner.city}</p>
+                                </div>
+                                <button type="button" onClick={() => setShowConfirmModal(false)} className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full hover:bg-[var(--wk-paper-2)]" aria-label="Fermer">
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            <div className={`mt-4 rounded-2xl p-4 ${confirmOfferType === 'free' ? 'bg-[var(--wk-paper)]' : 'bg-[rgba(255,106,26,0.08)]'}`}>
+                                <p className="text-sm font-semibold">
+                                    {confirmOfferType === 'free'
+                                        ? 'Offre gratuite'
+                                        : `Offre premium · ${confirmPartner.offers.premium?.gemsCost ?? 0} gemmes`}
+                                </p>
+                                <p className="mt-1 text-sm text-[rgba(26,21,18,0.7)]">{confirmPartner.offers[confirmOfferType]?.description}</p>
+                                {confirmPartner.offers[confirmOfferType]?.conditions && (
+                                    <p className="mt-2 text-xs text-[rgba(26,21,18,0.55)]">{confirmPartner.offers[confirmOfferType]?.conditions}</p>
+                                )}
+                            </div>
+
+                            <div className="mt-3 flex items-start gap-2.5 rounded-2xl bg-[#fff4e0] p-3.5">
+                                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-[#9a5d00]" />
+                                <p className="text-xs text-[#9a5d00]">
+                                    Un seul code par partenaire, et il est à usage unique.
+                                    {confirmOfferType === 'premium' && ' Les gemmes seront débitées de ton solde.'}
+                                </p>
+                            </div>
+
+                            <div className="mt-5 flex gap-2">
+                                <button type="button" onClick={() => setShowConfirmModal(false)} className="wk-btn-ghost flex-1 justify-center !py-2.5 text-sm">
+                                    Annuler
+                                </button>
+                                <button type="button" onClick={confirmClaim} disabled={claiming} className="wk-btn-orange flex-1 justify-center !py-2.5 text-sm disabled:opacity-50">
+                                    <Ticket className="h-4 w-4" /> {claiming ? 'Attribution…' : 'Confirmer'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Succès */}
+                {showSuccessModal && successPartner && (
+                    <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/40 p-4" {...successBackdrop}>
+                        <div className="w-full max-w-md rounded-3xl bg-white p-6 text-center">
+                            <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-50">
+                                <CheckCircle className="h-7 w-7 text-emerald-600" />
+                            </span>
+                            <h3 className="font-serif-display mt-4 text-2xl">Code attribué<span className="text-[var(--wk-accent)]">.</span></h3>
+                            <p className="mt-1 text-sm text-[rgba(26,21,18,0.62)]">
+                                Ton code personnel chez <b className="text-[var(--wk-ink)]">{successPartner.name}</b>
+                            </p>
+
+                            <div className="mt-4 rounded-2xl bg-emerald-50 p-4">
+                                <p className="font-mono-ui text-2xl font-bold tracking-[0.15em] text-emerald-900">{successCode}</p>
+                                <button type="button" onClick={copySuccessCode} className="wk-btn-ghost mt-3 !py-2 text-sm">
+                                    {copiedSuccess ? <><CheckCircle className="h-4 w-4" /> Copié</> : <><Copy className="h-4 w-4" /> Copier le code</>}
+                                </button>
+                            </div>
+
+                            <div className="mt-4 rounded-2xl bg-[var(--wk-paper)] p-4 text-left">
+                                <p className="text-sm font-semibold">Comment l&apos;utiliser</p>
+                                <ol className="mt-2 space-y-1 text-sm text-[rgba(26,21,18,0.68)]">
+                                    <li>1. Va sur le site du partenaire.</li>
+                                    <li>2. Ajoute tes articles au panier.</li>
+                                    <li>3. Entre ton code au moment du paiement.</li>
+                                </ol>
+                            </div>
+
+                            <button
+                                type="button"
+                                onClick={() => { setShowSuccessModal(false); setSuccessCode(''); setSuccessPartner(null); }}
+                                className="wk-btn-ink mt-5 w-full justify-center !py-2.5 text-sm"
+                            >
+                                C&apos;est noté
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </NoSSR>
     );

@@ -15,6 +15,17 @@ export interface IProfileCustomization extends Document {
     filename: string; // Nom du fichier dans public/profile/contour/
     isActive: boolean;
   };
+  /**
+   * Photo envoyée par le membre (bénévoles uniquement).
+   * Elle prime sur toutes les autres images de profil : image achetée en
+   * boutique comme avatar généré. Stockée sur R2, d'où l'URL complète.
+   */
+  customPhoto: {
+    url: string;
+    key: string; // Clé R2, pour pouvoir supprimer le fichier
+    isActive: boolean;
+    updatedAt?: Date;
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -52,14 +63,20 @@ const ProfileCustomizationSchema = new Schema<IProfileCustomization>({
     }
   },
   profileBorder: {
-    filename: { 
-      type: String, 
-      default: '' 
+    filename: {
+      type: String,
+      default: ''
     },
-    isActive: { 
-      type: Boolean, 
-      default: false 
+    isActive: {
+      type: Boolean,
+      default: false
     }
+  },
+  customPhoto: {
+    url: { type: String, default: '' },
+    key: { type: String, default: '' },
+    isActive: { type: Boolean, default: false },
+    updatedAt: { type: Date }
   },
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

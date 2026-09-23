@@ -30,6 +30,11 @@ interface ProfileCustomization {
         filename: string;
         isActive: boolean;
     };
+    /** Photo envoyée par le membre — prioritaire sur toutes les autres images */
+    customPhoto?: {
+        url: string;
+        isActive: boolean;
+    };
     profileBorder: {
         filename: string;
         isActive: boolean;
@@ -260,6 +265,11 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     const getProfileImage = () => {
         const custom = customization || propCustomization;
         
+        // Priorité 1 : la photo envoyée par le membre lui-même
+        if (custom?.customPhoto?.isActive && custom.customPhoto.url) {
+            return custom.customPhoto.url;
+        }
+
         if (custom?.profileImage.isActive && custom.profileImage.filename) {
             return `/profile/${custom.profileImage.filename}`;
         }
