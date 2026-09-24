@@ -102,10 +102,20 @@ export interface ActivePlayer {
 }
 
 /**
- * Joueurs actifs : au moins 1 point gagné dans les 7 derniers jours.
+ * Gains reçus sans action du joueur : un like ou une validation tombés
+ * aujourd'hui sur une réponse ou une fiche publiée il y a un an, ou les
+ * récompenses de la guerre précédente (sinon elles réinscriraient d'office).
+ * Ils ne prouvent pas que le joueur est encore là.
+ */
+const PASSIVE_ACTIONS = ['likeAnswer', 'likeRevision', 'validateAnswer', 'clanReward'];
+
+/**
+ * Joueurs actifs : au moins 1 point gagné PAR SES PROPRES ACTIONS dans les
+ * 7 derniers jours.
  *
  * Un inactif n'est pas enrôlé du tout — il ne plombe aucun clan et ne
- * descend pas de rang.
+ * descend pas de rang. Les gains passifs (PASSIVE_ACTIONS) n'enrôlent
+ * personne, mais comptent dans la puissance d'un joueur déjà actif.
  */
 export async function getActivePlayers(now: Date = new Date()): Promise<ActivePlayer[]> {
   await dbConnect();
@@ -117,8 +127,16 @@ export async function getActivePlayers(now: Date = new Date()): Promise<ActivePl
   // faire baisser la puissance de quelqu'un (vecteur de sabotage).
   const rows = await PointTransaction.aggregate([
     { $match: { type: 'gain', createdAt: { $gte: since } } },
-    { $group: { _id: '$user', points: { $sum: '$points' } } },
-    { $match: { points: { $gt: 0 } } }
+    {
+      $group: {
+        _id: '$user',
+        points: { $sum: '$points' },
+        activePoints: {
+          $sum: { $cond: [{ $in: ['$action', PASSIVE_ACTIONS] }, 0, '$points'] }
+        }
+      }
+    },
+    { $match: { activePoints: { $gt: 0 } } }
   ]);
 
   if (rows.length === 0) return [];

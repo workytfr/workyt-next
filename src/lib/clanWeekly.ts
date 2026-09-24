@@ -214,7 +214,7 @@ async function settleClan(
       // Conditionnée à une contribution réelle : sinon la compensation
       // deviendrait un revenu passif pour les enrôlés inactifs.
       try {
-        await addPointsWithBoost(userId, rewards.loserPoints, 'completeQuiz');
+        await addPointsWithBoost(userId, rewards.loserPoints, 'clanReward');
         compensation = rewards.loserPoints;
       } catch (err) {
         console.error('[Clans] Erreur points de compensation:', err);
@@ -226,7 +226,7 @@ async function settleClan(
       const share = Math.floor((leftoverPool * (m.totalPoints || 0)) / totalPoints);
       if (share > 0) {
         try {
-          await addPointsWithBoost(userId, share, 'completeQuiz');
+          await addPointsWithBoost(userId, share, 'clanReward');
           leftoverShare = share;
         } catch { /* le reliquat est un bonus, il ne doit rien bloquer */ }
       }

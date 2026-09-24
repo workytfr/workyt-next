@@ -22,7 +22,8 @@ type PointAction =
   | 'completeAssignedResource'
   | 'reachMentorshipGoal'
   | 'mentorshipCheckin'
-  | 'mentorshipDuoStreak';
+  | 'mentorshipDuoStreak'
+  | 'clanReward';
 
 /**
  * Ajoute des points a un utilisateur en appliquant le boost actif si present.

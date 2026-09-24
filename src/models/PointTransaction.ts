@@ -27,7 +27,8 @@ export interface IPointTransaction extends Document {
         | 'completeAssignedResource'
         | 'reachMentorshipGoal'
         | 'mentorshipCheckin'
-        | 'mentorshipDuoStreak';
+        | 'mentorshipDuoStreak'
+        | 'clanReward';
     type: 'gain' | 'perte';
     points: number;
     createdAt: Date;
@@ -51,6 +52,7 @@ const PointTransactionSchema: Schema = new Schema({
             'createCourse', 'verifyCourse', 'createQuiz', 'createExercisePack',
             'winChallenge',
             'completeAssignedResource', 'reachMentorshipGoal', 'mentorshipCheckin', 'mentorshipDuoStreak',
+            'clanReward',
         ],
         required: true
     },
