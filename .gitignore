@@ -72,3 +72,6 @@ backups/
 
 # design handoff / reference bundles (not code)
 .design-ref/
+
+# Documents internes (chartes, guides, PDF) : non versionnés
+/docs/
