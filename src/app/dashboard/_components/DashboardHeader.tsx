@@ -37,12 +37,12 @@ export default function DashboardHeader() {
       <div className="dash-header-left">
         <Link
           href="/"
-          className="flex items-center gap-2 text-[#6b6b6b] hover:text-[#37352f] transition-colors"
+          className="flex items-center gap-2 text-[#6b625c] hover:text-[#1a1512] transition-colors"
         >
           <Home className="w-4 h-4" />
           <span className="text-sm font-medium hidden sm:inline">Accueil</span>
         </Link>
-        <span className="text-[#e3e2e0]">|</span>
+        <span className="text-[#e6e0d6]">|</span>
         <h1 className="dash-header-title">Tableau de bord</h1>
       </div>
 
@@ -70,16 +70,16 @@ export default function DashboardHeader() {
         </Link>
 
         {/* Notifications */}
-        <button className="relative p-2 text-[#6b6b6b] hover:text-[#37352f] hover:bg-[#f7f6f3] rounded-lg transition-colors">
+        <button className="relative p-2 text-[#6b625c] hover:text-[#1a1512] hover:bg-[#f5efe3] rounded-lg transition-colors">
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#f97316] rounded-full"></span>
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#ff6a1a] rounded-full"></span>
         </button>
 
         {/* Menu utilisateur avec ProfileAvatar */}
         <div className="relative">
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[#f7f6f3] transition-colors"
+            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[#f5efe3] transition-colors"
           >
             <ProfileAvatar
               username={user?.username || "Utilisateur"}
@@ -90,14 +90,14 @@ export default function DashboardHeader() {
               showPoints={false}
             />
             <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-[#37352f] leading-tight">
+              <p className="text-sm font-medium text-[#1a1512] leading-tight">
                 {user?.username || "Utilisateur"}
               </p>
-              <p className="text-xs text-[#9ca3af] leading-tight">
+              <p className="text-xs text-[#97938e] leading-tight">
                 {user?.role || "Rédacteur"}
               </p>
             </div>
-            <ChevronDown className="w-4 h-4 text-[#6b6b6b]" />
+            <ChevronDown className="w-4 h-4 text-[#6b625c]" />
           </button>
 
           {/* Dropdown menu */}
@@ -107,8 +107,8 @@ export default function DashboardHeader() {
                 className="fixed inset-0 z-40"
                 onClick={() => setShowUserMenu(false)}
               />
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#e3e2e0] rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="p-4 border-b border-[#e3e2e0] bg-[#f7f6f3]">
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#e6e0d6] rounded-xl shadow-lg z-50 overflow-hidden">
+                <div className="p-4 border-b border-[#e6e0d6] bg-[#f5efe3]">
                   <div className="flex items-center gap-3">
                     <ProfileAvatar
                       username={user?.username || "Utilisateur"}
@@ -119,10 +119,10 @@ export default function DashboardHeader() {
                       showPoints={false}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#37352f] truncate">
+                      <p className="text-sm font-medium text-[#1a1512] truncate">
                         {user?.username || "Utilisateur"}
                       </p>
-                      <p className="text-xs text-[#9ca3af] truncate">
+                      <p className="text-xs text-[#97938e] truncate">
                         {user?.email || ""}
                       </p>
                     </div>
@@ -131,9 +131,9 @@ export default function DashboardHeader() {
                 <div className="p-1">
                   <Link
                     href={`/compte/${user?.id}`}
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-[#37352f] hover:bg-[#f7f6f3] rounded-lg transition-colors"
+                    className="flex items-center gap-2 px-3 py-2 text-sm text-[#1a1512] hover:bg-[#f5efe3] rounded-lg transition-colors"
                   >
-                    <User className="w-4 h-4 text-[#6b6b6b]" />
+                    <User className="w-4 h-4 text-[#6b625c]" />
                     Mon profil
                   </Link>
                   <button

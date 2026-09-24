@@ -163,8 +163,8 @@ export default function AddProgramModal({ token, onClose, onImported }: AddProgr
             <div className="flex h-[92vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
-                    <h2 className="flex items-center gap-2 text-base font-semibold text-[#37352f]">
-                        <Wand2 className="h-5 w-5 text-[#f97316]" /> Créer un programme
+                    <h2 className="flex items-center gap-2 text-base font-semibold text-[#1a1512]">
+                        <Wand2 className="h-5 w-5 text-[#ff6a1a]" /> Créer un programme
                     </h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-gray-700"><X className="h-5 w-5" /></button>
                 </div>
@@ -175,7 +175,7 @@ export default function AddProgramModal({ token, onClose, onImported }: AddProgr
                         <button
                             key={key}
                             onClick={() => { setTab(key); setError(null); }}
-                            className={`flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-sm font-medium ${tab === key ? "border-b-2 border-[#f97316] text-[#f97316]" : "text-gray-500 hover:text-gray-700"}`}
+                            className={`flex items-center gap-1.5 rounded-t-lg px-3 py-2 text-sm font-medium ${tab === key ? "border-b-2 border-[#ff6a1a] text-[#ff6a1a]" : "text-gray-500 hover:text-gray-700"}`}
                         >
                             <Icon className="h-4 w-4" /> {label}
                         </button>
@@ -215,7 +215,7 @@ export default function AddProgramModal({ token, onClose, onImported }: AddProgr
                             {themes.map((theme, ti) => (
                                 <div key={ti} className="rounded-xl border border-gray-200 bg-gray-50/40">
                                     <div className="flex items-center gap-2 border-b border-gray-100 p-3">
-                                        <span className="text-xs font-bold text-[#f97316]">Thème {ti + 1}</span>
+                                        <span className="text-xs font-bold text-[#ff6a1a]">Thème {ti + 1}</span>
                                         <input
                                             value={theme.name}
                                             onChange={(e) => patchTheme(ti, { name: e.target.value })}
@@ -250,15 +250,15 @@ export default function AddProgramModal({ token, onClose, onImported }: AddProgr
                                                             )}
                                                         </div>
                                                     ))}
-                                                    <button onClick={() => addSkill(ti, ci)} className="mt-1 text-xs font-medium text-[#f97316] hover:underline">+ Compétence</button>
+                                                    <button onClick={() => addSkill(ti, ci)} className="mt-1 text-xs font-medium text-[#ff6a1a] hover:underline">+ Compétence</button>
                                                 </div>
                                             </div>
                                         ))}
-                                        <button onClick={() => addChapter(ti)} className="text-xs font-medium text-[#6b6b6b] hover:text-[#f97316]">+ Chapitre</button>
+                                        <button onClick={() => addChapter(ti)} className="text-xs font-medium text-[#6b625c] hover:text-[#ff6a1a]">+ Chapitre</button>
                                     </div>
                                 </div>
                             ))}
-                            <button onClick={addTheme} className="flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-[#f97316] hover:border-[#f97316]">
+                            <button onClick={addTheme} className="flex items-center gap-1.5 rounded-lg border border-dashed border-gray-300 px-3 py-2 text-sm font-medium text-[#ff6a1a] hover:border-[#ff6a1a]">
                                 <Plus className="h-4 w-4" /> Ajouter un thème
                             </button>
                         </div>
@@ -299,7 +299,7 @@ export default function AddProgramModal({ token, onClose, onImported }: AddProgr
                     )}
                     <div className="flex items-center gap-3">
                         <button onClick={onClose} className="rounded-lg px-4 py-2 text-sm text-gray-600 hover:bg-gray-100">Annuler</button>
-                        <button onClick={handleSubmit} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-[#f97316] px-4 py-2 text-sm font-semibold text-white hover:bg-[#ea580c] disabled:opacity-50">
+                        <button onClick={handleSubmit} disabled={busy} className="inline-flex items-center gap-2 rounded-lg bg-[#ff6a1a] px-4 py-2 text-sm font-semibold text-white hover:bg-[#c24a0a] disabled:opacity-50">
                             {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Import…</> : "Créer le programme"}
                         </button>
                     </div>

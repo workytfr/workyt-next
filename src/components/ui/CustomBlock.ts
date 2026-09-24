@@ -1,4 +1,6 @@
 import { Node, mergeAttributes, RawCommands } from '@tiptap/core'
+import { ReactNodeViewRenderer } from '@tiptap/react'
+import CustomBlockView from './editor/CustomBlockView'
 
 /**
  * 1. On étend l'interface Commands de Tiptap pour déclarer la commande setCustomBlock.
@@ -99,48 +101,27 @@ export const CustomBlock = Node.create<CustomBlockOptions>({
         ]
     },
 
+    addNodeView() {
+        return ReactNodeViewRenderer(CustomBlockView)
+    },
+
     addCommands() {
         return {
             /**
-             * Insère un nœud customBlock dans le document,
-             * avec l'attribut "blockType" (ex: "definition", "remarque", etc.)
+             * Met le paragraphe courant (ou la sélection) dans un bloc
+             * "blockType" (ex: "definition", "remarque", etc.). Le curseur reste
+             * dedans : on écrit tout de suite. Pas de titre inséré : l'en-tête
+             * du bloc est affiché par CustomBlockView et recréé par LessonView.
              */
             setCustomBlock:
                 (blockType: string) =>
-                    ({ chain }) => {
-                        const labels: Record<string, string> = {
-                            definition: 'Définition',
-                            propriete: 'Propriété',
-                            theoreme: 'Théorème',
-                            exemple: 'Exemple',
-                            remarque: 'Remarque',
-                            attention: 'Attention',
-                        }
-                        const label = labels[blockType] || blockType
-
-                        return chain()
-                            .insertContent({
-                                type: this.name,
-                                attrs: { blockType },
-                                content: [
-                                    {
-                                        type: 'paragraph',
-                                        content: [
-                                            {
-                                                type: 'text',
-                                                marks: [{ type: 'bold' }],
-                                                text: label,
-                                            },
-                                        ],
-                                    },
-                                    {
-                                        type: 'paragraph',
-                                    },
-                                ],
-                            })
-                            .focus()
-                            .run()
-                    },
+                    ({ commands }) =>
+                        commands.wrapIn(this.name, { blockType }) ||
+                        commands.insertContent({
+                            type: this.name,
+                            attrs: { blockType },
+                            content: [{ type: 'paragraph' }],
+                        }),
         } as Partial<RawCommands>
     },
 
@@ -261,8 +242,10 @@ export const CustomBlock = Node.create<CustomBlockOptions>({
                     const tr = state.tr
                     tr.delete($from.before($from.depth), $from.after($from.depth))
 
-                    // Recalculer la fin du bloc après suppression
-                    const newBlockEnd = blockEnd - currentParagraph.nodeSize - 2
+                    // Fin du bloc après suppression : le mapping évite de recalculer
+                    // les tailles à la main (l'ancien « - 2 » tombait DANS le bloc,
+                    // et le nouveau paragraphe y restait coincé)
+                    const newBlockEnd = tr.mapping.map(blockEnd)
                     tr.insert(newBlockEnd, state.schema.nodes.paragraph.create())
                     tr.setSelection(
                         // @ts-ignore

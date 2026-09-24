@@ -1,6 +1,4 @@
 import React from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
 
@@ -12,7 +10,15 @@ interface AdvancedPaginationProps {
     onPageChange: (page: number) => void;
     onItemsPerPageChange: (itemsPerPage: number) => void;
     isLoading?: boolean;
+    /** Ce qu'on compte, au pluriel (« éléments » par défaut, ex. « cours ») */
+    itemLabel?: string;
+    /** Choix proposés pour « Par page » */
+    pageSizes?: number[];
 }
+
+// Charte : pastilles rondes, page courante en encre, survol papier 2
+const navBtn =
+    "inline-flex h-8 min-w-8 items-center justify-center rounded-full border border-[#e6e0d6] bg-white px-2 text-sm text-[#1a1512] transition-colors hover:bg-[#f5efe3] disabled:pointer-events-none disabled:opacity-40";
 
 export default function AdvancedPagination({
     currentPage,
@@ -21,7 +27,9 @@ export default function AdvancedPagination({
     itemsPerPage,
     onPageChange,
     onItemsPerPageChange,
-    isLoading = false
+    isLoading = false,
+    itemLabel = "éléments",
+    pageSizes = [5, 10, 20, 50],
 }: AdvancedPaginationProps) {
     const getVisiblePages = () => {
         const delta = 2;
@@ -49,124 +57,96 @@ export default function AdvancedPagination({
         return rangeWithDots;
     };
 
-    const startItem = (currentPage - 1) * itemsPerPage + 1;
+    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
     const endItem = Math.min(currentPage * itemsPerPage, totalItems);
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex flex-col items-center justify-between gap-4 rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-3 sm:flex-row sm:px-5">
             {/* Informations sur les éléments affichés */}
-            <div className="text-sm text-gray-600">
-                Affichage de {startItem} à {endItem} sur {totalItems} éléments
+            <div className="text-sm text-[#6b625c]">
+                <span className="font-medium text-[#1a1512]">{startItem}–{endItem}</span> sur {totalItems} {itemLabel}
             </div>
 
-            {/* Contrôles de pagination */}
+            {/* Boutons de navigation */}
+            <nav className="flex items-center gap-1" aria-label="Pagination">
+                <button
+                    type="button"
+                    onClick={() => onPageChange(1)}
+                    disabled={currentPage === 1 || isLoading}
+                    className={`${navBtn} hidden sm:inline-flex`}
+                    aria-label="Première page"
+                >
+                    <ChevronsLeft className="h-4 w-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage === 1 || isLoading}
+                    className={navBtn}
+                    aria-label="Page précédente"
+                >
+                    <ChevronLeft className="h-4 w-4" />
+                </button>
+
+                {getVisiblePages().map((page, index) =>
+                    page === '...' ? (
+                        <span key={`dots-${index}`} className="px-1 text-[#97938e]">…</span>
+                    ) : (
+                        <button
+                            key={page}
+                            type="button"
+                            onClick={() => onPageChange(page as number)}
+                            disabled={isLoading}
+                            aria-current={currentPage === page ? "page" : undefined}
+                            className={
+                                currentPage === page
+                                    ? "inline-flex h-8 min-w-8 items-center justify-center rounded-full bg-[#1a1512] px-2 text-sm font-medium text-[#fdfaf4]"
+                                    : navBtn
+                            }
+                        >
+                            {page}
+                        </button>
+                    )
+                )}
+
+                <button
+                    type="button"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages || isLoading}
+                    className={navBtn}
+                    aria-label="Page suivante"
+                >
+                    <ChevronRight className="h-4 w-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={() => onPageChange(totalPages)}
+                    disabled={currentPage === totalPages || isLoading}
+                    className={`${navBtn} hidden sm:inline-flex`}
+                    aria-label="Dernière page"
+                >
+                    <ChevronsRight className="h-4 w-4" />
+                </button>
+            </nav>
+
+            {/* Éléments par page */}
             <div className="flex items-center gap-2">
-                {/* Éléments par page */}
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Par page:</span>
-                    <Select
-                        value={itemsPerPage.toString()}
-                        onValueChange={(value) => onItemsPerPageChange(parseInt(value))}
-                        disabled={isLoading}
-                    >
-                        <SelectTrigger className="w-20">
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="5">5</SelectItem>
-                            <SelectItem value="10">10</SelectItem>
-                            <SelectItem value="20">20</SelectItem>
-                            <SelectItem value="50">50</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-
-                {/* Boutons de navigation */}
-                <div className="flex items-center gap-1">
-                    {/* Première page */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(1)}
-                        disabled={currentPage === 1 || isLoading}
-                        className="hidden sm:flex"
-                    >
-                        <ChevronsLeft className="h-4 w-4" />
-                    </Button>
-
-                    {/* Page précédente */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(currentPage - 1)}
-                        disabled={currentPage === 1 || isLoading}
-                    >
-                        <ChevronLeft className="h-4 w-4" />
-                    </Button>
-
-                    {/* Numéros de pages */}
-                    <div className="flex items-center gap-1">
-                        {getVisiblePages().map((page, index) => (
-                            <React.Fragment key={index}>
-                                {page === '...' ? (
-                                    <span className="px-2 text-gray-500">...</span>
-                                ) : (
-                                    <Button
-                                        variant={currentPage === page ? "default" : "outline"}
-                                        size="sm"
-                                        onClick={() => onPageChange(page as number)}
-                                        disabled={isLoading}
-                                        className="w-8 h-8"
-                                    >
-                                        {page}
-                                    </Button>
-                                )}
-                            </React.Fragment>
-                        ))}
-                    </div>
-
-                    {/* Page suivante */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages || isLoading}
-                    >
-                        <ChevronRight className="h-4 w-4" />
-                    </Button>
-
-                    {/* Dernière page */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onPageChange(totalPages)}
-                        disabled={currentPage === totalPages || isLoading}
-                        className="hidden sm:flex"
-                    >
-                        <ChevronsRight className="h-4 w-4" />
-                    </Button>
-                </div>
-            </div>
-
-            {/* Aller à la page spécifique */}
-            <div className="flex items-center gap-2">
-                <span className="text-sm text-gray-600">Aller à:</span>
-                <Input
-                    type="number"
-                    min={1}
-                    max={totalPages}
-                    value={currentPage}
-                    onChange={(e) => {
-                        const page = parseInt(e.target.value);
-                        if (page >= 1 && page <= totalPages) {
-                            onPageChange(page);
-                        }
-                    }}
-                    className="w-16"
+                <span className="text-sm text-[#6b625c]">Par page</span>
+                <Select
+                    value={itemsPerPage.toString()}
+                    onValueChange={(value) => onItemsPerPageChange(parseInt(value))}
                     disabled={isLoading}
-                />
-                <span className="text-sm text-gray-600">/ {totalPages}</span>
+                >
+                    <SelectTrigger className="h-8 w-20 rounded-full">
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {pageSizes.map((n) => (
+                            <SelectItem key={n} value={String(n)}>{n}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
         </div>
     );
-} 
+}

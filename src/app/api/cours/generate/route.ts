@@ -12,41 +12,41 @@ const MAX_TEXT_LENGTH = 100_000;
 
 export const maxDuration = 120;
 
-const SYSTEM_PROMPT = `Tu es un assistant pédagogique expert en structuration de cours. À partir du contenu textuel d'un PDF de cours, tu dois structurer le contenu en sections et leçons.
+// MaitreRenard AI ne RÉÉCRIT pas : il découpe, encadre et corrige les fautes.
+// Le texte appartient au rédacteur (guide des rédacteurs : « chacun écrit à sa manière »).
+const SYSTEM_PROMPT = `Tu mets en forme un cours déjà écrit par un rédacteur bénévole. Le texte t'est donné tel qu'il a été extrait d'un PDF. Ton travail : le DÉCOUPER en sections et leçons, le mettre en HTML, et CORRIGER LES FAUTES. Rien d'autre.
 
-RÈGLES STRICTES :
-- Conserve le style d'écriture ORIGINAL du PDF tel quel
-- Ne résume JAMAIS le contenu, conserve-le en INTÉGRALITÉ
-- Chaque section représente un chapitre ou thème majeur
-- Chaque leçon représente un sous-chapitre ou concept distinct
-- Le contenu de chaque leçon doit être en HTML riche (pas du Markdown)
-- Organise logiquement du plus simple au plus complexe
-- Conserve les listes, tableaux, définitions et exemples du document original
-- Si le PDF contient des titres ou chapitres, utilise-les comme titres de sections/leçons
+RÈGLE N°1 — LE TEXTE EST RECOPIÉ MOT POUR MOT
+- Recopie TOUT le texte, phrase par phrase, dans l'ordre du document.
+- INTERDIT : reformuler, résumer, raccourcir, développer, simplifier, changer un mot par un synonyme, changer le ton, fusionner ou réordonner des phrases.
+- INTERDIT : ajouter du contenu (introduction, transition, conclusion, exemple, explication, titre de bloc, emoji) qui n'est pas dans le document.
+- INTERDIT : supprimer un passage du cours, même s'il te semble inutile ou répétitif.
 
-FORMAT DU CONTENU HTML :
-- Utilise des balises HTML : <h2>, <h3>, <p>, <strong>, <em>, <ul>, <li>, <ol>, <table>, <tr>, <td>, <th>
-- Pour les formules LaTeX inline : $formule$
-- Pour les formules LaTeX en bloc : $$formule$$
-- Pour mettre du texte en couleur : <span style="color: #couleur">texte</span>
-- Couleurs recommandées : #e74c3c (rouge), #2980b9 (bleu), #27ae60 (vert), #f39c12 (orange), #8e44ad (violet)
+RÈGLE N°2 — TU CORRIGES UNIQUEMENT LES FAUTES
+- Autorisé : orthographe, accords, conjugaison, accents, majuscules, ponctuation, espaces (ex. espace avant « : » ou « ? »), apostrophes.
+- Autorisé : réparer les défauts de l'extraction PDF — mots coupés en fin de ligne (« fonc- tion » → « fonction »), lignes cassées au milieu d'une phrase, espaces en trop.
+- Autorisé : retirer ce qui n'appartient pas au cours — numéros de page, en-têtes et pieds de page répétés.
+- Une phrase juste mais maladroite reste TELLE QUELLE. En cas de doute, ne change rien.
+- Ne touche jamais aux formules, aux nombres, aux noms propres ni aux termes techniques, sauf faute d'orthographe évidente.
 
-BLOCS PÉDAGOGIQUES OBLIGATOIRES - Utilise ces blocs pour structurer le contenu :
-- Définition : <div data-custom-block blocktype="definition"><strong>Titre de la définition</strong><p>Contenu...</p></div>
-- Propriété : <div data-custom-block blocktype="propriete"><strong>Titre de la propriété</strong><p>Contenu...</p></div>
-- Théorème : <div data-custom-block blocktype="theoreme"><strong>Titre du théorème</strong><p>Contenu...</p></div>
-- Exemple : <div data-custom-block blocktype="exemple"><strong>Titre de l'exemple</strong><p>Contenu...</p></div>
-- Remarque : <div data-custom-block blocktype="remarque"><strong>Titre de la remarque</strong><p>Contenu...</p></div>
-- Attention : <div data-custom-block blocktype="attention"><strong>Point d'attention</strong><p>Contenu...</p></div>
+RÈGLE N°3 — LE DÉCOUPAGE SUIT LE DOCUMENT
+- Les titres du document deviennent les titres de sections (chapitres) et de leçons (sous-parties), avec leurs mots à eux (fautes corrigées).
+- Sans titre dans le document : tu peux donner à une section ou une leçon un titre court fait de mots présents dans le texte. C'est la SEULE chose que tu peux écrire toi-même.
+- Retire les numéros en tête de titre (« Chapitre 1 : », « I. », « A. ») : le site numérote déjà.
 
-UTILISATION DES BLOCS :
-- Les définitions mathématiques/scientifiques → bloc "definition"
-- Les propriétés, formules, règles → bloc "propriete"
-- Les théorèmes, lois, principes → bloc "theoreme"
-- Les exemples d'application, exercices résolus → bloc "exemple"
-- Les remarques, astuces, compléments → bloc "remarque"
-- Les erreurs fréquentes, pièges, mises en garde → bloc "attention"
-- Le texte explicatif normal reste en <p> ou <h2>/<h3> sans bloc
+FORMAT DU CONTENU HTML
+- Balises autorisées : <h2>, <h3>, <p>, <strong>, <em>, <ul>, <ol>, <li>, <table>, <tr>, <th>, <td>.
+- Garde le gras et l'italique là où le document les met ; n'en ajoute pas.
+- Formules : $formule$ dans le texte, $$formule$$ seule sur sa ligne. Retranscris-les fidèlement en LaTeX.
+- N'ajoute AUCUNE couleur ni style.
+
+BLOCS PÉDAGOGIQUES — ils ENCADRENT un passage existant, ils n'en créent pas
+- Un passage que le document présente lui-même comme une définition, une propriété, un théorème, un exemple, une remarque ou une mise en garde est placé dans le bloc correspondant :
+  <div data-custom-block blocktype="definition"><p>…texte du document…</p></div>
+  Types : definition, propriete, theoreme, exemple, remarque, attention.
+- Le mot annonçant le bloc (« Définition : », « Exemple : »…) est retiré du texte : le bloc l'affiche déjà.
+- Si le document donne un titre au passage (« Théorème de Pythagore »), mets-le en premier : <div data-custom-block blocktype="theoreme"><p><strong>Théorème de Pythagore</strong></p><p>…</p></div>. Sinon, pas de titre.
+- Le reste du texte reste en <p>, <h2>, <h3>, sans bloc. N'invente pas de bloc pour « décorer ».
 
 IMPORTANT SUR LE FORMAT JSON :
 - Les guillemets dans le contenu HTML doivent être échappés avec \\"
@@ -62,7 +62,7 @@ Retourne UNIQUEMENT un JSON valide avec cette structure exacte, sans texte avant
       "lessons": [
         {
           "title": "Titre de la leçon",
-          "content": "Contenu HTML complet de la leçon avec les blocs pédagogiques...",
+          "content": "Texte INTÉGRAL de la leçon en HTML, recopié mot pour mot (fautes corrigées)",
           "order": 1
         }
       ]
@@ -110,6 +110,42 @@ RÈGLES STRICTES :
 
 Retourne UNIQUEMENT un JSON valide, sans texte avant ou après :
 {"quizzes":[{"sectionIndex":0,"title":"Quiz — [Titre section]","description":"Description courte","questions":[...]}]}`;
+
+/**
+ * Contrôle de fidélité : l'IA doit recopier le texte (fautes corrigées), pas le
+ * réécrire. On compare les mots du PDF et ceux du brouillon :
+ * - `kept`  : part des mots du PDF retrouvés dans le brouillon (bas = résumé, coupe) ;
+ * - `added` : part des mots du brouillon absents du PDF (haut = réécriture, ajout).
+ * Une correction d'orthographe ne change qu'un mot par-ci par-là : elle reste sous les seuils.
+ */
+function fidelity(source: string, sections: any[]) {
+    const words = (text: string) =>
+        text
+            .normalize("NFD")
+            .replace(/[̀-ͯ]/g, "")
+            .toLowerCase()
+            .match(/[a-z]{3,}/g) || [];
+    const count = (list: string[]) => {
+        const m = new Map<string, number>();
+        for (const w of list) m.set(w, (m.get(w) || 0) + 1);
+        return m;
+    };
+    // Seul le contenu des leçons compte : les titres peuvent être créés quand le PDF n'en a pas
+    const output = sections
+        .flatMap((s: any) => (s.lessons || []).map((l: any) => l.content || ""))
+        .join(" ")
+        .replace(/<[^>]*>/g, " ");
+    const src = count(words(source));
+    const out = count(words(output));
+    let common = 0;
+    for (const [w, n] of src) common += Math.min(n, out.get(w) || 0);
+    const srcTotal = [...src.values()].reduce((a, b) => a + b, 0) || 1;
+    const outTotal = [...out.values()].reduce((a, b) => a + b, 0) || 1;
+    return {
+        kept: Math.round((common / srcTotal) * 100),
+        added: Math.round(((outTotal - common) / outTotal) * 100),
+    };
+}
 
 export async function POST(req: NextRequest) {
     // --- Étape 1 : Authentification AVANT le stream SSE ---
@@ -253,7 +289,8 @@ export async function POST(req: NextRequest) {
                     return;
                 }
 
-                if (extractedText.length > MAX_TEXT_LENGTH) {
+                const truncated = extractedText.length > MAX_TEXT_LENGTH;
+                if (truncated) {
                     extractedText = extractedText.slice(0, MAX_TEXT_LENGTH);
                 }
 
@@ -267,7 +304,7 @@ export async function POST(req: NextRequest) {
 
                 const userMessage = `Voici le contenu extrait d'un PDF de cours intitulé "${title}" (matière : ${matiere}, niveau : ${niveau}).
 
-Structure ce contenu en sections et leçons en conservant le style d'écriture original :
+Découpe-le en sections et leçons et corrige uniquement les fautes. Recopie tout le texte mot pour mot : ne reformule rien, n'ajoute rien, ne résume rien.
 
 ---
 ${extractedText}
@@ -277,7 +314,8 @@ ${extractedText}
                     { role: "system", content: SYSTEM_PROMPT },
                     { role: "user", content: userMessage },
                 ], {
-                    temperature: 0.2,
+                    // Température nulle : on veut une copie fidèle, pas de créativité
+                    temperature: 0,
                     max_tokens: 32000,
                 });
 
@@ -397,7 +435,9 @@ Génère ${parsed.sections.length} quiz (un par section) en utilisant UNIQUEMENT
                     pdfInfo: {
                         pages: numPages,
                         textLength: extractedText.length,
+                        truncated,
                     },
+                    fidelity: fidelity(extractedText, parsed.sections),
                 });
 
                 closeStream();

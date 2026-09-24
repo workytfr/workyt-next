@@ -15,7 +15,7 @@ import {
   ExternalLink,
   Layers,
   FileText,
-  Sparkles,
+  Upload,
   Loader2,
   BadgeCheck,
 } from "lucide-react";
@@ -239,7 +239,7 @@ export default function CoursesPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
       </div>
     );
   }
@@ -263,11 +263,11 @@ export default function CoursesPage() {
             <span className="hidden sm:inline">Audit SEO</span>
           </Link>
           <Link
-            href="/cours/generer"
+            href="/dashboard/cours/importer"
             className="dash-button dash-button-secondary"
           >
-            <Sparkles className="w-4 h-4" />
-            <span className="hidden sm:inline">Générer avec MaitreRenardAI</span>
+            <Upload className="w-4 h-4" />
+            <span className="hidden sm:inline">Importer un cours</span>
           </Link>
           <Link href="/dashboard/cours/nouveau" className="dash-button dash-button-primary">
             <Plus className="w-4 h-4" />
@@ -280,7 +280,7 @@ export default function CoursesPage() {
       <div className="flex flex-col sm:flex-row gap-4">
         {/* Recherche */}
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9ca3af]" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#97938e]" />
           <input
             type="text"
             placeholder="Rechercher un cours..."
@@ -295,21 +295,21 @@ export default function CoursesPage() {
           <button
             onClick={() => setShowFilters(!showFilters)}
             className={`dash-button dash-button-secondary ${
-              showFilters ? "bg-[#fff7ed] text-[#f97316]" : ""
+              showFilters ? "bg-[#fff4ec] text-[#ff6a1a]" : ""
             }`}
           >
             <Filter className="w-4 h-4" />
             Filtres
           </button>
 
-          <div className="h-6 w-px bg-[#e3e2e0] mx-2" />
+          <div className="h-6 w-px bg-[#e6e0d6] mx-2" />
 
           <button
             onClick={() => setViewMode("grid")}
             className={`p-2 rounded-lg transition-colors ${
               viewMode === "grid"
-                ? "bg-[#fff7ed] text-[#f97316]"
-                : "text-[#6b6b6b] hover:bg-[#f7f6f3]"
+                ? "bg-[#fff4ec] text-[#ff6a1a]"
+                : "text-[#6b625c] hover:bg-[#f5efe3]"
             }`}
           >
             <Grid3X3 className="w-5 h-5" />
@@ -318,8 +318,8 @@ export default function CoursesPage() {
             onClick={() => setViewMode("list")}
             className={`p-2 rounded-lg transition-colors ${
               viewMode === "list"
-                ? "bg-[#fff7ed] text-[#f97316]"
-                : "text-[#6b6b6b] hover:bg-[#f7f6f3]"
+                ? "bg-[#fff4ec] text-[#ff6a1a]"
+                : "text-[#6b625c] hover:bg-[#f5efe3]"
             }`}
           >
             <List className="w-5 h-5" />
@@ -329,7 +329,7 @@ export default function CoursesPage() {
 
       {/* Filtres avancés */}
       {showFilters && (
-        <div className="p-4 bg-[#f7f6f3] rounded-xl space-y-4">
+        <div className="p-4 bg-[#f5efe3] rounded-xl space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
               <label className="dash-label text-sm">Statut</label>
@@ -387,7 +387,7 @@ export default function CoursesPage() {
               onClick={() =>
                 setFilters({ ...filters, status: "", niveau: "", matiere: "" })
               }
-              className="text-sm text-[#f97316] hover:text-[#ea580c]"
+              className="text-sm text-[#ff6a1a] hover:text-[#c24a0a]"
             >
               Réinitialiser les filtres
             </button>
@@ -397,7 +397,7 @@ export default function CoursesPage() {
 
       {/* Liste des cours */}
       {filteredCourses.length === 0 ? (
-        <div className="dash-empty border-2 border-dashed border-[#e3e2e0] rounded-xl">
+        <div className="dash-empty border-2 border-dashed border-[#e6e0d6] rounded-xl">
           <div className="dash-empty-icon">
             <BookOpen className="w-8 h-8" />
           </div>
@@ -481,10 +481,10 @@ export default function CoursesPage() {
               </div>
 
               {/* Actions */}
-              <div className="p-4 border-t border-[#e3e2e0] space-y-2">
+              <div className="p-4 border-t border-[#e6e0d6] space-y-2">
                 {/* Correcteur ayant vérifié le cours */}
                 {course.verifiedBy && (
-                  <div className="flex items-center gap-1.5 text-sm text-[#6b6b6b]">
+                  <div className="flex items-center gap-1.5 text-sm text-[#6b625c]">
                     <BadgeCheck className="w-4 h-4 text-emerald-500" />
                     Vérifié par {course.verifiedBy.name || course.verifiedBy.username}
                   </div>
@@ -564,7 +564,7 @@ export default function CoursesPage() {
                 <tr key={course._id}>
                   <td>
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-[#f7f6f3] rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-12 h-12 bg-[#f5efe3] rounded-lg flex items-center justify-center flex-shrink-0">
                         {course.image ? (
                           <Image
                             src={course.image}
@@ -579,10 +579,10 @@ export default function CoursesPage() {
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-[#37352f]">
+                        <p className="font-medium text-[#1a1512]">
                           {course.title}
                         </p>
-                        <p className="text-sm text-[#9ca3af]">
+                        <p className="text-sm text-[#97938e]">
                           {course.authors?.[0]?.name || "Workyt"}
                         </p>
                       </div>
@@ -597,7 +597,7 @@ export default function CoursesPage() {
                     </div>
                   </td>
                   <td>
-                    <div className="text-sm text-[#6b6b6b]">
+                    <div className="text-sm text-[#6b625c]">
                       <div className="flex items-center gap-1">
                         <Layers className="w-4 h-4" />
                         {course.sections?.length || 0} sections
@@ -624,7 +624,7 @@ export default function CoursesPage() {
                       </span>
                     )}
                     {course.verifiedBy && (
-                      <div className="flex items-center gap-1 text-xs text-[#6b6b6b] mt-1">
+                      <div className="flex items-center gap-1 text-xs text-[#6b625c] mt-1">
                         <BadgeCheck className="w-3.5 h-3.5 text-emerald-500" />
                         {course.verifiedBy.name || course.verifiedBy.username}
                       </div>
@@ -643,18 +643,18 @@ export default function CoursesPage() {
                       )}
                       <Link
                         href={`/dashboard/cours/${course._id}/gestion`}
-                        className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors"
+                        className="p-2 hover:bg-[#f5efe3] rounded-lg transition-colors"
                         title="Gérer"
                       >
-                        <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
+                        <Edit2 className="w-4 h-4 text-[#6b625c]" />
                       </Link>
                       <Link
                         href={`/cours/${course._id}`}
                         target="_blank"
-                        className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors"
+                        className="p-2 hover:bg-[#f5efe3] rounded-lg transition-colors"
                         title={course.status === "publie" ? "Voir le cours" : "Prévisualiser (non publié)"}
                       >
-                        <ExternalLink className="w-4 h-4 text-[#6b6b6b]" />
+                        <ExternalLink className="w-4 h-4 text-[#6b625c]" />
                       </Link>
                       {session?.user?.role === "Admin" && (
                         <button

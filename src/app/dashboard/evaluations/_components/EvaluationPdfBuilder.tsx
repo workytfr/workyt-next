@@ -105,7 +105,7 @@ const TEXTBOOK_CSS = `
 .eval-content li { margin-bottom: 3px; }
 .eval-content strong { font-weight: 700; }
 .eval-content img { max-width: 100%; border-radius: 6px; margin: 6px 0; }
-.eval-content blockquote { border-left: 3px solid ${BRAND_ORANGE}; background: #fff7ed; padding: 6px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; }
+.eval-content blockquote { border-left: 3px solid ${BRAND_ORANGE}; background: #fff4ec; padding: 6px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; }
 .eval-content code { background: #fff3e6; padding: 1px 5px; border-radius: 4px; font-size: .92em; }
 .eval-content .katex { font-size: 1.04em; }
 .eval-lines { margin-top: 12px; }
@@ -113,7 +113,7 @@ const TEXTBOOK_CSS = `
 .eval-line:first-child { border-top: 1px solid #e7e3de; }
 .foxy-note {
     display: flex; align-items: center; gap: 12px;
-    background: #fff7ed; border: 1px solid #ffe0c2; border-radius: 12px;
+    background: #fff4ec; border: 1px solid #ffe0c2; border-radius: 12px;
     padding: 9px 13px; margin: 10px 0;
 }
 .foxy-note-global { margin: 0 4px 16px; }
@@ -458,12 +458,12 @@ export default function EvaluationPdfBuilder({
                 {/* Header */}
                 <div className="flex items-center justify-between border-b border-gray-100 px-5 py-3">
                     <div className="flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-[#f97316]" />
+                        <FileText className="h-5 w-5 text-[#ff6a1a]" />
                         <input
                             value={docTitle}
                             onChange={(e) => setDocTitle(e.target.value)}
                             placeholder="Titre de l'évaluation"
-                            className="w-72 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold focus:border-[#f97316] focus:outline-none"
+                            className="w-72 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-semibold focus:border-[#ff6a1a] focus:outline-none"
                         />
                         <span className={`text-xs font-semibold ${totalPoints === 20 ? "text-emerald-600" : "text-amber-600"}`}>
                             {exos.length} exo{exos.length > 1 ? "s" : ""} · Barème : {totalPoints}/20{totalPoints !== 20 ? " ⚠️" : " ✓"}
@@ -493,11 +493,11 @@ export default function EvaluationPdfBuilder({
                                     key={e.id}
                                     onClick={() => setActiveId(e.id)}
                                     className={`mb-1.5 cursor-pointer rounded-lg border p-2 transition-colors ${
-                                        i === activeIndex ? "border-[#f97316] bg-white" : "border-transparent bg-white/70 hover:bg-white"
+                                        i === activeIndex ? "border-[#ff6a1a] bg-white" : "border-transparent bg-white/70 hover:bg-white"
                                     }`}
                                 >
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-semibold text-[#37352f]">Exo {i + 1}</span>
+                                        <span className="text-xs font-semibold text-[#1a1512]">Exo {i + 1}</span>
                                         <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cfg.color }} />
                                     </div>
                                     <div className="mt-1 flex items-center gap-1">
@@ -518,7 +518,7 @@ export default function EvaluationPdfBuilder({
                         })}
                         <button
                             onClick={addExo}
-                            className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 py-2 text-xs font-medium text-[#f97316] hover:border-[#f97316]"
+                            className="mt-1 flex w-full items-center justify-center gap-1 rounded-lg border border-dashed border-gray-300 py-2 text-xs font-medium text-[#ff6a1a] hover:border-[#ff6a1a]"
                         >
                             <Plus className="h-3.5 w-3.5" /> Ajouter
                         </button>
@@ -543,7 +543,7 @@ export default function EvaluationPdfBuilder({
                                 onChange={(e) => setEvalComment(e.target.value)}
                                 rows={2}
                                 placeholder="Ex : Bonne chance ! Lis bien chaque énoncé avant de te lancer 💪"
-                                className="w-full resize-y rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-sm focus:border-[#f97316] focus:outline-none"
+                                className="w-full resize-y rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-sm focus:border-[#ff6a1a] focus:outline-none"
                             />
                             <p className="mt-1 text-[10px] text-orange-700/70">Affiché en haut de la 1re page du PDF.</p>
                         </div>
@@ -562,7 +562,7 @@ export default function EvaluationPdfBuilder({
                                                         key={d}
                                                         onClick={() => patchActive({ difficulty: d })}
                                                         className="rounded-lg border px-2 py-1 text-[11px] font-medium"
-                                                        style={on ? { backgroundColor: cfg.color, borderColor: cfg.color, color: "#fff" } : { backgroundColor: cfg.bg, borderColor: "#e3e2e0", color: cfg.color }}
+                                                        style={on ? { backgroundColor: cfg.color, borderColor: cfg.color, color: "#fff" } : { backgroundColor: cfg.bg, borderColor: "#e6e0d6", color: cfg.color }}
                                                     >
                                                         {d}
                                                     </button>
@@ -576,7 +576,7 @@ export default function EvaluationPdfBuilder({
                                             type="number" min={0} max={100}
                                             value={active.points}
                                             onChange={(e) => patchActive({ points: Math.max(0, Math.min(100, parseInt(e.target.value) || 0)) })}
-                                            className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-[#f97316] focus:outline-none"
+                                            className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-[#ff6a1a] focus:outline-none"
                                         />
                                     </div>
                                     <div>
@@ -585,7 +585,7 @@ export default function EvaluationPdfBuilder({
                                             type="number" min={0} max={40}
                                             value={active.answerLines}
                                             onChange={(e) => patchActive({ answerLines: Math.max(0, Math.min(40, parseInt(e.target.value) || 0)) })}
-                                            className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-[#f97316] focus:outline-none"
+                                            className="w-full rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-[#ff6a1a] focus:outline-none"
                                         />
                                         <p className="mt-0.5 text-[10px] text-gray-400">Espace blanc pour la réponse de l&apos;élève</p>
                                     </div>
@@ -615,7 +615,7 @@ export default function EvaluationPdfBuilder({
                                         onChange={(e) => patchActive({ comment: e.target.value })}
                                         rows={2}
                                         placeholder="Ex : Pense à justifier chaque étape 😉"
-                                        className="w-full resize-y rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-sm focus:border-[#f97316] focus:outline-none"
+                                        className="w-full resize-y rounded-lg border border-orange-200 bg-white px-3 py-1.5 text-sm focus:border-[#ff6a1a] focus:outline-none"
                                     />
                                 </div>
                             </>

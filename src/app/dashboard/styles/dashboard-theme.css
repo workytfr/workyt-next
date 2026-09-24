@@ -1,46 +1,58 @@
 /* ==========================================
-   DASHBOARD THEME - Design Notion-like
-   Moderne, épuré, cohérent avec la partie cours
+   DASHBOARD THEME — « Encre »
+   Couleurs de la charte (docs/charte-graphique) : le site public est papier,
+   le tableau de bord garde le papier au centre mais s'encadre d'encre. On sait
+   au premier coup d'œil qu'on est en coulisses, sans sortir de la charte.
    ========================================== */
 
 /* Variables CSS du thème Dashboard */
 :root {
-  /* Couleurs de base */
-  --dash-bg: #ffffff;
-  --dash-bg-secondary: #f7f6f3;
-  --dash-bg-hover: #f1f1ef;
+  /* Couleurs de base — cartes blanches posées sur le papier */
+  --dash-paper: #fdfaf4;          /* --wk-paper : fond des pages */
+  --dash-bg: #ffffff;             /* cartes, champs, conteneurs */
+  --dash-bg-secondary: #f5efe3;   /* --wk-paper-2 : pastilles, zones calmes */
+  --dash-bg-hover: #f0e9dc;
   --dash-bg-elevated: #ffffff;
-  
-  /* Texte */
-  --dash-text: #37352f;
-  --dash-text-secondary: #6b6b6b;
-  --dash-text-tertiary: #9ca3af;
-  --dash-text-muted: #bfbfbf;
-  
-  /* Bordures */
-  --dash-border: #e3e2e0;
-  --dash-border-light: #f1f1ef;
-  --dash-border-hover: #d1d1d1;
-  
-  /* Accents - Orange Workyt */
-  --dash-accent: #f97316;
-  --dash-accent-light: #fff7ed;
-  --dash-accent-hover: #ea580c;
-  
-  /* Status colors */
-  --dash-success: #10b981;
+
+  /* Texte — encre en transparence */
+  --dash-text: #1a1512;           /* encre */
+  --dash-text-secondary: #6b625c; /* encre 62 % */
+  --dash-text-tertiary: #97938e;  /* encre 45 % */
+  --dash-text-muted: #c9c3bb;
+
+  /* Bordures — encre 8 à 14 % */
+  --dash-border: #e6e0d6;
+  --dash-border-light: #f0e9dc;
+  --dash-border-hover: #d6cec2;
+
+  /* Accents — Orange Workyt */
+  --dash-accent: #ff6a1a;
+  --dash-accent-light: #fff4ec;
+  --dash-accent-hover: #c24a0a;   /* orange foncé : texte orange lisible */
+
+  /* Cadre encre (barre latérale) */
+  --dash-ink: #1a1512;
+  --dash-ink-2: #2a231e;
+  --dash-on-ink: #fdfaf4;
+  --dash-on-ink-secondary: rgba(253, 250, 244, 0.68);
+  --dash-on-ink-tertiary: rgba(253, 250, 244, 0.42);
+  --dash-on-ink-border: rgba(253, 250, 244, 0.1);
+
+  /* Statuts (charte) */
+  --dash-success: #065f46;
   --dash-success-light: #ecfdf5;
-  --dash-warning: #f59e0b;
-  --dash-warning-light: #fffbeb;
-  --dash-info: #3b82f6;
-  --dash-info-light: #eff6ff;
-  --dash-danger: #ef4444;
-  --dash-danger-light: #fef2f2;
-  
-  /* Typographie */
-  --dash-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-  --dash-font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
-  
+  --dash-warning: #9a5d00;
+  --dash-warning-light: #fff4e0;
+  --dash-info: #2f86b3;
+  --dash-info-light: #eaf6fb;
+  --dash-danger: #c2272d;
+  --dash-danger-light: #fdecec;
+
+  /* Typographie — Funnel Display pour les titres, Montserrat pour le reste */
+  --dash-font: var(--font-montserrat), system-ui, sans-serif;
+  --dash-font-display: var(--font-funnel-display), system-ui, sans-serif;
+  --dash-font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
   /* Espacements */
   --dash-gap-xs: 0.25rem;
   --dash-gap-sm: 0.5rem;
@@ -49,18 +61,18 @@
   --dash-gap-xl: 1.5rem;
   --dash-gap-2xl: 2rem;
   --dash-gap-3xl: 3rem;
-  
+
   /* Rayons */
   --dash-radius-sm: 6px;
   --dash-radius-md: 10px;
   --dash-radius-lg: 16px;
   --dash-radius-xl: 24px;
-  
-  /* Ombres */
-  --dash-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.02);
-  --dash-shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
-  --dash-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.03), 0 4px 6px -4px rgba(0, 0, 0, 0.03);
-  
+
+  /* Ombres — teintées encre, jamais noires */
+  --dash-shadow-sm: 0 1px 2px rgba(26, 21, 18, 0.04);
+  --dash-shadow-md: 0 4px 10px -2px rgba(26, 21, 18, 0.06), 0 2px 4px -2px rgba(26, 21, 18, 0.04);
+  --dash-shadow-lg: 0 12px 24px -6px rgba(26, 21, 18, 0.1), 0 4px 8px -4px rgba(26, 21, 18, 0.05);
+
   /* Transitions */
   --dash-transition: all 0.15s ease-in-out;
 }
@@ -71,10 +83,19 @@
 
 .dash-layout {
   min-height: 100vh;
-  background: var(--dash-bg);
+  background: var(--dash-paper);
   color: var(--dash-text);
   font-family: var(--dash-font);
   line-height: 1.6;
+}
+
+.dash-layout h1,
+.dash-layout h2,
+.dash-main-title,
+.dash-header-title {
+  font-family: var(--dash-font-display);
+  font-weight: 500;
+  letter-spacing: -0.01em;
 }
 
 .dash-container {
@@ -84,13 +105,14 @@
 }
 
 /* ==========================================
-   SIDEBAR
+   SIDEBAR — cadre encre
    ========================================== */
 
 .dash-sidebar {
   width: 260px;
-  background: var(--dash-bg-secondary);
-  border-right: 1px solid var(--dash-border);
+  background: var(--dash-ink);
+  color: var(--dash-on-ink);
+  border-right: 1px solid var(--dash-ink);
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -104,7 +126,7 @@
 
 .dash-sidebar-header {
   padding: var(--dash-gap-lg) var(--dash-gap-xl);
-  border-bottom: 1px solid var(--dash-border);
+  border-bottom: 1px solid var(--dash-on-ink-border);
   display: flex;
   align-items: center;
   gap: var(--dash-gap-md);
@@ -124,9 +146,21 @@
 }
 
 .dash-sidebar-title {
-  font-size: 1rem;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  font-family: var(--dash-font-display);
+  font-size: 1.125rem;
+  color: var(--dash-on-ink);
+}
+
+.dash-sidebar-title small {
+  font-family: var(--dash-font);
+  font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--dash-text);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--dash-accent);
 }
 
 .dash-sidebar-nav {
@@ -139,11 +173,11 @@
 }
 
 .dash-sidebar-section-title {
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 600;
-  color: var(--dash-text-tertiary);
+  color: var(--dash-on-ink-tertiary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   padding: 0 var(--dash-gap-xl);
   margin-bottom: var(--dash-gap-sm);
 }
@@ -154,23 +188,22 @@
   gap: var(--dash-gap-md);
   padding: 0.625rem var(--dash-gap-xl);
   font-size: 0.9375rem;
-  color: var(--dash-text-secondary);
+  color: var(--dash-on-ink-secondary);
   cursor: pointer;
   transition: var(--dash-transition);
-  border-radius: 0;
   margin: 0 var(--dash-gap-sm);
-  border-radius: var(--dash-radius-md);
+  border-radius: 999px;
 }
 
 .dash-sidebar-item:hover {
-  background: var(--dash-bg-hover);
-  color: var(--dash-text);
+  background: rgba(253, 250, 244, 0.07);
+  color: var(--dash-on-ink);
 }
 
 .dash-sidebar-item.active {
-  background: var(--dash-bg-hover);
-  color: var(--dash-text);
-  font-weight: 500;
+  background: rgba(255, 106, 26, 0.16);
+  color: var(--dash-on-ink);
+  font-weight: 600;
 }
 
 .dash-sidebar-item.active .dash-sidebar-icon {
@@ -185,7 +218,12 @@
 
 .dash-sidebar-footer {
   padding: var(--dash-gap-md) var(--dash-gap-xl);
-  border-top: 1px solid var(--dash-border);
+  border-top: 1px solid var(--dash-on-ink-border);
+}
+
+.dash-sidebar .dash-scrollbar::-webkit-scrollbar-thumb,
+.dash-sidebar.dash-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(253, 250, 244, 0.18);
 }
 
 /* ==========================================
@@ -194,7 +232,8 @@
 
 .dash-header {
   height: 64px;
-  background: var(--dash-bg);
+  background: rgba(253, 250, 244, 0.9);
+  backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--dash-border);
   display: flex;
   align-items: center;
@@ -213,7 +252,6 @@
 
 .dash-header-title {
   font-size: 1.25rem;
-  font-weight: 600;
   color: var(--dash-text);
 }
 
@@ -232,8 +270,8 @@
   padding: 0.5rem 1rem 0.5rem 2.5rem;
   font-size: 0.9375rem;
   border: 1px solid var(--dash-border);
-  border-radius: 20px;
-  background: var(--dash-bg-secondary);
+  border-radius: 999px;
+  background: var(--dash-bg);
   color: var(--dash-text);
   transition: var(--dash-transition);
 }
@@ -241,8 +279,7 @@
 .dash-header-search input:focus {
   outline: none;
   border-color: var(--dash-accent);
-  background: var(--dash-bg);
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  box-shadow: 0 0 0 3px rgba(255, 106, 26, 0.14);
 }
 
 .dash-header-search-icon {
@@ -260,7 +297,7 @@
 .dash-main {
   margin-left: 260px;
   min-height: calc(100vh - 64px);
-  background: var(--dash-bg);
+  background: var(--dash-paper);
   padding: var(--dash-gap-2xl);
 }
 
@@ -270,9 +307,7 @@
 
 .dash-main-title {
   font-size: 1.875rem;
-  font-weight: 700;
   color: var(--dash-text);
-  letter-spacing: -0.02em;
   margin-bottom: var(--dash-gap-sm);
 }
 
@@ -437,7 +472,7 @@
 .dash-badge-primary {
   background: var(--dash-accent-light);
   color: var(--dash-accent);
-  border-color: rgba(249, 115, 22, 0.2);
+  border-color: rgba(255, 106, 26, 0.2);
 }
 
 .dash-badge-success {
@@ -540,7 +575,7 @@
 .dash-input:focus {
   outline: none;
   border-color: var(--dash-accent);
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  box-shadow: 0 0 0 3px rgba(255, 106, 26, 0.1);
 }
 
 .dash-input::placeholder {
@@ -1016,7 +1051,7 @@
   outline: none;
   border-color: var(--dash-accent);
   background: var(--dash-bg);
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+  box-shadow: 0 0 0 3px rgba(255, 106, 26, 0.1);
 }
 
 .dash-hierarchy-search-input::placeholder {
@@ -1197,3 +1232,187 @@
     display: none;
   }
 }
+
+/* ==========================================
+   SIDEBAR — groupes repliables et barre « icônes seules »
+   ========================================== */
+
+.dash-sidebar,
+.dash-main {
+  transition: width 0.2s ease, margin-left 0.2s ease;
+}
+
+.dash-sidebar-group-toggle {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+}
+.dash-sidebar-group-toggle:hover:not(:disabled) {
+  color: var(--dash-on-ink);
+}
+.dash-sidebar-group-toggle:disabled {
+  cursor: default;
+}
+
+.dash-sidebar-collapse {
+  display: none;
+  margin-left: auto;
+  padding: 0.375rem;
+  border-radius: 999px;
+  color: var(--dash-on-ink-tertiary);
+  transition: var(--dash-transition);
+}
+.dash-sidebar-collapse:hover {
+  color: var(--dash-on-ink);
+  background: rgba(253, 250, 244, 0.07);
+}
+
+/* Le repli n'existe que sur grand écran ; sur mobile la barre est un tiroir */
+@media (min-width: 1025px) {
+  .dash-sidebar-collapse {
+    display: inline-flex;
+  }
+
+  html[data-dash-sidebar="collapsed"] .dash-main {
+    margin-left: 72px;
+  }
+
+  .dash-sidebar.is-collapsed {
+    width: 72px;
+  }
+  .dash-sidebar.is-collapsed .dash-sidebar-header {
+    flex-direction: column;
+    padding: var(--dash-gap-lg) 0;
+  }
+  .dash-sidebar.is-collapsed .dash-sidebar-collapse {
+    margin-left: 0;
+  }
+  .dash-sidebar.is-collapsed .dash-sidebar-title,
+  .dash-sidebar.is-collapsed .dash-sidebar-label,
+  .dash-sidebar.is-collapsed .dash-sidebar-group-toggle {
+    display: none;
+  }
+  /* Sans titres de groupes, un simple filet sépare les groupes */
+  .dash-sidebar.is-collapsed .dash-sidebar-section + .dash-sidebar-section {
+    border-top: 1px solid var(--dash-on-ink-border);
+    padding-top: var(--dash-gap-md);
+  }
+  .dash-sidebar.is-collapsed .dash-sidebar-item {
+    justify-content: center;
+    padding: 0.625rem 0;
+  }
+  .dash-sidebar.is-collapsed .dash-sidebar-footer {
+    display: flex;
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+  }
+}
+
+/* ==========================================
+   POPUPS DU TABLEAU DE BORD (Dialog, AlertDialog)
+   Carte blanche arrondie, en-tête papier, fond encre voilé.
+   Rendus dans un portail, hors de .dash-layout : d'où les classes dédiées.
+   ========================================== */
+
+.dash-dialog-overlay {
+  background: rgba(26, 21, 18, 0.55) !important;
+  backdrop-filter: blur(3px);
+}
+
+.dash-dialog {
+  font-family: var(--dash-font);
+  color: var(--dash-text);
+  background: #ffffff !important;
+  border: 1px solid rgba(26, 21, 18, 0.08) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 24px 48px -12px rgba(26, 21, 18, 0.28) !important;
+}
+
+/* En-tête : bande papier avec le titre en Funnel Display */
+.dash-dialog-header {
+  margin: -1rem -1rem 0;
+  padding: 1rem 3.5rem 1rem 1.5rem;
+  background: var(--dash-paper);
+  border-bottom: 1px solid var(--dash-border);
+  text-align: left;
+}
+@media (min-width: 640px) {
+  .dash-dialog-header {
+    margin: -1.5rem -1.5rem 0;
+  }
+}
+/* Popups « plein cadre » (p-0) : l'en-tête n'a pas de marge à compenser */
+.dash-dialog.p-0 .dash-dialog-header {
+  margin: 0;
+}
+
+.dash-dialog-header h2,
+.dash-dialog-title {
+  font-family: var(--dash-font-display);
+  font-size: 1.375rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--dash-text);
+}
+
+/* Bouton de fermeture : pastille ronde */
+.dash-dialog > button[type="button"].absolute {
+  top: 0.875rem;
+  right: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: #ffffff;
+  border: 1px solid var(--dash-border);
+  opacity: 1;
+  color: var(--dash-text-secondary);
+}
+.dash-dialog > button[type="button"].absolute:hover {
+  color: var(--dash-text);
+  border-color: var(--dash-border-hover);
+}
+
+/* ==========================================
+   IMPORT DE COURS — aperçu des leçons du brouillon
+   Mêmes repères que les blocs publiés (lesson-blocks.css) : carte blanche,
+   type en capitales dans la couleur du bloc. Pas de bordure latérale.
+   ========================================== */
+
+.wk-draft-preview div[data-custom-block] {
+  margin: 0.875rem 0;
+  padding: 0.75rem 1rem;
+  background: #ffffff;
+  border: 1px solid rgba(26, 21, 18, 0.1);
+  border-radius: 16px;
+}
+.wk-draft-preview div[data-custom-block]::before {
+  display: block;
+  margin-bottom: 0.25rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.wk-draft-preview div[data-custom-block] > :first-child { margin-top: 0; }
+.wk-draft-preview div[data-custom-block] > :last-child { margin-bottom: 0; }
+
+.wk-draft-preview div[blocktype="definition"]::before { content: "Définition"; color: #c24a0a; }
+.wk-draft-preview div[blocktype="propriete"]::before  { content: "Propriété";  color: #2f86b3; }
+.wk-draft-preview div[blocktype="theoreme"]::before   { content: "Théorème";   color: #1a1512; }
+.wk-draft-preview div[blocktype="exemple"]::before    { content: "Exemple";    color: #3f8a1f; }
+.wk-draft-preview div[blocktype="remarque"]::before   { content: "Remarque";   color: rgba(26, 21, 18, 0.6); }
+.wk-draft-preview div[blocktype="attention"]::before  { content: "Attention";  color: #c2272d; }
+.wk-draft-preview div[blocktype="attention"] { border-color: rgba(229, 72, 77, 0.35); }
+.wk-draft-preview div[blocktype="definition"] { background: #fffaf6; }

@@ -66,6 +66,7 @@ import AuthorReassign from "@/components/ui/AuthorReassign";
 import EditingPresenceBanner from "@/components/ui/EditingPresenceBanner";
 import MascotLoader from "@/components/ui/MascotLoader";
 import SeoScorePanel from "@/app/dashboard/_components/SeoScorePanel";
+import { useConfirm } from "@/app/dashboard/_components/useConfirm";
 import { getRoleIconPath } from "@/lib/roleIcon";
 import { educationData } from "@/data/educationData";
 import "../../../styles/dashboard-theme.css";
@@ -158,14 +159,14 @@ function SortableSection({
   return (
     <div ref={setNodeRef} style={style} className="dash-card">
       <div
-        className="dash-card-header bg-[#f7f6f3] cursor-pointer"
+        className="dash-card-header bg-[#f5efe3] cursor-pointer"
         onClick={onToggle}
       >
         <div className="flex items-center gap-3 flex-1">
           {isExpanded ? (
-            <ChevronDown className="w-5 h-5 text-[#6b6b6b]" />
+            <ChevronDown className="w-5 h-5 text-[#6b625c]" />
           ) : (
-            <ChevronRight className="w-5 h-5 text-[#6b6b6b]" />
+            <ChevronRight className="w-5 h-5 text-[#6b625c]" />
           )}
           <div
             {...attributes}
@@ -173,23 +174,23 @@ function SortableSection({
             className="cursor-grab active:cursor-grabbing"
             onClick={(e) => e.stopPropagation()}
           >
-            <GripVertical className="w-5 h-5 text-[#bfbfbf] hover:text-[#6b6b6b] transition-colors" />
+            <GripVertical className="w-5 h-5 text-[#c9c3bb] hover:text-[#6b625c] transition-colors" />
           </div>
-          <span className="w-8 h-8 bg-[#f97316] text-white rounded-lg flex items-center justify-center text-sm font-medium">
+          <span className="w-8 h-8 bg-[#1a1512] text-[#fdfaf4] rounded-xl flex items-center justify-center font-serif-display text-base">
             {index + 1}
           </span>
           <div className="flex-1">
-            <h3 className="font-semibold text-[#37352f]">{section.title}</h3>
+            <h3 className="font-semibold text-[#1a1512]">{section.title}</h3>
             <div className="flex items-center gap-1.5 mt-1 flex-wrap">
-              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#eff6ff] text-[#2563eb]">
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#eaf6fb] text-[#2f86b3]">
                 <FileText className="w-3 h-3" />
                 {lessons.length}
               </span>
-              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#fffbeb] text-[#d97706]">
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#fff4e0] text-[#9a5d00]">
                 <Trophy className="w-3 h-3" />
                 {(section.quizzes || []).length}
               </span>
-              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#ecfdf5] text-[#059669]">
+              <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#ecfdf5] text-[#3f8a1f]">
                 <Dumbbell className="w-3 h-3" />
                 {(section.exercises || []).length}
               </span>
@@ -205,17 +206,17 @@ function SortableSection({
             className="p-2 hover:bg-white rounded-lg transition-colors"
             title="Ajouter une leçon"
           >
-            <Plus className="w-4 h-4 text-[#6b6b6b]" />
+            <Plus className="w-4 h-4 text-[#6b625c]" />
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete();
             }}
-            className="p-2 hover:bg-red-50 rounded-lg transition-colors"
+            className="p-2 hover:bg-[#fdecec] rounded-lg transition-colors"
             title="Supprimer"
           >
-            <Trash2 className="w-4 h-4 text-red-500" />
+            <Trash2 className="w-4 h-4 text-[#c2272d]" />
           </button>
         </div>
       </div>
@@ -253,36 +254,36 @@ function SortableLesson({
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-3 border border-[#e3e2e0] rounded-lg group hover:border-[#f97316] transition-colors"
+      className="flex items-center gap-3 p-3 border border-[#e6e0d6] rounded-lg group hover:border-[#ff6a1a] transition-colors"
     >
       <div
         {...attributes}
         {...listeners}
         className="cursor-grab active:cursor-grabbing"
       >
-        <GripVertical className="w-4 h-4 text-[#bfbfbf] hover:text-[#6b6b6b] transition-colors" />
+        <GripVertical className="w-4 h-4 text-[#c9c3bb] hover:text-[#6b625c] transition-colors" />
       </div>
-      <span className="w-6 h-6 bg-[#f7f6f3] text-[#6b6b6b] rounded text-xs flex items-center justify-center">
+      <span className="w-6 h-6 bg-[#f5efe3] text-[#6b625c] rounded text-xs flex items-center justify-center">
         {index + 1}
       </span>
-      <FileText className="w-4 h-4 text-[#6b6b6b]" />
-      <span className="flex-1 text-[#37352f]">{lesson.title}</span>
+      <FileText className="w-4 h-4 text-[#6b625c]" />
+      <span className="flex-1 text-[#1a1512]">{lesson.title}</span>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         {adminSlot}
         <button
           onClick={onEdit}
-          className="p-1.5 hover:bg-[#f7f6f3] rounded"
+          className="p-1.5 hover:bg-[#f5efe3] rounded"
           title="Éditer"
         >
-          <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
+          <Edit2 className="w-4 h-4 text-[#6b625c]" />
         </button>
         {canDelete && (
           <button
             onClick={onDelete}
-            className="p-1.5 hover:bg-red-50 rounded"
+            className="p-1.5 hover:bg-[#fdecec] rounded"
             title="Supprimer"
           >
-            <Trash2 className="w-4 h-4 text-red-500" />
+            <Trash2 className="w-4 h-4 text-[#c2272d]" />
           </button>
         )}
       </div>
@@ -295,6 +296,7 @@ export default function CourseManagementPage() {
   const { id } = useParams();
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<Tab>("structure");
+  const { confirm, confirmDialog } = useConfirm();
   const [course, setCourse] = useState<Course | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [loading, setLoading] = useState(true);
@@ -515,7 +517,7 @@ export default function CourseManagementPage() {
 
   // Supprimer une section
   const deleteSection = async (sectionId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette section ?")) return;
+    if (!(await confirm({ title: "Supprimer cette section ?", description: "Ses leçons, quiz et exercices ne seront plus rattachés au cours.", confirmLabel: "Supprimer", danger: true }))) return;
 
     setOperationLoading(`deleteSection-${sectionId}`);
     try {
@@ -588,7 +590,7 @@ export default function CourseManagementPage() {
 
   // Supprimer une leçon
   const deleteLesson = async (lessonId: string, sectionId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cette leçon ?")) return;
+    if (!(await confirm({ title: "Supprimer cette leçon ?", description: "Cette action est définitive.", confirmLabel: "Supprimer", danger: true }))) return;
 
     setOperationLoading(`deleteLesson-${lessonId}`);
     try {
@@ -751,7 +753,7 @@ export default function CourseManagementPage() {
   };
 
   const deleteQuiz = async (quizId: string, sectionId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer ce quiz ?")) return;
+    if (!(await confirm({ title: "Supprimer ce quiz ?", description: "Ses questions seront supprimées avec lui.", confirmLabel: "Supprimer", danger: true }))) return;
     setOperationLoading(`deleteQuiz-${quizId}`);
     try {
       const res = await fetch(`/api/quizzes/${quizId}`, {
@@ -833,7 +835,7 @@ export default function CourseManagementPage() {
   };
 
   const deleteExercise = async (exerciseId: string, sectionId: string) => {
-    if (!confirm("Êtes-vous sûr de vouloir supprimer cet exercice ?")) return;
+    if (!(await confirm({ title: "Supprimer cet exercice ?", description: "Cette action est définitive.", confirmLabel: "Supprimer", danger: true }))) return;
     setOperationLoading(`deleteExercise-${exerciseId}`);
     try {
       const res = await fetch(`/api/exercises/${exerciseId}`, {
@@ -967,7 +969,7 @@ export default function CourseManagementPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
       </div>
     );
   }
@@ -975,8 +977,8 @@ export default function CourseManagementPage() {
   if (error && !course) {
     return (
       <div className="text-center py-12">
-        <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
-        <h2 className="text-lg font-semibold text-[#37352f]">
+        <AlertCircle className="w-12 h-12 mx-auto text-[#c2272d] mb-4" />
+        <h2 className="text-lg font-semibold text-[#1a1512]">
           {error || "Cours non trouvé"}
         </h2>
         <Link
@@ -1002,11 +1004,12 @@ export default function CourseManagementPage() {
   const totalExercises = sections.reduce((acc, s) => acc + (s.exercises?.length || 0), 0);
 
   const statCards = [
-    { label: "Sections", value: sections.length, icon: Layers, color: "#f97316", bg: "#fff7ed" },
-    { label: "Leçons", value: totalLessons, icon: FileText, color: "#2563eb", bg: "#eff6ff" },
-    { label: "Quiz", value: totalQuizzes, icon: Trophy, color: "#d97706", bg: "#fffbeb" },
-    { label: "Questions", value: totalQuestions, icon: HelpCircle, color: "#7c3aed", bg: "#f5f3ff" },
-    { label: "Exercices", value: totalExercises, icon: Dumbbell, color: "#059669", bg: "#ecfdf5" },
+    // Tuiles aux couleurs d'accent de la charte : orange, ciel, ambre, encre, pousse
+    { label: "Sections", value: sections.length, icon: Layers, tile: "#ff6a1a", ink: "#ffffff" },
+    { label: "Leçons", value: totalLessons, icon: FileText, tile: "#6ec1e4", ink: "#1a1512" },
+    { label: "Quiz", value: totalQuizzes, icon: Trophy, tile: "#ffb547", ink: "#1a1512" },
+    { label: "Questions", value: totalQuestions, icon: HelpCircle, tile: "#1a1512", ink: "#ffb547" },
+    { label: "Exercices", value: totalExercises, icon: Dumbbell, tile: "#7ed957", ink: "#1a1512" },
   ];
 
   // Permissions de suppression (alignées sur l'API) — on masque les boutons sinon
@@ -1023,39 +1026,41 @@ export default function CourseManagementPage() {
   const roleBadgeClass = (role: string) => {
     switch (role) {
       case "Admin":
-        return "bg-red-50 text-red-600 border-red-200";
+        return "bg-[#fdecec] text-[#c2272d] border-[#f5c2c4]";
       case "Correcteur":
-        return "bg-purple-50 text-purple-600 border-purple-200";
+        return "bg-[#f7f3ff] text-[#7b55d6] border-[#c9b3f5]";
       case "Rédacteur":
-        return "bg-blue-50 text-blue-600 border-blue-200";
+        return "bg-[#eaf6fb] text-[#2f86b3] border-[#bfe3f2]";
       case "Helpeur":
-        return "bg-green-50 text-green-600 border-green-200";
+        return "bg-[#ecfdf5] text-[#065f46] border-[#a7f3d0]";
       case "Modérateur":
-        return "bg-orange-50 text-orange-600 border-orange-200";
+        return "bg-[#fff4ec] text-[#c24a0a] border-[#ffd2b8]";
       default:
-        return "bg-gray-50 text-gray-500 border-gray-200";
+        return "bg-[#f5efe3] text-[#6b625c] border-[#e6e0d6]";
     }
   };
 
   return (
     <div className="space-y-6">
+      {confirmDialog}
+
       {/* Messages */}
       {successMessage && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl flex items-center gap-3">
-          <CheckCircle className="w-5 h-5 text-green-500" />
-          <p className="text-sm text-green-700">{successMessage}</p>
+        <div className="p-4 bg-[#ecfdf5] border border-[#a7f3d0] rounded-xl flex items-center gap-3">
+          <CheckCircle className="w-5 h-5 text-[#065f46]" />
+          <p className="text-sm text-[#065f46]">{successMessage}</p>
         </div>
       )}
 
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500" />
-          <p className="text-sm text-red-700">{error}</p>
+        <div className="p-4 bg-[#fdecec] border border-[#f5c2c4] rounded-xl flex items-center gap-3">
+          <AlertCircle className="w-5 h-5 text-[#c2272d]" />
+          <p className="text-sm text-[#c2272d]">{error}</p>
           <button
             onClick={() => setError(null)}
-            className="ml-auto p-1 hover:bg-red-100 rounded"
+            className="ml-auto p-1 hover:bg-[#fbd9da] rounded"
           >
-            <X className="w-4 h-4 text-red-500" />
+            <X className="w-4 h-4 text-[#c2272d]" />
           </button>
         </div>
       )}
@@ -1067,9 +1072,9 @@ export default function CourseManagementPage() {
             <div className="flex items-center gap-2">
               <Link
                 href="/dashboard/cours"
-                className="p-2 hover:bg-[#f7f6f3] rounded-lg transition-colors"
+                className="p-2 hover:bg-[#f5efe3] rounded-lg transition-colors"
               >
-                <ChevronLeft className="w-5 h-5 text-[#6b6b6b]" />
+                <ChevronLeft className="w-5 h-5 text-[#6b625c]" />
               </Link>
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -1080,7 +1085,7 @@ export default function CourseManagementPage() {
                 {editingCourse ? (
                   <input
                     type="text"
-                    className="text-2xl font-bold text-[#37352f] bg-[#f7f6f3] border-0 rounded-lg px-3 py-1 w-full"
+                    className="text-2xl font-bold text-[#1a1512] bg-[#f5efe3] border-0 rounded-lg px-3 py-1 w-full"
                     value={editedCourse?.title || ""}
                     onChange={(e) =>
                       setEditedCourse(
@@ -1091,7 +1096,7 @@ export default function CourseManagementPage() {
                     }
                   />
                 ) : (
-                  <h1 className="text-2xl font-bold text-[#37352f]">
+                  <h1 className="font-serif-display text-3xl leading-tight text-[#1a1512]">
                     {course.title}
                   </h1>
                 )}
@@ -1146,7 +1151,7 @@ export default function CourseManagementPage() {
           </div>
 
           {editingCourse && editedCourse && (
-            <div className="mt-4 space-y-4 border-t border-[#e3e2e0] pt-4">
+            <div className="mt-4 space-y-4 border-t border-[#e6e0d6] pt-4">
               <EditingPresenceBanner room={`edit:course:${id}`} label="ce cours" />
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -1214,7 +1219,7 @@ export default function CourseManagementPage() {
               {/* Image de couverture */}
               <div>
                 <label className="dash-label">Image de couverture</label>
-                <div className="border-2 border-dashed border-[#e3e2e0] rounded-xl p-6 text-center hover:border-[#f97316] transition-colors">
+                <div className="border-2 border-dashed border-[#e6e0d6] rounded-xl p-6 text-center hover:border-[#ff6a1a] transition-colors">
                   {editedCourse.image ? (
                     <div className="relative">
                       <Image
@@ -1252,8 +1257,8 @@ export default function CourseManagementPage() {
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      <div className="w-16 h-16 mx-auto bg-[#f7f6f3] rounded-full flex items-center justify-center">
-                        <BookOpen className="w-8 h-8 text-[#bfbfbf]" />
+                      <div className="w-16 h-16 mx-auto bg-[#f5efe3] rounded-full flex items-center justify-center">
+                        <BookOpen className="w-8 h-8 text-[#c9c3bb]" />
                       </div>
                       <UploadButton
                         endpoint="imageUploader"
@@ -1269,7 +1274,7 @@ export default function CourseManagementPage() {
                           setError(`Erreur d'upload: ${error.message}`);
                         }}
                       />
-                      <p className="text-sm text-[#9ca3af]">
+                      <p className="text-sm text-[#97938e]">
                         PNG, JPG jusqu&apos;à 4MB
                       </p>
                     </div>
@@ -1280,7 +1285,7 @@ export default function CourseManagementPage() {
           )}
 
           {/* Onglets */}
-          <div className="flex items-center gap-1 mt-6 border-t border-[#e3e2e0] pt-4">
+          <div className="flex items-center gap-1 mt-6 border-t border-[#e6e0d6] pt-4">
             {[
               { id: "structure" as Tab, label: "Structure", icon: Layers },
               { id: "content" as Tab, label: "Contenu", icon: FileText },
@@ -1290,10 +1295,10 @@ export default function CourseManagementPage() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   activeTab === tab.id
-                    ? "bg-[#fff7ed] text-[#f97316]"
-                    : "text-[#6b6b6b] hover:bg-[#f7f6f3]"
+                    ? "bg-[#1a1512] text-[#fdfaf4]"
+                    : "text-[#6b625c] hover:bg-[#f5efe3] hover:text-[#1a1512]"
                 }`}
               >
                 <tab.icon className="w-4 h-4" />
@@ -1310,32 +1315,27 @@ export default function CourseManagementPage() {
           {/* Cartes de statistiques colorées */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
             {statCards.map((stat) => (
-              <div
-                key={stat.label}
-                className="group dash-card p-4 flex items-center gap-3 cursor-default transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
-                style={{ borderTop: `3px solid ${stat.color}` }}
-              >
+              <div key={stat.label} className="dash-card p-4 flex items-center gap-3 cursor-default">
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-6"
-                  style={{ backgroundColor: stat.bg, color: stat.color }}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: stat.tile, color: stat.ink }}
                 >
                   <stat.icon className="w-5 h-5" />
                 </div>
                 <div className="min-w-0">
-                  <p
-                    className="text-2xl font-bold leading-none tabular-nums"
-                    style={{ color: stat.color }}
-                  >
+                  <p className="font-serif-display text-[1.75rem] leading-none tabular-nums text-[#1a1512]">
                     {stat.value}
                   </p>
-                  <p className="text-xs text-[#9ca3af] mt-1 truncate">{stat.label}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[#97938e] mt-1.5 truncate">
+                    {stat.label}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
 
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-[#37352f]">
+            <h2 className="text-lg font-semibold text-[#1a1512]">
               Structure du cours
             </h2>
             {addingSectionTitle !== null ? (
@@ -1382,7 +1382,7 @@ export default function CourseManagementPage() {
           </div>
 
           {sections.length === 0 ? (
-            <div className="dash-empty border-2 border-dashed border-[#e3e2e0] rounded-xl">
+            <div className="dash-empty border-2 border-dashed border-[#e6e0d6] rounded-xl">
               <div className="dash-empty-icon">
                 <Layers className="w-8 h-8" />
               </div>
@@ -1430,12 +1430,12 @@ export default function CourseManagementPage() {
                         <div className="space-y-6">
                         <div>
                         <div className="flex items-center gap-2 mb-2">
-                          <FileText className="w-4 h-4 text-[#6b6b6b]" />
-                          <h4 className="text-sm font-semibold text-[#37352f]">Leçons</h4>
+                          <FileText className="w-4 h-4 text-[#6b625c]" />
+                          <h4 className="text-sm font-semibold text-[#1a1512]">Leçons</h4>
                         </div>
                         {lessons.length === 0 && addingLessonSection !== section._id ? (
                           <div className="text-center py-6">
-                            <p className="text-sm text-[#9ca3af] mb-3">
+                            <p className="text-sm text-[#97938e] mb-3">
                               Aucune leçon dans cette section
                             </p>
                             <button
@@ -1488,8 +1488,8 @@ export default function CourseManagementPage() {
 
                                 {/* Formulaire inline ajout leçon */}
                                 {addingLessonSection === section._id ? (
-                                  <div className="flex items-center gap-2 p-3 border-2 border-dashed border-[#f97316] rounded-lg bg-[#fff7ed]">
-                                    <FileText className="w-4 h-4 text-[#f97316]" />
+                                  <div className="flex items-center gap-2 p-3 border-2 border-dashed border-[#ff6a1a] rounded-lg bg-[#fff4ec]">
+                                    <FileText className="w-4 h-4 text-[#ff6a1a]" />
                                     <input
                                       type="text"
                                       className="flex-1 dash-input"
@@ -1541,7 +1541,7 @@ export default function CourseManagementPage() {
                                       setAddingLessonSection(section._id);
                                       setAddingLessonTitle("");
                                     }}
-                                    className="w-full py-2 border-2 border-dashed border-[#e3e2e0] rounded-lg text-sm text-[#6b6b6b] hover:border-[#f97316] hover:text-[#f97316] transition-colors"
+                                    className="w-full py-2 border-2 border-dashed border-[#e6e0d6] rounded-lg text-sm text-[#6b625c] hover:border-[#ff6a1a] hover:text-[#ff6a1a] transition-colors"
                                   >
                                     <Plus className="w-4 h-4 inline mr-2" />
                                     Ajouter une leçon
@@ -1557,8 +1557,8 @@ export default function CourseManagementPage() {
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <Trophy className="w-4 h-4 text-[#6b6b6b]" />
-                              <h4 className="text-sm font-semibold text-[#37352f]">Quiz</h4>
+                              <Trophy className="w-4 h-4 text-[#6b625c]" />
+                              <h4 className="text-sm font-semibold text-[#1a1512]">Quiz</h4>
                             </div>
                             <button
                               onClick={() => openQuizCreator(section._id)}
@@ -1569,7 +1569,7 @@ export default function CourseManagementPage() {
                             </button>
                           </div>
                           {(section.quizzes || []).length === 0 ? (
-                            <p className="text-sm text-[#9ca3af] py-2">
+                            <p className="text-sm text-[#97938e] py-2">
                               Aucun quiz dans cette section
                             </p>
                           ) : (
@@ -1577,11 +1577,11 @@ export default function CourseManagementPage() {
                               {(section.quizzes || []).map((quiz) => (
                                 <div
                                   key={quiz._id}
-                                  className="flex items-center gap-3 p-3 border border-[#e3e2e0] rounded-lg group hover:border-[#d97706] transition-colors"
+                                  className="flex items-center gap-3 p-3 border border-[#e6e0d6] rounded-lg group hover:border-[#9a5d00] transition-colors"
                                 >
-                                  <Trophy className="w-4 h-4 text-[#d97706]" />
-                                  <span className="flex-1 text-[#37352f]">{quiz.title}</span>
-                                  <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#f5f3ff] text-[#7c3aed]">
+                                  <Trophy className="w-4 h-4 text-[#9a5d00]" />
+                                  <span className="flex-1 text-[#1a1512]">{quiz.title}</span>
+                                  <span className="inline-flex items-center gap-1 text-xs font-medium px-1.5 py-0.5 rounded-md bg-[#f7f3ff] text-[#7b55d6]">
                                     <HelpCircle className="w-3 h-3" />
                                     {quiz.questions?.length || 0}
                                   </span>
@@ -1595,18 +1595,18 @@ export default function CourseManagementPage() {
                                     )}
                                     <button
                                       onClick={() => openQuizEditor(quiz._id, section._id)}
-                                      className="p-1.5 hover:bg-[#f7f6f3] rounded"
+                                      className="p-1.5 hover:bg-[#f5efe3] rounded"
                                       title="Éditer"
                                     >
-                                      <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
+                                      <Edit2 className="w-4 h-4 text-[#6b625c]" />
                                     </button>
                                     {canDeleteQuiz && (
                                       <button
                                         onClick={() => deleteQuiz(quiz._id, section._id)}
-                                        className="p-1.5 hover:bg-red-50 rounded"
+                                        className="p-1.5 hover:bg-[#fdecec] rounded"
                                         title="Supprimer"
                                       >
-                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                        <Trash2 className="w-4 h-4 text-[#c2272d]" />
                                       </button>
                                     )}
                                   </div>
@@ -1620,8 +1620,8 @@ export default function CourseManagementPage() {
                         <div>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
-                              <Dumbbell className="w-4 h-4 text-[#6b6b6b]" />
-                              <h4 className="text-sm font-semibold text-[#37352f]">Exercices</h4>
+                              <Dumbbell className="w-4 h-4 text-[#6b625c]" />
+                              <h4 className="text-sm font-semibold text-[#1a1512]">Exercices</h4>
                             </div>
                             <button
                               onClick={() => openExerciseCreator(section._id)}
@@ -1632,7 +1632,7 @@ export default function CourseManagementPage() {
                             </button>
                           </div>
                           {(section.exercises || []).length === 0 ? (
-                            <p className="text-sm text-[#9ca3af] py-2">
+                            <p className="text-sm text-[#97938e] py-2">
                               Aucun exercice dans cette section
                             </p>
                           ) : (
@@ -1640,10 +1640,10 @@ export default function CourseManagementPage() {
                               {(section.exercises || []).map((exercise) => (
                                 <div
                                   key={exercise._id}
-                                  className="flex items-center gap-3 p-3 border border-[#e3e2e0] rounded-lg group hover:border-[#059669] transition-colors"
+                                  className="flex items-center gap-3 p-3 border border-[#e6e0d6] rounded-lg group hover:border-[#3f8a1f] transition-colors"
                                 >
-                                  <Dumbbell className="w-4 h-4 text-[#059669]" />
-                                  <span className="flex-1 text-[#37352f]">{exercise.title}</span>
+                                  <Dumbbell className="w-4 h-4 text-[#3f8a1f]" />
+                                  <span className="flex-1 text-[#1a1512]">{exercise.title}</span>
                                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     {isAdmin && (
                                       <AuthorReassign
@@ -1654,18 +1654,18 @@ export default function CourseManagementPage() {
                                     )}
                                     <button
                                       onClick={() => openExerciseEditor(exercise._id, section._id)}
-                                      className="p-1.5 hover:bg-[#f7f6f3] rounded"
+                                      className="p-1.5 hover:bg-[#f5efe3] rounded"
                                       title="Éditer"
                                     >
-                                      <Edit2 className="w-4 h-4 text-[#6b6b6b]" />
+                                      <Edit2 className="w-4 h-4 text-[#6b625c]" />
                                     </button>
                                     {canDeleteExercise(exercise) && (
                                       <button
                                         onClick={() => deleteExercise(exercise._id, section._id)}
-                                        className="p-1.5 hover:bg-red-50 rounded"
+                                        className="p-1.5 hover:bg-[#fdecec] rounded"
                                         title="Supprimer"
                                       >
-                                        <Trash2 className="w-4 h-4 text-red-500" />
+                                        <Trash2 className="w-4 h-4 text-[#c2272d]" />
                                       </button>
                                     )}
                                   </div>
@@ -1691,7 +1691,7 @@ export default function CourseManagementPage() {
             <h3 className="dash-card-title">Contenu détaillé</h3>
           </div>
           <div className="dash-card-body">
-            <p className="text-[#6b6b6b] mb-4">
+            <p className="text-[#6b625c] mb-4">
               Sélectionnez une leçon dans l&apos;onglet &quot;Structure&quot; pour l&apos;éditer, ou
               utilisez l&apos;éditeur de leçons complet.
             </p>
@@ -1711,20 +1711,20 @@ export default function CourseManagementPage() {
           {/* Auteurs & contributeurs */}
           <div className="dash-card">
             <div className="dash-card-header flex items-center gap-2">
-              <Users className="w-4 h-4 text-[#f97316]" />
+              <Users className="w-4 h-4 text-[#ff6a1a]" />
               <h3 className="dash-card-title">Auteurs &amp; contributeurs</h3>
             </div>
             <div className="dash-card-body space-y-6">
               {loadingContributors ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader2 className="w-6 h-6 animate-spin text-[#f97316]" />
+                  <Loader2 className="w-6 h-6 animate-spin text-[#ff6a1a]" />
                 </div>
               ) : (
                 <>
                   {/* Auteurs principaux */}
                   <div>
                     <div className="flex items-center justify-between mb-3">
-                      <h4 className="text-sm font-semibold text-[#37352f]">
+                      <h4 className="text-sm font-semibold text-[#1a1512]">
                         Auteurs principaux
                       </h4>
                       {isAdmin && (
@@ -1740,13 +1740,13 @@ export default function CourseManagementPage() {
                       )}
                     </div>
                     {authors.length === 0 ? (
-                      <p className="text-sm text-[#9ca3af]">Aucun auteur renseigné.</p>
+                      <p className="text-sm text-[#97938e]">Aucun auteur renseigné.</p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                         {authors.map((author) => (
                           <div
                             key={author._id}
-                            className="flex items-center gap-3 p-3 border border-[#e3e2e0] rounded-xl hover:border-[#f97316] transition-colors"
+                            className="flex items-center gap-3 p-3 border border-[#e6e0d6] rounded-xl hover:border-[#ff6a1a] transition-colors"
                           >
                             <ProfileAvatar
                               username={author.username}
@@ -1755,7 +1755,7 @@ export default function CourseManagementPage() {
                               showPoints={false}
                             />
                             <div className="min-w-0">
-                              <p className="font-medium text-[#37352f] truncate">
+                              <p className="font-medium text-[#1a1512] truncate">
                                 {author.name || author.username}
                               </p>
                               <span
@@ -1783,17 +1783,17 @@ export default function CourseManagementPage() {
                   {/* Correcteurs ayant validé des leçons */}
                   {correctors.length > 0 && (
                     <div>
-                      <h4 className="text-sm font-semibold text-[#37352f] mb-1">
+                      <h4 className="text-sm font-semibold text-[#1a1512] mb-1">
                         Correcteurs
                       </h4>
-                      <p className="text-xs text-[#9ca3af] mb-3">
+                      <p className="text-xs text-[#97938e] mb-3">
                         Ont validé au moins une leçon de ce cours.
                       </p>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {correctors.map((c) => (
                           <div
                             key={c._id}
-                            className="flex items-center gap-2 p-2 border border-[#e3e2e0] rounded-lg hover:border-purple-300 transition-colors"
+                            className="flex items-center gap-2 p-2 border border-[#e6e0d6] rounded-lg hover:border-[#c9b3f5] transition-colors"
                           >
                             <ProfileAvatar
                               username={c.username}
@@ -1802,7 +1802,7 @@ export default function CourseManagementPage() {
                               showPoints={false}
                             />
                             <div className="min-w-0 flex-1">
-                              <p className="text-sm font-medium text-[#37352f] truncate">
+                              <p className="text-sm font-medium text-[#1a1512] truncate">
                                 {c.name || c.username}
                               </p>
                               <span
@@ -1829,20 +1829,20 @@ export default function CourseManagementPage() {
 
                   {/* Contributeurs (leçons / exercices / quiz) */}
                   <div>
-                    <h4 className="text-sm font-semibold text-[#37352f] mb-1">
+                    <h4 className="text-sm font-semibold text-[#1a1512] mb-1">
                       Contributeurs
                     </h4>
-                    <p className="text-xs text-[#9ca3af] mb-3">
+                    <p className="text-xs text-[#97938e] mb-3">
                       Rédacteurs, helpeurs et correcteurs ayant créé des leçons, exercices ou quiz de ce cours.
                     </p>
                     {contributors.length === 0 ? (
-                      <p className="text-sm text-[#9ca3af]">Aucun autre contributeur.</p>
+                      <p className="text-sm text-[#97938e]">Aucun autre contributeur.</p>
                     ) : (
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {contributors.map((c) => (
                           <div
                             key={c._id}
-                            className="flex items-center gap-2 p-2 border border-[#e3e2e0] rounded-lg hover:border-[#f97316] transition-colors"
+                            className="flex items-center gap-2 p-2 border border-[#e6e0d6] rounded-lg hover:border-[#ff6a1a] transition-colors"
                           >
                             <ProfileAvatar
                               username={c.username}
@@ -1852,7 +1852,7 @@ export default function CourseManagementPage() {
                             />
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-1.5">
-                                <p className="text-sm font-medium text-[#37352f] truncate">
+                                <p className="text-sm font-medium text-[#1a1512] truncate">
                                   {c.name || c.username}
                                 </p>
                                 <span
@@ -1871,7 +1871,7 @@ export default function CourseManagementPage() {
                                   {c.role}
                                 </span>
                               </div>
-                              <p className="text-[11px] text-[#9ca3af] truncate">
+                              <p className="text-[11px] text-[#97938e] truncate">
                                 {[
                                   (c.contributions?.lessons || 0) > 0 &&
                                     `${c.contributions?.lessons} leçon${
@@ -1904,7 +1904,7 @@ export default function CourseManagementPage() {
               <h3 className="dash-card-title">Statut du cours</h3>
             </div>
             <div className="dash-card-body">
-              <p className="text-sm text-[#6b6b6b]">
+              <p className="text-sm text-[#6b625c]">
                 {course.status === "publie"
                   ? "Ce cours est publié et visible par les élèves."
                   : course.status === "en_attente_publication"
@@ -1935,7 +1935,7 @@ export default function CourseManagementPage() {
               ),
             }}
           />
-          <p className="mt-4 text-xs text-[#9ca3af]">
+          <p className="mt-4 text-xs text-[#97938e]">
             💡 Le score se met à jour en direct pendant que vous modifiez le titre,
             la description ou l&apos;image du cours (onglet Structure / en-tête).
           </p>
@@ -1953,8 +1953,8 @@ export default function CourseManagementPage() {
           }
         }}
       >
-        <DialogContent className="max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 flex flex-col gap-0 overflow-hidden">
-          <DialogHeader className="px-6 py-4 border-b shrink-0">
+        <DialogContent overlayClassName="dash-dialog-overlay" className="dash-dialog max-w-[95vw] w-[95vw] h-[95vh] max-h-[95vh] p-0 flex flex-col gap-0 overflow-hidden">
+          <DialogHeader className="dash-dialog-header shrink-0">
             <DialogTitle>Modifier la leçon</DialogTitle>
           </DialogHeader>
           {loadingLesson || !editingLesson ? (
@@ -1985,8 +1985,8 @@ export default function CourseManagementPage() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent overlayClassName="dash-dialog-overlay" className="dash-dialog max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="dash-dialog-header">
             <DialogTitle>{editingQuiz ? "Modifier le quiz" : "Ajouter un quiz"}</DialogTitle>
           </DialogHeader>
           {loadingQuiz ? (
@@ -2017,8 +2017,8 @@ export default function CourseManagementPage() {
           }
         }}
       >
-        <DialogContent className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent overlayClassName="dash-dialog-overlay" className="dash-dialog max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="dash-dialog-header">
             <DialogTitle>
               {editingExercise ? "Modifier l'exercice" : "Ajouter un exercice"}
             </DialogTitle>

@@ -23,7 +23,7 @@ import {
   GraduationCap,
   X,
   Plus,
-  Sparkles,
+  Upload,
   BarChart3,
   FileCheck,
   HelpCircle,
@@ -32,6 +32,9 @@ import {
   IdCard,
   CalendarClock,
   HeartHandshake,
+  ChevronDown,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import TutorialModal from "./TutorialModal";
 import "../styles/dashboard-theme.css";
@@ -70,7 +73,7 @@ const navItems: NavItem[] = [
     children: [
       { name: "Tous les cours", href: "/dashboard/cours" },
       { name: "Créer un cours", href: "/dashboard/cours/nouveau", icon: Plus },
-      { name: "Générer avec MaitreRenardAI", href: "/cours/generer", icon: Sparkles, external: true },
+      { name: "Importer un cours", href: "/dashboard/cours/importer", icon: Upload },
     ],
   },
   { name: "Sections", href: "/dashboard/sections", icon: Layers },
@@ -105,7 +108,8 @@ const navItems: NavItem[] = [
   { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
 ];
 
-// Groupement pour l'affichage
+// Groupement pour l'affichage : un groupe = une tâche, pas plus de 5 liens.
+// « Paramètres » n'est dans aucun groupe : il est en bas, avec le guide.
 const navGroups = [
   {
     title: "Général",
@@ -113,34 +117,63 @@ const navGroups = [
   },
   {
     title: "Contenu",
-    items: ["Cours", "Sections", "Leçons", "Quiz", "Quiz du jour", "Exercices", "Évaluations"],
+    items: ["Cours", "Sections", "Leçons", "Exercices"],
   },
   {
-    title: "Administration",
-    items: ["Certificats", "Programmes", "Partenaires", "Lives", "Adhérents", "Utilisateurs", "Modération", "Rôles", "Bénévoles"],
+    title: "Quiz & évaluations",
+    items: ["Quiz", "Quiz du jour", "Évaluations", "Certificats"],
   },
   {
-    title: "Configuration",
-    items: ["Paramètres"],
+    title: "Communauté",
+    items: ["Utilisateurs", "Adhérents", "Bénévoles", "Rôles", "Modération"],
+  },
+  {
+    title: "Site",
+    items: ["Programmes", "Partenaires", "Lives"],
   },
 ];
+
+// Préférences d'affichage, propres à chaque navigateur
+const COLLAPSED_KEY = "dash-sidebar-collapsed";
+const CLOSED_GROUPS_KEY = "dash-sidebar-closed-groups";
+
+function readPref<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+function writePref(key: string, value: unknown) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch {
+    /* navigation privée : la préférence ne sera simplement pas retenue */
+  }
+}
 
 interface NavItemProps {
   item: NavItem;
   isActive: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
+  /** Barre repliée : icône seule, le nom apparaît au survol */
+  railMode?: boolean;
 }
 
-function NavItem({ item, isActive, isExpanded, onToggle }: NavItemProps) {
+function NavItem({ item, isActive, isExpanded, onToggle, railMode }: NavItemProps) {
   const Icon = item.icon;
-  const hasChildren = item.children && item.children.length > 0;
+  // Barre repliée : pas de sous-menu, l'icône mène directement à la page
+  const hasChildren = !railMode && item.children && item.children.length > 0;
 
   return (
     <div>
       {hasChildren ? (
         <>
           <button
+            type="button"
             onClick={onToggle}
             className={cn(
               "dash-sidebar-item w-full",
@@ -174,7 +207,7 @@ function NavItem({ item, isActive, isExpanded, onToggle }: NavItemProps) {
                   href={child.href}
                   className={cn(
                     "dash-sidebar-item text-sm",
-                    child.external && "text-[#f97316] hover:text-[#ea580c]"
+                    child.external && "text-[#ff6a1a] hover:text-[#ffb547]"
                   )}
                 >
                   {child.icon && <child.icon className="w-4 h-4" />}
@@ -202,10 +235,12 @@ function NavItem({ item, isActive, isExpanded, onToggle }: NavItemProps) {
       ) : (
         <Link
           href={item.href}
+          title={railMode ? item.name : undefined}
+          aria-label={railMode ? item.name : undefined}
           className={cn("dash-sidebar-item", isActive && "active")}
         >
           <Icon className="dash-sidebar-icon" />
-          <span>{item.name}</span>
+          <span className="dash-sidebar-label">{item.name}</span>
         </Link>
       )}
     </div>
@@ -218,8 +253,34 @@ export default function DashboardSidebar() {
   const [expandedItems, setExpandedItems] = useState<string[]>(["Cours"]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  // Barre repliée (icônes seules) et groupes fermés : relus depuis le navigateur
+  const [collapsed, setCollapsed] = useState(false);
+  const [closedGroups, setClosedGroups] = useState<string[]>([]);
+  const [prefsLoaded, setPrefsLoaded] = useState(false);
 
   const user = session?.user;
+
+  // localStorage n'existe qu'après le montage (pas côté serveur)
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture unique d'une préférence navigateur
+    setCollapsed(readPref(COLLAPSED_KEY, false));
+    setClosedGroups(readPref<string[]>(CLOSED_GROUPS_KEY, []));
+    setPrefsLoaded(true);
+  }, []);
+
+  // La marge du contenu suit la largeur de la barre (voir dashboard-theme.css)
+  useEffect(() => {
+    document.documentElement.dataset.dashSidebar = collapsed ? "collapsed" : "open";
+    if (prefsLoaded) writePref(COLLAPSED_KEY, collapsed);
+  }, [collapsed, prefsLoaded]);
+
+  const toggleGroup = (title: string) => {
+    setClosedGroups((prev) => {
+      const next = prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title];
+      writePref(CLOSED_GROUPS_KEY, next);
+      return next;
+    });
+  };
 
   // Fermer le menu mobile lors du changement de page
   useEffect(() => {
@@ -229,8 +290,8 @@ export default function DashboardSidebar() {
   // Forcer le mode clair
   useEffect(() => {
     document.body.classList.remove("dark");
-    document.body.style.backgroundColor = "white";
-    document.body.style.color = "#37352f";
+    document.body.style.backgroundColor = "#fdfaf4";
+    document.body.style.color = "#1a1512";
   }, []);
 
   // Filtrer les éléments selon le rôle
@@ -257,6 +318,10 @@ export default function DashboardSidebar() {
     );
   };
 
+  // Sur mobile, la barre ouverte est un tiroir : toujours en version complète
+  const railMode = collapsed && !isMobileMenuOpen;
+  const settingsItem = filteredNavItems.find((item) => item.name === "Paramètres");
+
   const isItemActive = (item: NavItem) => {
     if (pathname === item.href) return true;
     if (item.children) {
@@ -270,12 +335,12 @@ export default function DashboardSidebar() {
       {/* Bouton menu mobile */}
       <button
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-white border border-[#e3e2e0] rounded-lg shadow-sm lg:hidden"
+        className="fixed top-4 left-4 z-50 p-2 bg-white border border-[#e6e0d6] rounded-lg shadow-sm lg:hidden"
       >
         {isMobileMenuOpen ? (
-          <X className="w-5 h-5 text-[#37352f]" />
+          <X className="w-5 h-5 text-[#1a1512]" />
         ) : (
-          <Menu className="w-5 h-5 text-[#37352f]" />
+          <Menu className="w-5 h-5 text-[#1a1512]" />
         )}
       </button>
 
@@ -291,7 +356,8 @@ export default function DashboardSidebar() {
       <aside
         className={cn(
           "dash-sidebar dash-scrollbar",
-          isMobileMenuOpen && "open"
+          isMobileMenuOpen && "open",
+          railMode && "is-collapsed"
         )}
       >
         {/* Header */}
@@ -305,7 +371,18 @@ export default function DashboardSidebar() {
               className="w-8 h-8 object-contain"
             />
           </div>
-          <span className="dash-sidebar-title">Workyt Dashboard</span>
+          <span className="dash-sidebar-title">workyt<small>Tableau de bord</small></span>
+          {/* Replier / déplier (grand écran uniquement : sur mobile la barre est un tiroir) */}
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            className="dash-sidebar-collapse"
+            title={collapsed ? "Déplier le menu" : "Replier le menu"}
+            aria-label={collapsed ? "Déplier le menu" : "Replier le menu"}
+            aria-expanded={!collapsed}
+          >
+            {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+          </button>
         </div>
 
         {/* Navigation */}
@@ -318,33 +395,57 @@ export default function DashboardSidebar() {
 
             if (groupItems.length === 0) return null;
 
+            // Le groupe de la page ouverte reste toujours visible
+            const hasActive = groupItems.some(isItemActive);
+            const isOpen = railMode || hasActive || !closedGroups.includes(group.title);
+
             return (
               <div key={group.title} className="dash-sidebar-section">
-                <div className="dash-sidebar-section-title">{group.title}</div>
-                <div className="space-y-1 px-2">
-                  {groupItems.map((item) => (
-                    <NavItem
-                      key={item.href}
-                      item={item}
-                      isActive={isItemActive(item)}
-                      isExpanded={expandedItems.includes(item.name)}
-                      onToggle={() => toggleExpanded(item.name)}
-                    />
-                  ))}
-                </div>
+                <button
+                  type="button"
+                  onClick={() => !hasActive && toggleGroup(group.title)}
+                  className="dash-sidebar-section-title dash-sidebar-group-toggle"
+                  aria-expanded={isOpen}
+                  disabled={hasActive}
+                >
+                  <span>{group.title}</span>
+                  {!hasActive && (
+                    <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", !isOpen && "-rotate-90")} />
+                  )}
+                </button>
+                {isOpen && (
+                  <div className="space-y-1 px-2">
+                    {groupItems.map((item) => (
+                      <NavItem
+                        key={item.href}
+                        item={item}
+                        isActive={isItemActive(item)}
+                        isExpanded={expandedItems.includes(item.name)}
+                        onToggle={() => toggleExpanded(item.name)}
+                        railMode={railMode}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             );
           })}
         </nav>
 
-        {/* Bouton guide */}
-        <div className="px-3 pb-2">
+        {/* Paramètres + guide, toujours en bas */}
+        <div className="px-2 pb-2 space-y-1">
+          {settingsItem && (
+            <NavItem item={settingsItem} isActive={isItemActive(settingsItem)} railMode={railMode} />
+          )}
           <button
+            type="button"
             onClick={() => setTutorialOpen(true)}
-            className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-[#6b6b6b] hover:bg-[#fff7ed] hover:text-[#f97316] transition-colors group"
+            title={railMode ? "Guide de démarrage" : undefined}
+            aria-label="Guide de démarrage"
+            className="dash-sidebar-item w-full group"
           >
-            <HelpCircle className="w-4 h-4 group-hover:text-[#f97316] transition-colors" />
-            <span>Guide de démarrage</span>
+            <HelpCircle className="dash-sidebar-icon group-hover:text-[#ff6a1a] transition-colors" />
+            <span className="dash-sidebar-label">Guide de démarrage</span>
           </button>
         </div>
 
@@ -359,11 +460,11 @@ export default function DashboardSidebar() {
               size="small"
               showPoints={false}
             />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#37352f] truncate">
+            <div className="dash-sidebar-label flex-1 min-w-0">
+              <p className="text-sm font-medium text-[#fdfaf4] truncate">
                 {user?.username || "Utilisateur"}
               </p>
-              <p className="text-xs text-[#9ca3af]">
+              <p className="text-xs text-[rgba(253,250,244,0.5)]">
                 {user?.role || "Rédacteur"}
               </p>
             </div>

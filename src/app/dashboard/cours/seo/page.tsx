@@ -91,7 +91,7 @@ export default function CoursesSeoAuditPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
       </div>
     );
   }
@@ -103,7 +103,7 @@ export default function CoursesSeoAuditPage() {
         <div>
           <Link
             href="/dashboard/cours"
-            className="inline-flex items-center gap-1 text-sm text-[#6b6b6b] hover:text-[#f97316] mb-2"
+            className="inline-flex items-center gap-1 text-sm text-[#6b625c] hover:text-[#ff6a1a] mb-2"
           >
             <ChevronLeft className="w-4 h-4" />
             Retour aux cours
@@ -119,20 +119,20 @@ export default function CoursesSeoAuditPage() {
       {stats && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="dash-card p-4">
-            <p className="text-2xl font-bold text-[#37352f]">{stats.avgScorePublished}/100</p>
-            <p className="text-xs text-[#9ca3af]">Score moyen (publiés)</p>
+            <p className="text-2xl font-bold text-[#1a1512]">{stats.avgScorePublished}/100</p>
+            <p className="text-xs text-[#97938e]">Score moyen (publiés)</p>
           </div>
           <div className="dash-card p-4">
-            <p className="text-2xl font-bold text-[#37352f]">{stats.published}</p>
-            <p className="text-xs text-[#9ca3af]">Cours publiés</p>
+            <p className="text-2xl font-bold text-[#1a1512]">{stats.published}</p>
+            <p className="text-xs text-[#97938e]">Cours publiés</p>
           </div>
           <div className="dash-card p-4">
             <p className="text-2xl font-bold text-red-500">{stats.withErrors}</p>
-            <p className="text-xs text-[#9ca3af]">Cours avec erreurs</p>
+            <p className="text-xs text-[#97938e]">Cours avec erreurs</p>
           </div>
           <div className="dash-card p-4">
-            <p className="text-2xl font-bold text-[#37352f]">{stats.total}</p>
-            <p className="text-xs text-[#9ca3af]">Cours audités</p>
+            <p className="text-2xl font-bold text-[#1a1512]">{stats.total}</p>
+            <p className="text-xs text-[#97938e]">Cours audités</p>
           </div>
         </div>
       )}
@@ -162,7 +162,7 @@ export default function CoursesSeoAuditPage() {
       {filteredCourses.length === 0 ? (
         <div className="dash-card p-8 text-center">
           <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto mb-3" />
-          <p className="text-[#37352f] font-medium">Aucun cours dans cette catégorie 🎉</p>
+          <p className="text-[#1a1512] font-medium">Aucun cours dans cette catégorie 🎉</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -175,8 +175,8 @@ export default function CoursesSeoAuditPage() {
                     {course.score}
                   </span>
                   <div className="min-w-0">
-                    <p className="font-medium text-[#37352f] truncate">{course.title}</p>
-                    <p className="text-xs text-[#9ca3af]">
+                    <p className="font-medium text-[#1a1512] truncate">{course.title}</p>
+                    <p className="text-xs text-[#97938e]">
                       {course.matiere} · {course.niveau} · {STATUS_LABELS[course.status] || course.status}
                     </p>
                   </div>
@@ -214,21 +214,21 @@ export default function CoursesSeoAuditPage() {
 
               {/* Détail des problèmes */}
               {course.issues.length > 0 && (
-                <ul className="mt-3 pt-3 border-t border-[#e3e2e0] space-y-1.5">
+                <ul className="mt-3 pt-3 border-t border-[#e6e0d6] space-y-1.5">
                   {course.issues.slice(0, 3).map((issue) => (
-                    <li key={issue.id} className="flex items-start gap-2 text-xs text-[#6b6b6b]">
+                    <li key={issue.id} className="flex items-start gap-2 text-xs text-[#6b625c]">
                       {issue.status === "error" ? (
                         <XCircle className="w-3.5 h-3.5 text-red-400 flex-shrink-0 mt-0.5" />
                       ) : (
                         <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
                       )}
                       <span>
-                        <b className="text-[#37352f]">{issue.label}</b> — {issue.advice}
+                        <b className="text-[#1a1512]">{issue.label}</b> — {issue.advice}
                       </span>
                     </li>
                   ))}
                   {course.issues.length > 3 && (
-                    <li className="text-xs text-[#9ca3af] pl-5">
+                    <li className="text-xs text-[#97938e] pl-5">
                       + {course.issues.length - 3} autre{course.issues.length - 3 > 1 ? "s" : ""} problème
                       {course.issues.length - 3 > 1 ? "s" : ""} (voir l'onglet SEO du cours)
                     </li>

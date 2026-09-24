@@ -243,7 +243,7 @@ export default function StatisticsPage() {
     return (
       <div className="text-center py-12">
         <AlertCircle className="w-12 h-12 mx-auto text-red-500 mb-4" />
-        <h2 className="text-lg font-semibold text-[#37352f]">{error}</h2>
+        <h2 className="text-lg font-semibold text-[#1a1512]">{error}</h2>
         <button 
           onClick={fetchData}
           className="dash-button dash-button-primary mt-4"
@@ -286,8 +286,8 @@ export default function StatisticsPage() {
                 <BookOpen className="w-5 h-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[#37352f]">{globalStats.totalRedacteurs}</p>
-                <p className="text-sm text-[#6b6b6b]">Rédacteurs</p>
+                <p className="text-2xl font-bold text-[#1a1512]">{globalStats.totalRedacteurs}</p>
+                <p className="text-sm text-[#6b625c]">Rédacteurs</p>
               </div>
             </div>
           </div>
@@ -297,8 +297,8 @@ export default function StatisticsPage() {
                 <FileText className="w-5 h-5 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[#37352f]">{globalStats.totalCorrecteurs}</p>
-                <p className="text-sm text-[#6b6b6b]">Correcteurs</p>
+                <p className="text-2xl font-bold text-[#1a1512]">{globalStats.totalCorrecteurs}</p>
+                <p className="text-sm text-[#6b625c]">Correcteurs</p>
               </div>
             </div>
           </div>
@@ -308,8 +308,8 @@ export default function StatisticsPage() {
                 <MessageSquare className="w-5 h-5 text-emerald-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[#37352f]">{globalStats.totalHelpeurs}</p>
-                <p className="text-sm text-[#6b6b6b]">Helpeurs</p>
+                <p className="text-2xl font-bold text-[#1a1512]">{globalStats.totalHelpeurs}</p>
+                <p className="text-sm text-[#6b625c]">Helpeurs</p>
               </div>
             </div>
           </div>
@@ -319,8 +319,8 @@ export default function StatisticsPage() {
                 <TrendingUp className="w-5 h-5 text-amber-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-[#37352f]">{globalStats.avgActivity}%</p>
-                <p className="text-sm text-[#6b6b6b]">Activité moyenne</p>
+                <p className="text-2xl font-bold text-[#1a1512]">{globalStats.avgActivity}%</p>
+                <p className="text-sm text-[#6b625c]">Activité moyenne</p>
               </div>
             </div>
           </div>
@@ -330,8 +330,8 @@ export default function StatisticsPage() {
       {/* Filtres */}
       <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
         <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-[#6b6b6b]" />
-          <span className="text-sm text-[#6b6b6b]">Filtrer par rôle:</span>
+          <Filter className="w-4 h-4 text-[#6b625c]" />
+          <span className="text-sm text-[#6b625c]">Filtrer par rôle:</span>
           <select
             className="dash-input py-1 px-2 text-sm w-40"
             value={filterRole}
@@ -345,7 +345,7 @@ export default function StatisticsPage() {
           </select>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-[#6b6b6b]">Trier par:</span>
+          <span className="text-sm text-[#6b625c]">Trier par:</span>
           <select
             className="dash-input py-1 px-2 text-sm w-40"
             value={sortBy}
@@ -360,7 +360,7 @@ export default function StatisticsPage() {
 
       {/* Légende des couleurs */}
       <div className="dash-card p-4">
-        <h3 className="text-sm font-semibold text-[#37352f] mb-3">Légende d&apos;activité</h3>
+        <h3 className="text-sm font-semibold text-[#1a1512] mb-3">Légende d&apos;activité</h3>
         <div className="flex flex-wrap gap-4">
           {[
             { min: 80, label: "Très actif (80-100%)", color: "bg-emerald-500" },
@@ -371,34 +371,34 @@ export default function StatisticsPage() {
           ].map((item) => (
             <div key={item.min} className="flex items-center gap-2">
               <div className={`w-3 h-3 rounded-full ${item.color}`} />
-              <span className="text-sm text-[#6b6b6b]">{item.label}</span>
+              <span className="text-sm text-[#6b625c]">{item.label}</span>
             </div>
           ))}
         </div>
         <div className="flex items-center gap-2 mt-3">
-          <p className="text-xs text-[#9ca3af]">
+          <p className="text-xs text-[#97938e]">
             Les <span className="text-emerald-600 font-medium">+X%</span> / <span className="text-red-600 font-medium">-X%</span> indiquent l&apos;évolution du score ce mois vs le mois dernier.
           </p>
           <Tooltip>
             <TooltipTrigger asChild>
               <button
                 type="button"
-                className="p-1 rounded-full hover:bg-[#f1f1ef] transition-colors text-[#9ca3af] hover:text-[#6b6b6b] focus:outline-none focus:ring-2 focus:ring-[#f97316]/30"
+                className="p-1 rounded-full hover:bg-[#f0e9dc] transition-colors text-[#97938e] hover:text-[#6b625c] focus:outline-none focus:ring-2 focus:ring-[#ff6a1a]/30"
                 aria-label="Comment est calculé le pourcentage ?"
               >
                 <Info className="w-4 h-4" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="top" className="max-w-xs p-4 text-left">
-              <p className="font-semibold text-[#37352f] mb-2">Calcul du pourcentage d&apos;évolution</p>
-              <p className="text-sm text-[#6b6b6b] mb-2">
+              <p className="font-semibold text-[#1a1512] mb-2">Calcul du pourcentage d&apos;évolution</p>
+              <p className="text-sm text-[#6b625c] mb-2">
                 Le pourcentage compare le score de ce mois au score du mois dernier.
               </p>
-              <p className="text-xs text-[#9ca3af] mb-3">
+              <p className="text-xs text-[#97938e] mb-3">
                 Formule : ((score ce mois − score mois dernier) ÷ score mois dernier) × 100
               </p>
-              <p className="text-xs font-medium text-[#37352f] mb-1">Points par contribution :</p>
-              <ul className="text-xs text-[#6b6b6b] space-y-1">
+              <p className="text-xs font-medium text-[#1a1512] mb-1">Points par contribution :</p>
+              <ul className="text-xs text-[#6b625c] space-y-1">
                 <li>• <strong>Rédacteur</strong> : cours 20 pts, leçons 1 pt, exercices 2 pts, fiches 3 pts</li>
                 <li>• <strong>Correcteur</strong> : exercices 3 pts, cours 5 pts, leçons 2 pts, fiches 2 pts</li>
                 <li>• <strong>Helpeur</strong> : fiches 5 pts, réponses forum 3 pts, exercices 2 pts</li>
@@ -413,12 +413,12 @@ export default function StatisticsPage() {
         {/* Rédacteurs */}
         {groupedByRole.Rédacteur.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold text-[#37352f] mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-[#1a1512] mb-4 flex items-center gap-2">
               <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                 <BookOpen className="w-4 h-4 text-blue-600" />
               </div>
               Rédacteurs
-              <span className="text-sm font-normal text-[#9ca3af]">
+              <span className="text-sm font-normal text-[#97938e]">
                 ({groupedByRole.Rédacteur.length})
               </span>
             </h2>
@@ -433,12 +433,12 @@ export default function StatisticsPage() {
         {/* Correcteurs */}
         {groupedByRole.Correcteur.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold text-[#37352f] mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-[#1a1512] mb-4 flex items-center gap-2">
               <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
                 <FileText className="w-4 h-4 text-purple-600" />
               </div>
               Correcteurs
-              <span className="text-sm font-normal text-[#9ca3af]">
+              <span className="text-sm font-normal text-[#97938e]">
                 ({groupedByRole.Correcteur.length})
               </span>
             </h2>
@@ -453,12 +453,12 @@ export default function StatisticsPage() {
         {/* Helpeurs */}
         {groupedByRole.Helpeur.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold text-[#37352f] mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-[#1a1512] mb-4 flex items-center gap-2">
               <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
                 <MessageSquare className="w-4 h-4 text-emerald-600" />
               </div>
               Helpeurs
-              <span className="text-sm font-normal text-[#9ca3af]">
+              <span className="text-sm font-normal text-[#97938e]">
                 ({groupedByRole.Helpeur.length})
               </span>
             </h2>
@@ -473,12 +473,12 @@ export default function StatisticsPage() {
         {/* Modérateurs */}
         {groupedByRole.Modérateur.length > 0 && (
           <div>
-            <h2 className="text-lg font-semibold text-[#37352f] mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-semibold text-[#1a1512] mb-4 flex items-center gap-2">
               <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
                 <Users className="w-4 h-4 text-red-600" />
               </div>
               Modérateurs
-              <span className="text-sm font-normal text-[#9ca3af]">
+              <span className="text-sm font-normal text-[#97938e]">
                 ({groupedByRole.Modérateur.length})
               </span>
             </h2>
@@ -549,10 +549,10 @@ function ContributorCard({ contributor }: { contributor: Contributor }) {
             showPoints={false}
           />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-[#37352f] truncate">
+            <h3 className="font-semibold text-[#1a1512] truncate">
               {contributor.name}
             </h3>
-            <p className="text-sm text-[#9ca3af] truncate">@{contributor.username}</p>
+            <p className="text-sm text-[#97938e] truncate">@{contributor.username}</p>
           </div>
         </div>
 
@@ -562,7 +562,7 @@ function ContributorCard({ contributor }: { contributor: Contributor }) {
             {colors.label}
           </span>
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-[#37352f]">
+            <span className="text-sm font-semibold text-[#1a1512]">
               {contributor.activityScore}%
             </span>
             {contributor.scoreEvolution !== undefined && contributor.scoreEvolution !== 0 && (
@@ -572,7 +572,7 @@ function ContributorCard({ contributor }: { contributor: Contributor }) {
                     ? "text-emerald-600"
                     : contributor.scoreEvolution < 0
                     ? "text-red-600"
-                    : "text-[#9ca3af]"
+                    : "text-[#97938e]"
                 }`}
               >
                 {contributor.scoreEvolution > 0 ? (
@@ -588,7 +588,7 @@ function ContributorCard({ contributor }: { contributor: Contributor }) {
         </div>
 
         {/* Barre de progression */}
-        <div className="w-full h-2 bg-[#f1f1ef] rounded-full overflow-hidden mb-4">
+        <div className="w-full h-2 bg-[#f0e9dc] rounded-full overflow-hidden mb-4">
           <div
             className={`h-full ${colors.bg} transition-all duration-500`}
             style={{ width: `${contributor.activityScore}%` }}
@@ -598,18 +598,18 @@ function ContributorCard({ contributor }: { contributor: Contributor }) {
         {/* Stats spécifiques au rôle */}
         <div className="grid grid-cols-2 gap-2 mb-3">
           {stats.map((stat, idx) => (
-            <div key={idx} className="flex items-center gap-2 p-2 bg-[#f7f6f3] rounded-lg">
-              <stat.icon className="w-4 h-4 text-[#9ca3af]" />
+            <div key={idx} className="flex items-center gap-2 p-2 bg-[#f5efe3] rounded-lg">
+              <stat.icon className="w-4 h-4 text-[#97938e]" />
               <div>
-                <p className="text-sm font-semibold text-[#37352f]">{stat.value}</p>
-                <p className="text-xs text-[#9ca3af]">{stat.label}</p>
+                <p className="text-sm font-semibold text-[#1a1512]">{stat.value}</p>
+                <p className="text-xs text-[#97938e]">{stat.label}</p>
               </div>
             </div>
           ))}
         </div>
 
         {/* Dernière activité */}
-        <p className="text-xs text-[#9ca3af] text-center">
+        <p className="text-xs text-[#97938e] text-center">
           Dernière activité: {formatRelativeTime(contributor.lastActivity)}
         </p>
       </div>

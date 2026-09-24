@@ -491,7 +491,7 @@ export default function ModerationPage() {
                 <div className="dash-card-body p-0">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f97316]"></div>
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ff6a1a]"></div>
                         </div>
                     ) : reports.length === 0 ? (
                         <div className="dash-empty py-12">
@@ -579,7 +579,7 @@ export default function ModerationPage() {
                                                             <Button 
                                                                 variant="ghost" 
                                                                 size="sm"
-                                                                className="h-8 px-3 text-[#f97316] hover:text-[#ea580c] hover:bg-orange-50"
+                                                                className="h-8 px-3 text-[#ff6a1a] hover:text-[#c24a0a] hover:bg-orange-50"
                                                                 onClick={() => {
                                                                     setSelectedReport(report);
                                                                     setModeratorNotes(report.moderatorNotes || '');
@@ -625,7 +625,7 @@ export default function ModerationPage() {
                                                                         )}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"
-                                                                        className="inline-flex items-center gap-2 text-sm text-[#f97316] hover:text-[#ea580c] bg-orange-50 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors"
+                                                                        className="inline-flex items-center gap-2 text-sm text-[#ff6a1a] hover:text-[#c24a0a] bg-orange-50 px-4 py-2 rounded-lg hover:bg-orange-100 transition-colors"
                                                                     >
                                                                         <ExternalLink className="w-4 h-4" />
                                                                         Ouvrir le contenu signalé

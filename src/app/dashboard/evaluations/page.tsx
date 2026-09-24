@@ -77,11 +77,11 @@ export default function EvaluationCorrectionsPage() {
         <div className="p-6 max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#37352f] flex items-center gap-2">
-                        <FileCheck className="w-7 h-7 text-[#f97316]" />
+                    <h1 className="text-2xl font-bold text-[#1a1512] flex items-center gap-2">
+                        <FileCheck className="w-7 h-7 text-[#ff6a1a]" />
                         Corrections d'évaluations
                     </h1>
-                    <p className="text-sm text-[#6b6b6b] mt-1">
+                    <p className="text-sm text-[#6b625c] mt-1">
                         {submissions.length} soumission(s)
                     </p>
                 </div>
@@ -91,8 +91,8 @@ export default function EvaluationCorrectionsPage() {
             <div className="dash-card mb-6">
                 <div className="dash-card-body">
                     <div className="flex items-center gap-2 mb-3">
-                        <Filter className="w-4 h-4 text-[#6b6b6b]" />
-                        <span className="text-sm font-medium text-[#37352f]">Filtres</span>
+                        <Filter className="w-4 h-4 text-[#6b625c]" />
+                        <span className="text-sm font-medium text-[#1a1512]">Filtres</span>
                     </div>
                     <div className="flex gap-3">
                         <select
@@ -111,13 +111,13 @@ export default function EvaluationCorrectionsPage() {
             {/* Table */}
             {loading ? (
                 <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
                 </div>
             ) : submissions.length === 0 ? (
                 <div className="dash-empty">
                     <FileCheck className="dash-empty-icon" />
                     <h3 className="dash-empty-title">Aucune soumission</h3>
-                    <p className="text-sm text-[#6b6b6b]">
+                    <p className="text-sm text-[#6b625c]">
                         Les évaluations soumises apparaîtront ici.
                     </p>
                 </div>
@@ -126,42 +126,42 @@ export default function EvaluationCorrectionsPage() {
                     <div className="overflow-x-auto">
                         <table className="w-full">
                             <thead>
-                                <tr className="border-b border-[#e3e2e0]">
-                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b6b6b] uppercase">Élève</th>
-                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b6b6b] uppercase">Cours</th>
-                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b6b6b] uppercase">Évaluation</th>
-                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b6b6b] uppercase">Soumis</th>
-                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b6b6b] uppercase">Temps</th>
-                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b6b6b] uppercase">Statut</th>
-                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b6b6b] uppercase">Action</th>
+                                <tr className="border-b border-[#e6e0d6]">
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b625c] uppercase">Élève</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b625c] uppercase">Cours</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b625c] uppercase">Évaluation</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b625c] uppercase">Soumis</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b625c] uppercase">Temps</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b625c] uppercase">Statut</th>
+                                    <th className="text-left px-4 py-3 text-xs font-medium text-[#6b625c] uppercase">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {submissions.map((sub) => (
-                                    <tr key={sub._id} className="border-b border-[#e3e2e0] hover:bg-[#f7f6f3] transition-colors">
+                                    <tr key={sub._id} className="border-b border-[#e6e0d6] hover:bg-[#f5efe3] transition-colors">
                                         <td className="px-4 py-3">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-7 h-7 bg-gray-100 rounded-full flex items-center justify-center">
                                                     <User className="w-3.5 h-3.5 text-gray-400" />
                                                 </div>
-                                                <span className="text-sm text-[#37352f] font-medium">
+                                                <span className="text-sm text-[#1a1512] font-medium">
                                                     {sub.userId?.username || "Inconnu"}
                                                 </span>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-sm text-[#37352f]">
+                                        <td className="px-4 py-3 text-sm text-[#1a1512]">
                                             {sub.courseId?.title || "-"}
                                         </td>
                                         <td className="px-4 py-3">
-                                            <span className="text-sm text-[#37352f]">{sub.evaluationId?.title || "-"}</span>
-                                            <span className="ml-1.5 text-xs text-[#9ca3af]">
+                                            <span className="text-sm text-[#1a1512]">{sub.evaluationId?.title || "-"}</span>
+                                            <span className="ml-1.5 text-xs text-[#97938e]">
                                                 ({sub.type === "form" ? "Form" : "PDF"})
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-[#6b6b6b]">
+                                        <td className="px-4 py-3 text-xs text-[#6b625c]">
                                             {timeAgo(sub.submittedAt)}
                                         </td>
-                                        <td className="px-4 py-3 text-xs text-[#6b6b6b]">
+                                        <td className="px-4 py-3 text-xs text-[#6b625c]">
                                             {Math.round(sub.timeSpent / 60)} min
                                         </td>
                                         <td className="px-4 py-3">
@@ -191,7 +191,7 @@ export default function EvaluationCorrectionsPage() {
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <div className="flex items-center justify-center gap-2 py-4 border-t border-[#e3e2e0]">
+                        <div className="flex items-center justify-center gap-2 py-4 border-t border-[#e6e0d6]">
                             <button
                                 disabled={page <= 1}
                                 onClick={() => setPage(page - 1)}
@@ -199,7 +199,7 @@ export default function EvaluationCorrectionsPage() {
                             >
                                 Précédent
                             </button>
-                            <span className="text-sm text-[#6b6b6b]">{page}/{totalPages}</span>
+                            <span className="text-sm text-[#6b625c]">{page}/{totalPages}</span>
                             <button
                                 disabled={page >= totalPages}
                                 onClick={() => setPage(page + 1)}

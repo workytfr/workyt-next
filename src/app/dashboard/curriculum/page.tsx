@@ -352,11 +352,11 @@ export default function CurriculumAdminPage() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-[#37352f] flex items-center gap-2">
-            <GraduationCap className="w-7 h-7 text-[#f97316]" />
+          <h1 className="text-2xl font-bold text-[#1a1512] flex items-center gap-2">
+            <GraduationCap className="w-7 h-7 text-[#ff6a1a]" />
             Programmes Scolaires
           </h1>
-          <p className="text-sm text-[#6b6b6b] mt-1 flex items-center gap-2">
+          <p className="text-sm text-[#6b625c] mt-1 flex items-center gap-2">
             <span>{nodes.length} chapitres &middot; {totalSkills} compétences</span>
             {nodes.length > 0 && (() => {
               const pct = aggregateCoverage(nodes);
@@ -412,7 +412,7 @@ export default function CurriculumAdminPage() {
             )}
             <span className="font-medium">{importResult.message}</span>
           </div>
-          <p className="text-sm text-[#6b6b6b]">
+          <p className="text-sm text-[#6b625c]">
             {importResult.created} créés, {importResult.updated} mis à jour
             {importResult.errors.length > 0 &&
               `, ${importResult.errors.length} erreurs`}
@@ -424,8 +424,8 @@ export default function CurriculumAdminPage() {
       <div className="dash-card mb-6">
         <div className="dash-card-body">
           <div className="flex items-center gap-2 mb-3">
-            <Filter className="w-4 h-4 text-[#6b6b6b]" />
-            <span className="text-sm font-medium text-[#37352f]">Filtres</span>
+            <Filter className="w-4 h-4 text-[#6b625c]" />
+            <span className="text-sm font-medium text-[#1a1512]">Filtres</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3">
             <select
@@ -511,7 +511,7 @@ export default function CurriculumAdminPage() {
             </select>
 
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#9ca3af]" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[#97938e]" />
               <input
                 type="text"
                 placeholder="Rechercher..."
@@ -527,26 +527,26 @@ export default function CurriculumAdminPage() {
       {/* Tree view */}
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+          <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
         </div>
       ) : searchQuery ? (
         <div className="space-y-2">
-          <div className="text-xs text-[#6b6b6b] px-1">
+          <div className="text-xs text-[#6b625c] px-1">
             {searchResults.length} compétence{searchResults.length > 1 ? "s" : ""} trouvée{searchResults.length > 1 ? "s" : ""} pour &laquo; {searchQuery} &raquo;
           </div>
           {searchResults.length === 0 ? (
             <div className="dash-empty">
               <Search className="dash-empty-icon" />
               <h3 className="dash-empty-title">Aucune compétence</h3>
-              <p className="text-sm text-[#6b6b6b]">
+              <p className="text-sm text-[#6b625c]">
                 Essayez un autre mot-clé ou élargissez les filtres
               </p>
             </div>
           ) : (
             <div className="dash-card">
-              <div className="dash-card-body p-0 divide-y divide-[#e3e2e0]">
+              <div className="dash-card-body p-0 divide-y divide-[#e6e0d6]">
                 {searchResults.slice(0, 200).map(({ skill, node }) => (
-                  <div key={`${node.nodeId}-${skill.skillId}`} className="px-4 py-3 hover:bg-[#f7f6f3]">
+                  <div key={`${node.nodeId}-${skill.skillId}`} className="px-4 py-3 hover:bg-[#f5efe3]">
                     <div className="flex items-start gap-2">
                       <span
                         className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold shrink-0 mt-0.5 ${
@@ -556,8 +556,8 @@ export default function CurriculumAdminPage() {
                         {skill.difficulty}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <div className="text-sm text-[#37352f]">{skill.description}</div>
-                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1 text-xs text-[#6b6b6b]">
+                        <div className="text-sm text-[#1a1512]">{skill.description}</div>
+                        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 mt-1 text-xs text-[#6b625c]">
                           <span className="dash-badge">{CYCLE_LABELS[node.cycle] || node.cycle}</span>
                           <span>&rsaquo;</span>
                           <span className="dash-badge">{node.level}</span>
@@ -572,24 +572,24 @@ export default function CurriculumAdminPage() {
                           <span>&rsaquo;</span>
                           <span className="truncate">{node.theme}</span>
                           <span>&rsaquo;</span>
-                          <span className="truncate font-medium text-[#37352f]">{node.chapter}</span>
+                          <span className="truncate font-medium text-[#1a1512]">{node.chapter}</span>
                         </div>
                         {skill.keywords.length > 0 && (
                           <div className="flex flex-wrap gap-1 mt-1.5">
                             {skill.keywords.map((k) => (
-                              <span key={k} className="text-[10px] px-1.5 py-0.5 rounded bg-[#f3f4f6] text-[#6b6b6b]">
+                              <span key={k} className="text-[10px] px-1.5 py-0.5 rounded bg-[#f3f4f6] text-[#6b625c]">
                                 {k}
                               </span>
                             ))}
                           </div>
                         )}
                       </div>
-                      <code className="text-[10px] text-[#9ca3af] shrink-0 mt-0.5">{skill.skillId}</code>
+                      <code className="text-[10px] text-[#97938e] shrink-0 mt-0.5">{skill.skillId}</code>
                     </div>
                   </div>
                 ))}
                 {searchResults.length > 200 && (
-                  <div className="px-4 py-2 text-xs text-[#9ca3af] text-center">
+                  <div className="px-4 py-2 text-xs text-[#97938e] text-center">
                     Affichage limité aux 200 premiers résultats. Affinez la recherche.
                   </div>
                 )}
@@ -601,7 +601,7 @@ export default function CurriculumAdminPage() {
         <div className="dash-empty">
           <FileJson className="dash-empty-icon" />
           <h3 className="dash-empty-title">Aucun programme importé</h3>
-          <p className="text-sm text-[#6b6b6b]">
+          <p className="text-sm text-[#6b625c]">
             Importez un fichier JSON depuis le bouton ci-dessus
           </p>
         </div>
@@ -612,15 +612,15 @@ export default function CurriculumAdminPage() {
               {/* Theme header */}
               <button
                 onClick={() => toggleTheme(theme)}
-                className="w-full dash-card-header flex items-center gap-2 cursor-pointer hover:bg-[#f7f6f3] transition-colors"
+                className="w-full dash-card-header flex items-center gap-2 cursor-pointer hover:bg-[#f5efe3] transition-colors"
               >
                 {expandedThemes.has(theme) ? (
-                  <ChevronDown className="w-5 h-5 text-[#f97316]" />
+                  <ChevronDown className="w-5 h-5 text-[#ff6a1a]" />
                 ) : (
-                  <ChevronRight className="w-5 h-5 text-[#6b6b6b]" />
+                  <ChevronRight className="w-5 h-5 text-[#6b625c]" />
                 )}
-                <BookOpen className="w-4 h-4 text-[#f97316]" />
-                <span className="font-semibold text-[#37352f]">{theme}</span>
+                <BookOpen className="w-4 h-4 text-[#ff6a1a]" />
+                <span className="font-semibold text-[#1a1512]">{theme}</span>
                 {(() => {
                   const themeNodes = Object.values(chapters).flat();
                   const pct = aggregateCoverage(themeNodes);
@@ -633,7 +633,7 @@ export default function CurriculumAdminPage() {
                     </span>
                   );
                 })()}
-                <span className="text-xs text-[#9ca3af] ml-auto">
+                <span className="text-xs text-[#97938e] ml-auto">
                   {Object.keys(chapters).length} chapitres &middot;{" "}
                   {Object.values(chapters)
                     .flat()
@@ -650,17 +650,17 @@ export default function CurriculumAdminPage() {
                     const levels = [...new Set(chapterNodes.map((n) => n.level))];
 
                     return (
-                      <div key={chapterKey} className="border border-[#e3e2e0] rounded-lg">
+                      <div key={chapterKey} className="border border-[#e6e0d6] rounded-lg">
                         <button
                           onClick={() => toggleChapter(chapterKey)}
-                          className="w-full px-4 py-3 flex items-center gap-2 hover:bg-[#f7f6f3] transition-colors"
+                          className="w-full px-4 py-3 flex items-center gap-2 hover:bg-[#f5efe3] transition-colors"
                         >
                           {expandedChapters.has(chapterKey) ? (
-                            <ChevronDown className="w-4 h-4 text-[#6b6b6b]" />
+                            <ChevronDown className="w-4 h-4 text-[#6b625c]" />
                           ) : (
-                            <ChevronRight className="w-4 h-4 text-[#6b6b6b]" />
+                            <ChevronRight className="w-4 h-4 text-[#6b625c]" />
                           )}
-                          <span className="font-medium text-sm text-[#37352f]">
+                          <span className="font-medium text-sm text-[#1a1512]">
                             {chapter}
                           </span>
                           {(() => {
@@ -684,7 +684,7 @@ export default function CurriculumAdminPage() {
                               </span>
                             ))}
                           </div>
-                          <span className="text-xs text-[#9ca3af] ml-auto">
+                          <span className="text-xs text-[#97938e] ml-auto">
                             {allSkills.length} comp. &middot;{" "}
                             {chapterNodes[0]?.estimatedHours || 0}h &middot; Exam{" "}
                             {chapterNodes[0]?.examFrequency || 0}%
@@ -697,7 +697,7 @@ export default function CurriculumAdminPage() {
                             {allSkills.map((skill) => (
                               <div
                                 key={skill.skillId}
-                                className="flex items-center gap-2 py-1.5 px-3 rounded hover:bg-[#f7f6f3] text-sm"
+                                className="flex items-center gap-2 py-1.5 px-3 rounded hover:bg-[#f5efe3] text-sm"
                               >
                                 <span
                                   className={`inline-flex items-center justify-center w-5 h-5 rounded text-xs font-bold ${
@@ -706,17 +706,17 @@ export default function CurriculumAdminPage() {
                                 >
                                   {skill.difficulty}
                                 </span>
-                                <span className="flex-1 text-[#37352f]">
+                                <span className="flex-1 text-[#1a1512]">
                                   {skill.description}
                                 </span>
-                                <code className="text-xs text-[#9ca3af]">
+                                <code className="text-xs text-[#97938e]">
                                   {skill.skillId}
                                 </code>
                               </div>
                             ))}
 
                             {/* Actions */}
-                            <div className="flex items-center gap-2 pt-2 border-t border-[#e3e2e0] mt-2">
+                            <div className="flex items-center gap-2 pt-2 border-t border-[#e6e0d6] mt-2">
                               <button
                                 onClick={() => setTaggingNode(chapterNodes[0])}
                                 className="dash-button dash-button-secondary dash-button-sm flex items-center gap-1"
@@ -732,7 +732,7 @@ export default function CurriculumAdminPage() {
                                 Supprimer
                               </button>
                               {chapterNodes[0].linkedContent && (
-                                <span className="text-xs text-[#9ca3af] ml-auto">
+                                <span className="text-xs text-[#97938e] ml-auto">
                                   {chapterNodes[0].linkedContent.fiches?.length || 0} fiches,{" "}
                                   {chapterNodes[0].linkedContent.courses?.length || 0} cours,{" "}
                                   {chapterNodes[0].linkedContent.quizzes?.length || 0} quiz
@@ -756,7 +756,7 @@ export default function CurriculumAdminPage() {
         <div className="fixed inset-0 bg-black/30 z-50 flex items-center justify-center">
           <div className="bg-white rounded-xl shadow-xl max-w-lg w-full mx-4 p-6">
             <div className="flex items-center justify-between mb-1">
-              <h3 className="font-semibold text-lg text-[#37352f]">
+              <h3 className="font-semibold text-lg text-[#1a1512]">
                 Lier du contenu
               </h3>
               <button
@@ -769,7 +769,7 @@ export default function CurriculumAdminPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <p className="text-sm text-[#6b6b6b] mb-4">
+            <p className="text-sm text-[#6b625c] mb-4">
               {taggingNode.chapter} ({taggingNode.level}) &middot; Recherchez par titre
             </p>
 
@@ -777,7 +777,7 @@ export default function CurriculumAdminPage() {
             {(taggingNode.linkedContent.fiches?.length > 0 ||
               taggingNode.linkedContent.courses?.length > 0 ||
               taggingNode.linkedContent.quizzes?.length > 0) && (
-              <div className="mb-4 p-3 bg-gray-50 rounded-lg text-xs text-[#6b6b6b]">
+              <div className="mb-4 p-3 bg-gray-50 rounded-lg text-xs text-[#6b625c]">
                 <p className="font-medium mb-1">Déjà lié :</p>
                 {taggingNode.linkedContent.fiches?.length > 0 && (
                   <p>{taggingNode.linkedContent.fiches.length} fiche(s)</p>

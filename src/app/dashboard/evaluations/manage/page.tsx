@@ -499,11 +499,11 @@ export default function ManageEvaluationsPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#37352f] flex items-center gap-2">
-                        <FileCheck className="w-7 h-7 text-[#f97316]" />
+                    <h1 className="text-2xl font-bold text-[#1a1512] flex items-center gap-2">
+                        <FileCheck className="w-7 h-7 text-[#ff6a1a]" />
                         Banque d&apos;exercices d&apos;évaluation
                     </h1>
-                    <p className="text-sm text-[#6b6b6b] mt-1">
+                    <p className="text-sm text-[#6b625c] mt-1">
                         Créez des exercices que les élèves tireront au sort pour s&apos;entraîner — puis que vous corrigerez.
                     </p>
                 </div>
@@ -518,13 +518,13 @@ export default function ManageEvaluationsPage() {
             {/* Encart explicatif : à quoi ça sert + parcours élève */}
             {!showForm && (
                 <div className="mb-6 rounded-xl border border-orange-100 bg-orange-50/60 p-4">
-                    <p className="text-sm font-semibold text-[#37352f] mb-2">Comment ça fonctionne&nbsp;?</p>
-                    <ol className="grid gap-2 text-xs text-[#6b6b6b] sm:grid-cols-5">
-                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">1.</span> Vous <strong>créez un exercice</strong> rattaché à un cours (PDF généré/déposé, ou formulaire).</li>
-                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">2.</span> L&apos;élève <strong>tire au sort</strong> un exercice du cours.</li>
-                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">3.</span> Il compose dans le <strong>temps imparti</strong> puis rend sa copie.</li>
-                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">4.</span> Vous <strong>corrigez</strong> et notez (points + compétences).</li>
-                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#f97316]">5.</span> L&apos;élève reçoit sa <strong>note</strong> et sa correction.</li>
+                    <p className="text-sm font-semibold text-[#1a1512] mb-2">Comment ça fonctionne&nbsp;?</p>
+                    <ol className="grid gap-2 text-xs text-[#6b625c] sm:grid-cols-5">
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#ff6a1a]">1.</span> Vous <strong>créez un exercice</strong> rattaché à un cours (PDF généré/déposé, ou formulaire).</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#ff6a1a]">2.</span> L&apos;élève <strong>tire au sort</strong> un exercice du cours.</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#ff6a1a]">3.</span> Il compose dans le <strong>temps imparti</strong> puis rend sa copie.</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#ff6a1a]">4.</span> Vous <strong>corrigez</strong> et notez (points + compétences).</li>
+                        <li className="flex items-start gap-1.5"><span className="font-bold text-[#ff6a1a]">5.</span> L&apos;élève reçoit sa <strong>note</strong> et sa correction.</li>
                     </ol>
                 </div>
             )}
@@ -553,10 +553,10 @@ export default function ManageEvaluationsPage() {
             {showForm && (
                 <div className="dash-card mb-6">
                     <div className="dash-card-header flex items-center justify-between">
-                        <span className="font-semibold text-[#37352f]">
+                        <span className="font-semibold text-[#1a1512]">
                             {editing ? "Modifier l'exercice" : "Créer un exercice d'évaluation"}
                         </span>
-                        <button onClick={() => { setShowForm(false); resetForm(); }} className="text-[#6b6b6b] hover:text-[#37352f]">
+                        <button onClick={() => { setShowForm(false); resetForm(); }} className="text-[#6b625c] hover:text-[#1a1512]">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -600,8 +600,8 @@ export default function ManageEvaluationsPage() {
                                             onClick={() => setFormDuration(d)}
                                             className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                                                 formDuration === d
-                                                    ? "bg-[#f97316] text-white border-[#f97316]"
-                                                    : "bg-white text-[#6b6b6b] border-[#e3e2e0] hover:border-[#f97316]"
+                                                    ? "bg-[#ff6a1a] text-white border-[#ff6a1a]"
+                                                    : "bg-white text-[#6b625c] border-[#e6e0d6] hover:border-[#ff6a1a]"
                                             }`}
                                         >
                                             {d}m
@@ -620,8 +620,8 @@ export default function ManageEvaluationsPage() {
                                             onClick={() => setFormDeposit(d)}
                                             className={`px-2.5 py-1.5 text-xs font-medium rounded-lg border transition-colors ${
                                                 formDeposit === d
-                                                    ? "bg-[#f97316] text-white border-[#f97316]"
-                                                    : "bg-white text-[#6b6b6b] border-[#e3e2e0] hover:border-[#f97316]"
+                                                    ? "bg-[#ff6a1a] text-white border-[#ff6a1a]"
+                                                    : "bg-white text-[#6b625c] border-[#e6e0d6] hover:border-[#ff6a1a]"
                                             }`}
                                         >
                                             {d === 0 ? "0" : `${d}m`}
@@ -672,7 +672,7 @@ export default function ManageEvaluationsPage() {
                                             type="button"
                                             onClick={() => setShowComposer(true)}
                                             disabled={uploadingPdf}
-                                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#f97316] bg-[#fff7ed] px-4 py-3 text-sm font-semibold text-[#f97316] transition-colors hover:bg-[#ffedd5] disabled:opacity-50"
+                                            className="w-full flex items-center justify-center gap-2 rounded-xl border border-[#ff6a1a] bg-[#fff4ec] px-4 py-3 text-sm font-semibold text-[#ff6a1a] transition-colors hover:bg-[#ffedd5] disabled:opacity-50"
                                         >
                                             <Pencil className="w-4 h-4" />
                                             Composer les exercices → PDF (cards, lignes de réponse, LaTeX, dessins)
@@ -684,7 +684,7 @@ export default function ManageEvaluationsPage() {
 
                                         <div
                                             onClick={() => pdfInputRef.current?.click()}
-                                            className="border-2 border-dashed border-gray-300 hover:border-[#f97316] rounded-xl p-8 text-center cursor-pointer transition-colors"
+                                            className="border-2 border-dashed border-gray-300 hover:border-[#ff6a1a] rounded-xl p-8 text-center cursor-pointer transition-colors"
                                         >
                                             <input
                                                 ref={pdfInputRef}
@@ -699,14 +699,14 @@ export default function ManageEvaluationsPage() {
                                             />
                                             {uploadingPdf ? (
                                                 <div className="flex flex-col items-center gap-2">
-                                                    <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
-                                                    <p className="text-sm text-[#6b6b6b]">Upload en cours...</p>
+                                                    <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
+                                                    <p className="text-sm text-[#6b625c]">Upload en cours...</p>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-2">
                                                     <Upload className="w-10 h-10 text-gray-300" />
                                                     <p className="text-sm text-gray-600">
-                                                        <span className="font-medium text-[#f97316]">Cliquez</span> ou glissez le sujet PDF ici
+                                                        <span className="font-medium text-[#ff6a1a]">Cliquez</span> ou glissez le sujet PDF ici
                                                     </p>
                                                     <p className="text-xs text-gray-400">Le titre sera rempli automatiquement</p>
                                                 </div>
@@ -733,14 +733,14 @@ export default function ManageEvaluationsPage() {
                         <button
                             type="button"
                             onClick={() => setShowAdvanced(!showAdvanced)}
-                            className="flex items-center gap-2 text-sm text-[#6b6b6b] hover:text-[#37352f] transition-colors"
+                            className="flex items-center gap-2 text-sm text-[#6b625c] hover:text-[#1a1512] transition-colors"
                         >
                             {showAdvanced ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                             Options avancées
                         </button>
 
                         {showAdvanced && (
-                            <div className="space-y-4 pl-2 border-l-2 border-[#e3e2e0]">
+                            <div className="space-y-4 pl-2 border-l-2 border-[#e6e0d6]">
                                 <div>
                                     <label className="dash-label mb-1 block text-xs">Description</label>
                                     <textarea
@@ -753,7 +753,7 @@ export default function ManageEvaluationsPage() {
                                 </div>
                                 <div>
                                     <label className="dash-label mb-1 block text-xs">
-                                        Compétences évaluées {formCompetencyIds.length > 0 && <span className="text-[#f97316]">({formCompetencyIds.length})</span>}
+                                        Compétences évaluées {formCompetencyIds.length > 0 && <span className="text-[#ff6a1a]">({formCompetencyIds.length})</span>}
                                     </label>
                                     <p className="text-[11px] text-gray-400 mb-2">
                                         Coche les compétences du programme testées par cette éval (issues des quiz du cours).
@@ -761,7 +761,7 @@ export default function ManageEvaluationsPage() {
 
                                     {/* Liste des compétences du cours */}
                                     {courseCompetencies.length > 0 ? (
-                                        <div className="max-h-44 overflow-y-auto rounded-lg border border-[#e3e2e0] divide-y divide-gray-100">
+                                        <div className="max-h-44 overflow-y-auto rounded-lg border border-[#e6e0d6] divide-y divide-gray-100">
                                             {courseCompetencies.map((c) => {
                                                 const checked = formCompetencyIds.includes(c.skillId);
                                                 return (
@@ -771,11 +771,11 @@ export default function ManageEvaluationsPage() {
                                                         onClick={() => toggleCompetencyId(c.skillId)}
                                                         className={`flex w-full items-start gap-2 px-3 py-2 text-left transition-colors ${checked ? "bg-orange-50" : "hover:bg-gray-50"}`}
                                                     >
-                                                        <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-[#f97316] bg-[#f97316] text-white" : "border-gray-300"}`}>
+                                                        <span className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded border ${checked ? "border-[#ff6a1a] bg-[#ff6a1a] text-white" : "border-gray-300"}`}>
                                                             {checked && <span className="text-[10px] leading-none">✓</span>}
                                                         </span>
                                                         <span className="min-w-0">
-                                                            <span className="block text-xs text-[#37352f]">{c.description || c.skillId}</span>
+                                                            <span className="block text-xs text-[#1a1512]">{c.description || c.skillId}</span>
                                                             <span className="block font-mono text-[10px] text-gray-400">{c.skillId}</span>
                                                         </span>
                                                     </button>
@@ -814,7 +814,7 @@ export default function ManageEvaluationsPage() {
                                             className="dash-input flex-1 text-xs"
                                             placeholder="Ajouter des codes : C4-MATH-NC-CL-01, …"
                                         />
-                                        <button type="button" onClick={addManualCompetencies} className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs text-gray-600 hover:border-[#f97316]">
+                                        <button type="button" onClick={addManualCompetencies} className="rounded-lg border border-gray-300 px-2.5 py-1.5 text-xs text-gray-600 hover:border-[#ff6a1a]">
                                             Ajouter
                                         </button>
                                     </div>
@@ -844,9 +844,9 @@ export default function ManageEvaluationsPage() {
                                 </div>
                                 <div className="space-y-3">
                                     {formQuestions.map((q, idx) => (
-                                        <div key={idx} className="border border-[#e3e2e0] rounded-xl p-4">
+                                        <div key={idx} className="border border-[#e6e0d6] rounded-xl p-4">
                                             <div className="flex items-center justify-between mb-2">
-                                                <span className="text-xs font-semibold text-[#6b6b6b]">Q{idx + 1}</span>
+                                                <span className="text-xs font-semibold text-[#6b625c]">Q{idx + 1}</span>
                                                 {formQuestions.length > 1 && (
                                                     <button onClick={() => removeQuestion(idx)} className="text-red-400 hover:text-red-500">
                                                         <X className="w-3.5 h-3.5" />
@@ -899,7 +899,7 @@ export default function ManageEvaluationsPage() {
                                                             </button>
                                                         </div>
                                                     ))}
-                                                    <button onClick={() => addOption(idx)} className="text-xs text-[#f97316] hover:text-[#ea580c] font-medium">
+                                                    <button onClick={() => addOption(idx)} className="text-xs text-[#ff6a1a] hover:text-[#c24a0a] font-medium">
                                                         + Option
                                                     </button>
                                                 </div>
@@ -955,13 +955,13 @@ export default function ManageEvaluationsPage() {
             {/* Liste */}
             {loading ? (
                 <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
                 </div>
             ) : evaluations.length === 0 ? (
                 <div className="dash-empty">
                     <FileCheck className="dash-empty-icon" />
                     <h3 className="dash-empty-title">Aucune évaluation</h3>
-                    <p className="text-sm text-[#6b6b6b]">Glissez un PDF ici pour commencer.</p>
+                    <p className="text-sm text-[#6b625c]">Glissez un PDF ici pour commencer.</p>
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -984,17 +984,17 @@ export default function ManageEvaluationsPage() {
 
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-[#37352f] truncate">{ev.title}</p>
+                                    <p className="text-sm font-medium text-[#1a1512] truncate">{ev.title}</p>
                                     <div className="flex items-center gap-3 mt-0.5">
-                                        <span className="text-xs text-[#6b6b6b]">{ev.courseId?.title}</span>
-                                        <span className="text-xs text-[#6b6b6b] flex items-center gap-1">
+                                        <span className="text-xs text-[#6b625c]">{ev.courseId?.title}</span>
+                                        <span className="text-xs text-[#6b625c] flex items-center gap-1">
                                             <Clock className="w-3 h-3" /> {ev.duration}m
                                         </span>
-                                        <span className="text-xs text-[#6b6b6b] flex items-center gap-1">
+                                        <span className="text-xs text-[#6b625c] flex items-center gap-1">
                                             <Target className="w-3 h-3" /> {ev.rewardPoints} pts
                                         </span>
                                         {ev.linkedCompetencies?.length > 0 && (
-                                            <span className="text-xs text-[#6b6b6b] flex items-center gap-1">
+                                            <span className="text-xs text-[#6b625c] flex items-center gap-1">
                                                 <Target className="w-3 h-3" /> {ev.linkedCompetencies.length}
                                             </span>
                                         )}
@@ -1011,14 +1011,14 @@ export default function ManageEvaluationsPage() {
                                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                                         title="Dupliquer"
                                     >
-                                        <Copy className="w-4 h-4 text-[#6b6b6b]" />
+                                        <Copy className="w-4 h-4 text-[#6b625c]" />
                                     </button>
                                     <button
                                         onClick={() => openEdit(ev)}
                                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                                         title="Modifier"
                                     >
-                                        <Pencil className="w-4 h-4 text-[#6b6b6b]" />
+                                        <Pencil className="w-4 h-4 text-[#6b625c]" />
                                     </button>
                                     {session?.user?.role === "Admin" && (
                                         <AuthorReassign
@@ -1051,7 +1051,7 @@ export default function ManageEvaluationsPage() {
                             >
                                 Précédent
                             </button>
-                            <span className="text-sm text-[#6b6b6b]">{page}/{totalPages}</span>
+                            <span className="text-sm text-[#6b625c]">{page}/{totalPages}</span>
                             <button
                                 disabled={page >= totalPages}
                                 onClick={() => setPage(page + 1)}

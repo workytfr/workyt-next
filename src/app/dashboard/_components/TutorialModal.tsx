@@ -71,7 +71,7 @@ function SimButton({ children, variant = "primary", small = false }: {
 }) {
     const base = `inline-flex items-center gap-1.5 font-medium rounded-md transition-colors ${small ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"}`;
     const styles = variant === "primary"
-        ? `${base} bg-[#f97316] text-white hover:bg-[#ea580c]`
+        ? `${base} bg-[#ff6a1a] text-white hover:bg-[#c24a0a]`
         : `${base} border border-gray-200 bg-white text-gray-700 hover:bg-gray-50`;
     return <div className={styles}>{children}</div>;
 }
@@ -1100,7 +1100,7 @@ function SkillPickerDemo() {
                         {filtered.slice(0, 4).map((sk, i) => {
                             const isSel = selected.includes(sk.id);
                             return (
-                                <motion.div key={sk.id} animate={i === highlighted ? { backgroundColor: "#fff7ed" } : {}}
+                                <motion.div key={sk.id} animate={i === highlighted ? { backgroundColor: "#fff4ec" } : {}}
                                     onClick={() => setSelected(s => isSel ? s.filter(x => x !== sk.id) : [...s, sk.id])}
                                     className={`flex items-center gap-2 px-4 py-2 cursor-pointer text-sm hover:bg-orange-50 transition-colors ${isSel ? "bg-orange-50 text-orange-700" : "text-gray-700"}`}
                                 >

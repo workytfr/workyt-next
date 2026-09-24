@@ -38,17 +38,17 @@ export default function SeoScorePanel({ input }: { input: SeoCheckInput }) {
             {/* En-tête avec score */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <Search className="w-5 h-5 text-[#f97316]" />
-                    <h3 className="font-semibold text-[#37352f]">Score SEO</h3>
+                    <Search className="w-5 h-5 text-[#ff6a1a]" />
+                    <h3 className="font-semibold text-[#1a1512]">Score SEO</h3>
                 </div>
                 <span className={`text-2xl font-bold ${scoreColor(score)}`}>
                     {score}
-                    <span className="text-sm font-medium text-[#9ca3af]">/100</span>
+                    <span className="text-sm font-medium text-[#97938e]">/100</span>
                 </span>
             </div>
 
             {/* Barre de score */}
-            <div className="h-2 bg-[#e3e2e0] rounded-full overflow-hidden">
+            <div className="h-2 bg-[#e6e0d6] rounded-full overflow-hidden">
                 <div
                     className={`h-full rounded-full transition-all duration-500 ${scoreBarColor(score)}`}
                     style={{ width: `${score}%` }}
@@ -56,8 +56,8 @@ export default function SeoScorePanel({ input }: { input: SeoCheckInput }) {
             </div>
 
             {/* Aperçu Google (titre composé automatiquement par Workyt) */}
-            <div className="p-3 bg-[#f7f6f3] rounded-lg border border-[#e3e2e0]">
-                <p className="text-[10px] uppercase tracking-wide text-[#9ca3af] mb-1.5">
+            <div className="p-3 bg-[#f5efe3] rounded-lg border border-[#e6e0d6]">
+                <p className="text-[10px] uppercase tracking-wide text-[#97938e] mb-1.5">
                     Aperçu dans Google
                 </p>
                 <p className="text-sm text-[#1a0dab] font-medium leading-snug line-clamp-1">
@@ -77,8 +77,8 @@ export default function SeoScorePanel({ input }: { input: SeoCheckInput }) {
                     <li key={check.id} className="flex items-start gap-2.5">
                         {STATUS_ICON[check.status]}
                         <div className="min-w-0">
-                            <p className="text-sm font-medium text-[#37352f]">{check.label}</p>
-                            <p className="text-xs text-[#6b6b6b] leading-relaxed">{check.advice}</p>
+                            <p className="text-sm font-medium text-[#1a1512]">{check.label}</p>
+                            <p className="text-xs text-[#6b625c] leading-relaxed">{check.advice}</p>
                         </div>
                     </li>
                 ))}

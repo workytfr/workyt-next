@@ -11,7 +11,7 @@ import {
     SelectValue,
 } from "@/components/ui/Select";
 import { useSession, signIn } from "next-auth/react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Paperclip } from "lucide-react";
 import { ILesson } from "@/models/Lesson";
 import RichTextEditor from "@/components/ui/RichTextEditorClientWrapper";
 import EditingPresenceBanner from "@/components/ui/EditingPresenceBanner";
@@ -129,8 +129,8 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
     // Forcer le thème clair
     useEffect(() => {
         document.body.classList.remove("dark");
-        document.body.style.backgroundColor = "white";
-        document.body.style.color = "black";
+        document.body.style.backgroundColor = "#fdfaf4";
+        document.body.style.color = "#1a1512";
     }, []);
 
     // Charger tous les cours une seule fois au montage (inutile si la section est verrouillée)
@@ -264,33 +264,27 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
                 </div>
             )}
 
-            {/* Barre métadonnées compacte */}
-            <div className="px-6 py-3 border-b bg-gray-50/50 shrink-0">
+            {/* Où ranger la leçon : une seule ligne discrète, le titre est dans la page */}
+            <div className="px-6 py-2 border-b border-[#e6e0d6] bg-[#fdfaf4] shrink-0 flex flex-wrap items-center gap-2 text-sm">
                 {lockedSectionId ? (
-                    // Section verrouillée : on n'affiche que le titre (la section est déjà connue)
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                        {lockedSectionLabel && (
-                            <span className="text-sm text-gray-500 whitespace-nowrap">
-                                Section : <span className="font-medium text-gray-700">{lockedSectionLabel}</span>
-                            </span>
-                        )}
-                        <Input
-                            placeholder="Titre de la leçon"
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            className="flex-1"
-                        />
-                    </div>
+                    // Section verrouillée : elle est déjà connue, on la rappelle seulement
+                    lockedSectionLabel && (
+                        <span className="text-[#6b625c]">
+                            Section : <span className="font-medium text-[#1a1512]">{lockedSectionLabel}</span>
+                        </span>
+                    )
                 ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+                <>
+                    <span className="text-[#6b625c] whitespace-nowrap">Ranger dans</span>
                     <Input
-                        placeholder="Rechercher un cours..."
+                        placeholder="Filtrer les cours…"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-8 w-40"
                     />
                     <Select value={selectedCourseId} onValueChange={setSelectedCourseId} disabled={loadingCourses}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Choisissez un cours" />
+                        <SelectTrigger className="h-8 w-full sm:w-60">
+                            <SelectValue placeholder="Choisis un cours" />
                         </SelectTrigger>
                         <SelectContent>
                             {loadingCourses ? (
@@ -308,13 +302,14 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
                             )}
                         </SelectContent>
                     </Select>
+                    <span className="text-[#97938e]" aria-hidden="true">›</span>
                     <Select
                         onValueChange={setSectionId}
                         disabled={!selectedCourseId}
                         value={sectionId}
                     >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Sélectionner une section" />
+                        <SelectTrigger className="h-8 w-full sm:w-60">
+                            <SelectValue placeholder="Choisis une section" />
                         </SelectTrigger>
                         <SelectContent>
                             {courses
@@ -326,37 +321,62 @@ export default function LessonForm({ lesson, onSuccess, onDirtyChange, lockedSec
                                 ))}
                         </SelectContent>
                     </Select>
-                    <Input
-                        placeholder="Titre de la leçon"
-                        value={title}
-                        onChange={(e) => setTitle(e.target.value)}
-                    />
-                </div>
+                </>
                 )}
             </div>
 
-            {/* Éditeur qui remplit tout l'espace disponible */}
+            {/* Éditeur qui remplit tout l'espace disponible ; le titre est celui de la page */}
             <div className="flex-1 min-h-0 overflow-hidden">
-                <RichTextEditor content={content} onChange={setContent} fullHeight />
+                <RichTextEditor
+                    content={content}
+                    onChange={setContent}
+                    fullHeight
+                    header={
+                        <div className="mb-6 border-b border-[#e6e0d6] pb-4">
+                            <label
+                                htmlFor="lesson-title"
+                                className="mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-[#c24a0a]"
+                            >
+                                Titre de la leçon
+                            </label>
+                            {/* textarea et non input : un titre long passe à la ligne au lieu d'être coupé */}
+                            <textarea
+                                id="lesson-title"
+                                rows={1}
+                                // Hauteur ajustée au texte à chaque rendu (Firefox/Safari n'ont pas field-sizing)
+                                ref={(el) => {
+                                    if (!el) return;
+                                    el.style.height = "auto";
+                                    el.style.height = `${el.scrollHeight}px`;
+                                }}
+                                placeholder="Ex. : Les civilisations de la Méditerranée"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value.replace(/\n/g, " "))}
+                                // Entrée ne doit ni envoyer le formulaire ni créer de 2e ligne
+                                onKeyDown={(e) => { if (e.key === "Enter") e.preventDefault(); }}
+                                className="block w-full resize-none overflow-hidden border-0 bg-transparent p-0 font-serif-display text-3xl md:text-[2.6rem] leading-[1.1] text-[#1a1512] outline-none placeholder:text-[rgba(26,21,18,0.25)] [field-sizing:content]"
+                            />
+                        </div>
+                    }
+                />
             </div>
 
             {/* Pied de page avec fichiers et bouton de soumission */}
-            <div className="px-6 py-3 border-t bg-gray-50/50 shrink-0 flex items-center gap-3 flex-wrap">
-                <Input
-                    type="file"
-                    multiple
-                    onChange={handleFilesChange}
-                    className="max-w-xs"
-                />
+            <div className="px-6 py-3 border-t border-[#e6e0d6] bg-[#fdfaf4] shrink-0 flex items-center gap-3 flex-wrap">
+                <label className="dash-button dash-button-secondary dash-button-sm cursor-pointer">
+                    <Paperclip className="w-4 h-4" />
+                    Joindre des fichiers
+                    <input type="file" multiple onChange={handleFilesChange} className="sr-only" />
+                </label>
                 {files.length > 0 && (
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-[#6b625c]">
                         {files.length} fichier{files.length > 1 ? "s" : ""} sélectionné{files.length > 1 ? "s" : ""}
                     </span>
                 )}
                 <Button
                     type="submit"
                     disabled={loading || !sectionId}
-                    className="ml-auto"
+                    className="ml-auto rounded-full bg-[#ff6a1a] px-5 text-white hover:bg-[#c24a0a]"
                 >
                     {loading
                         ? lesson

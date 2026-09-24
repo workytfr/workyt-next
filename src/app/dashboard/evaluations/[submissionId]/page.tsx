@@ -177,7 +177,7 @@ export default function GradingPage() {
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+                <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
             </div>
         );
     }
@@ -200,7 +200,7 @@ export default function GradingPage() {
         <div className="p-6 max-w-5xl mx-auto">
             <Link
                 href="/dashboard/evaluations"
-                className="inline-flex items-center gap-2 text-sm text-[#6b6b6b] hover:text-[#37352f] mb-6"
+                className="inline-flex items-center gap-2 text-sm text-[#6b625c] hover:text-[#1a1512] mb-6"
             >
                 <ArrowLeft className="w-4 h-4" />
                 Retour aux corrections
@@ -216,11 +216,11 @@ export default function GradingPage() {
                                 <User className="w-4 h-4 text-gray-400" />
                             </div>
                             <div>
-                                <p className="font-semibold text-[#37352f]">{student?.username || "Inconnu"}</p>
-                                <p className="text-xs text-[#6b6b6b]">{student?.email}</p>
+                                <p className="font-semibold text-[#1a1512]">{student?.username || "Inconnu"}</p>
+                                <p className="text-xs text-[#6b625c]">{student?.email}</p>
                             </div>
                         </div>
-                        <div className="dash-card-body grid grid-cols-2 gap-2 text-xs text-[#6b6b6b]">
+                        <div className="dash-card-body grid grid-cols-2 gap-2 text-xs text-[#6b625c]">
                             <div>
                                 <span className="font-medium">Trimestre :</span> {draw?.trimester} {draw?.schoolYear}
                             </div>
@@ -241,8 +241,8 @@ export default function GradingPage() {
                     {submission.type === "form" && evaluation?.questions && (
                         <div className="dash-card">
                             <div className="dash-card-header">
-                                <span className="font-semibold text-[#37352f] flex items-center gap-2">
-                                    <FileText className="w-4 h-4 text-[#f97316]" />
+                                <span className="font-semibold text-[#1a1512] flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-[#ff6a1a]" />
                                     Réponses
                                 </span>
                             </div>
@@ -252,11 +252,11 @@ export default function GradingPage() {
                                     .map((q: any, idx: number) => {
                                     const answer = submission.answers?.find((a: any) => a.questionIndex === idx);
                                     return (
-                                        <div key={idx} className="border-b border-[#e3e2e0] pb-3 last:border-0">
-                                            <p className="text-sm font-medium text-[#37352f] mb-1">
+                                        <div key={idx} className="border-b border-[#e6e0d6] pb-3 last:border-0">
+                                            <p className="text-sm font-medium text-[#1a1512] mb-1">
                                                 Q{idx + 1}. {q.questionText}
                                             </p>
-                                            <p className="text-sm text-[#6b6b6b] bg-[#f7f6f3] rounded-lg px-3 py-2">
+                                            <p className="text-sm text-[#6b625c] bg-[#f5efe3] rounded-lg px-3 py-2">
                                                 {answer?.answer || <span className="italic text-gray-400">Pas de réponse</span>}
                                             </p>
                                         </div>
@@ -270,8 +270,8 @@ export default function GradingPage() {
                     {submission.type === "pdf" && submission.answers?.length > 0 && (
                         <div className="dash-card">
                             <div className="dash-card-header">
-                                <span className="font-semibold text-[#37352f] flex items-center gap-2">
-                                    <FileText className="w-4 h-4 text-[#f97316]" />
+                                <span className="font-semibold text-[#1a1512] flex items-center gap-2">
+                                    <FileText className="w-4 h-4 text-[#ff6a1a]" />
                                     Réponses en ligne
                                 </span>
                             </div>
@@ -281,14 +281,14 @@ export default function GradingPage() {
                                     .map((a: any, i: number) => {
                                         const enonce = evaluation?.pdfExercises?.[a.questionIndex]?.enonce;
                                         return (
-                                            <div key={i} className="border-b border-[#e3e2e0] pb-3 last:border-0">
-                                                <p className="text-sm font-medium text-[#37352f] mb-1">
+                                            <div key={i} className="border-b border-[#e6e0d6] pb-3 last:border-0">
+                                                <p className="text-sm font-medium text-[#1a1512] mb-1">
                                                     Exercice {a.questionIndex + 1}
                                                 </p>
                                                 {enonce && (
                                                     <p className="text-xs text-gray-400 mb-1 whitespace-pre-wrap">{enonce}</p>
                                                 )}
-                                                <p className="text-sm text-[#6b6b6b] bg-[#f7f6f3] rounded-lg px-3 py-2 whitespace-pre-wrap">
+                                                <p className="text-sm text-[#6b625c] bg-[#f5efe3] rounded-lg px-3 py-2 whitespace-pre-wrap">
                                                     {a.answer || <span className="italic text-gray-400">Pas de réponse</span>}
                                                 </p>
                                             </div>
@@ -302,8 +302,8 @@ export default function GradingPage() {
                     {submission.submittedFiles?.length > 0 && (
                         <div className="dash-card">
                             <div className="dash-card-header">
-                                <span className="font-semibold text-[#37352f] flex items-center gap-2">
-                                    <Camera className="w-4 h-4 text-[#f97316]" />
+                                <span className="font-semibold text-[#1a1512] flex items-center gap-2">
+                                    <Camera className="w-4 h-4 text-[#ff6a1a]" />
                                     Photos de l&apos;élève ({submission.submittedFiles.length})
                                 </span>
                             </div>
@@ -315,7 +315,7 @@ export default function GradingPage() {
                                             href={evalFileUrl(url)}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="block rounded-lg overflow-hidden border border-gray-200 hover:border-[#f97316] transition-colors"
+                                            className="block rounded-lg overflow-hidden border border-gray-200 hover:border-[#ff6a1a] transition-colors"
                                         >
                                             {url.match(/\.pdf$/i) ? (
                                                 <div className="flex items-center justify-center h-28 bg-gray-50 gap-2">
@@ -329,7 +329,7 @@ export default function GradingPage() {
                                                     className="w-full h-28 object-cover"
                                                 />
                                             )}
-                                            <div className="text-xs text-center py-1 text-[#6b6b6b] bg-[#f7f6f3]">
+                                            <div className="text-xs text-center py-1 text-[#6b625c] bg-[#f5efe3]">
                                                 Photo {i + 1} — cliquer pour agrandir
                                             </div>
                                         </a>
@@ -343,7 +343,7 @@ export default function GradingPage() {
                     {submission.type === "pdf" && submission.submittedPdfUrl && !submission.submittedFiles?.length && (
                         <div className="dash-card">
                             <div className="dash-card-header">
-                                <span className="font-semibold text-[#37352f]">PDF soumis</span>
+                                <span className="font-semibold text-[#1a1512]">PDF soumis</span>
                             </div>
                             <div className="dash-card-body">
                                 <a
@@ -365,7 +365,7 @@ export default function GradingPage() {
                     {/* Note */}
                     <div className="dash-card">
                         <div className="dash-card-header">
-                            <span className="font-semibold text-[#37352f]">Notation</span>
+                            <span className="font-semibold text-[#1a1512]">Notation</span>
                         </div>
                         <div className="dash-card-body space-y-4">
                             <div>
@@ -400,7 +400,7 @@ export default function GradingPage() {
                                 {!isAlreadyGraded && (
                                     <div
                                         onClick={() => fileInputRef.current?.click()}
-                                        className="border-2 border-dashed border-gray-300 hover:border-[#f97316] rounded-lg p-4 text-center cursor-pointer transition-colors mb-3"
+                                        className="border-2 border-dashed border-gray-300 hover:border-[#ff6a1a] rounded-lg p-4 text-center cursor-pointer transition-colors mb-3"
                                     >
                                         <input
                                             ref={fileInputRef}
@@ -411,7 +411,7 @@ export default function GradingPage() {
                                             className="hidden"
                                         />
                                         {uploading ? (
-                                            <Loader2 className="w-5 h-5 animate-spin text-[#f97316] mx-auto" />
+                                            <Loader2 className="w-5 h-5 animate-spin text-[#ff6a1a] mx-auto" />
                                         ) : (
                                             <div className="flex flex-col items-center gap-1">
                                                 <Upload className="w-5 h-5 text-gray-400" />
@@ -454,13 +454,13 @@ export default function GradingPage() {
                     {competencies.length > 0 && (
                         <div className="dash-card">
                             <div className="dash-card-header">
-                                <span className="font-semibold text-[#37352f] flex items-center gap-2">
-                                    <Target className="w-4 h-4 text-[#f97316]" />
+                                <span className="font-semibold text-[#1a1512] flex items-center gap-2">
+                                    <Target className="w-4 h-4 text-[#ff6a1a]" />
                                     Compétences ({competencies.length})
                                 </span>
                             </div>
                             <div className="dash-card-body space-y-2">
-                                <p className="text-xs text-[#6b6b6b] mb-2">
+                                <p className="text-xs text-[#6b625c] mb-2">
                                     Cliquez pour alterner : acquise → non acquise → non évalué
                                 </p>
                                 {competencies.map((skillId: string) => {
@@ -488,7 +488,7 @@ export default function GradingPage() {
                                                 <div className="w-4 h-4 rounded-full border-2 border-gray-300 shrink-0" />
                                             )}
                                             <span className="flex-1 min-w-0">
-                                                <span className="block text-sm text-[#37352f] truncate">
+                                                <span className="block text-sm text-[#1a1512] truncate">
                                                     {compDetails[skillId] || skillId}
                                                 </span>
                                                 {compDetails[skillId] && (

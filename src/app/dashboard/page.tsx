@@ -11,7 +11,7 @@ import {
   Clock,
   Plus,
   ArrowRight,
-  Sparkles,
+  Upload,
   CheckCircle,
   AlertCircle,
   Loader2,
@@ -81,7 +81,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
       </div>
     );
   }
@@ -95,12 +95,11 @@ export default function DashboardPage() {
       color: "primary",
     },
     {
-      title: "Générer avec MaitreRenardAI",
-      description: "Créer un cours automatiquement avec un script Workyt",
-      icon: Sparkles,
-      href: "/cours/generer",
+      title: "Importer un cours",
+      description: "Depuis un Word ou un PDF, avec Foxy (sans IA) ou MaitreRenard AI",
+      icon: Upload,
+      href: "/dashboard/cours/importer",
       color: "accent",
-      external: true,
     },
     {
       title: "Gérer les leçons",
@@ -142,7 +141,7 @@ export default function DashboardPage() {
       {error && !stats && (
         <div className="dash-card p-6 text-center">
           <AlertCircle className="w-10 h-10 mx-auto text-red-400 mb-2" />
-          <p className="text-[#6b6b6b]">Impossible de charger les statistiques.</p>
+          <p className="text-[#6b625c]">Impossible de charger les statistiques.</p>
         </div>
       )}
 
@@ -219,7 +218,7 @@ export default function DashboardPage() {
 
       {/* Actions rapides */}
       <div>
-        <h2 className="text-lg font-semibold text-[#37352f] mb-4">
+        <h2 className="text-lg font-semibold text-[#1a1512] mb-4">
           Actions rapides
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -227,30 +226,29 @@ export default function DashboardPage() {
             <Link
               key={action.title}
               href={action.href}
-              target={action.external ? "_blank" : undefined}
               className="dash-card dash-card-interactive p-6 group"
             >
               <div className="flex items-start gap-4">
                 <div
                   className={`w-12 h-12 rounded-xl flex items-center justify-center ${
                     action.color === "primary"
-                      ? "bg-[#fff7ed] text-[#f97316]"
+                      ? "bg-[#fff4ec] text-[#ff6a1a]"
                       : action.color === "accent"
                       ? "bg-purple-100 text-purple-600"
-                      : "bg-[#f7f6f3] text-[#6b6b6b]"
+                      : "bg-[#f5efe3] text-[#6b625c]"
                   }`}
                 >
                   <action.icon className="w-6 h-6" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-[#37352f] group-hover:text-[#f97316] transition-colors">
+                  <h3 className="font-semibold text-[#1a1512] group-hover:text-[#ff6a1a] transition-colors">
                     {action.title}
                   </h3>
-                  <p className="text-sm text-[#6b6b6b] mt-1">
+                  <p className="text-sm text-[#6b625c] mt-1">
                     {action.description}
                   </p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-[#bfbfbf] group-hover:text-[#f97316] transition-colors" />
+                <ArrowRight className="w-5 h-5 text-[#bfbfbf] group-hover:text-[#ff6a1a] transition-colors" />
               </div>
             </Link>
           ))}
@@ -266,7 +264,7 @@ export default function DashboardPage() {
               <h3 className="dash-card-title">Statut des leçons</h3>
               <Link
                 href="/dashboard/lessons"
-                className="text-sm text-[#f97316] hover:text-[#ea580c] font-medium"
+                className="text-sm text-[#ff6a1a] hover:text-[#c24a0a] font-medium"
               >
                 Voir tout
               </Link>
@@ -279,10 +277,10 @@ export default function DashboardPage() {
                 return (
                   <div key={s.label}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm font-medium text-[#37352f]">{s.label}</span>
-                      <span className="text-sm text-[#6b6b6b]">{s.count} ({pct}%)</span>
+                      <span className="text-sm font-medium text-[#1a1512]">{s.label}</span>
+                      <span className="text-sm text-[#6b625c]">{s.count} ({pct}%)</span>
                     </div>
-                    <div className="w-full h-2 bg-[#f1f1ef] rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-[#f0e9dc] rounded-full overflow-hidden">
                       <div
                         className={`h-full ${s.color} rounded-full transition-all duration-500`}
                         style={{ width: `${pct}%` }}
@@ -292,9 +290,9 @@ export default function DashboardPage() {
                 );
               })}
               {stats.lessons.withMedia > 0 && (
-                <div className="flex items-center gap-2 pt-2 border-t border-[#f1f1ef]">
+                <div className="flex items-center gap-2 pt-2 border-t border-[#f0e9dc]">
                   <Video className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm text-[#6b6b6b]">
+                  <span className="text-sm text-[#6b625c]">
                     {stats.lessons.withMedia} leçons avec média
                   </span>
                 </div>
@@ -308,7 +306,7 @@ export default function DashboardPage() {
               <h3 className="dash-card-title">Cours par matière</h3>
               <Link
                 href="/dashboard/cours"
-                className="text-sm text-[#f97316] hover:text-[#ea580c] font-medium"
+                className="text-sm text-[#ff6a1a] hover:text-[#c24a0a] font-medium"
               >
                 Voir tout
               </Link>
@@ -322,12 +320,12 @@ export default function DashboardPage() {
                   return (
                     <div key={subject}>
                       <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-medium text-[#37352f]">{subject}</span>
-                        <span className="text-sm text-[#6b6b6b]">{count} cours</span>
+                        <span className="text-sm font-medium text-[#1a1512]">{subject}</span>
+                        <span className="text-sm text-[#6b625c]">{count} cours</span>
                       </div>
-                      <div className="w-full h-2 bg-[#f1f1ef] rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-[#f0e9dc] rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-[#f97316] rounded-full transition-all duration-500"
+                          className="h-full bg-[#ff6a1a] rounded-full transition-all duration-500"
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -335,7 +333,7 @@ export default function DashboardPage() {
                   );
                 })
               ) : (
-                <p className="text-sm text-[#9ca3af] text-center py-4">Aucune donnée</p>
+                <p className="text-sm text-[#97938e] text-center py-4">Aucune donnée</p>
               )}
             </div>
           </div>
@@ -346,21 +344,21 @@ export default function DashboardPage() {
               <h3 className="dash-card-title">Mes contributions</h3>
               <Link
                 href="/dashboard/cours"
-                className="text-sm text-[#f97316] hover:text-[#ea580c] font-medium"
+                className="text-sm text-[#ff6a1a] hover:text-[#c24a0a] font-medium"
               >
                 Voir mes cours
               </Link>
             </div>
             <div className="dash-card-body">
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-4 bg-[#f7f6f3] rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-[#f5efe3] rounded-xl">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-[#fff7ed] rounded-lg flex items-center justify-center">
-                      <BookOpen className="w-5 h-5 text-[#f97316]" />
+                    <div className="w-10 h-10 bg-[#fff4ec] rounded-lg flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-[#ff6a1a]" />
                     </div>
                     <div>
-                      <p className="font-medium text-[#37352f]">Mes cours</p>
-                      <p className="text-sm text-[#6b6b6b]">
+                      <p className="font-medium text-[#1a1512]">Mes cours</p>
+                      <p className="text-sm text-[#6b625c]">
                         {stats.my.courses} cours créés
                       </p>
                     </div>
@@ -369,18 +367,18 @@ export default function DashboardPage() {
                     href="/dashboard/cours"
                     className="p-2 hover:bg-white rounded-lg transition-colors"
                   >
-                    <ArrowRight className="w-5 h-5 text-[#6b6b6b]" />
+                    <ArrowRight className="w-5 h-5 text-[#6b625c]" />
                   </Link>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-[#f7f6f3] rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-[#f5efe3] rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#ecfdf5] rounded-lg flex items-center justify-center">
                       <FileText className="w-5 h-5 text-[#10b981]" />
                     </div>
                     <div>
-                      <p className="font-medium text-[#37352f]">Mes leçons</p>
-                      <p className="text-sm text-[#6b6b6b]">
+                      <p className="font-medium text-[#1a1512]">Mes leçons</p>
+                      <p className="text-sm text-[#6b625c]">
                         {stats.my.lessons} leçons rédigées
                       </p>
                     </div>
@@ -389,18 +387,18 @@ export default function DashboardPage() {
                     href="/dashboard/lessons"
                     className="p-2 hover:bg-white rounded-lg transition-colors"
                   >
-                    <ArrowRight className="w-5 h-5 text-[#6b6b6b]" />
+                    <ArrowRight className="w-5 h-5 text-[#6b625c]" />
                   </Link>
                 </div>
 
-                <div className="flex items-center justify-between p-4 bg-[#f7f6f3] rounded-xl">
+                <div className="flex items-center justify-between p-4 bg-[#f5efe3] rounded-xl">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-[#fef3c7] rounded-lg flex items-center justify-center">
                       <PenTool className="w-5 h-5 text-[#f59e0b]" />
                     </div>
                     <div>
-                      <p className="font-medium text-[#37352f]">Mes exercices</p>
-                      <p className="text-sm text-[#6b6b6b]">
+                      <p className="font-medium text-[#1a1512]">Mes exercices</p>
+                      <p className="text-sm text-[#6b625c]">
                         {stats.my.exercises} exercices créés
                       </p>
                     </div>
@@ -409,7 +407,7 @@ export default function DashboardPage() {
                     href="/dashboard/exercises"
                     className="p-2 hover:bg-white rounded-lg transition-colors"
                   >
-                    <ArrowRight className="w-5 h-5 text-[#6b6b6b]" />
+                    <ArrowRight className="w-5 h-5 text-[#6b625c]" />
                   </Link>
                 </div>
               </div>
@@ -425,20 +423,20 @@ export default function DashboardPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-[#ecfdf5]">
                   <CheckCircle className="w-5 h-5 text-[#10b981]" />
-                  <span className="text-sm font-medium text-[#37352f]">
+                  <span className="text-sm font-medium text-[#1a1512]">
                     {stats.courses.published} cours publiés
                   </span>
                 </div>
                 <div className="flex items-center gap-3 p-3 rounded-lg bg-[#fffbeb]">
                   <Clock className="w-5 h-5 text-[#f59e0b]" />
-                  <span className="text-sm font-medium text-[#37352f]">
+                  <span className="text-sm font-medium text-[#1a1512]">
                     {stats.courses.pending} cours en attente de validation
                   </span>
                 </div>
                 {stats.courses.cancelled > 0 && (
                   <div className="flex items-center gap-3 p-3 rounded-lg bg-[#fef2f2]">
                     <AlertCircle className="w-5 h-5 text-[#ef4444]" />
-                    <span className="text-sm font-medium text-[#37352f]">
+                    <span className="text-sm font-medium text-[#1a1512]">
                       {stats.courses.cancelled} cours annulés
                     </span>
                   </div>

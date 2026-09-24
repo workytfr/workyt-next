@@ -423,7 +423,7 @@ export default function CardModal({
                                         style={
                                             on
                                                 ? { backgroundColor: l.bg, color: l.color, borderColor: l.color }
-                                                : { backgroundColor: "#fff", color: "#9ca3af", borderColor: "#e5e7eb" }
+                                                : { backgroundColor: "#fff", color: "#97938e", borderColor: "#e5e7eb" }
                                         }
                                     >
                                         {l.label}

@@ -211,11 +211,11 @@ export default function RolesPage() {
             {/* Header */}
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold text-[#37352f] flex items-center gap-2">
-                        <Shield className="w-7 h-7 text-[#f97316]" />
+                    <h1 className="text-2xl font-bold text-[#1a1512] flex items-center gap-2">
+                        <Shield className="w-7 h-7 text-[#ff6a1a]" />
                         Gestion des rôles
                     </h1>
-                    <p className="text-sm text-[#6b6b6b] mt-1">
+                    <p className="text-sm text-[#6b625c] mt-1">
                         Créez, modifiez et gérez les permissions de chaque rôle
                     </p>
                 </div>
@@ -240,10 +240,10 @@ export default function RolesPage() {
             {showForm && (
                 <div className="dash-card mb-6">
                     <div className="dash-card-header flex items-center justify-between">
-                        <span className="font-semibold text-[#37352f]">
+                        <span className="font-semibold text-[#1a1512]">
                             {editingRole ? `Modifier : ${editingRole.displayName}` : "Nouveau rôle"}
                         </span>
-                        <button onClick={resetForm} className="text-[#6b6b6b] hover:text-[#37352f]">
+                        <button onClick={resetForm} className="text-[#6b625c] hover:text-[#1a1512]">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -284,7 +284,7 @@ export default function RolesPage() {
                                         type="color"
                                         value={formColor}
                                         onChange={(e) => setFormColor(e.target.value)}
-                                        className="w-9 h-9 rounded-lg border border-[#e3e2e0] cursor-pointer"
+                                        className="w-9 h-9 rounded-lg border border-[#e6e0d6] cursor-pointer"
                                     />
                                     <input
                                         type="text"
@@ -339,7 +339,7 @@ export default function RolesPage() {
                                     const allSelected = selectedCount === groupPerms.length;
 
                                     return (
-                                        <div key={groupName} className="border border-[#e3e2e0] rounded-lg overflow-hidden">
+                                        <div key={groupName} className="border border-[#e6e0d6] rounded-lg overflow-hidden">
                                             <div
                                                 className="flex items-center gap-3 px-3 py-2 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
                                                 onClick={() => setExpandedGroups((prev) => {
@@ -350,18 +350,18 @@ export default function RolesPage() {
                                                 })}
                                             >
                                                 {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
-                                                <span className="text-sm font-medium text-[#37352f] flex-1">{groupName}</span>
-                                                <span className="text-xs text-[#6b6b6b]">{selectedCount}/{groupPerms.length}</span>
+                                                <span className="text-sm font-medium text-[#1a1512] flex-1">{groupName}</span>
+                                                <span className="text-xs text-[#6b625c]">{selectedCount}/{groupPerms.length}</span>
                                                 {!isSystemEdit && (
                                                     <button
                                                         type="button"
                                                         onClick={(e) => { e.stopPropagation(); toggleGroup(groupName); }}
                                                         className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${
                                                             allSelected
-                                                                ? "bg-[#f97316] border-[#f97316]"
+                                                                ? "bg-[#ff6a1a] border-[#ff6a1a]"
                                                                 : selectedCount > 0
-                                                                    ? "bg-orange-100 border-[#f97316]"
-                                                                    : "border-gray-300 hover:border-[#f97316]"
+                                                                    ? "bg-orange-100 border-[#ff6a1a]"
+                                                                    : "border-gray-300 hover:border-[#ff6a1a]"
                                                         }`}
                                                     >
                                                         {allSelected && <Check className="w-3 h-3 text-white" />}
@@ -381,10 +381,10 @@ export default function RolesPage() {
                                                                 type="checkbox"
                                                                 checked={formPermissions.has(perm)}
                                                                 onChange={() => togglePerm(perm)}
-                                                                className="accent-[#f97316]"
+                                                                className="accent-[#ff6a1a]"
                                                                 disabled={isSystemEdit}
                                                             />
-                                                            <span className="text-xs text-[#37352f]">{permissions[perm]}</span>
+                                                            <span className="text-xs text-[#1a1512]">{permissions[perm]}</span>
                                                         </label>
                                                     ))}
                                                 </div>
@@ -419,7 +419,7 @@ export default function RolesPage() {
             {/* Liste des rôles */}
             {loading ? (
                 <div className="flex items-center justify-center py-20">
-                    <Loader2 className="w-8 h-8 animate-spin text-[#f97316]" />
+                    <Loader2 className="w-8 h-8 animate-spin text-[#ff6a1a]" />
                 </div>
             ) : (
                 <div className="space-y-2">
@@ -437,7 +437,7 @@ export default function RolesPage() {
                                 {/* Info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2">
-                                        <p className="text-sm font-medium text-[#37352f]">{role.displayName}</p>
+                                        <p className="text-sm font-medium text-[#1a1512]">{role.displayName}</p>
                                         {role.isSystem && (
                                             <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded font-medium">
                                                 Système
@@ -450,11 +450,11 @@ export default function RolesPage() {
                                         )}
                                     </div>
                                     <div className="flex items-center gap-3 mt-0.5">
-                                        <span className="text-xs text-[#6b6b6b]">{role.description || "Aucune description"}</span>
-                                        <span className="text-xs text-[#6b6b6b] flex items-center gap-1">
+                                        <span className="text-xs text-[#6b625c]">{role.description || "Aucune description"}</span>
+                                        <span className="text-xs text-[#6b625c] flex items-center gap-1">
                                             <Users className="w-3 h-3" /> {role.userCount}
                                         </span>
-                                        <span className="text-xs text-[#6b6b6b]">
+                                        <span className="text-xs text-[#6b625c]">
                                             {role.permissions.length} permission{role.permissions.length !== 1 ? "s" : ""}
                                         </span>
                                     </div>
@@ -467,14 +467,14 @@ export default function RolesPage() {
                                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                                         title="Cloner"
                                     >
-                                        <Copy className="w-4 h-4 text-[#6b6b6b]" />
+                                        <Copy className="w-4 h-4 text-[#6b625c]" />
                                     </button>
                                     <button
                                         onClick={() => openEdit(role)}
                                         className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
                                         title="Modifier"
                                     >
-                                        <Pencil className="w-4 h-4 text-[#6b6b6b]" />
+                                        <Pencil className="w-4 h-4 text-[#6b625c]" />
                                     </button>
                                     {!role.isSystem && (
                                         <button

@@ -14,13 +14,8 @@ import {
     Image as ImageIcon,
     Code,
     Table as TableIcon,
-    AlertCircle,
-    BookOpen,
-    Lightbulb,
-    Star,
-    Triangle,
-    Info,
 } from "lucide-react";
+import { BLOCK_TYPES } from "./editor/blockTypes";
 import { Toggle } from "./Toggle";
 import { Editor } from "@tiptap/react";
 import { UploadButton } from "@/utils/uploadthing";
@@ -116,30 +111,8 @@ export default function MenuBarEditor({ editor, hideImage = false }: { editor: E
         preesed: editor.isActive("textStyle", { color }),
     }));
 
-    // Boutons pour les blocs custom
-    const customBlocks = [
-        {
-            icon: <Info className="size-4" />, label: "Définition", type: "definition"
-        },
-        {
-            icon: <BookOpen className="size-4" />, label: "Propriété", type: "propriete"
-        },
-        {
-            icon: <Star className="size-4" />, label: "Exemple", type: "exemple"
-        },
-        {
-            icon: <Triangle className="size-4" />, label: "Théorème", type: "theoreme"
-        },
-        {
-            icon: <Lightbulb className="size-4" />, label: "Remarque", type: "remarque"
-        },
-        {
-            icon: <AlertCircle className="size-4" />, label: "Attention", type: "attention"
-        },
-    ];
-
     return (
-        <div className="border rounded-md p-1 mb-1 bg-slate-50 flex flex-wrap items-center gap-2">
+        <div className="border border-[#e6e0d6] rounded-md p-1 mb-1 bg-[#fdfaf4] flex flex-wrap items-center gap-2">
             {/* Boutons de mise en forme de base */}
             {baseOptions.map((option, index) => (
                 <Toggle key={index} pressed={option.preesed} onPressedChange={option.onClick}>
@@ -155,14 +128,16 @@ export default function MenuBarEditor({ editor, hideImage = false }: { editor: E
             ))}
 
             {/* Boutons de blocs custom */}
-            {customBlocks.map((block) => (
+            {/* Mêmes icônes que le rendu publié ; aussi disponibles avec « / » */}
+            {BLOCK_TYPES.map((block) => (
                 <button
-                    key={block.label}
+                    key={block.type}
+                    type="button" // sans ça, le bouton soumet le <form> qui contient l'éditeur
                     onClick={() => editor.chain().focus().setCustomBlock?.(block.type).run()}
-                    title={block.label}
-                    className="p-2 rounded hover:bg-gray-200"
+                    title={`${block.label} — ${block.hint}`}
+                    className="p-2 rounded hover:bg-[#f5efe3]"
                 >
-                    {block.icon}
+                    <block.icon className="size-4" />
                 </button>
             ))}
 
