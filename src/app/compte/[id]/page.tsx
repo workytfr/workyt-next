@@ -37,6 +37,7 @@ import ReportButton from "@/components/ReportButton";
 import { PAGE_CONTAINER, Eyebrow, SubjectLabel, LevelChip } from "@/components/wk/primitives";
 import { StatusChip, plainExcerpt, relativeTime } from "@/app/forum/_components/forumUi";
 import { FicheTile } from "@/app/fiches/_components/ficheUi";
+import RankIcon from "@/components/ui/RankIcon";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session } = useSession();
@@ -347,7 +348,8 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                         className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
                                         style={{ backgroundColor: `${userRank.color}18`, color: userRank.color, border: `1px solid ${userRank.color}30` }}
                                     >
-                                        {userRank.badge} {userRank.name} · Niv. {userRank.level}
+                                        <RankIcon level={userRank.level} color={userRank.color} size={15} />
+                                        {userRank.name} · Niv. {userRank.level}
                                     </span>
                                     {memberSince && (
                                         <span className="inline-flex items-center gap-1.5 text-sm text-[rgba(26,21,18,0.55)]">

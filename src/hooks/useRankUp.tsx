@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { calculateUserRank, getPrestigeInfo, PRESTIGE_ROMAN, type Rank, type PrestigeInfo } from '@/lib/rankSystem';
+import RankIcon from '@/components/ui/RankIcon';
 
 const STORAGE_KEY = 'workyt_last_rank';
 
@@ -74,7 +75,7 @@ function showRankUpToast(rank: Rank, prestige: PrestigeInfo | null) {
           justifyContent: 'center',
           flexShrink: 0,
         }}>
-          {rank.badge}
+          <RankIcon level={rank.level} color={rank.color} size={28} />
         </div>
         <div>
           <div style={{ fontWeight: 700, fontSize: 13, color: '#6B7280', marginBottom: 2 }}>

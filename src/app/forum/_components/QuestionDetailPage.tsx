@@ -19,6 +19,7 @@ import { useForumRealtime } from "@/hooks/useForumRealtime";
 import { subjectToSlug, levelToSlug } from "@/utils/subjectSlug";
 import { FORUM_CONTAINER, StatusChip, SubjectLabel, relativeTime } from "./forumUi";
 import "katex/dist/katex.min.css";
+import AuthorLevel from "@/components/ui/AuthorLevel";
 
 interface QuestionDetailPageProps {
     id?: string;
@@ -159,10 +160,13 @@ export default function QuestionDetailPage({
                             <div className="mt-5 flex items-center gap-3">
                                 <ProfileAvatar username={question.user.username} points={question.user.points} size="small" userId={question.user._id} />
                                 <div className="leading-tight">
-                                    <Link href={`/compte/${question.user._id}`} className="hover:underline">
-                                        <UsernameDisplay username={question.user.username} userId={question.user._id} className="text-sm font-semibold" />
-                                    </Link>
-                                    <span className="block text-xs text-[rgba(26,21,18,0.5)]">a demandé {relativeTime(question.createdAt)}</span>
+                                    <div className="flex items-center gap-1.5">
+                                        <Link href={`/compte/${question.user._id}`} className="hover:underline">
+                                            <UsernameDisplay username={question.user.username} userId={question.user._id} className="text-sm font-semibold" />
+                                        </Link>
+                                        <AuthorLevel points={question.user.points} />
+                                    </div>
+                                    <span className="mt-0.5 block text-xs text-[rgba(26,21,18,0.5)]">a demandé {relativeTime(question.createdAt)}</span>
                                 </div>
                             </div>
                         </>

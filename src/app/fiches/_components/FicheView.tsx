@@ -32,6 +32,7 @@ import BookmarkButton from "@/components/BookmarkButton";
 import { PAGE_CONTAINER, SubjectLabel, LevelChip } from "@/components/wk/primitives";
 import { subjectToSlug, levelToSlug } from "@/utils/subjectSlug";
 import { FicheStatusChip, ficheStatusTint } from "./ficheUi";
+import AuthorLevel from "@/components/ui/AuthorLevel";
 
 interface FicheViewProps {
     id: string;
@@ -225,14 +226,17 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
                                 size="small"
                             />
                             <div className="leading-tight">
-                                <Link href={`/compte/${fiche.author?._id}`} className="hover:underline">
-                                    <UsernameDisplay
-                                        username={fiche.author?.username || "Inconnu"}
-                                        userId={fiche.author?._id}
-                                        className="text-sm font-semibold"
-                                        role={fiche.author?.role}
-                                    />
-                                </Link>
+                                <div className="flex items-center gap-1.5">
+                                    <Link href={`/compte/${fiche.author?._id}`} className="hover:underline">
+                                        <UsernameDisplay
+                                            username={fiche.author?.username || "Inconnu"}
+                                            userId={fiche.author?._id}
+                                            className="text-sm font-semibold"
+                                            role={fiche.author?.role}
+                                        />
+                                    </Link>
+                                    <AuthorLevel points={fiche.author?.points || 0} />
+                                </div>
                                 <span className="flex items-center gap-1 text-xs text-[rgba(26,21,18,0.5)]">
                                     <CalendarDays className="h-3 w-3" />
                                     Publiée le {new Date(fiche.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}

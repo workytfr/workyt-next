@@ -9,6 +9,7 @@ import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import BookmarkButton from "@/components/BookmarkButton";
 import { buildIdSlug } from "@/utils/slugify";
 import { StatusChip, SubjectLabel, plainExcerpt, relativeTime } from "./forumUi";
+import AuthorLevel from "@/components/ui/AuthorLevel";
 
 export interface ForumQuestion {
     _id: string;
@@ -81,8 +82,11 @@ export default function QuestionCard({ q }: { q: ForumQuestion }) {
                 <div className="flex min-w-0 flex-1 items-center gap-2.5">
                     <ProfileAvatar username={q.user.username} points={q.user.points} size="small" userId={q.user._id} />
                     <div className="min-w-0 leading-tight">
-                        <UsernameDisplay username={q.user.username} userId={q.user._id} className="block truncate text-sm font-semibold" />
-                        <span className="text-xs text-[rgba(26,21,18,0.5)]">{relativeTime(q.createdAt)}</span>
+                        <div className="flex min-w-0 items-center gap-1.5">
+                            <UsernameDisplay username={q.user.username} userId={q.user._id} className="truncate text-sm font-semibold" />
+                            <AuthorLevel points={q.user.points} />
+                        </div>
+                        <span className="mt-0.5 block text-xs text-[rgba(26,21,18,0.5)]">{relativeTime(q.createdAt)}</span>
                     </div>
                 </div>
                 <div className="flex shrink-0 items-center gap-2 text-xs text-[rgba(26,21,18,0.6)]">

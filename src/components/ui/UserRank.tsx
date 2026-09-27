@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { getRankProgress, getPrestigeInfo, RANKS } from '@/lib/rankSystem';
 import PrestigeGem from '@/components/ui/PrestigeGem';
+import RankIcon from '@/components/ui/RankIcon';
 
 interface UserRankProps {
   points: number;
@@ -47,7 +48,7 @@ export default function UserRank({ points, className = '', showProgress = true }
           className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl text-4xl"
           style={{ backgroundColor: `${currentRank.color}1f`, boxShadow: `inset 0 0 0 1px ${currentRank.color}40` }}
         >
-          {currentRank.badge}
+          <RankIcon level={currentRank.level} color={currentRank.color} size={30} />
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-serif-display text-2xl leading-tight text-[var(--wk-ink)]">{currentRank.name}</p>
@@ -76,7 +77,7 @@ export default function UserRank({ points, className = '', showProgress = true }
                 Encore <strong className="text-[var(--wk-ink)]">{pointsNeeded.toLocaleString('fr-FR')} pts</strong>
               </p>
               <p className="flex min-w-0 items-center gap-1 text-sm font-semibold" style={{ color: nextRank.color }}>
-                <span>{nextRank.badge}</span>
+                <RankIcon level={nextRank.level} color={nextRank.color} size={14} />
                 <span className="truncate">{nextRank.name}</span>
               </p>
             </div>

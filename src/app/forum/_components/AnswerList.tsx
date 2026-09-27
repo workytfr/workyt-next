@@ -11,6 +11,7 @@ import { useSession } from "next-auth/react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
 import ReportButton from "@/components/ReportButton";
 import "katex/dist/katex.min.css";
+import AuthorLevel from "@/components/ui/AuthorLevel";
 
 interface AnswerListProps {
     answers: any[];
@@ -160,10 +161,13 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
                                     <div className="flex items-center gap-3">
                                         <ProfileAvatar username={answer.user.username} points={answer.user.points} size="small" userId={answer.user._id} />
                                         <div className="leading-tight">
-                                            <Link href={`/compte/${answer.user._id}`} className="hover:underline">
-                                                <UsernameDisplay username={answer.user.username} userId={answer.user._id} className="text-sm font-semibold" />
-                                            </Link>
-                                            <span className="block text-xs text-[rgba(26,21,18,0.5)]">{relativeTime(answer.createdAt)}</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <Link href={`/compte/${answer.user._id}`} className="hover:underline">
+                                                    <UsernameDisplay username={answer.user.username} userId={answer.user._id} className="text-sm font-semibold" />
+                                                </Link>
+                                                <AuthorLevel points={answer.user.points} />
+                                            </div>
+                                            <span className="mt-0.5 block text-xs text-[rgba(26,21,18,0.5)]">{relativeTime(answer.createdAt)}</span>
                                         </div>
                                     </div>
 
