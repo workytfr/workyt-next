@@ -104,7 +104,7 @@ const TEXTBOOK_CSS = `
 .eval-content ul, .eval-content ol { margin: 0 0 8px; padding-left: 22px; }
 .eval-content li { margin-bottom: 3px; }
 .eval-content strong { font-weight: 700; }
-.eval-content img { max-width: 100%; border-radius: 6px; margin: 6px 0; }
+.eval-content img { max-width: 100%; max-height: 560px; width: auto; height: auto; object-fit: contain; border-radius: 6px; margin: 6px 0; }
 .eval-content blockquote { border-left: 3px solid ${BRAND_ORANGE}; background: #fff4ec; padding: 6px 12px; margin: 8px 0; border-radius: 0 6px 6px 0; }
 .eval-content code { background: #fff3e6; padding: 1px 5px; border-radius: 4px; font-size: .92em; }
 .eval-content .katex { font-size: 1.04em; }
@@ -365,6 +365,31 @@ export default function EvaluationPdfBuilder({
             const bounds = exoEls.map((el) => el.offsetTop * SCALE);
             bounds.push(canvas.height);
 
+            // Blocs à ne jamais couper entre deux pages (images, formules centrées,
+            // tableaux, dessins), en px source relatifs au document.
+            const nodeTop = node.getBoundingClientRect().top;
+            const keepTogether = Array.from(
+                node.querySelectorAll<HTMLElement>("img, .katex-display, table, svg, canvas, pre"),
+            )
+                .map((el) => {
+                    const r = el.getBoundingClientRect();
+                    return { top: (r.top - nodeTop) * SCALE, bottom: (r.bottom - nodeTop) * SCALE };
+                })
+                .filter((b) => b.bottom > b.top);
+
+            // Coupe au plus tard à `maxCut`, mais jamais au milieu d'un bloc : on
+            // remonte au-dessus du bloc traversé. Un bloc plus haut qu'une page
+            // (impossible à garder entier) est coupé tel quel.
+            const safeCut = (from: number, maxCut: number): number => {
+                let cut = maxCut;
+                for (let guard = 0; guard < 50; guard++) {
+                    const hit = keepTogether.find((b) => b.top < cut - 1 && b.bottom > cut + 1);
+                    if (!hit || hit.top - 4 <= from + 1) break;
+                    cut = hit.top - 4;
+                }
+                return cut;
+            };
+
             let pageNum = 1; // la garde est la page 1
             const emitPage = (fromPx: number, toPx: number) => {
                 const slicePx = Math.max(1, toPx - fromPx);
@@ -389,8 +414,9 @@ export default function EvaluationPdfBuilder({
                     if (secTop > pageStart) { emitPage(pageStart, secTop); pageStart = secTop; }
                     let y = secTop;
                     while (secBottom - y > pageMaxPx) {
-                        emitPage(y, y + pageMaxPx);
-                        y += pageMaxPx;
+                        const cut = safeCut(y, y + pageMaxPx);
+                        emitPage(y, cut);
+                        y = cut;
                     }
                     pageStart = y; // le reste continue avec les exos suivants
                 } else if (secBottom - pageStart > pageMaxPx) {
