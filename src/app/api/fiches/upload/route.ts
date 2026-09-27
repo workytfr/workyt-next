@@ -15,6 +15,11 @@ const s3 = new S3Client({
         accessKeyId: process.env.S3_ACCESS_KEY!,
         secretAccessKey: process.env.S3_SECRET_KEY!,
     },
+    // Depuis 3.729, le SDK signe d'office une somme CRC32… d'un corps VIDE dans
+    // les URL présignées (x-amz-checksum-crc32=AAAAAA==) : R2 refuse alors le
+    // vrai fichier envoyé par le navigateur. On ne calcule la somme que si l'API l'exige.
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED",
 });
 
 const BUCKET = process.env.S3_BUCKET_NAME!;
