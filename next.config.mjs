@@ -1,3 +1,5 @@
+import path from "node:path";
+
 // Origine de l'instance Umami, autorisée dans le CSP.
 // Doit désigner la même instance que NEXT_PUBLIC_UMAMI_URL lu par le layout :
 // sans cette entrée, le navigateur bloque le script et aucune visite n'est
@@ -58,6 +60,15 @@ const nextConfig = {
         "@uploadthing/shared",
         "uploadthing",
     ],
+    // pdf.js (pdfjs-dist 5) arrive déjà empaqueté par webpack : ses variables
+    // internes entrent en conflit avec les nôtres en dev (voir le loader).
+    webpack: (config) => {
+        config.module.rules.push({
+            test: /pdfjs-dist[\\/]build[\\/]pdf\.mjs$/,
+            loader: path.join(import.meta.dirname, "webpack/pdfjs-rename-loader.cjs"),
+        });
+        return config;
+    },
     // Turbopack : ignorer les README.md et fichiers markdown embarqués dans certains
     // packages (@uploadthing/mime-types, @uploadthing/react) — ils n'ont pas à être
     // bundlés côté client.
