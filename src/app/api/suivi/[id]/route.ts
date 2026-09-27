@@ -67,7 +67,7 @@ export async function PATCH(req: NextRequest, { params }: Params) {
     const body = await req.json().catch(() => ({}));
     switch (body?.action) {
       case 'cancel':
-        return respond(await cancelRequest(m, viewer));
+        return respond(await cancelRequest(m, viewer, me, String(body?.reason ?? '')));
       case 'take':
         return respond(await takeRequest(m, me, viewer));
       case 'assign':

@@ -157,13 +157,22 @@ export async function createRequest(user: SuiviUser, input: RequestInput): Promi
   return { ok: true, data: { id: m._id.toString() } };
 }
 
-export async function cancelRequest(m: IMentorship, viewer: SuiviViewerRole): Promise<Result> {
+export async function cancelRequest(m: IMentorship, viewer: SuiviViewerRole, user?: SuiviUser, reason = ''): Promise<Result> {
   if (viewer !== 'student' && viewer !== 'moderator') return fail(403, 'Action non autorisée.');
   if (m.status !== 'pending') return fail(409, 'Seule une demande en attente peut être annulée.');
   m.status = 'cancelled';
   m.closedAt = new Date();
   await m.save();
-  await systemMessage(m, 'Demande annulée.');
+
+  if (viewer === 'moderator') {
+    // Annulée par la modération : l'élève doit savoir pourquoi, et que la porte reste ouverte
+    const why = String(reason || '').trim().slice(0, 300);
+    const text = `Demande annulée par l’équipe Workyt.${why ? ` Motif : ${why}` : ''} Tu peux refaire une demande quand tu veux.`;
+    await systemMessage(m, text, { meta: { event: 'cancelled_by_moderator' } });
+    await notify('mentorship_update', id(m.student), user?.id || id(m.student), id(m._id), 'Ta demande de suivi a été annulée', why || 'Tu peux refaire une demande quand tu veux.');
+  } else {
+    await systemMessage(m, 'Demande annulée.');
+  }
   ping(m);
   return { ok: true };
 }

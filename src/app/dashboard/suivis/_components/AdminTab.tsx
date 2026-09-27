@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Inbox, HeartHandshake, Clock, Users, AlertTriangle, ShieldAlert, Flag, Copy, X } from "lucide-react";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MENTOR_REMINDER_DAYS, MENTOR_TIMEOUT_DAYS } from "@/lib/mentorship/config";
 import { api, ApiError, daysSince, formatDate, type MentorshipSummary, type PublicUser } from "@/app/suivi/_lib/client";
 import type { Engagement } from "./ProfileTab";
@@ -40,6 +40,15 @@ interface AdminData {
     blocked: { id: string; mentorshipId: string; author: PublicUser | null; authorRole: string; text: string; reasons: string[]; createdAt: string }[];
 }
 
+/** Action de pilotage en attente de confirmation */
+type PendingAction =
+    | { kind: "cancel"; m: MentorshipSummary }
+    | { kind: "transfer"; m: MentorshipSummary; mentor: PublicUser }
+    | { kind: "requeue"; m: MentorshipSummary };
+
+/** Valeur spéciale du menu « Transférer à » : remettre le suivi dans la file */
+const REQUEUE = "__file__";
+
 /**
  * Le pilotage du dispositif. La question qui compte n'est pas technique :
  * y a-t-il assez de bénévoles pour la demande ? Les chiffres du haut y
@@ -48,6 +57,9 @@ interface AdminData {
 export default function AdminTab() {
     const [data, setData] = useState<AdminData | null>(null);
     const [engagementOf, setEngagementOf] = useState<{ user: PublicUser; engagement: Engagement } | null>(null);
+    const [pending, setPending] = useState<PendingAction | null>(null);
+    const [reason, setReason] = useState("");
+    const [busy, setBusy] = useState(false);
 
     const load = useCallback(async () => {
         try {
@@ -71,6 +83,34 @@ export default function AdminTab() {
             load();
         } catch (err) {
             toast.error(err instanceof ApiError ? err.message : "Attribution impossible");
+        }
+    };
+
+    const askAction = (action: PendingAction) => {
+        setReason("");
+        setPending(action);
+    };
+
+    const confirmAction = async () => {
+        if (!pending) return;
+        setBusy(true);
+        const json =
+            pending.kind === "cancel"
+                ? { action: "cancel", reason }
+                : pending.kind === "transfer"
+                  ? { action: "assign", mentorId: pending.mentor.id }
+                  : { action: "release", note: reason };
+        try {
+            await api(`/api/suivi/${pending.m.id}`, { method: "PATCH", json });
+            toast.success(
+                pending.kind === "cancel" ? "Demande annulée" : pending.kind === "transfer" ? "Suivi transféré" : "Suivi remis dans la file",
+            );
+            setPending(null);
+            load();
+        } catch (err) {
+            toast.error(err instanceof ApiError ? err.message : "Action impossible");
+        } finally {
+            setBusy(false);
         }
     };
 
@@ -131,6 +171,7 @@ export default function AdminTab() {
                                     <th>Matière</th>
                                     <th>Attente</th>
                                     <th>Attribuer à</th>
+                                    <th />
                                 </tr>
                             </thead>
                             <tbody>
@@ -157,6 +198,15 @@ export default function AdminTab() {
                                                     ))}
                                                 </select>
                                             </td>
+                                            <td className="text-right">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => askAction({ kind: "cancel", m })}
+                                                    className="dash-button dash-button-ghost dash-button-sm text-red-600"
+                                                >
+                                                    Annuler
+                                                </button>
+                                            </td>
                                         </tr>
                                     );
                                 })}
@@ -181,6 +231,7 @@ export default function AdminTab() {
                                     <th>Matière</th>
                                     <th>Élève en attente</th>
                                     <th>Dernier message</th>
+                                    <th>Transférer</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -203,6 +254,34 @@ export default function AdminTab() {
                                             {m.waitingForMentorDays ? `${m.waitingForMentorDays} j` : "—"}
                                         </td>
                                         <td>{m.lastMessageAt ? formatDate(m.lastMessageAt, { day: "numeric", month: "short" }) : "—"}</td>
+                                        <td>
+                                            <select
+                                                value=""
+                                                onChange={(e) => {
+                                                    const v = e.target.value;
+                                                    if (v === REQUEUE) return askAction({ kind: "requeue", m });
+                                                    const target = ready.find((r) => r.user.id === v);
+                                                    if (target) askAction({ kind: "transfer", m, mentor: target.user });
+                                                }}
+                                                className="dash-input !w-auto !py-1 text-sm"
+                                                aria-label={`Transférer le suivi de ${m.student?.username}`}
+                                            >
+                                                <option value="">Transférer à…</option>
+                                                {ready
+                                                    .filter(
+                                                        (r) =>
+                                                            r.user.id !== m.mentor?.id &&
+                                                            r.user.id !== m.student?.id &&
+                                                            (!r.subjects.length || r.subjects.includes(m.subject)),
+                                                    )
+                                                    .map((c) => (
+                                                        <option key={c.user.id} value={c.user.id}>
+                                                            {c.user.username} ({c.activeCount}/{c.maxActive})
+                                                        </option>
+                                                    ))}
+                                                <option value={REQUEUE}>↩ Remettre dans la file</option>
+                                            </select>
+                                        </td>
                                     </tr>
                                 ))}
                             </tbody>
@@ -288,6 +367,56 @@ export default function AdminTab() {
                     </ul>
                 )}
             </section>
+
+            <Dialog open={!!pending} onOpenChange={(o) => !o && !busy && setPending(null)}>
+                {pending && (
+                    <DialogContent className="max-w-lg">
+                        <DialogHeader>
+                            <DialogTitle>
+                                {pending.kind === "cancel"
+                                    ? `Annuler la demande de ${pending.m.student?.username}`
+                                    : pending.kind === "transfer"
+                                      ? `Transférer le suivi à ${pending.mentor.username}`
+                                      : "Remettre le suivi dans la file"}
+                            </DialogTitle>
+                            <DialogDescription>
+                                {pending.kind === "cancel"
+                                    ? `La demande en ${pending.m.subject} sort de la file. L'élève est prévenu et peut en refaire une.`
+                                    : pending.kind === "transfer"
+                                      ? `${pending.m.mentor?.username || "Le bénévole actuel"} ne suivra plus ${pending.m.student?.username}. Tout l'historique est conservé ; les deux bénévoles et l'élève sont prévenus.`
+                                      : `${pending.m.mentor?.username || "Le bénévole actuel"} ne suivra plus ${pending.m.student?.username}. Le suivi repart dans la file avec tout son historique.`}
+                            </DialogDescription>
+                        </DialogHeader>
+                        {pending.kind !== "transfer" && (
+                            <textarea
+                                value={reason}
+                                onChange={(e) => setReason(e.target.value.slice(0, pending.kind === "cancel" ? 300 : 500))}
+                                rows={3}
+                                placeholder={
+                                    pending.kind === "cancel"
+                                        ? "Motif montré à l'élève (facultatif). Ex. : demande en double, hors du champ de l'association…"
+                                        : "Un mot pour le bénévole suivant (facultatif)"
+                                }
+                                className="dash-input w-full text-sm"
+                            />
+                        )}
+                        <div className="flex justify-end gap-2">
+                            <button type="button" onClick={() => setPending(null)} disabled={busy} className="dash-button dash-button-ghost dash-button-sm">
+                                Retour
+                            </button>
+                            <button
+                                type="button"
+                                onClick={confirmAction}
+                                disabled={busy}
+                                className={`dash-button dash-button-primary dash-button-sm ${pending.kind === "cancel" ? "!bg-red-600 hover:!bg-red-700" : ""}`}
+                            >
+                                {busy && <Loader2 className="h-4 w-4 animate-spin" />}
+                                {pending.kind === "cancel" ? "Annuler la demande" : pending.kind === "transfer" ? "Transférer" : "Remettre dans la file"}
+                            </button>
+                        </div>
+                    </DialogContent>
+                )}
+            </Dialog>
 
             <Dialog open={!!engagementOf} onOpenChange={(o) => !o && setEngagementOf(null)}>
                 {engagementOf && (
