@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { fetchCustomization } from "@/lib/customizationClient";
+import { generatedAvatarUri } from "@/lib/blobatar";
+import { sanitizeLook } from "@/lib/avatarLook";
 
 /**
  * Avatar réel d'un membre pour le Kanban : utilise la photo de profil
- * personnalisée si elle est active, sinon l'avatar génératif du site
- * (/api/avatar/[id]) — identique à ProfileAvatar.
+ * personnalisée si elle est active, sinon l'avatar génératif Blobatar
+ * — identique à ProfileAvatar.
  *
  * Les personnalisations sont mises en cache (et dédupliquées) au niveau du
  * module pour éviter une requête par carte.
@@ -22,7 +24,7 @@ function resolveAvatar(userId: string): Promise<Resolved> {
     if (inflight.has(userId)) return inflight.get(userId)!;
 
     const p = (async () => {
-        const fallback = `/api/avatar/${userId}?size=64`;
+        let fallback = generatedAvatarUri(userId);
         try {
             // Regroupé avec les autres avatars du tableau
             const data = await fetchCustomization(userId);
@@ -32,6 +34,7 @@ function resolveAvatar(userId: string): Promise<Resolved> {
                 cache.set(userId, url);
                 return url;
             }
+            fallback = generatedAvatarUri(userId, sanitizeLook(data?.customization?.avatarLook));
         } catch {
             /* ignore — on retombe sur l'avatar génératif */
         }
@@ -72,12 +75,12 @@ export default function KanbanAvatar({ userId, username, size = 24, className = 
     return (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-            src={src || `/api/avatar/${userId}?size=64`}
+            src={src || generatedAvatarUri(userId)}
             alt={username}
             width={size}
             height={size}
             style={{ width: size, height: size }}
-            className={`rounded-full border-2 border-white object-cover bg-gray-100 ${className}`}
+            className={`rounded-full object-cover ${src.startsWith("data:") ? "" : "border-2 border-white bg-gray-100"} ${className}`}
         />
     );
 }

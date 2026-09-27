@@ -11,6 +11,8 @@ import { Sparkles, Palette, Crown, Coins, Award, Star, X } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import ProfileAvatar from '@/components/ui/profile';
 import CustomPhotoCard from '@/components/ui/CustomPhotoCard';
+import AvatarAccessoryShop from '@/components/ui/AvatarAccessoryShop';
+import { getAccessory, type AvatarLook } from '@/lib/avatarLook';
 
 interface GemData {
   balance: number;
@@ -32,6 +34,11 @@ interface CustomizationData {
     filename: string;
     isActive: boolean;
   };
+  customPhoto?: {
+    url: string;
+    isActive: boolean;
+  };
+  avatarLook?: AvatarLook;
 }
 
 // Type alias pour la compatibilité
@@ -70,7 +77,8 @@ const GemManager: React.FC = () => {
     profileImage: string | null;
     profileBorder: string | null;
     usernameColor: { type: string; value: string } | null;
-  }>({ profileImage: null, profileBorder: null, usernameColor: null });
+    avatarLook: AvatarLook;
+  }>({ profileImage: null, profileBorder: null, usernameColor: null, avatarLook: {} });
 
   // Badge selection state
   const [earnedBadges, setEarnedBadges] = useState<{ slug: string; name: string; icon: string; rarity: string }[]>([]);
@@ -85,6 +93,10 @@ const GemManager: React.FC = () => {
     if (cosmeticType === 'profile_image') return equipped.profileImage === cosmeticId;
     if (cosmeticType === 'profile_border') return equipped.profileBorder === cosmeticId;
     if (cosmeticType === 'username_color') return equipped.usernameColor?.type === cosmeticId;
+    if (cosmeticType === 'avatar_accessory') {
+      const accessory = getAccessory(cosmeticId);
+      return !!accessory && equipped.avatarLook?.[accessory.slot] === cosmeticId;
+    }
     return false;
   };
 
@@ -94,7 +106,7 @@ const GemManager: React.FC = () => {
       const data = await res.json();
       if (data.success) {
         setOwnedItems(data.inventory);
-        setEquipped(data.equipped);
+        setEquipped({ ...data.equipped, avatarLook: data.equipped.avatarLook || {} });
       }
     } catch (e) {
       console.error('Erreur inventaire:', e);
@@ -249,6 +261,7 @@ const GemManager: React.FC = () => {
       usernameColor: 'username_color',
       profileImage: 'profile_image',
       profileBorder: 'profile_border',
+      avatarAccessory: 'avatar_accessory',
     };
     const cosmeticType = typeMap[itemType];
 
@@ -276,7 +289,8 @@ const GemManager: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        setSuccess(`Achat réussi ! ${itemValue} est maintenant actif`);
+        const itemLabel = itemType === 'avatarAccessory' ? getAccessory(itemValue)?.label : itemValue;
+        setSuccess(`Achat réussi ! ${itemLabel} est maintenant actif`);
         loadGemData();
         loadInventory();
       } else if (data.alreadyOwned) {
@@ -321,6 +335,7 @@ const GemManager: React.FC = () => {
       usernameColor: 'username_color',
       profileImage: 'profile_image',
       profileBorder: 'profile_border',
+      avatarAccessory: 'avatar_accessory',
     };
     const cosmeticType = typeMap[itemType];
     const owned = cosmeticType ? isOwned(cosmeticType, itemValue) : false;
@@ -801,6 +816,17 @@ const GemManager: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Accessoires de l'avatar Blobatar */}
+      {userData?.id && (
+        <AvatarAccessoryShop
+          userId={userData.id}
+          look={equipped.avatarLook}
+          hasProfileImage={!!equipped.profileImage || !!customization?.customPhoto?.isActive}
+          getButtonProps={getItemButtonProps}
+          onAction={purchaseCustomization}
+        />
+      )}
 
       {/* Badge de profil */}
       <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">

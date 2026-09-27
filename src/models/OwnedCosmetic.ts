@@ -2,8 +2,8 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
 
 export interface IOwnedCosmetic extends Document {
   user: Types.ObjectId;
-  cosmeticType: 'profile_image' | 'profile_border' | 'username_color';
-  cosmeticId: string; // ex: 'FoxyPink.webp', 'gold', 'rainbow'
+  cosmeticType: 'profile_image' | 'profile_border' | 'username_color' | 'avatar_accessory';
+  cosmeticId: string; // ex: 'FoxyPink.webp', 'gold', 'rainbow', 'hat-toque'
   source: 'purchase' | 'chest' | 'reward' | 'gift'; // comment il a été obtenu
   acquiredAt: Date;
 }
@@ -16,7 +16,7 @@ const OwnedCosmeticSchema = new Schema<IOwnedCosmetic>({
   },
   cosmeticType: {
     type: String,
-    enum: ['profile_image', 'profile_border', 'username_color'],
+    enum: ['profile_image', 'profile_border', 'username_color', 'avatar_accessory'],
     required: true
   },
   cosmeticId: {

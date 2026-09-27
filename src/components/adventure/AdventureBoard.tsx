@@ -15,6 +15,8 @@ import HeroPanel, { type HeroState } from './rpg/HeroPanel';
 import { fetchHero, invalidateHero } from '@/lib/heroClient';
 import type { CalendarDay, ClaimResult, CollectionInfo } from './types';
 import { formatDateLocal, monthNames } from './types';
+import { generatedAvatarUri } from '@/lib/blobatar';
+import { sanitizeLook } from '@/lib/avatarLook';
 
 /**
  * Plateau de l'Aventure : le calendrier mensuel transformé en jeu de plateau.
@@ -106,14 +108,17 @@ export default function AdventureBoard() {
         const custom = data?.data?.customization;
         if (custom?.profileImage?.isActive && custom?.profileImage?.filename) {
           setAvatarUrl(`/profile/${custom.profileImage.filename}`);
+        } else {
+          // Avatar Blobatar avec les accessoires équipés
+          setAvatarUrl(generatedAvatarUri(userId, sanitizeLook(custom?.avatarLook)));
         }
       })
       .catch(() => {});
   }, [session]);
 
-  // Image de la mascotte : cosmétique actif → sinon avatar eigen du site (le même que partout ailleurs)
+  // Image de la mascotte : cosmétique actif → sinon avatar Blobatar du site (le même que partout ailleurs)
   const sessionUserId = (session?.user as any)?.id as string | undefined;
-  const mascotImage = avatarUrl || (sessionUserId ? `/api/avatar/${encodeURIComponent(sessionUserId)}?size=96` : null);
+  const mascotImage = avatarUrl || (sessionUserId ? generatedAvatarUri(sessionUserId) : null);
 
   // Thème dominant du mois (jours spéciaux), sinon default
   const theme = useMemo(() => {

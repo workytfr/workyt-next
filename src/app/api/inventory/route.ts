@@ -6,6 +6,7 @@ import User from '@/models/User';
 import OwnedCosmetic from '@/models/OwnedCosmetic';
 import ProfileCustomization from '@/models/ProfileCustomization';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { getAccessory, sanitizeLook } from '@/lib/avatarLook';
 
 // GET /api/inventory - Récupérer l'inventaire de l'utilisateur
 export async function GET(req: NextRequest) {
@@ -34,6 +35,7 @@ export async function GET(req: NextRequest) {
           type: customization.usernameColor.type,
           value: customization.usernameColor.value,
         } : null,
+        avatarLook: sanitizeLook(customization?.avatarLook),
       }
     });
   } catch (error) {
@@ -101,6 +103,12 @@ export async function POST(req: NextRequest) {
       } else if (cosmeticType === 'username_color') {
         updateData['usernameColor.type'] = cosmeticId;
         updateData['usernameColor.isActive'] = true;
+      } else if (cosmeticType === 'avatar_accessory') {
+        const accessory = getAccessory(cosmeticId);
+        if (!accessory) {
+          return NextResponse.json({ error: 'Accessoire inconnu' }, { status: 400 });
+        }
+        updateData[`avatarLook.${accessory.slot}`] = accessory.id;
       }
     } else if (action === 'unequip') {
       if (cosmeticType === 'profile_image') {
@@ -109,6 +117,12 @@ export async function POST(req: NextRequest) {
         updateData['profileBorder.isActive'] = false;
       } else if (cosmeticType === 'username_color') {
         updateData['usernameColor.isActive'] = false;
+      } else if (cosmeticType === 'avatar_accessory') {
+        const accessory = getAccessory(cosmeticId);
+        if (!accessory) {
+          return NextResponse.json({ error: 'Accessoire inconnu' }, { status: 400 });
+        }
+        updateData[`avatarLook.${accessory.slot}`] = '';
       }
     }
 

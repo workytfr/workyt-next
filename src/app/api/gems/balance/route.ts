@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/authOptions';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import Gem from '@/models/Gem';
+import { sanitizeLook } from '@/lib/avatarLook';
 import ProfileCustomization from '@/models/ProfileCustomization';
 
 export async function GET(req: NextRequest) {
@@ -59,7 +60,8 @@ export async function GET(req: NextRequest) {
           customPhoto: {
             url: customization?.customPhoto?.url || '',
             isActive: !!customization?.customPhoto?.isActive
-          }
+          },
+          avatarLook: sanitizeLook(customization?.avatarLook)
         }
       }
     });

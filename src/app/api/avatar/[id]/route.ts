@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { generateEigenAvatarPngBuffer } from "@/lib/eigenAvatarNode";
+import mongoose from "mongoose";
+import dbConnect from "@/lib/mongodb";
+import ProfileCustomization from "@/models/ProfileCustomization";
+import { generatedAvatarSvg } from "@/lib/blobatar";
+import { sanitizeLook, type AvatarLook } from "@/lib/avatarLook";
 
 export const runtime = "nodejs";
 
@@ -7,8 +11,8 @@ const ID_PATTERN = /^[a-zA-Z0-9_-]{1,128}$/;
 
 /**
  * GET /api/avatar/[id]?size=128
- * PNG déterministe (même id → même avatar que sur le site eigen-avatar-generator).
- * Public, cache long (pas de données sensibles).
+ * SVG Blobatar (même id → même avatar que sur le site), avec les accessoires
+ * équipés. Public ; cache court, puisque les accessoires peuvent changer.
  */
 export async function GET(
     req: NextRequest,
@@ -28,12 +32,18 @@ export async function GET(
         : 128;
 
     try {
-        const buffer = generateEigenAvatarPngBuffer(id, size);
-        return new Response(buffer, {
+        let look: AvatarLook = {};
+        if (mongoose.isValidObjectId(id)) {
+            await dbConnect();
+            const custom = await ProfileCustomization.findOne({ user: id }).select("avatarLook").lean<{ avatarLook?: unknown }>();
+            look = sanitizeLook(custom?.avatarLook);
+        }
+        const svg = generatedAvatarSvg(id, size, look);
+        return new Response(svg, {
             status: 200,
             headers: {
-                "Content-Type": "image/png",
-                "Cache-Control": "public, max-age=31536000, immutable",
+                "Content-Type": "image/svg+xml",
+                "Cache-Control": "public, max-age=300, stale-while-revalidate=86400",
             },
         });
     } catch (e) {

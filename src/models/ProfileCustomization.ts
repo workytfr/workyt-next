@@ -20,6 +20,15 @@ export interface IProfileCustomization extends Document {
    * Elle prime sur toutes les autres images de profil : image achetée en
    * boutique comme avatar généré. Stockée sur R2, d'où l'URL complète.
    */
+  /** Accessoires Blobatar équipés, par emplacement (voir lib/avatarLook). */
+  avatarLook: {
+    color: string;
+    hair: string;
+    hat: string;
+    glasses: string;
+    face: string;
+    mark: string;
+  };
   customPhoto: {
     url: string;
     key: string; // Clé R2, pour pouvoir supprimer le fichier
@@ -71,6 +80,14 @@ const ProfileCustomizationSchema = new Schema<IProfileCustomization>({
       type: Boolean,
       default: false
     }
+  },
+  avatarLook: {
+    color: { type: String, default: '' },
+    hair: { type: String, default: '' },
+    hat: { type: String, default: '' },
+    glasses: { type: String, default: '' },
+    face: { type: String, default: '' },
+    mark: { type: String, default: '' }
   },
   customPhoto: {
     url: { type: String, default: '' },

@@ -1,11 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { AvatarInterference } from "eigen-avatar-generator/react/interference";
-import { AvatarPlasma } from "eigen-avatar-generator/react/plasma";
-import { AvatarSmile } from "eigen-avatar-generator/react/smile";
-import { AvatarPixels } from "eigen-avatar-generator/react/pixels";
-import { COLOR_SETS, PIXELS_GRADIENT, hashString } from "@/lib/eigenAvatarShared";
+import { generatedAvatarUri } from "@/lib/blobatar";
+import { sanitizeLook, type AvatarLook } from "@/lib/avatarLook";
 import { fetchCustomization } from "@/lib/customizationClient";
 
 interface AvatarDisplayProps {
@@ -24,39 +21,6 @@ const sizeMap = {
     xl: { class: "w-16 h-16", pixels: 64 },
 };
 
-// Composant Eigen Avatar Generator
-function EigenAvatarGenerated({
-    id,
-    size,
-    className,
-}: {
-    id: string;
-    size: number;
-    className: string;
-}) {
-    const themeIndex = hashString(id) % 4;
-    const commonProps = {
-        id,
-        size,
-        className: `rounded-full object-cover w-full h-full ${className}`,
-    };
-
-    const colorSetProps = { foreground: COLOR_SETS };
-    const pixelsProps = { foreground: PIXELS_GRADIENT, interpolate: true };
-
-    switch (themeIndex) {
-        case 0:
-            return <AvatarInterference {...commonProps} {...colorSetProps} />;
-        case 1:
-            return <AvatarPlasma {...commonProps} {...colorSetProps} />;
-        case 2:
-            return <AvatarSmile {...commonProps} {...colorSetProps} />;
-        case 3:
-        default:
-            return <AvatarPixels {...commonProps} {...pixelsProps} />;
-    }
-}
-
 export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
     name,
     userId,
@@ -66,6 +30,7 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
 }) => {
     const [profileImage, setProfileImage] = useState<string | null>(null);
     const [profileBorder, setProfileBorder] = useState<string | null>(null);
+    const [look, setLook] = useState<AvatarLook>({});
     const [loading, setLoading] = useState(false);
 
     const sizeConfig = sizeMap[size];
@@ -87,6 +52,7 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
             const data = await fetchCustomization(userId);
             const custom = data?.customization;
             if (custom) {
+                setLook(sanitizeLook(custom.avatarLook));
                 if (custom.profileImage?.isActive && custom.profileImage?.filename) {
                     setProfileImage(`/profile/${custom.profileImage.filename}`);
                 }
@@ -108,7 +74,7 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
     return (
         <div className={`relative ${sizeConfig.class} ${className}`}>
             {/* Avatar principal */}
-            <div className="rounded-full w-full h-full flex items-center justify-center overflow-hidden bg-gray-100">
+            <div className={`rounded-full w-full h-full flex items-center justify-center overflow-hidden ${displayImage ? "bg-gray-100" : ""}`}>
                 {displayImage ? (
                     <img
                         src={displayImage}
@@ -116,10 +82,10 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
                         className="w-full h-full object-cover"
                     />
                 ) : (
-                    <EigenAvatarGenerated
-                        id={identifier}
-                        size={sizeConfig.pixels}
-                        className=""
+                    <img
+                        src={generatedAvatarUri(identifier, look)}
+                        alt={`${name}'s avatar`}
+                        className="w-full h-full object-cover"
                     />
                 )}
             </div>

@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
         .select('_id selectedBadge')
         .lean(),
       ProfileCustomization.find({ user: { $in: objectIds } })
-        .select('user usernameColor profileImage profileBorder')
+        .select('user usernameColor profileImage profileBorder avatarLook')
         .lean()
     ]);
 
@@ -62,7 +62,8 @@ export async function POST(req: NextRequest) {
     const DEFAULT_CUSTOM = {
       usernameColor: { type: 'solid', value: '#3B82F6', isActive: false },
       profileImage: { filename: '', isActive: false },
-      profileBorder: { filename: '', isActive: false }
+      profileBorder: { filename: '', isActive: false },
+      avatarLook: {}
     };
 
     const data: Record<string, any> = {};

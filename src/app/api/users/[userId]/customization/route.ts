@@ -41,6 +41,7 @@ export async function GET(
           usernameColor: { type: 'solid', value: '#3B82F6', isActive: false },
           profileImage: { filename: '', isActive: false },
           profileBorder: { filename: '', isActive: false },
+          avatarLook: {},
           customPhoto: { url: '', isActive: false }
         },
         selectedBadgeIcon,

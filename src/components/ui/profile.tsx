@@ -5,19 +5,8 @@ import { Badge } from "./Badge";
 import { getRoleIconPath } from "@/lib/roleIcon";
 import { getPrestigeInfo } from "@/lib/rankSystem";
 import PrestigeGem from "@/components/ui/PrestigeGem";
-import { AvatarInterference } from "eigen-avatar-generator/react/interference";
-import { AvatarPlasma } from "eigen-avatar-generator/react/plasma";
-import { AvatarSmile } from "eigen-avatar-generator/react/smile";
-import { AvatarPixels } from "eigen-avatar-generator/react/pixels";
-import { COLOR_SETS, PIXELS_GRADIENT, hashString } from "@/lib/eigenAvatarShared";
-
-// Fonction pour formater le nombre de points
-function formatPoints(points: number): string {
-    if (points < 1000) return points.toString();
-    if (points < 1000000) return Math.floor(points / 1000) + "k";
-    if (points < 1000000000) return Math.floor(points / 1000000) + "M";
-    return points.toString();
-}
+import { generatedAvatarUri } from "@/lib/blobatar";
+import { sanitizeLook, type AvatarLook } from "@/lib/avatarLook";
 
 // Interface pour les personnalisations
 interface ProfileCustomization {
@@ -39,12 +28,15 @@ interface ProfileCustomization {
         filename: string;
         isActive: boolean;
     };
+    /** Accessoires Blobatar achetés en boutique */
+    avatarLook?: AvatarLook;
 }
 
 interface ProfileAvatarProps {
     username: string;
     image?: string;
     points?: number;
+    /** @deprecated La pastille de points a été retirée (voir AuthorLevel) ; prop ignorée. */
     showPoints?: boolean;
     size?: "small" | "medium" | "large";
     userId?: string; // ID de l'utilisateur pour charger les personnalisations
@@ -58,51 +50,16 @@ const sizeClasses = {
     large: "w-20 h-20 text-lg",
 };
 
-const sizePixels = {
-    small: 96,
-    medium: 80,
-    large: 160,
-};
-
-// Composant Eigen Avatar (Interference, Plasma, Smile, Pixels)
-function EigenAvatar({
-    id,
-    size,
-    avatarSizeClass,
-}: {
-    id: string;
-    size: "small" | "medium" | "large";
-    avatarSizeClass: string;
-}) {
-    const themeIndex = hashString(id) % 4;
-    const pixels = sizePixels[size];
-    const commonProps = {
-        id,
-        size: pixels,
-        className: `rounded-full object-cover w-full h-full ${avatarSizeClass}`,
-    };
-
-    // Interference & Plasma & Smile: color sets
-    const colorSetProps = {
-        foreground: COLOR_SETS,
-    };
-    // Pixels: gradient interpolation only
-    const pixelsProps = {
-        foreground: PIXELS_GRADIENT,
-        interpolate: true,
-    };
-
-    switch (themeIndex) {
-        case 0:
-            return <AvatarInterference {...commonProps} {...colorSetProps} />;
-        case 1:
-            return <AvatarPlasma {...commonProps} {...colorSetProps} />;
-        case 2:
-            return <AvatarSmile {...commonProps} {...colorSetProps} />;
-        case 3:
-        default:
-            return <AvatarPixels {...commonProps} {...pixelsProps} />;
-    }
+// Avatar génératif Blobatar (quand aucune photo de profil n'est active)
+function GeneratedAvatar({ id, look, avatarSizeClass }: { id: string; look?: AvatarLook; avatarSizeClass: string }) {
+    return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+            src={generatedAvatarUri(id, look)}
+            alt=""
+            className={`rounded-full object-cover w-full h-full ${avatarSizeClass}`}
+        />
+    );
 }
 
 const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
@@ -294,16 +251,6 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
     // Contenu de l'avatar (cercle uniquement)
     const avatarContent = (
         <div className={`relative ${sizeClasses[size]} rounded-full`}>
-                {/* Badge pour les points */}
-                {showPoints && points > 0 && (
-                    <Badge
-                        variant="default"
-                        className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] px-1 rounded-full flex items-center justify-center w-5 h-5 z-10"
-                    >
-                        {formatPoints(points)}
-                    </Badge>
-                )}
-
                 {/* Avatar principal (en arrière-plan) */}
                 <div
                     className="rounded-full w-full h-full flex items-center justify-center overflow-hidden relative z-0"
@@ -318,9 +265,9 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                             className="w-full h-full object-cover rounded-full"
                         />
                     ) : (
-                        <EigenAvatar
+                        <GeneratedAvatar
                             id={userId || username}
-                            size={size}
+                            look={sanitizeLook((customization || propCustomization)?.avatarLook)}
                             avatarSizeClass={sizeClasses[size]}
                         />
                     )}

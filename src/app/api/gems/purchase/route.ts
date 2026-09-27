@@ -9,6 +9,7 @@ import ProfileCustomization from '@/models/ProfileCustomization';
 import OwnedCosmetic from '@/models/OwnedCosmetic';
 import mongoose from 'mongoose';
 import { GEM_CONFIG } from '@/lib/gemConfig';
+import { getAccessory } from '@/lib/avatarLook';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
@@ -47,6 +48,8 @@ export async function POST(req: NextRequest) {
       price = GEM_CONFIG.PRICES.profileImage[itemValue as keyof typeof GEM_CONFIG.PRICES.profileImage] || 0;
     } else if (itemType === 'profileBorder' && itemValue) {
       price = GEM_CONFIG.PRICES.profileBorder[itemValue as keyof typeof GEM_CONFIG.PRICES.profileBorder] || 0;
+    } else if (itemType === 'avatarAccessory') {
+      price = getAccessory(itemValue)?.price || 0;
     }
 
     if (price === 0) {
@@ -60,6 +63,7 @@ export async function POST(req: NextRequest) {
       usernameColor: 'username_color',
       profileImage: 'profile_image',
       profileBorder: 'profile_border',
+      avatarAccessory: 'avatar_accessory',
     };
     const cosmeticType = cosmeticTypeMap[itemType];
 
@@ -125,6 +129,10 @@ export async function POST(req: NextRequest) {
       const filename = borderFileMap[itemValue] || itemValue;
       updateData['profileBorder.filename'] = filename;
       updateData['profileBorder.isActive'] = true;
+    } else if (itemType === 'avatarAccessory') {
+      // Équipé à l'achat, dans son emplacement (remplace l'accessoire précédent)
+      const accessory = getAccessory(itemValue)!;
+      updateData[`avatarLook.${accessory.slot}`] = accessory.id;
     }
 
     const updatedCustomization = await ProfileCustomization.findOneAndUpdate(

@@ -20,6 +20,7 @@ export interface CustomizationPayload {
     usernameColor?: { type: string; value: string; isActive: boolean };
     profileImage?: { filename: string; isActive: boolean };
     profileBorder?: { filename: string; isActive: boolean };
+    avatarLook?: Partial<Record<'color' | 'hair' | 'hat' | 'glasses' | 'face' | 'mark', string>>;
   };
   selectedBadgeIcon: string | null;
 }
