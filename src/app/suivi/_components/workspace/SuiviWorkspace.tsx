@@ -23,6 +23,8 @@ import {
     Lock,
     ShieldCheck,
     XCircle,
+    Mail,
+    MailX,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -34,7 +36,7 @@ import {
 import ReportModal from "@/components/ReportModal";
 import { useThreadRealtime } from "@/hooks/useThreadRealtime";
 import { ANNOUNCED_DELAY_HOURS, FORMAT_LABELS, GOAL_TYPE_LABELS, OUTCOME_LABELS } from "@/lib/mentorship/config";
-import { api, ApiError, openAuth, formatDate, daysSince, type Message, type MentorshipDetail } from "../../_lib/client";
+import { api, ApiError, openAuth, formatDate, formatTime, daysSince, type Message, type MentorshipDetail } from "../../_lib/client";
 import { Eyebrow, StatusPill, Initial, Spinner, Card } from "../ui";
 import Conversation from "./Conversation";
 import PlanPanel from "./PlanPanel";
@@ -257,6 +259,31 @@ export default function SuiviWorkspace({ id }: { id: string }) {
                                 {staff && detail.status === "paused" && (
                                     <DropdownMenuItem onClick={() => setDialog("resume")}>
                                         <Play className="mr-2 h-4 w-4" /> Reprendre
+                                    </DropdownMenuItem>
+                                )}
+                                {detail.viewer === "mentor" && detail.status === "active" && (
+                                    <DropdownMenuItem
+                                        onClick={() => setDialog("email")}
+                                        disabled={!!detail.emailRemindersOff || !!detail.nextEmailReminderAt}
+                                        className="items-start"
+                                    >
+                                        <Mail className="mr-2 mt-0.5 h-4 w-4 shrink-0" />
+                                        <span>
+                                            Relancer par e-mail
+                                            {(detail.emailRemindersOff || detail.nextEmailReminderAt) && (
+                                                <span className="block text-xs text-[rgba(26,21,18,0.55)]">
+                                                    {detail.emailRemindersOff
+                                                        ? "L'élève a désactivé ces e-mails"
+                                                        : `Possible le ${formatDate(detail.nextEmailReminderAt)} à ${formatTime(detail.nextEmailReminderAt!)}`}
+                                                </span>
+                                            )}
+                                        </span>
+                                    </DropdownMenuItem>
+                                )}
+                                {detail.viewer === "student" && isOpen && (
+                                    <DropdownMenuItem onClick={() => setDialog(detail.emailRemindersOff ? "email_on" : "email_off")}>
+                                        {detail.emailRemindersOff ? <Mail className="mr-2 h-4 w-4" /> : <MailX className="mr-2 h-4 w-4" />}
+                                        {detail.emailRemindersOff ? "Réactiver les rappels par e-mail" : "Ne plus recevoir de rappels par e-mail"}
                                     </DropdownMenuItem>
                                 )}
                                 {staff && isOpen && (

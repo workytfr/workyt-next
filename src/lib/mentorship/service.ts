@@ -21,11 +21,14 @@ import { checkForContactDetails } from './contactFilter';
 import { readAttachment, uploadAttachment } from './storage';
 import { resolveResource, checkCompletion } from './resources';
 import { notify, notifyModerators, notifyAvailableMentors, activeLoadByMentor } from './notify';
+import { sendStudentReminderEmail } from './email';
 import type { SuiviUser, SuiviViewerRole } from './access';
 import {
   AUTO_DETECTED_KINDS,
   DUO_STREAK_MILESTONES,
   CHECKIN_INTERVAL_DAYS,
+  EMAIL_REMINDER_COOLDOWN_HOURS,
+  nextEmailReminderAt,
   MAX_GOALS,
   MAX_MESSAGE_LENGTH,
   MAX_OPEN_ASSIGNMENTS,
@@ -738,6 +741,70 @@ export async function setPaused(m: IMentorship, viewer: SuiviViewerRole, user: S
   await m.save();
   await systemMessage(m, paused ? 'Suivi mis en pause.' : 'Le suivi reprend.', { meta: { event: paused ? 'paused' : 'resumed' } });
   await notify('mentorship_update', id(m.student), user.id, id(m._id), paused ? 'Ton suivi est en pause' : 'Ton suivi reprend', `Suivi en ${m.subject}.`);
+  ping(m);
+  return { ok: true };
+}
+
+/**
+ * Le bénévole relance l'élève par e-mail (bouton « Relancer par e-mail »).
+ * Une relance au plus toutes les EMAIL_REMINDER_COOLDOWN_HOURS, jamais si
+ * l'élève a refusé ces e-mails. La relance est tracée dans la conversation.
+ */
+export async function emailReminder(m: IMentorship, viewer: SuiviViewerRole, user: SuiviUser): Promise<Result<{ nextAt: string }>> {
+  if (viewer !== 'mentor') return fail(403, 'Seul le bénévole du suivi peut relancer l’élève.');
+  if (m.status !== 'active') return fail(409, 'On ne relance que pendant un suivi en cours.');
+  if (m.emailRemindersOff) return fail(409, 'L’élève a choisi de ne plus recevoir de rappels par e-mail.');
+  const blockedUntil = nextEmailReminderAt(m.emailReminderAt);
+  if (blockedUntil) {
+    return fail(429, `Une relance par e-mail a déjà été envoyée. Prochaine possible le ${blockedUntil.toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' })}.`);
+  }
+
+  const student = await User.findById(m.student).select('email username').lean<{ email?: string; username: string }>();
+  if (!student?.email) return fail(409, 'Cet élève n’a pas d’adresse e-mail.');
+
+  // On réserve le créneau AVANT l'envoi : deux clics simultanés n'envoient qu'un e-mail
+  const now = new Date();
+  const reserved = await Mentorship.updateOne(
+    {
+      _id: m._id,
+      $or: [
+        { emailReminderAt: { $exists: false } },
+        { emailReminderAt: { $lte: new Date(now.getTime() - EMAIL_REMINDER_COOLDOWN_HOURS * 3600 * 1000) } }
+      ]
+    },
+    { $set: { emailReminderAt: now } }
+  );
+  if (reserved.modifiedCount === 0) return fail(429, 'Une relance par e-mail vient déjà d’être envoyée.');
+
+  let sent = false;
+  try {
+    sent = await sendStudentReminderEmail({
+      to: student.email,
+      studentName: student.username,
+      mentorName: user.username,
+      subject: m.subject,
+      mentorshipId: id(m._id)
+    });
+  } catch (error) {
+    console.error('Erreur relance e-mail suivi:', error);
+  }
+  if (!sent) {
+    // Échec d'envoi : on libère le créneau pour pouvoir réessayer
+    await Mentorship.updateOne({ _id: m._id, emailReminderAt: now }, { $unset: { emailReminderAt: 1 } });
+    return fail(502, 'L’e-mail n’a pas pu être envoyé. Réessaie plus tard.');
+  }
+
+  m.emailReminderAt = now;
+  await systemMessage(m, `Rappel envoyé par e-mail par ${user.username}.`, { meta: { event: 'email_reminder' } });
+  ping(m);
+  return { ok: true, data: { nextAt: new Date(now.getTime() + EMAIL_REMINDER_COOLDOWN_HOURS * 3600 * 1000).toISOString() } };
+}
+
+/** L'élève accepte ou refuse les relances par e-mail pour ce suivi */
+export async function setEmailReminders(m: IMentorship, viewer: SuiviViewerRole, off: boolean): Promise<Result> {
+  if (viewer !== 'student') return fail(403, 'Seul l’élève choisit s’il reçoit des e-mails.');
+  m.emailRemindersOff = off;
+  await m.save();
   ping(m);
   return { ok: true };
 }

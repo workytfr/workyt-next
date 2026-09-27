@@ -73,6 +73,10 @@ export interface MentorshipDetail {
     checkin?: { askedAt: string | null; answeredAt: string | null; mood: Mood | null } | null;
     nextCheckinAt?: string | null;
     duoStreak?: { current: number; best: number };
+    /** L'élève a refusé les relances par e-mail */
+    emailRemindersOff?: boolean;
+    /** Bénévole : prochaine relance par e-mail possible (null : maintenant) */
+    nextEmailReminderAt?: string | null;
     lastReadAt?: { student: string | null; mentor: string | null };
     closure?: {
         outcome: string;

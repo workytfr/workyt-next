@@ -108,6 +108,10 @@ export interface IMentorship extends Document {
   mentorReminderAt?: Date;
   studentReminderAt?: Date;
   lastBlockedAlertAt?: Date;
+  /** Dernière relance par e-mail envoyée par le bénévole (limite : voir config) */
+  emailReminderAt?: Date;
+  /** L'élève a refusé les relances par e-mail pour ce suivi */
+  emailRemindersOff?: boolean;
 
   createdAt: Date;
   updatedAt: Date;
@@ -216,7 +220,9 @@ const MentorshipSchema = new Schema<IMentorship>(
     escalatedAt: { type: Date },
     mentorReminderAt: { type: Date },
     studentReminderAt: { type: Date },
-    lastBlockedAlertAt: { type: Date }
+    lastBlockedAlertAt: { type: Date },
+    emailReminderAt: { type: Date },
+    emailRemindersOff: { type: Boolean, default: false }
   },
   { timestamps: true }
 );

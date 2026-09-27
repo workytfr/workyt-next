@@ -6,7 +6,7 @@ import { OUTCOME_LABELS } from "@/lib/mentorship/config";
 import { api, ApiError, type MentorshipDetail } from "../../_lib/client";
 import { Spinner } from "../ui";
 
-type Kind = "close" | "release" | "pause" | "resume" | "cancel" | null;
+type Kind = "close" | "release" | "pause" | "resume" | "cancel" | "email" | "email_off" | "email_on" | null;
 
 const FEEDBACK = [
     { key: "helpful", label: "Oui, ça m'a aidé" },
@@ -140,6 +140,24 @@ export default function ActionDialog({
             desc: "L'élève sera prévenu que vous reprenez.",
             cta: "Reprendre",
             action: () => run({ action: "resume" }),
+        },
+        email: {
+            title: "Relancer par e-mail",
+            desc: `${detail.student?.username || "L'élève"} recevra un e-mail l'invitant à revenir sur son suivi. Le contenu de vos messages n'y figure jamais. Une relance au plus toutes les 72 h.`,
+            cta: "Envoyer l'e-mail",
+            action: () => run({ action: "email_reminder" }),
+        },
+        email_off: {
+            title: "Ne plus recevoir de rappels par e-mail",
+            desc: "Ton bénévole ne pourra plus te relancer par e-mail pour ce suivi. Tu continueras à recevoir les notifications sur le site.",
+            cta: "Désactiver les e-mails",
+            action: () => run({ action: "email_reminders", off: true }),
+        },
+        email_on: {
+            title: "Réactiver les rappels par e-mail",
+            desc: "Ton bénévole pourra de nouveau t'envoyer un rappel par e-mail (au plus un tous les 3 jours).",
+            cta: "Réactiver",
+            action: () => run({ action: "email_reminders", off: false }),
         },
         cancel: {
             title: "Annuler ta demande",

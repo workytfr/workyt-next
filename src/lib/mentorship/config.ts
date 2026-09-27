@@ -36,6 +36,16 @@ export const MENTOR_TIMEOUT_DAYS = 7;
 /** L'élève ne s'est pas manifesté depuis N jours → petit rappel à l'élève */
 export const STUDENT_REMINDER_DAYS = 10;
 
+/** Relance manuelle par e-mail (bouton du bénévole) : une au plus par période */
+export const EMAIL_REMINDER_COOLDOWN_HOURS = 72;
+
+/** Prochaine relance par e-mail autorisée après `last` (null : possible tout de suite) */
+export function nextEmailReminderAt(last?: Date | null): Date | null {
+  if (!last) return null;
+  const next = new Date(new Date(last).getTime() + EMAIL_REMINDER_COOLDOWN_HOURS * 3600 * 1000);
+  return next > new Date() ? next : null;
+}
+
 /** Intervalle entre deux points d'étape */
 export const CHECKIN_INTERVAL_DAYS = 14;
 

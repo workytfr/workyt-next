@@ -5,6 +5,7 @@ import MentorProfile from '@/models/MentorProfile';
 import User from '@/models/User';
 import { activeLoadByMentor } from './notify';
 import type { SuiviViewerRole } from './access';
+import { nextEmailReminderAt } from './config';
 
 /**
  * Ce que chacun a le droit de voir d'un suivi.
@@ -95,6 +96,9 @@ export async function serializeMentorship(m: IMentorship, viewer: SuiviViewerRol
       : null,
     nextCheckinAt: iso(m.nextCheckinAt),
     duoStreak: { current: m.duoStreak?.current || 0, best: m.duoStreak?.best || 0 },
+    emailRemindersOff: !!m.emailRemindersOff,
+    // Relance par e-mail : réservé au bénévole et à la modération
+    nextEmailReminderAt: staff ? iso(nextEmailReminderAt(m.emailReminderAt)) : undefined,
     lastReadAt: { student: iso(m.lastReadAt?.student), mentor: iso(m.lastReadAt?.mentor) },
     closure: m.closure?.outcome
       ? {
