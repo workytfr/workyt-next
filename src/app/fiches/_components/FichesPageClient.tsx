@@ -4,6 +4,8 @@ import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, FileText, Sparkles, Bookmark, ArrowUpDown } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
+import UsernameDisplay from "@/components/ui/UsernameDisplay";
+import AuthorLevel from "@/components/ui/AuthorLevel";
 import { educationData, getSubjectIconComponent } from "@/data/educationData";
 import { PAGE_CONTAINER } from "@/components/wk/primitives";
 import { subjectToSlug } from "@/utils/subjectSlug";
@@ -238,13 +240,21 @@ export default function FichesPageClient() {
                             {sorted.map((f) => (
                                 <FicheTile
                                     key={f.id}
-                                    f={{ id: f.id, title: f.title, subject: f.subject, level: f.level, status: f.status, content: f.content, likes: f.likes, comments: f.comments }}
-                                    author={
-                                        <>
+                                    f={{ id: f.id, title: f.title, subject: f.subject, level: f.level, status: f.status, content: f.content, likes: f.likes, comments: f.comments, date: f.createdAt }}
+                                    relativeDate
+                                    author={{
+                                        avatar: (
                                             <ProfileAvatar username={f.authors?.username || "Inconnu"} points={f.authors?.points || 0} userId={f.authors?._id} size="small" />
-                                            <span className="truncate text-xs font-semibold text-[rgba(26,21,18,0.7)]">{f.authors?.username || "Inconnu"}</span>
-                                        </>
-                                    }
+                                        ),
+                                        name: f.authors?._id ? (
+                                            <>
+                                                <UsernameDisplay username={f.authors.username} userId={f.authors._id} className="truncate text-sm font-semibold" />
+                                                <AuthorLevel points={f.authors.points || 0} />
+                                            </>
+                                        ) : (
+                                            <span className="truncate text-sm font-semibold">Inconnu</span>
+                                        ),
+                                    }}
                                 />
                             ))}
                         </div>

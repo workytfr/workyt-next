@@ -2,7 +2,9 @@ import React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Flame, MessageCircle, FileText, ArrowUpRight, HeartHandshake } from "lucide-react";
-import { SubjectLabel, LevelChip } from "@/components/wk/primitives";
+import ContentCard from "@/components/wk/ContentCard";
+import BookmarkButton from "@/components/BookmarkButton";
+import { relativeTime } from "@/app/forum/_components/forumUi";
 import { buildIdSlug } from "@/utils/slugify";
 
 /**
@@ -26,8 +28,18 @@ const STATUS_TINT: Record<string, string> = {
     "Vérifiée": "linear-gradient(180deg, rgba(126, 217, 87, 0.24) 0%, rgba(126, 217, 87, 0.08) 38%, #ffffff 72%)",
 };
 
-export function ficheStatusTint(status?: string): React.CSSProperties | undefined {
-    return status && STATUS_TINT[status] ? { backgroundImage: STATUS_TINT[status] } : undefined;
+/**
+ * Version discrète pour les grilles : beaucoup de fiches sont certifiées, un
+ * dégradé plein ferait virer toute la liste au bleu. Juste un voile en haut.
+ */
+const STATUS_TINT_SOFT: Record<string, string> = {
+    "Certifiée": "linear-gradient(180deg, rgba(110, 193, 228, 0.12) 0%, rgba(110, 193, 228, 0.03) 30%, #ffffff 55%)",
+    "Vérifiée": "linear-gradient(180deg, rgba(126, 217, 87, 0.13) 0%, rgba(126, 217, 87, 0.035) 30%, #ffffff 55%)",
+};
+
+export function ficheStatusTint(status?: string, soft = false): React.CSSProperties | undefined {
+    const tints = soft ? STATUS_TINT_SOFT : STATUS_TINT;
+    return status && tints[status] ? { backgroundImage: tints[status] } : undefined;
 }
 
 export function FicheStatusChip({ status, className = "" }: { status?: string; className?: string }) {
@@ -69,66 +81,62 @@ export interface FicheTileData {
     date?: string | Date;
 }
 
+/** Date d'une fiche : absolue par défaut (pages servies en cache), relative dans la liste */
+function ficheDate(date: string | Date, relative: boolean) {
+    return relative
+        ? relativeTime(date)
+        : new Date(date).toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" });
+}
+
 /**
- * Une fiche en carte. Lien « étiré » sur le titre : toute la carte est
- * cliquable. `author` (avatar client) est passé en élément déjà rendu pour
- * que ce composant reste utilisable côté serveur.
+ * Une fiche en carte : même carte que les questions du forum (ContentCard).
+ * `author` (avatar et nom, composants client) est passé déjà rendu pour que
+ * ce composant reste utilisable côté serveur.
  */
-export function FicheTile({ f, author, showSubject = true }: { f: FicheTileData; author?: React.ReactNode; showSubject?: boolean }) {
-    const href = `/fiches/${buildIdSlug(f.id, f.slug || f.title)}`;
-    const excerpt = ficheExcerpt(f.content);
-
+export function FicheTile({
+    f,
+    author,
+    showSubject = true,
+    relativeDate = false,
+}: {
+    f: FicheTileData;
+    author?: { avatar: React.ReactNode; name: React.ReactNode };
+    showSubject?: boolean;
+    relativeDate?: boolean;
+}) {
     return (
-        <article
-            className="group relative flex h-full min-w-0 flex-col rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 transition duration-300 hover:-translate-y-1 hover:border-[rgba(26,21,18,0.18)] hover:shadow-[0_16px_40px_rgba(26,21,18,0.09)] sm:p-6"
-            style={ficheStatusTint(f.status)}
-        >
-            <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5">
-                {showSubject && f.subject ? (
-                    <SubjectLabel subject={f.subject} className="min-w-0" />
-                ) : (
-                    <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--wk-accent)]">
-                        <FileText className="h-3.5 w-3.5" /> Fiche
-                    </span>
-                )}
-                {f.level && <LevelChip level={f.level} />}
-                <FicheStatusChip status={f.status} className="ml-auto" />
-            </div>
-
-            <h2 className="font-serif-display mt-4 text-[1.35rem] leading-[1.15] text-[var(--wk-ink)] line-clamp-2 [overflow-wrap:anywhere]">
-                <Link
-                    href={href}
-                    className="after:absolute after:inset-0 after:rounded-3xl focus:outline-none focus-visible:after:outline focus-visible:after:outline-2 focus-visible:after:outline-offset-2 focus-visible:after:outline-[var(--wk-accent)]"
-                >
-                    {f.title}
-                </Link>
-            </h2>
-
-            {excerpt && <p className="mt-2.5 text-sm leading-relaxed text-[rgba(26,21,18,0.62)] line-clamp-3 [overflow-wrap:anywhere]">{excerpt}</p>}
-
-            <div className="mt-auto flex items-center gap-2.5 border-t border-[rgba(26,21,18,0.06)] pt-4">
-                <div className="flex min-w-0 flex-1 items-center gap-2.5">
-                    {author ?? (
-                        f.date && (
-                            <span className="text-xs text-[rgba(26,21,18,0.5)]">
-                                {new Date(f.date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })}
-                            </span>
-                        )
+        <ContentCard
+            href={`/fiches/${buildIdSlug(f.id, f.slug || f.title)}`}
+            style={ficheStatusTint(f.status, true)}
+            title={f.title}
+            subject={showSubject ? f.subject : undefined}
+            kindLabel={
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--wk-accent)]">
+                    <FileText className="h-3.5 w-3.5" /> Fiche
+                </span>
+            }
+            level={f.level}
+            status={<FicheStatusChip status={f.status} />}
+            excerpt={ficheExcerpt(f.content)}
+            avatar={author?.avatar}
+            authorName={author?.name}
+            meta={f.date ? ficheDate(f.date, relativeDate) : undefined}
+            stats={
+                <>
+                    {typeof f.likes === "number" && (
+                        <span className="inline-flex items-center gap-1" title={`${f.likes} j'aime`}>
+                            <Flame className="h-4 w-4 text-[var(--wk-accent)]" /> {f.likes}
+                        </span>
                     )}
-                </div>
-                {typeof f.likes === "number" && (
-                    <span className="inline-flex items-center gap-1 text-xs text-[rgba(26,21,18,0.6)]" title={`${f.likes} j'aime`}>
-                        <Flame className="h-4 w-4 text-[var(--wk-accent)]" /> {f.likes}
-                    </span>
-                )}
-                {typeof f.comments === "number" && (
-                    <span className="inline-flex items-center gap-1 text-xs text-[rgba(26,21,18,0.6)]" title={`${f.comments} commentaire(s)`}>
-                        <MessageCircle className="h-4 w-4" /> {f.comments}
-                    </span>
-                )}
-                <ArrowUpRight className="h-4 w-4 text-[rgba(26,21,18,0.35)] transition group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-[var(--wk-accent)]" />
-            </div>
-        </article>
+                    {typeof f.comments === "number" && (
+                        <span className="inline-flex items-center gap-1" title={`${f.comments} commentaire(s)`}>
+                            <MessageCircle className="h-4 w-4" /> {f.comments}
+                        </span>
+                    )}
+                </>
+            }
+            action={<BookmarkButton revisionId={f.id} size="sm" />}
+        />
     );
 }
 
