@@ -81,6 +81,8 @@ export interface IMentorship extends Document {
   assignments: Types.DocumentArray<IMentorshipAssignment & Types.Subdocument>;
   /** Bloc-notes du bénévole, jamais montré à l'élève, transmis au relais */
   mentorNotes: string;
+  /** Messages épinglés en haut de la conversation, partagés par l'élève et le bénévole */
+  pinnedMessages: Types.ObjectId[];
 
   lastReadAt: { student?: Date; mentor?: Date };
   lastStudentActivityAt?: Date;
@@ -183,6 +185,7 @@ const MentorshipSchema = new Schema<IMentorship>(
     goals: { type: [GoalSchema], default: [] },
     assignments: { type: [AssignmentSchema], default: [] },
     mentorNotes: { type: String, maxlength: 5000, default: '' },
+    pinnedMessages: { type: [{ type: Schema.Types.ObjectId }], default: [] },
 
     lastReadAt: {
       student: { type: Date },

@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, Types } from 'mongoose';
+import { SUIVI_BLOCK_TYPES, MAX_BLOCK_TITLE_LENGTH, type SuiviBlockType } from '@/lib/mentorship/config';
 
 /**
  * Un message d'un suivi (voir Mentorship).
@@ -14,7 +15,12 @@ import mongoose, { Schema, Document, Types } from 'mongoose';
  */
 
 export type MessageAuthorRole = 'student' | 'mentor' | 'moderator' | 'system';
-export type MessageKind = 'text' | 'resource' | 'goal' | 'checkin' | 'checkin_reply' | 'event';
+/**
+ * `block` : un bloc pédagogique (définition, méthode, indice…) envoyé par le
+ * bénévole — son contenu est dans `text`, son type et son titre dans `meta`.
+ * `confused` : l'élève signale qu'il n'a pas compris un bloc (`meta.replyTo`).
+ */
+export type MessageKind = 'text' | 'resource' | 'goal' | 'checkin' | 'checkin_reply' | 'event' | 'block' | 'confused';
 
 export interface IMentorshipMessage extends Document {
   mentorship: Types.ObjectId;
@@ -33,6 +39,9 @@ export interface IMentorshipMessage extends Document {
     goalId?: Types.ObjectId;
     mood?: 'bien' | 'moyen' | 'bloque';
     event?: string;
+    blockType?: SuiviBlockType;
+    blockTitle?: string;
+    replyTo?: Types.ObjectId;
   };
 
   status: 'visible' | 'blocked';
@@ -51,7 +60,7 @@ const MentorshipMessageSchema = new Schema<IMentorshipMessage>({
   },
   kind: {
     type: String,
-    enum: ['text', 'resource', 'goal', 'checkin', 'checkin_reply', 'event'],
+    enum: ['text', 'resource', 'goal', 'checkin', 'checkin_reply', 'event', 'block', 'confused'],
     default: 'text'
   },
   text: { type: String, default: '', maxlength: 2000 },
@@ -67,7 +76,10 @@ const MentorshipMessageSchema = new Schema<IMentorshipMessage>({
     assignmentId: { type: Schema.Types.ObjectId },
     goalId: { type: Schema.Types.ObjectId },
     mood: { type: String, enum: ['bien', 'moyen', 'bloque'] },
-    event: { type: String }
+    event: { type: String },
+    blockType: { type: String, enum: SUIVI_BLOCK_TYPES },
+    blockTitle: { type: String, maxlength: MAX_BLOCK_TITLE_LENGTH },
+    replyTo: { type: Schema.Types.ObjectId }
   },
 
   status: { type: String, enum: ['visible', 'blocked'], default: 'visible' },

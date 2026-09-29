@@ -1,5 +1,7 @@
 "use client";
 
+import type { SuiviBlockType } from "@/lib/mentorship/config";
+
 /**
  * Types et appels réseau partagés par les pages du suivi (élève, bénévole,
  * modération). Les routes /api/suivi s'authentifient par la session : aucun
@@ -10,6 +12,7 @@ export type ViewerRole = "student" | "mentor" | "moderator" | "candidate";
 export type Status = "pending" | "active" | "paused" | "closed" | "cancelled";
 export type Kind = "course" | "lesson" | "exercise" | "quiz" | "fiche" | "evaluation";
 export type Mood = "bien" | "moyen" | "bloque";
+export type { SuiviBlockType } from "@/lib/mentorship/config";
 
 export interface PublicUser {
     id: string;
@@ -84,6 +87,8 @@ export interface MentorshipDetail {
         studentFeedback: "helpful" | "neutral" | "not_helpful" | null;
         byStudent: boolean;
     } | null;
+    /** Messages épinglés en haut de la conversation (communs à l'élève et au bénévole) */
+    pinnedMessageIds?: string[];
     mentorNotes?: string;
     handoffNote?: string | null;
     resumed?: boolean;
@@ -95,10 +100,19 @@ export interface Message {
     id: string;
     authorRole: "student" | "mentor" | "moderator" | "system";
     author: PublicUser | null;
-    kind: "text" | "resource" | "goal" | "checkin" | "checkin_reply" | "event";
+    kind: "text" | "resource" | "goal" | "checkin" | "checkin_reply" | "event" | "block" | "confused";
     text: string;
     attachment: { name: string; mime: string; url: string } | null;
-    meta: { assignmentId: string | null; goalId: string | null; mood: Mood | null; event: string | null } | null;
+    meta: {
+        assignmentId: string | null;
+        goalId: string | null;
+        mood: Mood | null;
+        event: string | null;
+        blockType?: SuiviBlockType | null;
+        blockTitle?: string | null;
+        /** « Je n'ai pas compris » : le bloc concerné */
+        replyTo?: string | null;
+    } | null;
     status: "visible" | "blocked";
     blockedReasons?: string[];
     createdAt: string;

@@ -25,6 +25,7 @@ import {
     XCircle,
     Mail,
     MailX,
+    BookMarked,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -37,15 +38,17 @@ import ReportModal from "@/components/ReportModal";
 import { useThreadRealtime } from "@/hooks/useThreadRealtime";
 import { ANNOUNCED_DELAY_HOURS, FORMAT_LABELS, GOAL_TYPE_LABELS, OUTCOME_LABELS } from "@/lib/mentorship/config";
 import { api, ApiError, openAuth, formatDate, formatTime, daysSince, type Message, type MentorshipDetail } from "../../_lib/client";
-import { Eyebrow, StatusPill, Initial, Spinner, Card } from "../ui";
+import { Eyebrow, StatusPill, Spinner, Card } from "../ui";
 import Conversation from "./Conversation";
 import PlanPanel from "./PlanPanel";
 import ResourcesPanel from "./ResourcesPanel";
 import ProgressPanel from "./ProgressPanel";
 import NotesPanel from "./NotesPanel";
+import CahierPanel from "./CahierPanel";
 import ActionDialog, { type ActionKind } from "./Dialogs";
+import AvatarDisplay from "@/components/ui/AvatarDisplay";
 
-type Tab = "chat" | "plan" | "resources" | "progress" | "notes";
+type Tab = "chat" | "plan" | "resources" | "cahier" | "progress" | "notes";
 
 export default function SuiviWorkspace({ id }: { id: string }) {
     const { data: session, status: sessionStatus } = useSession();
@@ -166,6 +169,7 @@ export default function SuiviWorkspace({ id }: { id: string }) {
     const sideTabs: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
         { id: "plan", label: "Plan", icon: Target },
         { id: "resources", label: "Ressources", icon: BookOpen },
+        { id: "cahier", label: "Cahier", icon: BookMarked },
         ...(staff
             ? [
                   { id: "progress" as Tab, label: "Progression", icon: LineChart },
@@ -179,6 +183,7 @@ export default function SuiviWorkspace({ id }: { id: string }) {
         if (t === "resources") return <ResourcesPanel detail={detail} onChange={refresh} />;
         if (t === "progress") return <ProgressPanel mentorshipId={detail.id} studentName={detail.student?.username || "l'élève"} />;
         if (t === "notes") return <NotesPanel detail={detail} />;
+        if (t === "cahier") return <CahierPanel detail={detail} messages={messages} />;
         return null;
     };
 
@@ -212,7 +217,7 @@ export default function SuiviWorkspace({ id }: { id: string }) {
                     {other && (
                         <span className="wk-chip !py-1.5 !pl-1.5">
                             <span className="relative">
-                                <Initial name={other.username} tone="orange" size={24} />
+                                <AvatarDisplay name={other.username} userId={other.id} size="xs" />
                                 {otherOnline && <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />}
                             </span>
                             {other.username}
@@ -398,12 +403,15 @@ export default function SuiviWorkspace({ id }: { id: string }) {
                                 role="tab"
                                 aria-selected={tab === t.id}
                                 onClick={() => setTab(t.id)}
-                                className={`flex flex-1 items-center justify-center gap-1.5 rounded-full px-2 py-2 text-xs font-semibold transition ${
-                                    tab === t.id ? "bg-[var(--wk-ink)] text-white" : "text-[rgba(26,21,18,0.6)] hover:text-[var(--wk-ink)]"
-                                }`}
+                                title={t.label}
+                                aria-label={t.label}
+                                className={`flex items-center justify-center gap-1 rounded-full px-2.5 py-2 text-xs font-semibold transition ${
+                                    tab === t.id ? "flex-1 bg-[var(--wk-ink)] text-white" : "text-[rgba(26,21,18,0.6)] hover:text-[var(--wk-ink)]"
+                                } ${sideTabs.length <= 4 ? "flex-1" : ""}`}
                             >
-                                <t.icon className="h-3.5 w-3.5" />
-                                {t.label}
+                                <t.icon className="h-3.5 w-3.5 shrink-0" />
+                                {/* Bénévole (5 onglets) : seul l'onglet ouvert affiche son nom */}
+                                {(sideTabs.length <= 4 || tab === t.id) && t.label}
                                 {t.id === "resources" && openToDo > 0 && (
                                     <span className="rounded-full bg-[var(--wk-accent)] px-1.5 text-[10px] text-white">{openToDo}</span>
                                 )}
@@ -419,7 +427,7 @@ export default function SuiviWorkspace({ id }: { id: string }) {
                     {detail.viewer === "student" && detail.mentor?.bio && (
                         <div className="mt-4 rounded-3xl bg-[var(--wk-paper-2)] p-5 text-sm">
                             <div className="flex items-center gap-2.5">
-                                <Initial name={detail.mentor.username} tone="orange" size={32} />
+                                <AvatarDisplay name={detail.mentor.username} userId={detail.mentor.id} size="sm" />
                                 <div>
                                     <div className="font-semibold">{detail.mentor.username}</div>
                                     <div className="text-xs text-[rgba(26,21,18,0.55)]">Ton bénévole depuis le {formatDate(detail.matchedAt)}</div>

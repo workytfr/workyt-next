@@ -10,7 +10,8 @@ import {
   updateNotes,
   syncAssignments,
   emailReminder,
-  setEmailReminders
+  setEmailReminders,
+  setPinned
 } from '@/lib/mentorship/service';
 import { serializeMentorship } from '@/lib/mentorship/view';
 import { getMentorProfile } from '@/lib/mentorship/view';
@@ -50,6 +51,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
  * PATCH /api/suivi/[id] — une action sur le cycle de vie du suivi.
  * `action` : cancel | take | assign | pause | resume | release | close | feedback | notes
  *            | email_reminder | email_reminders (body.off : booléen)
+ *            | pin (body.messageId, body.pinned : booléen)
  */
 export async function PATCH(req: NextRequest, { params }: Params) {
   try {
@@ -95,6 +97,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
         return respond(await emailReminder(m, viewer, me));
       case 'email_reminders':
         return respond(await setEmailReminders(m, viewer, body?.off === true));
+      case 'pin':
+        return respond(await setPinned(m, viewer, String(body?.messageId ?? ''), body?.pinned !== false));
       default:
         return respond({ ok: false, status: 400, error: 'Action inconnue.' });
     }

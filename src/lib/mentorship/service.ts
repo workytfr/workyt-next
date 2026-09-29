@@ -22,6 +22,7 @@ import { readAttachment, uploadAttachment } from './storage';
 import { resolveResource, checkCompletion } from './resources';
 import { notify, notifyModerators, notifyAvailableMentors, activeLoadByMentor } from './notify';
 import { sendStudentReminderEmail } from './email';
+import { previewText } from './plainText';
 import type { SuiviUser, SuiviViewerRole } from './access';
 import {
   AUTO_DETECTED_KINDS,
@@ -31,6 +32,14 @@ import {
   nextEmailReminderAt,
   MAX_GOALS,
   MAX_MESSAGE_LENGTH,
+  MAX_BLOCK_TITLE_LENGTH,
+  MAX_CONFUSED_LENGTH,
+  MAX_PINNED_MESSAGES,
+  MAX_QUICK_REPLIES,
+  MAX_QUICK_REPLY_LENGTH,
+  SUIVI_BLOCK_TYPES,
+  SUIVI_BLOCK_LABELS,
+  type SuiviBlockType,
   MAX_OPEN_ASSIGNMENTS,
   MAX_OPEN_PER_STUDENT,
   MAX_PENDING_QUEUE,
@@ -300,8 +309,13 @@ export async function takeRequest(
 export interface MessageInput {
   text?: string;
   file?: File | null;
-  kind?: 'text' | 'checkin_reply';
+  kind?: 'text' | 'checkin_reply' | 'block' | 'confused';
   mood?: CheckinMood;
+  /** kind 'block' */
+  blockType?: string;
+  blockTitle?: string;
+  /** kind 'confused' : le bloc que l'élève n'a pas compris */
+  replyTo?: string;
 }
 
 export async function postMessage(
@@ -317,13 +331,60 @@ export async function postMessage(
 
   const text = String(input.text || '').trim();
   if (text.length > MAX_MESSAGE_LENGTH) return fail(400, `Message trop long (${MAX_MESSAGE_LENGTH} caractères maximum).`);
-  if (!text && !input.file) return fail(400, 'Message vide.');
 
   const role = viewer === 'moderator' ? 'moderator' : viewer;
-  const kind = input.kind === 'checkin_reply' ? 'checkin_reply' : 'text';
+  const kind =
+    input.kind === 'checkin_reply' || input.kind === 'block' || input.kind === 'confused' ? input.kind : 'text';
 
-  // ── Garde-fou : pas de coordonnées personnelles ──
-  const contact = checkForContactDetails(text);
+  // ── Bloc pédagogique : réservé au bénévole (et à la modération) ──
+  let blockType: SuiviBlockType | undefined;
+  let blockTitle = '';
+  if (kind === 'block') {
+    if (viewer === 'student') return fail(403, 'Seul le bénévole envoie des blocs.');
+    if (!SUIVI_BLOCK_TYPES.includes(input.blockType as SuiviBlockType)) return fail(400, 'Type de bloc inconnu.');
+    blockType = input.blockType as SuiviBlockType;
+    blockTitle = String(input.blockTitle || '').trim();
+    if (blockTitle.length > MAX_BLOCK_TITLE_LENGTH) return fail(400, `Titre trop long (${MAX_BLOCK_TITLE_LENGTH} caractères maximum).`);
+    if (!text) return fail(400, 'Le bloc est vide.');
+    if (input.file) return fail(400, 'Un bloc ne contient pas d’image : envoie-la dans un message à part.');
+  }
+
+  // ── « Je n'ai pas compris » : l'élève, sur un bloc du fil, une seule fois ──
+  let replyTo: mongoose.Types.ObjectId | undefined;
+  let confusedAbout = '';
+  if (kind === 'confused') {
+    if (viewer !== 'student') return fail(403, 'Seul l’élève peut signaler qu’il n’a pas compris.');
+    if (text.length > MAX_CONFUSED_LENGTH) return fail(400, `Précision trop longue (${MAX_CONFUSED_LENGTH} caractères maximum).`);
+    if (input.file) return fail(400, 'Envoie l’image dans un message à part.');
+    if (!input.replyTo || !mongoose.isValidObjectId(input.replyTo)) return fail(400, 'Bloc introuvable.');
+    const target = await MentorshipMessage.findOne({
+      _id: input.replyTo,
+      mentorship: m._id,
+      kind: 'block',
+      status: 'visible'
+    }).lean<{ _id: mongoose.Types.ObjectId; meta?: { blockType?: SuiviBlockType; blockTitle?: string } }>();
+    if (!target) return fail(404, 'Bloc introuvable.');
+    const already = await MentorshipMessage.exists({ mentorship: m._id, kind: 'confused', 'meta.replyTo': target._id });
+    if (already) return fail(409, 'Tu l’as déjà signalé : ton bénévole va y revenir.');
+    replyTo = target._id;
+    const label = target.meta?.blockType ? SUIVI_BLOCK_LABELS[target.meta.blockType] : 'Bloc';
+    confusedAbout = target.meta?.blockTitle ? `${label} « ${target.meta.blockTitle} »` : label;
+  }
+
+  // L'humeur d'un point d'étape et le signalement d'un bloc se suffisent à eux-mêmes
+  if (!text && !input.file && kind !== 'confused' && kind !== 'checkin_reply') return fail(400, 'Message vide.');
+
+  const meta =
+    kind === 'checkin_reply'
+      ? { mood: input.mood }
+      : kind === 'block'
+        ? { blockType, blockTitle: blockTitle || undefined }
+        : kind === 'confused'
+          ? { replyTo }
+          : undefined;
+
+  // ── Garde-fou : pas de coordonnées personnelles (titre du bloc compris) ──
+  const contact = checkForContactDetails(blockTitle ? `${blockTitle}\n${text}` : text);
   if (contact.blocked && viewer !== 'moderator') {
     await MentorshipMessage.create({
       mentorship: m._id,
@@ -331,6 +392,7 @@ export async function postMessage(
       authorRole: role,
       kind,
       text,
+      meta: kind === 'checkin_reply' ? undefined : meta,
       status: 'blocked',
       blockedReasons: contact.reasons
     });
@@ -387,7 +449,7 @@ export async function postMessage(
     kind,
     text,
     attachment,
-    meta: kind === 'checkin_reply' ? { mood: input.mood } : undefined
+    meta
   });
 
   const now = new Date();
@@ -414,7 +476,14 @@ export async function postMessage(
   const recipients: string[] = [];
   if (viewer !== 'student') recipients.push(id(m.student));
   if (viewer !== 'mentor' && m.mentor) recipients.push(id(m.mentor));
-  const preview = text ? (text.length > 80 ? `${text.slice(0, 80)}…` : text) : 'Image envoyée';
+  const preview =
+    kind === 'block'
+      ? `${SUIVI_BLOCK_LABELS[blockType!]}${blockTitle ? ` : ${previewText(blockTitle, 60)}` : ''}`
+      : kind === 'confused'
+        ? `N’a pas compris : ${confusedAbout}${text ? ` — ${previewText(text, 60)}` : ''}`
+        : text
+          ? previewText(text)
+          : 'Image envoyée';
   await Promise.all(
     recipients.map((r) =>
       notify(
@@ -422,7 +491,11 @@ export async function postMessage(
         r,
         user.id,
         id(m._id),
-        viewer === 'moderator' ? 'Message de la modération' : `Nouveau message de ${user.username}`,
+        viewer === 'moderator'
+          ? 'Message de la modération'
+          : kind === 'confused'
+            ? `${user.username} a besoin d’une autre explication`
+            : `Nouveau message de ${user.username}`,
         kind === 'checkin_reply' ? `Point d’étape : ${input.mood}` : preview,
         { dedupeUnread: viewer !== 'moderator' }
       )
@@ -734,6 +807,38 @@ export async function updateNotes(m: IMentorship, viewer: SuiviViewerRole, notes
   return { ok: true };
 }
 
+/**
+ * Épingler / désépingler un message en haut de la conversation. Les épingles
+ * sont communes à l'élève et au bénévole : c'est l'essentiel du suivi.
+ * Épingler ne modifie pas le message (voir MentorshipMessage).
+ */
+export async function setPinned(m: IMentorship, viewer: SuiviViewerRole, messageId: string, pinned: boolean): Promise<Result> {
+  if (viewer === 'candidate') return fail(403, 'Action non autorisée.');
+  if (!mongoose.isValidObjectId(messageId)) return fail(400, 'Message introuvable.');
+  const current = (m.pinnedMessages || []).map(String);
+
+  if (!pinned) {
+    if (!current.includes(messageId)) return { ok: true };
+    m.pinnedMessages = m.pinnedMessages.filter((x) => String(x) !== messageId);
+  } else {
+    if (current.includes(messageId)) return { ok: true };
+    if (current.length >= MAX_PINNED_MESSAGES) {
+      return fail(409, `${MAX_PINNED_MESSAGES} messages épinglés au maximum : retires-en un d’abord.`);
+    }
+    const msg = await MentorshipMessage.exists({
+      _id: messageId,
+      mentorship: m._id,
+      status: 'visible',
+      kind: { $in: ['text', 'block'] }
+    });
+    if (!msg) return fail(404, 'Message introuvable.');
+    m.pinnedMessages.push(new mongoose.Types.ObjectId(messageId));
+  }
+  await m.save();
+  ping(m);
+  return { ok: true };
+}
+
 export async function setPaused(m: IMentorship, viewer: SuiviViewerRole, user: SuiviUser, paused: boolean): Promise<Result> {
   if (!isStaff(viewer)) return fail(403, 'Seul le bénévole met un suivi en pause.');
   if (paused && m.status !== 'active') return fail(409, 'Seul un suivi en cours peut être mis en pause.');
@@ -941,6 +1046,23 @@ export async function giveFeedback(m: IMentorship, viewer: SuiviViewerRole, feed
 // ─────────────────────────────────────────────────────────────
 // Profil bénévole
 // ─────────────────────────────────────────────────────────────
+
+/** Les réponses types d'un bénévole, communes à tous ses suivis */
+export async function getQuickReplies(userId: string): Promise<string[]> {
+  const profile = await MentorProfile.findOne({ user: userId }).select('quickReplies').lean<{ quickReplies?: string[] }>();
+  return profile?.quickReplies || [];
+}
+
+export async function saveQuickReplies(userId: string, replies: unknown): Promise<Result<string[]>> {
+  if (!Array.isArray(replies)) return fail(400, 'Liste invalide.');
+  const clean = [...new Set(replies.map((r) => String(r ?? '').trim()).filter(Boolean))];
+  if (clean.length > MAX_QUICK_REPLIES) return fail(400, `${MAX_QUICK_REPLIES} réponses types au maximum.`);
+  if (clean.some((r) => r.length > MAX_QUICK_REPLY_LENGTH)) {
+    return fail(400, `Une réponse type fait ${MAX_QUICK_REPLY_LENGTH} caractères au maximum.`);
+  }
+  await MentorProfile.updateOne({ user: userId }, { $set: { quickReplies: clean } }, { upsert: true });
+  return { ok: true, data: clean };
+}
 
 export async function saveMentorProfile(
   user: SuiviUser,

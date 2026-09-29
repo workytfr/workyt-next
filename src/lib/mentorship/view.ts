@@ -109,6 +109,7 @@ export async function serializeMentorship(m: IMentorship, viewer: SuiviViewerRol
         }
       : null,
     // Réservé au bénévole et à la modération
+    pinnedMessageIds: (m.pinnedMessages || []).map(String),
     mentorNotes: staff ? m.mentorNotes : undefined,
     handoffNote: staff ? m.handoffNote || null : undefined,
     mentorHistory: staff
@@ -152,7 +153,10 @@ export async function listMessages(m: IMentorship, viewer: SuiviViewerRole, user
           assignmentId: x.meta.assignmentId ? String(x.meta.assignmentId) : null,
           goalId: x.meta.goalId ? String(x.meta.goalId) : null,
           mood: x.meta.mood || null,
-          event: x.meta.event || null
+          event: x.meta.event || null,
+          blockType: x.meta.blockType || null,
+          blockTitle: x.meta.blockTitle || null,
+          replyTo: x.meta.replyTo ? String(x.meta.replyTo) : null
         }
       : null,
     status: x.status,

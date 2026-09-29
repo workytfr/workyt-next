@@ -53,6 +53,12 @@ export const CHECKIN_INTERVAL_DAYS = 14;
 export const MAX_GOALS = 8;
 export const MAX_OPEN_ASSIGNMENTS = 20;
 export const MAX_MESSAGE_LENGTH = 2000;
+export const MAX_BLOCK_TITLE_LENGTH = 140;
+/** Un « Je n'ai pas compris » peut préciser ce qui bloque, brièvement */
+export const MAX_CONFUSED_LENGTH = 500;
+export const MAX_PINNED_MESSAGES = 5;
+export const MAX_QUICK_REPLIES = 20;
+export const MAX_QUICK_REPLY_LENGTH = 500;
 export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 
@@ -106,6 +112,34 @@ export const MOOD_LABELS: Record<string, string> = {
   bien: 'Ça avance bien',
   moyen: 'Moyen',
   bloque: 'Je bloque'
+};
+
+/**
+ * Blocs pédagogiques qu'un bénévole peut envoyer dans la conversation. Les six
+ * premiers sont ceux des leçons ; `methode` (étapes) et `indice` (masqué
+ * jusqu'au clic de l'élève) sont propres au suivi.
+ */
+export const SUIVI_BLOCK_TYPES = [
+  'definition',
+  'propriete',
+  'theoreme',
+  'exemple',
+  'methode',
+  'indice',
+  'remarque',
+  'attention'
+] as const;
+export type SuiviBlockType = (typeof SUIVI_BLOCK_TYPES)[number];
+
+export const SUIVI_BLOCK_LABELS: Record<SuiviBlockType, string> = {
+  definition: 'Définition',
+  propriete: 'Propriété',
+  theoreme: 'Théorème',
+  exemple: 'Exemple',
+  methode: 'Méthode',
+  indice: 'Indice',
+  remarque: 'Remarque',
+  attention: 'Attention'
 };
 
 export const ASSIGNMENT_KIND_LABELS: Record<string, string> = {

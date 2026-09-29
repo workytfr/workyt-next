@@ -4,40 +4,13 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from "@tiptap/react";
 import { useEffect, useRef, useState } from "react";
 import katex from "katex";
-
-let mathliveLoaded = false;
-let mathliveLoading: Promise<void> | null = null;
-
-async function ensureMathlive(): Promise<void> {
-    if (typeof window === "undefined") return;
-    if (mathliveLoaded) return;
-    // Si déjà enregistré (par un HMR précédent), on saute l'import qui throw
-    if (typeof customElements !== "undefined" && customElements.get("math-field")) {
-        mathliveLoaded = true;
-        return;
-    }
-    if (mathliveLoading) return mathliveLoading;
-    mathliveLoading = (async () => {
-        try {
-            await import("mathlive");
-        } catch (e) {
-            // Erreur "already defined" possible en HMR : on l'ignore silencieusement
-            if (!(e instanceof Error) || !/already.*defined|registered/i.test(e.message)) {
-                console.warn("MathLive import warning:", e);
-            }
-        } finally {
-            mathliveLoaded = true;
-            mathliveLoading = null;
-        }
-    })();
-    return mathliveLoading;
-}
+import { ensureMathlive, isMathliveLoaded } from "@/lib/ensureMathlive";
 
 function MathView({ node, updateAttributes, selected }: NodeViewProps) {
     const inline = node.attrs.inline as boolean;
     const latex = (node.attrs.latex as string) || "";
     const [editing, setEditing] = useState(false);
-    const [ready, setReady] = useState(mathliveLoaded);
+    const [ready, setReady] = useState(isMathliveLoaded);
     const fieldRef = useRef<HTMLElement | null>(null);
 
     useEffect(() => {

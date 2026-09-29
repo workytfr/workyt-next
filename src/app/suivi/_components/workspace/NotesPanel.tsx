@@ -3,6 +3,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Lock, History, Quote } from "lucide-react";
 import { api, formatDate, type MentorshipDetail } from "../../_lib/client";
+import MessageText from "../MessageText";
+import FormatToolbar from "../editor/FormatToolbar";
+import MathPanel from "../editor/MathPanel";
+import { useMarkdownField } from "../editor/useMarkdownField";
 
 const REASON_LABELS: Record<string, string> = {
     released: "a passé la main",
@@ -21,6 +25,8 @@ export default function NotesPanel({ detail }: { detail: MentorshipDetail }) {
     const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const pending = useRef<string | null>(null);
     const editable = detail.status !== "closed" && detail.status !== "cancelled";
+    const [view, setView] = useState<"write" | "preview">(editable ? "write" : "preview");
+    const [mathOpen, setMathOpen] = useState(false);
     const id = detail.id;
 
     // Changer d'onglet démonte le panneau : on envoie aussitôt la saisie en attente
@@ -48,6 +54,8 @@ export default function NotesPanel({ detail }: { detail: MentorshipDetail }) {
         }, 900);
     };
 
+    const textRef = useRef<HTMLTextAreaElement>(null);
+    const field = useMarkdownField(notes, edit, 5000, textRef);
     const history = detail.mentorHistory || [];
 
     return (
@@ -62,14 +70,55 @@ export default function NotesPanel({ detail }: { detail: MentorshipDetail }) {
                 <p className="mt-1 flex items-center gap-1.5 text-xs text-[rgba(26,21,18,0.55)]">
                     <Lock className="h-3 w-3" /> Invisibles pour l&apos;élève. Transmises au bénévole suivant en cas de relais.
                 </p>
-                <textarea
-                    value={notes}
-                    onChange={(e) => edit(e.target.value.slice(0, 5000))}
-                    disabled={!editable}
-                    rows={10}
-                    placeholder={"Ce qui marche avec lui, ses points faibles, ce qu'on a prévu pour la prochaine fois…"}
-                    className="wk-seyes mt-3 w-full resize-y rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white py-1 pl-[76px] pr-4 text-sm leading-[28px] outline-none focus:border-[var(--wk-accent)]"
-                />
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    {editable && view === "write" ? (
+                        <FormatToolbar field={field} mathOpen={mathOpen} onToggleMath={() => setMathOpen((v) => !v)} />
+                    ) : (
+                        <span />
+                    )}
+                    {editable && (
+                        <div className="flex rounded-full border border-[rgba(26,21,18,0.1)] bg-white p-0.5 text-[11px] font-semibold" role="tablist">
+                            {(["write", "preview"] as const).map((v) => (
+                                <button
+                                    key={v}
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={view === v}
+                                    onClick={() => setView(v)}
+                                    className={`rounded-full px-2.5 py-1 transition ${view === v ? "bg-[var(--wk-ink)] text-white" : "text-[rgba(26,21,18,0.6)]"}`}
+                                >
+                                    {v === "write" ? "Écrire" : "Aperçu"}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                {mathOpen && view === "write" && (
+                    <div className="mt-2">
+                        <MathPanel
+                            onClose={() => setMathOpen(false)}
+                            onInsert={(latex) => {
+                                field.insert(`$${latex}$`);
+                                setMathOpen(false);
+                            }}
+                        />
+                    </div>
+                )}
+                {view === "write" ? (
+                    <textarea
+                        ref={textRef}
+                        value={notes}
+                        onChange={(e) => edit(e.target.value.slice(0, 5000))}
+                        disabled={!editable}
+                        rows={10}
+                        placeholder={"Ce qui marche avec lui, ses points faibles, ce qu'on a prévu pour la prochaine fois…"}
+                        className="wk-seyes mt-2 w-full resize-y rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white py-1 pl-[76px] pr-4 text-sm leading-[28px] outline-none focus:border-[var(--wk-accent)]"
+                    />
+                ) : (
+                    <div className="mt-2 min-h-[120px] rounded-2xl border border-[rgba(26,21,18,0.12)] bg-white px-4 py-3 text-sm leading-relaxed">
+                        {notes.trim() ? <MessageText text={notes} /> : <span className="text-[rgba(26,21,18,0.45)]">Aucune note.</span>}
+                    </div>
+                )}
             </div>
 
             {detail.handoffNote && (

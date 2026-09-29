@@ -42,8 +42,10 @@ export async function GET(req: NextRequest, { params }: Params) {
 
 /**
  * POST /api/suivi/[id]/messages — envoyer un message.
- * multipart/form-data (text, file?) ou JSON { text, kind?, mood? } pour
- * répondre à un point d'étape.
+ * multipart/form-data (text, file?) ou JSON :
+ *  - { kind: 'checkin_reply', mood, text? } : répondre à un point d'étape ;
+ *  - { kind: 'block', blockType, blockTitle?, text } : un bloc pédagogique ;
+ *  - { kind: 'confused', replyTo, text? } : « je n'ai pas compris » ce bloc.
  */
 export async function POST(req: NextRequest, { params }: Params) {
   try {
@@ -60,8 +62,11 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     let text = '';
     let file: File | null = null;
-    let kind: 'text' | 'checkin_reply' = 'text';
+    let kind: 'text' | 'checkin_reply' | 'block' | 'confused' = 'text';
     let mood: 'bien' | 'moyen' | 'bloque' | undefined;
+    let blockType: string | undefined;
+    let blockTitle: string | undefined;
+    let replyTo: string | undefined;
 
     const contentType = req.headers.get('content-type') || '';
     if (contentType.includes('multipart/form-data')) {
@@ -72,11 +77,22 @@ export async function POST(req: NextRequest, { params }: Params) {
     } else {
       const body = await req.json().catch(() => ({}));
       text = String(body?.text ?? '');
-      if (body?.kind === 'checkin_reply') kind = 'checkin_reply';
+      if (['checkin_reply', 'block', 'confused'].includes(body?.kind)) kind = body.kind;
       if (['bien', 'moyen', 'bloque'].includes(body?.mood)) mood = body.mood;
+      if (typeof body?.blockType === 'string') blockType = body.blockType;
+      if (typeof body?.blockTitle === 'string') blockTitle = body.blockTitle;
+      if (typeof body?.replyTo === 'string') replyTo = body.replyTo;
     }
 
-    const result = await postMessage(access.mentorship, access.viewer, me, { text, file, kind, mood });
+    const result = await postMessage(access.mentorship, access.viewer, me, {
+      text,
+      file,
+      kind,
+      mood,
+      blockType,
+      blockTitle,
+      replyTo
+    });
     return respond(result, 201);
   } catch (error) {
     return serverError('POST /api/suivi/[id]/messages', error);

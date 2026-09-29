@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
     Send,
     ImagePlus,
@@ -13,8 +13,14 @@ import {
     CalendarDays,
     Flame,
     Info,
+    Pin,
+    PinOff,
+    CircleHelp,
+    Blocks,
+    ChevronDown,
 } from "lucide-react";
-import { MOOD_LABELS } from "@/lib/mentorship/config";
+import { MAX_CONFUSED_LENGTH, MAX_MESSAGE_LENGTH, MOOD_LABELS } from "@/lib/mentorship/config";
+import { previewText } from "@/lib/mentorship/plainText";
 import {
     api,
     ApiError,
@@ -27,6 +33,14 @@ import {
 } from "../../_lib/client";
 import { KindBadge, KIND_META, Initial, Spinner } from "../ui";
 import type { TypingUser } from "@/hooks/useThreadRealtime";
+import AvatarDisplay from "@/components/ui/AvatarDisplay";
+import MessageText from "../MessageText";
+import { BlockCard, blockDef } from "../blocks";
+import FormatToolbar, { toolbarButton } from "../editor/FormatToolbar";
+import MathPanel from "../editor/MathPanel";
+import BlockComposer from "../editor/BlockComposer";
+import QuickReplies from "../editor/QuickReplies";
+import { hasFormatting, useMarkdownField } from "../editor/useMarkdownField";
 
 interface Props {
     detail: MentorshipDetail;
@@ -44,9 +58,26 @@ const MOOD_STYLE: Record<Mood, string> = {
     bloque: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
+/** Titre lisible d'un bloc : « Définition « Nombre premier » » */
+function blockName(m?: Message) {
+    if (!m) return "un bloc retiré";
+    const label = blockDef(m.meta?.blockType).label;
+    return m.meta?.blockTitle ? `${label} « ${previewText(m.meta.blockTitle, 60)} »` : label;
+}
+
+/** Amène un message à l'écran et le fait briller un instant */
+function jumpTo(id: string) {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("wk-msg-flash");
+    setTimeout(() => el.classList.remove("wk-msg-flash"), 1600);
+}
+
 export default function Conversation({ detail, messages, myId, typingUsers, startTyping, stopTyping, onSent }: Props) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const stickToBottom = useRef(true);
+    const [pinError, setPinError] = useState<string | null>(null);
 
     // Reste collé en bas quand un message arrive, sauf si on est en train de relire plus haut
     useEffect(() => {
@@ -69,10 +100,50 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
             ? [...messages].reverse().find((m) => m.kind === "checkin")?.id
             : undefined;
 
+    const byId = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
+    // Blocs que l'élève a déjà signalés comme « pas compris »
+    const confusedBlocks = useMemo(
+        () => new Set(messages.filter((m) => m.kind === "confused" && m.meta?.replyTo).map((m) => m.meta!.replyTo!)),
+        [messages]
+    );
+    const pinnedIds = detail.pinnedMessageIds || [];
+    const pinned = pinnedIds.map((id) => byId.get(id)).filter((m): m is Message => !!m);
+    const isOpen = detail.status === "active" || detail.status === "paused";
+
+    const togglePin = async (m: Message) => {
+        setPinError(null);
+        try {
+            await api(`/api/suivi/${detail.id}`, { method: "PATCH", json: { action: "pin", messageId: m.id, pinned: !pinnedIds.includes(m.id) } });
+            onSent();
+        } catch (err) {
+            setPinError(err instanceof ApiError ? err.message : "Action impossible.");
+        }
+    };
+
     const dayOf = (iso: string) => formatDate(iso, { weekday: "long", day: "numeric", month: "long" });
 
     return (
         <div className="flex h-full min-h-0 flex-col">
+            <style jsx global>{`
+                .wk-msg-flash {
+                    animation: wk-msg-flash 1.6s ease;
+                    border-radius: 20px;
+                }
+                @keyframes wk-msg-flash {
+                    0%,
+                    60% {
+                        box-shadow: 0 0 0 4px rgba(255, 106, 26, 0.35);
+                    }
+                    100% {
+                        box-shadow: 0 0 0 4px rgba(255, 106, 26, 0);
+                    }
+                }
+            `}</style>
+
+            {(pinned.length > 0 || pinError) && (
+                <PinnedBar pinned={pinned} error={pinError} onJump={jumpTo} onUnpin={togglePin} onDismissError={() => setPinError(null)} />
+            )}
+
             <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-6">
                 <RequestRecap detail={detail} />
 
@@ -95,6 +166,19 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
                                 checkinOpen={isStudent && m.id === openCheckinId}
                                 mentorshipId={detail.id}
                                 onSent={onSent}
+                                isStudent={isStudent}
+                                pinned={pinnedIds.includes(m.id)}
+                                onTogglePin={() => togglePin(m)}
+                                confusedTarget={m.kind === "confused" && m.meta?.replyTo ? byId.get(m.meta.replyTo) : undefined}
+                                confusion={
+                                    m.kind === "block" && isStudent
+                                        ? confusedBlocks.has(m.id)
+                                            ? "sent"
+                                            : isOpen
+                                              ? "available"
+                                              : "none"
+                                        : "none"
+                                }
                             />
                         </React.Fragment>
                     );
@@ -117,6 +201,68 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
             </div>
 
             <Composer detail={detail} startTyping={startTyping} stopTyping={stopTyping} onSent={onSent} />
+        </div>
+    );
+}
+
+/* ─── Les messages épinglés, en haut du fil ─── */
+
+function PinnedBar({
+    pinned,
+    error,
+    onJump,
+    onUnpin,
+    onDismissError,
+}: {
+    pinned: Message[];
+    error: string | null;
+    onJump: (id: string) => void;
+    onUnpin: (m: Message) => void;
+    onDismissError: () => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const shown = open ? pinned : pinned.slice(0, 1);
+
+    const label = (m: Message) =>
+        m.kind === "block" ? `${blockName(m)} — ${previewText(m.text, 60)}` : previewText(m.text, 90) || "Image";
+
+    return (
+        <div className="border-b border-[rgba(26,21,18,0.08)] bg-[var(--wk-paper)] px-3 py-2 sm:px-4">
+            {error && (
+                <p role="alert" className="mb-1.5 flex items-center justify-between gap-2 rounded-xl bg-red-50 px-3 py-1.5 text-xs text-red-700">
+                    {error}
+                    <button type="button" onClick={onDismissError} aria-label="Fermer">
+                        <X className="h-3.5 w-3.5" />
+                    </button>
+                </p>
+            )}
+            {shown.map((m) => (
+                <div key={m.id} className="flex items-center gap-2 text-xs">
+                    <Pin className="h-3.5 w-3.5 shrink-0 text-[var(--wk-accent)]" />
+                    <button type="button" onClick={() => onJump(m.id)} className="min-w-0 flex-1 truncate py-1 text-left font-medium hover:text-[var(--wk-accent)]">
+                        {label(m)}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onUnpin(m)}
+                        className="shrink-0 rounded-full p-1 text-[rgba(26,21,18,0.4)] hover:bg-white hover:text-[var(--wk-ink)]"
+                        aria-label="Désépingler"
+                        title="Désépingler"
+                    >
+                        <PinOff className="h-3.5 w-3.5" />
+                    </button>
+                </div>
+            ))}
+            {pinned.length > 1 && (
+                <button
+                    type="button"
+                    onClick={() => setOpen((v) => !v)}
+                    className="mt-0.5 inline-flex items-center gap-1 text-[11px] font-semibold text-[rgba(26,21,18,0.55)] hover:text-[var(--wk-ink)]"
+                >
+                    <ChevronDown className={`h-3 w-3 transition ${open ? "rotate-180" : ""}`} />
+                    {open ? "Réduire" : `${pinned.length - 1} autre${pinned.length > 2 ? "s" : ""} épinglé${pinned.length > 2 ? "s" : ""}`}
+                </button>
+            )}
         </div>
     );
 }
@@ -147,6 +293,11 @@ function MessageItem({
     checkinOpen,
     mentorshipId,
     onSent,
+    isStudent,
+    pinned,
+    onTogglePin,
+    confusedTarget,
+    confusion,
 }: {
     m: Message;
     mine: boolean;
@@ -155,6 +306,13 @@ function MessageItem({
     checkinOpen: boolean;
     mentorshipId: string;
     onSent: () => void;
+    isStudent: boolean;
+    pinned: boolean;
+    onTogglePin: () => void;
+    /** kind 'confused' : le bloc concerné */
+    confusedTarget?: Message;
+    /** kind 'block', côté élève : peut-il encore dire qu'il n'a pas compris ? */
+    confusion: "available" | "sent" | "none";
 }) {
     // Événements du suivi : une ligne centrée, discrète
     if (m.kind === "event") {
@@ -203,13 +361,54 @@ function MessageItem({
         return <CheckinCard m={m} open={checkinOpen} mentorshipId={mentorshipId} onSent={onSent} />;
     }
 
+    // « Je n'ai pas compris » : une carte centrée, qui renvoie au bloc
+    if (m.kind === "confused" && m.status === "visible") {
+        return (
+            <div id={`msg-${m.id}`} className="flex justify-center py-1">
+                <div className="max-w-md rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm">
+                    <div className="flex items-start gap-2">
+                        <CircleHelp className="mt-0.5 h-4 w-4 shrink-0 text-amber-700" />
+                        <p className="text-amber-900">
+                            <span className="font-semibold">{mine ? "Tu as signalé ne pas avoir compris" : `${m.author?.username} n'a pas compris`}</span>{" "}
+                            {confusedTarget ? (
+                                <button type="button" onClick={() => jumpTo(confusedTarget.id)} className="font-semibold underline decoration-amber-400 underline-offset-2 hover:text-[var(--wk-accent)]">
+                                    {blockName(confusedTarget)}
+                                </button>
+                            ) : (
+                                blockName(undefined)
+                            )}
+                        </p>
+                    </div>
+                    {m.text && (
+                        <div className="mt-2 rounded-xl bg-white/70 px-3 py-2 text-amber-950">
+                            <MessageText text={m.text} />
+                        </div>
+                    )}
+                    {!isStudent && (
+                        <p className="mt-2 text-xs text-amber-900/70">
+                            Réexplique autrement : un exemple concret, une méthode pas à pas ou un indice.
+                        </p>
+                    )}
+                    <p className="mt-1.5 text-[11px] text-amber-900/50">{formatTime(m.createdAt)}</p>
+                </div>
+            </div>
+        );
+    }
+
     const blocked = m.status === "blocked";
     const fromModeration = m.authorRole === "moderator";
+    const isBlock = m.kind === "block";
+    const canPin = !blocked && (m.kind === "text" || isBlock);
 
     return (
-        <div className={`flex gap-2.5 ${mine ? "flex-row-reverse" : ""}`}>
-            {!mine && <Initial name={m.author?.username || "?"} tone={fromModeration ? "ink" : "orange"} size={30} />}
-            <div className={`flex max-w-[82%] flex-col ${mine ? "items-end" : "items-start"}`}>
+        <div id={`msg-${m.id}`} className={`group flex gap-2.5 ${mine ? "flex-row-reverse" : ""}`}>
+            {!mine &&
+                (m.author?.id ? (
+                    <AvatarDisplay name={m.author.username} userId={m.author.id} size="sm" className="shrink-0" />
+                ) : (
+                    <Initial name={m.author?.username || "?"} tone={fromModeration ? "ink" : "orange"} size={30} />
+                ))}
+            <div className={`flex flex-col ${isBlock ? "w-full max-w-[92%] sm:max-w-[82%]" : "max-w-[82%]"} ${mine ? "items-end" : "items-start"}`}>
                 {!mine && (
                     <span className="mb-1 flex items-center gap-1.5 px-1 text-xs font-semibold text-[rgba(26,21,18,0.6)]">
                         {m.author?.username}
@@ -241,20 +440,37 @@ function MessageItem({
                     </a>
                 )}
 
-                {m.text && (
-                    <div
-                        className={`whitespace-pre-line break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-                            blocked
-                                ? "border border-dashed border-red-300 bg-red-50 text-red-900"
-                                : mine
-                                  ? "rounded-tr-md bg-[var(--wk-ink)] text-[var(--wk-paper)]"
-                                  : fromModeration
-                                    ? "rounded-tl-md border border-[var(--wk-ink)] bg-white"
-                                    : "rounded-tl-md bg-[var(--wk-paper-2)]"
-                        } ${m.kind === "resource" ? "mt-1" : ""}`}
-                    >
-                        {m.text}
-                    </div>
+                {isBlock ? (
+                    <BlockCard
+                        id={m.id}
+                        type={m.meta?.blockType}
+                        title={m.meta?.blockTitle}
+                        text={m.text}
+                        hideHint={isStudent}
+                        showHintNote={!isStudent}
+                        className={`w-full ${blocked ? "!border-dashed !border-red-300" : ""}`}
+                        footer={
+                            confusion !== "none" && (
+                                <ConfusedAction state={confusion} blockId={m.id} mentorshipId={mentorshipId} onSent={onSent} />
+                            )
+                        }
+                    />
+                ) : (
+                    m.text && (
+                        <div
+                            className={`break-words rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+                                blocked
+                                    ? "border border-dashed border-red-300 bg-red-50 text-red-900"
+                                    : mine
+                                      ? "rounded-tr-md bg-[var(--wk-ink)] text-[var(--wk-paper)]"
+                                      : fromModeration
+                                        ? "rounded-tl-md border border-[var(--wk-ink)] bg-white"
+                                        : "rounded-tl-md bg-[var(--wk-paper-2)]"
+                            } ${m.kind === "resource" ? "mt-1" : ""}`}
+                        >
+                            <MessageText text={m.text} />
+                        </div>
+                    )
                 )}
 
                 <span className="mt-1 flex items-center gap-1.5 px-1 text-[11px] text-[rgba(26,21,18,0.4)]">
@@ -265,11 +481,100 @@ function MessageItem({
                         </span>
                     ) : (
                         <>
+                            {pinned && <Pin className="h-3 w-3 text-[var(--wk-accent)]" aria-label="Épinglé" />}
                             {formatTime(m.createdAt)}
                             {seen && <span className="font-semibold text-[rgba(26,21,18,0.55)]">· Vu</span>}
+                            {canPin && (
+                                <button
+                                    type="button"
+                                    onClick={onTogglePin}
+                                    className="ml-1 inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 font-semibold text-[rgba(26,21,18,0.45)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)] focus:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                                    title={pinned ? "Retirer des messages épinglés" : "Épingler en haut de la conversation"}
+                                >
+                                    {pinned ? <PinOff className="h-3 w-3" /> : <Pin className="h-3 w-3" />}
+                                    {pinned ? "Désépingler" : "Épingler"}
+                                </button>
+                            )}
                         </>
                     )}
                 </span>
+            </div>
+        </div>
+    );
+}
+
+/* ─── « Je n'ai pas compris », sous un bloc (élève) ─── */
+
+function ConfusedAction({
+    state,
+    blockId,
+    mentorshipId,
+    onSent,
+}: {
+    state: "available" | "sent";
+    blockId: string;
+    mentorshipId: string;
+    onSent: () => void;
+}) {
+    const [open, setOpen] = useState(false);
+    const [text, setText] = useState("");
+    const [sending, setSending] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    if (state === "sent") {
+        return (
+            <p className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700">
+                <CircleHelp className="h-3.5 w-3.5" /> Signalé : ton bénévole va te le réexpliquer
+            </p>
+        );
+    }
+
+    const send = async () => {
+        setSending(true);
+        setError(null);
+        try {
+            await api(`/api/suivi/${mentorshipId}/messages`, { method: "POST", json: { kind: "confused", replyTo: blockId, text: text.trim() } });
+            setOpen(false);
+            onSent();
+        } catch (err) {
+            setError(err instanceof ApiError ? err.message : "Envoi impossible.");
+            if (err instanceof ApiError && err.status === 422) onSent();
+        } finally {
+            setSending(false);
+        }
+    };
+
+    if (!open) {
+        return (
+            <button
+                type="button"
+                onClick={() => setOpen(true)}
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-[rgba(26,21,18,0.12)] bg-white px-3 py-1.5 text-xs font-semibold text-[rgba(26,21,18,0.7)] transition hover:border-amber-400 hover:text-amber-800"
+            >
+                <CircleHelp className="h-3.5 w-3.5" /> Je n&apos;ai pas compris
+            </button>
+        );
+    }
+
+    return (
+        <div className="mt-3 rounded-2xl bg-amber-50 p-3">
+            <textarea
+                value={text}
+                onChange={(e) => setText(e.target.value.slice(0, MAX_CONFUSED_LENGTH))}
+                rows={2}
+                autoFocus
+                placeholder="Qu'est-ce qui te bloque ? (facultatif)"
+                className="w-full resize-none rounded-xl border border-amber-200 bg-white px-3 py-2 text-sm outline-none focus:border-amber-400"
+            />
+            {error && <p className="mt-1.5 text-xs text-red-600">{error}</p>}
+            <div className="mt-2 flex justify-end gap-2">
+                <button type="button" onClick={() => setOpen(false)} className="wk-chip !py-1.5 text-xs">
+                    Annuler
+                </button>
+                <button type="button" onClick={send} disabled={sending} className="wk-btn-ink !px-3.5 !py-1.5 text-xs disabled:opacity-50">
+                    {sending && <Spinner className="h-3.5 w-3.5" />}
+                    Prévenir mon bénévole
+                </button>
             </div>
         </div>
     );
@@ -384,12 +689,25 @@ function Composer({
     const [file, setFile] = useState<File | null>(null);
     const [sending, setSending] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [mode, setMode] = useState<"message" | "block">("message");
+    const [mathOpen, setMathOpen] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
     const lastTyping = useRef(0);
+
+    const onChange = (v: string) => {
+        setText(v.slice(0, MAX_MESSAGE_LENGTH));
+        const now = Date.now();
+        if (now - lastTyping.current > 2500) {
+            lastTyping.current = now;
+            startTyping(v.trim() ? v.trim().split(/\s+/).length : 0);
+        }
+    };
+    const field = useMarkdownField(text, onChange, MAX_MESSAGE_LENGTH);
 
     const closed = detail.status === "closed" || detail.status === "cancelled";
     const waiting = detail.status === "pending";
     const readOnly = closed || (waiting && detail.viewer !== "student" && detail.viewer !== "moderator");
+    const staff = detail.viewer === "mentor" || detail.viewer === "moderator";
 
     if (readOnly) {
         return (
@@ -397,6 +715,10 @@ function Composer({
                 {closed ? "Ce suivi est terminé : la conversation est conservée en lecture seule." : "La conversation s'ouvrira quand un bénévole aura pris la demande."}
             </div>
         );
+    }
+
+    if (mode === "block") {
+        return <BlockComposer mentorshipId={detail.id} onCancel={() => setMode("message")} onSent={onSent} />;
     }
 
     const send = async () => {
@@ -425,15 +747,6 @@ function Composer({
         }
     };
 
-    const onChange = (v: string) => {
-        setText(v.slice(0, 2000));
-        const now = Date.now();
-        if (now - lastTyping.current > 2500) {
-            lastTyping.current = now;
-            startTyping(v.trim() ? v.trim().split(/\s+/).length : 0);
-        }
-    };
-
     return (
         <div className="border-t border-[rgba(26,21,18,0.08)] bg-white px-3 pb-3 pt-2 sm:px-4">
             {error && (
@@ -448,6 +761,22 @@ function Composer({
                     <button type="button" onClick={() => setFile(null)} aria-label="Retirer l'image">
                         <X className="h-3.5 w-3.5" />
                     </button>
+                </div>
+            )}
+            {mathOpen && (
+                <MathPanel
+                    onClose={() => setMathOpen(false)}
+                    onInsert={(latex) => {
+                        field.insert(`$${latex}$`);
+                        setMathOpen(false);
+                    }}
+                />
+            )}
+            {/* Aperçu dès que le message contient une formule, du gras ou une liste */}
+            {hasFormatting(text) && (
+                <div className="mb-2 max-h-48 overflow-y-auto rounded-2xl border border-dashed border-[rgba(26,21,18,0.15)] bg-[var(--wk-paper)] px-4 py-2.5 text-sm leading-relaxed">
+                    <span className="font-mono-ui mb-1 block text-[10px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.45)]">Aperçu</span>
+                    <MessageText text={text} />
                 </div>
             )}
             <div className="flex items-end gap-2">
@@ -471,6 +800,7 @@ function Composer({
                     }}
                 />
                 <textarea
+                    ref={field.ref}
                     value={text}
                     onChange={(e) => onChange(e.target.value)}
                     onBlur={stopTyping}
@@ -502,10 +832,29 @@ function Composer({
                     {sending ? <Spinner className="h-4 w-4 !border-white/40 !border-t-white" /> : <Send className="h-4 w-4" />}
                 </button>
             </div>
-            <p className="mt-1.5 flex items-center gap-1.5 px-2 text-[11px] text-[rgba(26,21,18,0.45)]">
-                <Info className="h-3 w-3 shrink-0" />
-                Échanges conservés · pas de numéro ni de réseau social · Entrée pour envoyer, Maj+Entrée pour aller à la ligne
-            </p>
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-2">
+                <FormatToolbar field={field} mathOpen={mathOpen} onToggleMath={() => setMathOpen((v) => !v)}>
+                    {staff && !waiting && (
+                        <>
+                            <span className="mx-1 h-4 w-px bg-[rgba(26,21,18,0.12)]" aria-hidden />
+                            <button
+                                type="button"
+                                onClick={() => setMode("block")}
+                                className={toolbarButton}
+                                title="Envoyer une définition, une méthode, un indice…"
+                            >
+                                <Blocks className="h-3.5 w-3.5" />
+                                <span className="text-[11px] font-semibold">Bloc</span>
+                            </button>
+                            <QuickReplies current={text} onInsert={(r) => field.insert(r)} />
+                        </>
+                    )}
+                </FormatToolbar>
+                <p className="flex items-center gap-1.5 text-[11px] text-[rgba(26,21,18,0.45)]">
+                    <Info className="h-3 w-3 shrink-0" />
+                    Échanges conservés · pas de numéro ni de réseau social · Entrée pour envoyer, Maj+Entrée pour aller à la ligne
+                </p>
+            </div>
         </div>
     );
 }

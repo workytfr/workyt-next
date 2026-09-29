@@ -17,6 +17,8 @@ export interface IMentorProfile extends Document {
   subjects: string[];
   levels: string[];
   bio: string;
+  /** Réponses types du bénévole, insérables en un clic dans la conversation */
+  quickReplies: string[];
   charterAcceptedAt?: Date;
   adultDeclared: boolean;
   createdAt: Date;
@@ -31,6 +33,7 @@ const MentorProfileSchema = new Schema<IMentorProfile>(
     subjects: [{ type: String }],
     levels: [{ type: String }],
     bio: { type: String, trim: true, maxlength: 280, default: '' },
+    quickReplies: { type: [{ type: String, maxlength: 500 }], default: [] },
     charterAcceptedAt: { type: Date },
     adultDeclared: { type: Boolean, default: false }
   },
