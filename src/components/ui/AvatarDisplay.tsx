@@ -53,7 +53,10 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
             const custom = data?.customization;
             if (custom) {
                 setLook(sanitizeLook(custom.avatarLook));
-                if (custom.profileImage?.isActive && custom.profileImage?.filename) {
+                // Même priorité que ProfileAvatar : la photo du membre passe avant tout
+                if (custom.customPhoto?.isActive && custom.customPhoto?.url) {
+                    setProfileImage(custom.customPhoto.url);
+                } else if (custom.profileImage?.isActive && custom.profileImage?.filename) {
                     setProfileImage(`/profile/${custom.profileImage.filename}`);
                 }
 

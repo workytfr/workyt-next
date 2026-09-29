@@ -40,7 +40,8 @@ export async function POST(req: NextRequest) {
         .select('_id selectedBadge')
         .lean(),
       ProfileCustomization.find({ user: { $in: objectIds } })
-        .select('user usernameColor profileImage profileBorder avatarLook')
+        // customPhoto : seulement l'URL et l'état, jamais la clé R2
+        .select('user usernameColor profileImage profileBorder avatarLook customPhoto.url customPhoto.isActive')
         .lean()
     ]);
 
@@ -63,7 +64,8 @@ export async function POST(req: NextRequest) {
       usernameColor: { type: 'solid', value: '#3B82F6', isActive: false },
       profileImage: { filename: '', isActive: false },
       profileBorder: { filename: '', isActive: false },
-      avatarLook: {}
+      avatarLook: {},
+      customPhoto: { url: '', isActive: false }
     };
 
     const data: Record<string, any> = {};

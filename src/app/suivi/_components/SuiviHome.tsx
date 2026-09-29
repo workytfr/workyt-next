@@ -31,6 +31,7 @@ import {
 } from "@/lib/mentorship/config";
 import { api, ApiError, openAuth, formatDate, type MentorshipSummary, type PublicUser } from "../_lib/client";
 import { Eyebrow, StatusPill, Initial, Card, Spinner } from "./ui";
+import AvatarDisplay from "@/components/ui/AvatarDisplay";
 
 interface HomeData {
     authenticated: boolean;
@@ -371,7 +372,7 @@ function MySuiviCard({ m }: { m: MentorshipSummary }) {
             <div className="mt-4 flex items-center gap-2.5 text-sm text-[rgba(26,21,18,0.7)]">
                 {who ? (
                     <>
-                        <Initial name={who} tone="orange" size={26} />
+                        <AvatarDisplay name={who} userId={m.mentor?.id} size="xs" />
                         avec <strong className="text-[var(--wk-ink)]">{who}</strong>
                     </>
                 ) : m.status === "pending" ? (
