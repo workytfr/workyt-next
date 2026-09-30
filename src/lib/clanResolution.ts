@@ -130,17 +130,33 @@ export interface DayResolution {
 }
 
 /**
- * Résout la journée écoulée pour tous les clans de la saison.
+ * Résout une journée de guerre pour tous les clans de la saison.
  * Idempotent : l'index unique {clan, day} empêche un double passage du cron.
+ *
+ * `which` :
+ *  - 'previous' : la journée parisienne d'HIER, quelle que soit l'heure du
+ *    passage. C'est le passage de nuit (cron externe, après minuit, à une
+ *    heure qui dépend du fuseau de l'hébergeur) ;
+ *  - 'current' : la journée en cours, lue une minute avant l'instant courant.
+ *    C'est le bilan du dimanche soir (23 h 50) et le bouton de la modération.
+ *
+ * ⚠️ L'ancien passage de 00 h 01 utilisait 'current' : une minute avant, il
+ * était encore 00 h 00 le jour même. Les points de lundi partaient sous
+ * « jour 2 », le jour 1 n'existait jamais et ceux du dimanche étaient perdus
+ * (jour 7 « déjà résolu » à 23 h 50).
  */
-export async function resolveDay(now: Date = new Date()): Promise<DayResolution> {
+export async function resolveDay(now: Date = new Date(), which: 'current' | 'previous' = 'current'): Promise<DayResolution> {
   await dbConnect();
 
-  // On résout la journée qui vient de s'achever : on se replace une minute
-  // avant l'instant courant, et la SAISON comme le JOUR se lisent à ce
-  // moment-là. Les lire à deux instants différents faisait qu'un passage du
-  // lundi 00 h 01 cherchait le jour 7 dans la saison de la semaine qui commence.
-  const at = new Date(now.getTime() - 60_000);
+  // La SAISON comme le JOUR se lisent au même instant `at`. Les lire à deux
+  // instants différents faisait qu'un passage du lundi cherchait le jour 7
+  // dans la saison de la semaine qui commence.
+  // parisDay() donne minuit UTC de la date parisienne : 12 h plus tôt, on est
+  // en plein milieu de la veille parisienne, heure d'été comme d'hiver.
+  const at =
+    which === 'previous'
+      ? new Date(parisDay(now).getTime() - 12 * 3600_000)
+      : new Date(now.getTime() - 60_000);
   const season = seasonKey(at);
   const day = Math.max(1, warDay(at));
   const base = { season, day, pairs: 0 };

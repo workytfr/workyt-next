@@ -40,13 +40,14 @@ const JOBS: Record<string, Job> = {
     const { formClans } = await import('@/lib/clanService');
     return formClans();
   },
-  // Chaque jour 00h01 : résolution de la veille (index unique {clan, day} contre le double passage)
+  // Chaque nuit, après minuit : résolution de la VEILLE (jour de Paris), quelle
+  // que soit l'heure exacte du passage. Index unique {clan, day} contre le double passage.
   'clans-jour': async () => {
     const { resolveDay } = await import('@/lib/clanResolution');
-    return resolveDay();
+    return resolveDay(new Date(), 'previous');
   },
-  // Dimanche 23h50 : dernière journée PUIS bilan. L'ordre est impératif : le
-  // passage de 00h01 résout la veille, le dimanche n'aurait jamais le sien.
+  // Dimanche 23h50 : dernière journée (le dimanche lui-même) PUIS bilan. L'ordre
+  // est impératif : le passage de nuit résout la veille, il arriverait trop tard.
   'clans-semaine': async () => {
     const { resolveDay } = await import('@/lib/clanResolution');
     const { resolveWeek } = await import('@/lib/clanWeekly');
