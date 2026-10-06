@@ -131,7 +131,14 @@ export const authOptions: NextAuthOptions = {
             // Pour les autres providers, autoriser la connexion
             return true;
         },
-        async jwt({ token, user, account }) {
+        async jwt({ token, user, account, trigger }) {
+            // update() côté client (après modification du profil) : on relit le nom en base
+            if (trigger === "update" && token.id) {
+                await connectDB();
+                const fresh = await User.findById(token.id).select("username").lean<{ username: string }>();
+                if (fresh) token.username = fresh.username;
+                return token;
+            }
             if (user) {
                 token.id = user.id;
                 token.username = user.username;

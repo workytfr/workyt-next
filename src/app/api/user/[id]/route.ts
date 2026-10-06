@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 
+import { authOptions } from "@/lib/authOptions";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import Question from "@/models/Question";
@@ -121,7 +122,8 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ id: st
         const { id } = resolvedParams;
 
         const { bio, socialLinks, name, username, badges } = await req.json();
-        const session = await getServerSession();
+        // authOptions : sans elles, la session n'a ni rôle ni id (un admin était vu comme un membre)
+        const session = await getServerSession(authOptions);
 
         if (!session) {
             return NextResponse.json(
@@ -145,21 +147,31 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ id: st
             );
         }
 
-        // 📌 Vérifier si le nom d'utilisateur est déjà utilisé
-        const isUsernameExist = await User.findOne({ username });
-        if (isUsernameExist && isUsernameExist?._id?.toString() !== id) {
-            return NextResponse.json(
-                { error: "Username already exists. Try a different one." },
-                { status: 400 }
-            );
+        // 📌 Nom d'utilisateur : mêmes règles que le modèle (findByIdAndUpdate ne lance pas
+        // ses validateurs). Avant, « Christophe B » passait tel quel ou échouait sans explication.
+        const update: Record<string, unknown> = { bio, socialLinks, name };
+        if (username !== undefined && username !== user.username) {
+            const clean = String(username).trim().toLowerCase();
+            if (!/^[a-z0-9][a-z0-9_]{2,19}$/.test(clean)) {
+                return NextResponse.json(
+                    { error: "Le nom d'utilisateur doit faire 3 à 20 caractères : lettres sans accent, chiffres ou « _ », sans espace." },
+                    { status: 400 }
+                );
+            }
+            const taken = await User.exists({ username: clean, _id: { $ne: user._id } });
+            if (taken) {
+                return NextResponse.json(
+                    { error: "Ce nom d'utilisateur est déjà pris. Essaie-en un autre." },
+                    { status: 400 }
+                );
+            }
+            update.username = clean;
         }
+        // Les badges ne se donnent pas soi-même : réservé aux admins
+        if (isAdmin && badges !== undefined) update.badges = badges;
 
         // 📌 Mettre à jour l'utilisateur
-        const updatedUser = await User.findByIdAndUpdate(
-            id,
-            { bio, socialLinks, name, username, badges },
-            { new: true }
-        ).select("-password -email");
+        const updatedUser = await User.findByIdAndUpdate(id, update, { new: true }).select("-password -email");
 
         return NextResponse.json(
             { message: "User updated successfully", data: updatedUser },

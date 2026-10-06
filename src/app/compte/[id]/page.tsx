@@ -40,7 +40,7 @@ import { FicheTile } from "@/app/fiches/_components/ficheUi";
 import RankIcon from "@/components/ui/RankIcon";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
-    const { data: session } = useSession();
+    const { data: session, update: updateSession } = useSession();
     const router = useRouter();
 
     const [id, setId] = useState<string | null>(null);
@@ -269,7 +269,10 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
             if (res.ok) {
                 Toast({ title: "Profil mis à jour" });
                 setUser(data.data);
+                setFormData((f) => ({ ...f, username: data.data.username }));
                 setIsEditing(false);
+                // Le nom affiché dans le menu vient de la session : on la rafraîchit
+                if (data.data.username !== session?.user?.username) void updateSession();
             } else {
                 Toast({ title: "Enregistrement impossible", content: data.error, variant: "destructive" });
             }
