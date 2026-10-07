@@ -266,7 +266,7 @@ function Stat({ icon: Icon, value, label }: { icon: React.ComponentType<{ classN
     );
 }
 
-function ChipPicker({
+export function ChipPicker({
     label,
     hint,
     options,

@@ -3,11 +3,12 @@
 import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { HeartHandshake, Inbox, UserCog, Gauge, Loader2 } from "lucide-react";
-import { api } from "@/app/suivi/_lib/client";
+import { api, type MentorProfileView } from "@/app/suivi/_lib/client";
 import MySuivisTab from "./_components/MySuivisTab";
 import QueueTab from "./_components/QueueTab";
 import ProfileTab from "./_components/ProfileTab";
 import AdminTab from "./_components/AdminTab";
+import OnboardingTab from "./_components/OnboardingTab";
 import "../styles/dashboard-theme.css";
 
 type TabId = "suivis" | "file" | "profil" | "pilotage";
@@ -21,11 +22,19 @@ function SuivisDashboard() {
     const router = useRouter();
     const params = useSearchParams();
     const [rights, setRights] = useState<Rights | null>(null);
+    // Charte pas encore acceptée : on la montre avant tout le reste
+    const [needsCharter, setNeedsCharter] = useState(false);
     const tab = (params.get("tab") as TabId) || "suivis";
 
     useEffect(() => {
         api<Rights & { authenticated: boolean }>("/api/suivi")
-            .then((d) => setRights({ canMentor: !!d.canMentor, canManage: !!d.canManage }))
+            .then(async (d) => {
+                if (d.canMentor) {
+                    const m = await api<{ profile: MentorProfileView }>("/api/suivi/mentor").catch(() => null);
+                    setNeedsCharter(!!m && !m.profile.charterAccepted);
+                }
+                setRights({ canMentor: !!d.canMentor, canManage: !!d.canManage });
+            })
             .catch(() => setRights({ canMentor: false, canManage: false }));
     }, []);
 
@@ -52,6 +61,20 @@ function SuivisDashboard() {
                         Demande à un administrateur de t&apos;attribuer la permission « Accompagner des élèves en suivi ».
                     </p>
                 </div>
+            </div>
+        );
+    }
+
+    if (rights.canMentor && needsCharter) {
+        return (
+            <div className="dash-container pb-16">
+                <div className="dash-main-header">
+                    <h1 className="dash-main-title">Suivi personnalisé</h1>
+                    <p className="dash-main-subtitle">
+                        Accompagne des élèves dans la durée : un plan, des ressources choisies pour eux, et quelqu&apos;un qui les suit.
+                    </p>
+                </div>
+                <OnboardingTab onDone={() => setNeedsCharter(false)} onSkip={rights.canManage ? () => setNeedsCharter(false) : undefined} />
             </div>
         );
     }
