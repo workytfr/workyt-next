@@ -21,6 +21,9 @@ export async function notifySuiviRequestDiscord(d: RequestData): Promise<void> {
     if (!WEBHOOK_URL) return;
 
     const payload = {
+        // Postée au nom du bot Maître Renard plutôt que « Workyt - Forum »
+        username: 'Maître Renard',
+        avatar_url: 'https://cdn.discordapp.com/avatars/922578815891427348/c8ce557a0097d69f6974918b440d640a.png?size=256',
         embeds: [
             {
                 title: '🤝 Nouvelle demande de suivi',
