@@ -22,6 +22,7 @@ import { readAttachment, uploadAttachment } from './storage';
 import { resolveResource, checkCompletion } from './resources';
 import { notify, notifyModerators, notifyAvailableMentors, activeLoadByMentor } from './notify';
 import { sendStudentReminderEmail } from './email';
+import { notifySuiviRequestDiscord } from '@/lib/discord/suiviWebhook';
 import { previewText } from './plainText';
 import type { SuiviUser, SuiviViewerRole } from './access';
 import {
@@ -163,6 +164,8 @@ export async function createRequest(user: SuiviUser, input: RequestInput): Promi
 
   // Aucun point pour une demande : on ne gamifie jamais le fait de demander de l'aide.
   void notifyAvailableMentors(m);
+  // Annoncée sur Discord, dans le salon des questions du forum
+  void notifySuiviRequestDiscord(m);
   return { ok: true, data: { id: m._id.toString() } };
 }
 
