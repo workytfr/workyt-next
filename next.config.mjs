@@ -50,7 +50,8 @@ const nextConfig = {
     },
     // Exclure pdf-parse du bundling serveur (nécessite le worker pdf.js en natif)
     // + @uploadthing/mime-types pour éviter les erreurs de build sur ses fichiers .md
-    serverExternalPackages: ["pdf-parse", "@uploadthing/mime-types"],
+    // + @napi-rs/canvas (module natif) : rendu de la 1re page des fiches PDF pour les images de partage
+    serverExternalPackages: ["pdf-parse", "@uploadthing/mime-types", "@napi-rs/canvas"],
     // Transpile @uploadthing — Turbopack (Next 16) bute sinon sur les .d.cts qui
     // contiennent du ESM alors que leur extension annonce CommonJS.
     // Note : @uploadthing/mime-types reste en serverExternalPackages (plus haut),
