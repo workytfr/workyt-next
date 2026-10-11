@@ -2,24 +2,62 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Loader2, Flame, Target, BookOpen, MessageCircle, AlertTriangle, Pause, Inbox, CheckCircle2 } from "lucide-react";
+import {
+    Loader2,
+    Flame,
+    Target,
+    BookOpen,
+    MessageCircle,
+    AlertTriangle,
+    Pause,
+    Inbox,
+    CheckCircle2,
+    Clock,
+    MessagesSquare,
+    LayoutGrid,
+    List,
+} from "lucide-react";
 import { MOOD_LABELS, OUTCOME_LABELS, MENTOR_REMINDER_DAYS } from "@/lib/mentorship/config";
-import { api, daysSince, formatDate, type MentorshipSummary } from "@/app/suivi/_lib/client";
+import { api, daysSince, formatDate, formatDuration, type MentorshipSummary } from "@/app/suivi/_lib/client";
 
 interface Data {
     asMentor: { current: MentorshipSummary[]; past: MentorshipSummary[] } | null;
 }
 
+type View = "cards" | "list";
+type Sort = "urgency" | "messages" | "duration" | "recent";
+
+const SORTS: Record<Sort, { label: string; score: (m: MentorshipSummary) => number }> = {
+    urgency: { label: "Urgence", score: (m) => urgency(m) },
+    messages: { label: "Messages", score: (m) => m.activity?.messages || 0 },
+    duration: { label: "Durée", score: (m) => m.activity?.durationDays || 0 },
+    recent: { label: "Dernier message", score: (m) => (m.activity?.lastMessageAt ? new Date(m.activity.lastMessageAt).getTime() : 0) },
+};
+
 /**
  * Les suivis du bénévole, les plus urgents en premier : un élève qui attend
- * une réponse passe devant tout le reste.
+ * une réponse passe devant tout le reste. En vue liste, on peut aussi trier
+ * par volume de messages, durée ou dernier échange.
  */
 export default function MySuivisTab({ goToQueue }: { goToQueue: () => void }) {
     const [data, setData] = useState<Data | null>(null);
+    const [view, setView] = useState<View>("cards");
+    const [sort, setSort] = useState<Sort>("urgency");
 
     useEffect(() => {
-        api<Data>("/api/suivi").then(setData).catch(() => setData({ asMentor: null }));
+        api<Data>("/api/suivi")
+            .then((d) => {
+                const saved = localStorage.getItem("suivis-view");
+                if (saved === "cards" || saved === "list") setView(saved);
+                setData(d);
+            })
+            .catch(() => setData({ asMentor: null }));
     }, []);
+
+    const changeView = (v: View) => {
+        setView(v);
+        localStorage.setItem("suivis-view", v);
+    };
 
     if (!data) {
         return (
@@ -29,7 +67,7 @@ export default function MySuivisTab({ goToQueue }: { goToQueue: () => void }) {
         );
     }
 
-    const current = [...(data.asMentor?.current || [])].sort((a, b) => urgency(b) - urgency(a));
+    const current = [...(data.asMentor?.current || [])].sort((a, b) => SORTS[sort].score(b) - SORTS[sort].score(a));
     const past = data.asMentor?.past || [];
 
     return (
@@ -46,11 +84,52 @@ export default function MySuivisTab({ goToQueue }: { goToQueue: () => void }) {
                     </div>
                 </div>
             ) : (
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {current.map((m) => (
-                        <SuiviCard key={m.id} m={m} />
-                    ))}
-                </div>
+                <>
+                    <Overview current={current} past={past} />
+
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <label className="flex items-center gap-2 text-sm text-[var(--dash-text-secondary)]">
+                            Trier par
+                            <select value={sort} onChange={(e) => setSort(e.target.value as Sort)} className="dash-input w-auto py-1.5">
+                                {(Object.keys(SORTS) as Sort[]).map((k) => (
+                                    <option key={k} value={k}>
+                                        {SORTS[k].label}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                        <div className="flex gap-1">
+                            <button
+                                type="button"
+                                onClick={() => changeView("cards")}
+                                aria-label="Vue en cartes"
+                                aria-pressed={view === "cards"}
+                                className={`dash-button ${view === "cards" ? "dash-button-primary" : ""}`}
+                            >
+                                <LayoutGrid className="h-4 w-4" />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => changeView("list")}
+                                aria-label="Vue en liste"
+                                aria-pressed={view === "list"}
+                                className={`dash-button ${view === "list" ? "dash-button-primary" : ""}`}
+                            >
+                                <List className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {view === "list" ? (
+                        <CurrentTable list={current} />
+                    ) : (
+                        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                            {current.map((m) => (
+                                <SuiviCard key={m.id} m={m} />
+                            ))}
+                        </div>
+                    )}
+                </>
             )}
 
             {past.length > 0 && (
@@ -63,6 +142,8 @@ export default function MySuivisTab({ goToQueue }: { goToQueue: () => void }) {
                                     <th>Élève</th>
                                     <th>Matière</th>
                                     <th>Issue</th>
+                                    <th>Messages</th>
+                                    <th>Durée</th>
                                     <th>Terminé le</th>
                                 </tr>
                             </thead>
@@ -72,6 +153,8 @@ export default function MySuivisTab({ goToQueue }: { goToQueue: () => void }) {
                                         <td>{m.student?.username}</td>
                                         <td>{m.subject} · {m.level}</td>
                                         <td>{m.outcome ? OUTCOME_LABELS[m.outcome] : m.status === "cancelled" ? "Annulé" : "—"}</td>
+                                        <td><Messages m={m} /></td>
+                                        <td>{m.activity ? formatDuration(m.activity.durationDays) : "—"}</td>
                                         <td>{formatDate(m.closedAt)}</td>
                                     </tr>
                                 ))}
@@ -94,6 +177,98 @@ function waitingDays(m: MentorshipSummary) {
 
 function urgency(m: MentorshipSummary) {
     return (m.unread > 0 ? 100 : 0) + waitingDays(m) * 10 + (m.checkinPending ? 5 : 0) - (m.status === "paused" ? 1000 : 0);
+}
+
+function messagesTitle(m: MentorshipSummary) {
+    return m.activity ? `${m.activity.studentMessages} de l'élève, ${m.activity.mentorMessages} du bénévole` : undefined;
+}
+
+/** Total des messages, le détail élève · bénévole à côté */
+function Messages({ m }: { m: MentorshipSummary }) {
+    if (!m.activity) return <>—</>;
+    const a = m.activity;
+    return (
+        <span title={messagesTitle(m)}>
+            {a.messages} <span className="text-[var(--dash-text-tertiary)]">({a.studentMessages} · {a.mentorMessages})</span>
+        </span>
+    );
+}
+
+/** Quelques chiffres en tête, pour voir d'un coup d'œil où en est son engagement */
+function Overview({ current, past }: { current: MentorshipSummary[]; past: MentorshipSummary[] }) {
+    const all = [...current, ...past];
+    const messages = current.reduce((n, m) => n + (m.activity?.messages || 0), 0);
+    const waiting = current.filter((m) => m.status === "active" && waitingDays(m) >= 1).length;
+    const avg = all.length ? Math.round(all.reduce((n, m) => n + (m.activity?.durationDays || 0), 0) / all.length) : 0;
+    const stats = [
+        { label: "Suivis en cours", value: String(current.length) },
+        { label: "Messages (en cours)", value: String(messages) },
+        { label: "Durée moyenne", value: formatDuration(avg) },
+        { label: "Attendent ta réponse", value: String(waiting), alert: waiting > 0 },
+    ];
+    return (
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+            {stats.map((s) => (
+                <div key={s.label} className="dash-card p-4">
+                    <div className="text-xs text-[var(--dash-text-tertiary)]">{s.label}</div>
+                    <div className={`mt-1 text-2xl font-semibold ${s.alert ? "text-amber-600" : "text-[var(--dash-text)]"}`}>{s.value}</div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function CurrentTable({ list }: { list: MentorshipSummary[] }) {
+    return (
+        <div className="dash-table-container">
+            <table className="dash-table">
+                <thead>
+                    <tr>
+                        <th>Élève</th>
+                        <th>Matière</th>
+                        <th>Messages</th>
+                        <th>Durée</th>
+                        <th>Dernier message</th>
+                        <th>État</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {list.map((m) => {
+                        const waiting = waitingDays(m);
+                        const last = daysSince(m.activity?.lastMessageAt);
+                        return (
+                            <tr key={m.id}>
+                                <td>
+                                    <Link href={`/suivi/${m.id}`} className="font-medium text-[var(--dash-accent)] hover:underline">
+                                        {m.student?.username}
+                                    </Link>
+                                </td>
+                                <td>{m.subject} · {m.level}</td>
+                                <td><Messages m={m} /></td>
+                                <td>{m.activity ? formatDuration(m.activity.durationDays) : "—"}</td>
+                                <td>{last === null ? "—" : last === 0 ? "Aujourd'hui" : `Il y a ${last} j`}</td>
+                                <td>
+                                    <div className="flex flex-wrap gap-1">
+                                        {m.status === "paused" && <span className="dash-badge dash-badge-info">Pause</span>}
+                                        {m.unread > 0 && (
+                                            <span className="dash-badge dash-badge-primary">
+                                                {m.unread} non lu{m.unread > 1 ? "s" : ""}
+                                            </span>
+                                        )}
+                                        {waiting >= 1 && m.status === "active" && (
+                                            <span className={`dash-badge ${waiting >= MENTOR_REMINDER_DAYS ? "dash-badge-danger" : "dash-badge-warning"}`}>
+                                                Attend depuis {waiting} j
+                                            </span>
+                                        )}
+                                    </div>
+                                </td>
+                            </tr>
+                        );
+                    })}
+                </tbody>
+            </table>
+        </div>
+    );
 }
 
 function SuiviCard({ m }: { m: MentorshipSummary }) {
@@ -135,6 +310,22 @@ function SuiviCard({ m }: { m: MentorshipSummary }) {
                 )}
                 {m.resumed && <span className="dash-badge">Repris</span>}
             </div>
+
+            {m.activity && (
+                <div className="mt-4 flex items-center justify-between border-t border-[var(--dash-border)] pt-3 text-xs text-[var(--dash-text-secondary)]">
+                    <span className="flex items-center gap-1.5" title={messagesTitle(m)}>
+                        <MessagesSquare className="h-3.5 w-3.5" />
+                        {m.activity.messages} message{m.activity.messages > 1 ? "s" : ""}
+                    </span>
+                    <span
+                        className="flex items-center gap-1.5"
+                        title={m.activity.since ? `Depuis le ${formatDate(m.activity.since, { day: "numeric", month: "long", year: "numeric" })}` : undefined}
+                    >
+                        <Clock className="h-3.5 w-3.5" />
+                        {formatDuration(m.activity.durationDays)}
+                    </span>
+                </div>
+            )}
         </Link>
     );
 }

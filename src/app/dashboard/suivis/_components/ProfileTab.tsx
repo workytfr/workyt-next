@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, ShieldCheck, Copy, Check, Award, Users, CalendarDays, Target, Heart } from "lucide-react";
+import { Loader2, ShieldCheck, Copy, Check, Award, Users, CalendarDays, Target, Heart, MessagesSquare, Flag } from "lucide-react";
 import { toast } from "sonner";
 import { educationData } from "@/data/educationData";
 import { DEFAULT_MAX_ACTIVE, MAX_ACTIVE_LIMIT, HELP_LINES } from "@/lib/mentorship/config";
-import { api, ApiError, formatDate, type MentorProfileView } from "@/app/suivi/_lib/client";
+import { api, ApiError, formatDate, formatDuration, type MentorProfileView } from "@/app/suivi/_lib/client";
 
 export interface Engagement {
     students: number;
@@ -14,7 +14,11 @@ export interface Engagement {
     completed: number;
     goalReached: number;
     helpful: number;
+    /** Avis laissés par les élèves en fin de suivi */
+    feedbacks: number;
     messages: number;
+    /** Durée d'engagement réelle (suivis en parallèle comptés une fois) */
+    days: number;
     weeks: number;
     since: string | null;
     certificateLines: string[];
@@ -218,9 +222,15 @@ export default function ProfileTab() {
                         </div>
                         <div className="mt-4 grid grid-cols-2 gap-3">
                             <Stat icon={Users} value={engagement.students} label="élèves accompagnés" />
-                            <Stat icon={CalendarDays} value={engagement.weeks} label="semaines de suivi" />
+                            <Stat icon={CalendarDays} value={engagement.students ? formatDuration(engagement.days) : "—"} label="d'engagement" />
+                            <Stat icon={MessagesSquare} value={engagement.messages} label="messages écrits" />
+                            <Stat icon={Flag} value={engagement.completed} label="suivis menés à terme" />
                             <Stat icon={Target} value={engagement.goalReached} label="objectifs d'élèves atteints" />
-                            <Stat icon={Heart} value={engagement.helpful} label="élèves aidés (leur avis)" />
+                            <Stat
+                                icon={Heart}
+                                value={engagement.feedbacks ? `${engagement.helpful}/${engagement.feedbacks}` : "—"}
+                                label="élèves aidés (leur avis)"
+                            />
                         </div>
                         {engagement.since && (
                             <p className="mt-3 text-xs text-[var(--dash-text-tertiary)]">
@@ -256,7 +266,7 @@ export default function ProfileTab() {
     );
 }
 
-function Stat({ icon: Icon, value, label }: { icon: React.ComponentType<{ className?: string }>; value: number; label: string }) {
+function Stat({ icon: Icon, value, label }: { icon: React.ComponentType<{ className?: string }>; value: number | string; label: string }) {
     return (
         <div className="rounded-xl bg-[var(--dash-bg-secondary)] p-3">
             <Icon className="h-4 w-4 text-[var(--dash-accent)]" />

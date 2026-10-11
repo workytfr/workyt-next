@@ -6,7 +6,7 @@ import { Loader2, Inbox, HeartHandshake, Clock, Users, AlertTriangle, ShieldAler
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { MENTOR_REMINDER_DAYS, MENTOR_TIMEOUT_DAYS } from "@/lib/mentorship/config";
-import { api, ApiError, daysSince, formatDate, type MentorshipSummary, type PublicUser } from "@/app/suivi/_lib/client";
+import { api, ApiError, daysSince, formatDate, formatDuration, type MentorshipSummary, type PublicUser } from "@/app/suivi/_lib/client";
 import type { Engagement } from "./ProfileTab";
 
 interface MentorRow {
@@ -425,15 +425,24 @@ export default function AdminTab() {
                             <DialogTitle>Engagement de {engagementOf.user.username}</DialogTitle>
                         </DialogHeader>
                         <div className="grid grid-cols-3 gap-2 text-center text-sm">
-                            <div className="rounded-xl bg-[var(--dash-bg-secondary)] p-3">
-                                <div className="text-xl font-bold">{engagementOf.engagement.students}</div>élèves
-                            </div>
-                            <div className="rounded-xl bg-[var(--dash-bg-secondary)] p-3">
-                                <div className="text-xl font-bold">{engagementOf.engagement.weeks}</div>semaines
-                            </div>
-                            <div className="rounded-xl bg-[var(--dash-bg-secondary)] p-3">
-                                <div className="text-xl font-bold">{engagementOf.engagement.completed}</div>menés à terme
-                            </div>
+                            {[
+                                { value: engagementOf.engagement.students, label: "élèves" },
+                                { value: engagementOf.engagement.students ? formatDuration(engagementOf.engagement.days) : "—", label: "d'engagement" },
+                                { value: engagementOf.engagement.messages, label: "messages" },
+                                { value: engagementOf.engagement.active, label: "en cours" },
+                                { value: engagementOf.engagement.completed, label: "menés à terme" },
+                                {
+                                    value: engagementOf.engagement.feedbacks
+                                        ? `${engagementOf.engagement.helpful}/${engagementOf.engagement.feedbacks}`
+                                        : "—",
+                                    label: "avis positifs",
+                                },
+                            ].map((s) => (
+                                <div key={s.label} className="rounded-xl bg-[var(--dash-bg-secondary)] p-3">
+                                    <div className="text-xl font-bold">{s.value}</div>
+                                    {s.label}
+                                </div>
+                            ))}
                         </div>
                         <p className="text-xs text-[var(--dash-text-secondary)]">
                             À reporter dans les contributions de son attestation (Certificats) :

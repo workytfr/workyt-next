@@ -143,6 +143,26 @@ export interface MentorshipSummary {
     outcome: string | null;
     unread: number;
     waitingForMentorDays?: number;
+    /** Côté bénévole : volume de la conversation et durée de ses passages */
+    activity?: SuiviActivity;
+}
+
+export interface SuiviActivity {
+    messages: number;
+    studentMessages: number;
+    mentorMessages: number;
+    firstMessageAt: string | null;
+    lastMessageAt: string | null;
+    since: string | null;
+    durationDays: number;
+}
+
+/** « 3 j », « 5 sem. », « 4 mois » */
+export function formatDuration(days: number) {
+    if (days < 1) return "< 1 j";
+    if (days < 14) return `${days} j`;
+    if (days < 60) return `${Math.round(days / 7)} sem.`;
+    return `${Math.round(days / 30)} mois`;
 }
 
 export interface ResourceHit {

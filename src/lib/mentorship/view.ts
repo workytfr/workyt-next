@@ -166,9 +166,15 @@ export async function listMessages(m: IMentorship, viewer: SuiviViewerRole, user
 }
 
 /** Résumé d'un suivi pour les listes (pas de contenu de conversation) */
-async function summarize(list: IMentorship[], perspective: 'student' | 'mentor' | 'moderator', userId?: string) {
+async function summarize(
+  list: IMentorship[],
+  perspective: 'student' | 'mentor' | 'moderator',
+  userId?: string,
+  opts: { activityFor?: string } = {}
+) {
   const users = await usersById(list.flatMap((m) => [m.student, m.mentor]));
   const unread = new Map<string, number>();
+  const activity = opts.activityFor ? await conversationActivity(list) : null;
 
   if (userId && list.length) {
     // Messages non lus : postérieurs au dernier passage, écrits par quelqu'un d'autre
@@ -209,8 +215,62 @@ async function summarize(list: IMentorship[], perspective: 'student' | 'mentor' 
     duoStreak: m.duoStreak?.current || 0,
     resumed: m.mentorHistory.length > (m.mentor ? 1 : 0),
     outcome: m.closure?.outcome || null,
-    unread: unread.get(m._id.toString()) || 0
+    unread: unread.get(m._id.toString()) || 0,
+    ...(activity && opts.activityFor ? { activity: activityOf(m, opts.activityFor, activity) } : {})
   }));
+}
+
+type MessageStats = { student: number; mentor: number; first: Date | null; last: Date | null };
+
+/**
+ * Messages réellement écrits (texte, bloc de cours, réponses) : les traces
+ * automatiques d'un objectif ajouté ou d'une ressource assignée n'en sont pas.
+ */
+const WRITTEN_KINDS = ['text', 'block', 'checkin_reply', 'confused'];
+
+/** Volume de la conversation de chaque suivi, en une seule requête (index mentorship + createdAt) */
+async function conversationActivity(list: IMentorship[]) {
+  const stats = new Map<string, MessageStats>();
+  if (!list.length) return stats;
+  const rows = await MentorshipMessage.aggregate<{ _id: { m: mongoose.Types.ObjectId; role: string }; n: number; first: Date; last: Date }>([
+    { $match: { mentorship: { $in: list.map((m) => m._id) }, status: 'visible', authorRole: { $in: ['student', 'mentor'] }, kind: { $in: WRITTEN_KINDS } } },
+    { $group: { _id: { m: '$mentorship', role: '$authorRole' }, n: { $sum: 1 }, first: { $min: '$createdAt' }, last: { $max: '$createdAt' } } }
+  ]);
+  for (const r of rows) {
+    const key = r._id.m.toString();
+    const s = stats.get(key) || { student: 0, mentor: 0, first: null, last: null };
+    if (r._id.role === 'student') s.student = r.n;
+    else s.mentor = r.n;
+    if (!s.first || r.first < s.first) s.first = r.first;
+    if (!s.last || r.last > s.last) s.last = r.last;
+    stats.set(key, s);
+  }
+  return stats;
+}
+
+/**
+ * Messages et durée d'un suivi vus par un bénévole : la durée ne compte que
+ * ses propres passages (un suivi repris ne lui attribue pas le temps de l'autre).
+ */
+function activityOf(m: IMentorship, mentorId: string, stats: Map<string, MessageStats>) {
+  const s = stats.get(m._id.toString()) || { student: 0, mentor: 0, first: null, last: null };
+  const stints = m.mentorHistory.filter((h) => String(h.mentor) === mentorId);
+  const now = Date.now();
+  const end = m.closedAt ? new Date(m.closedAt).getTime() : now;
+  const ms = stints.reduce((sum, h) => {
+    const from = new Date(h.from).getTime();
+    const to = h.to ? new Date(h.to).getTime() : end;
+    return sum + Math.max(0, to - from);
+  }, 0);
+  return {
+    messages: s.student + s.mentor,
+    studentMessages: s.student,
+    mentorMessages: s.mentor,
+    firstMessageAt: iso(s.first),
+    lastMessageAt: iso(s.last),
+    since: iso(stints[0]?.from || m.matchedAt),
+    durationDays: Math.floor(ms / 86400000)
+  };
 }
 
 export async function listForStudent(userId: string) {
@@ -226,8 +286,8 @@ export async function listForMentor(userId: string) {
       .limit(20)
   ]);
   return {
-    current: await summarize(current, 'mentor', userId),
-    past: await summarize(past, 'mentor')
+    current: await summarize(current, 'mentor', userId, { activityFor: userId }),
+    past: await summarize(past, 'mentor', undefined, { activityFor: userId })
   };
 }
 
@@ -266,42 +326,68 @@ export async function getMentorProfile(userId: string) {
  */
 export async function mentorEngagement(userId: string) {
   const oid = new mongoose.Types.ObjectId(userId);
-  const list = await Mentorship.find({ 'mentorHistory.mentor': oid })
-    .select('student subject status closure mentor mentorHistory')
-    .lean<any[]>();
+  const [list, written] = await Promise.all([
+    Mentorship.find({ 'mentorHistory.mentor': oid })
+      .select('student subject status closure mentor mentorHistory closedAt')
+      .lean<any[]>(),
+    MentorshipMessage.aggregate<{ _id: mongoose.Types.ObjectId; n: number }>([
+      { $match: { author: oid, authorRole: 'mentor', status: 'visible', kind: { $in: WRITTEN_KINDS } } },
+      { $group: { _id: '$mentorship', n: { $sum: 1 } } }
+    ])
+  ]);
+  const writtenIn = new Map(written.map((r) => [String(r._id), r.n]));
 
   const now = Date.now();
-  let weeks = 0;
+  const intervals: [number, number][] = [];
   let firstFrom: Date | null = null;
   const students = new Set<string>();
   const subjects = new Set<string>();
   for (const m of list) {
-    for (const h of m.mentorHistory as { mentor: mongoose.Types.ObjectId; from: Date; to?: Date }[]) {
-      if (String(h.mentor) !== userId) continue;
-      students.add(String(m.student));
-      subjects.add(m.subject);
+    const mine = (m.mentorHistory as { mentor: mongoose.Types.ObjectId; from: Date; to?: Date }[]).filter(
+      (h) => String(h.mentor) === userId
+    );
+    if (!mine.length) continue;
+    // Un suivi pris puis relâché sans un mot n'est pas un élève accompagné
+    const inCharge = String(m.mentor) === userId && ['active', 'paused'].includes(m.status);
+    if (!inCharge && !writtenIn.get(String(m._id))) continue;
+    students.add(String(m.student));
+    subjects.add(m.subject);
+    for (const h of mine) {
       const from = new Date(h.from).getTime();
-      const to = h.to ? new Date(h.to).getTime() : now;
-      weeks += Math.max(0, to - from) / (7 * 24 * 3600 * 1000);
+      const to = h.to ? new Date(h.to).getTime() : m.closedAt ? new Date(m.closedAt).getTime() : now;
+      if (to > from) intervals.push([from, to]);
       if (!firstFrom || new Date(h.from) < firstFrom) firstFrom = new Date(h.from);
     }
   }
 
-  const completed = list.filter(
-    (m) => String(m.mentor) === userId && m.status === 'closed' && ['goal_reached', 'partial'].includes(m.closure?.outcome)
-  ).length;
-  const goalReached = list.filter((m) => String(m.mentor) === userId && m.closure?.outcome === 'goal_reached').length;
+  // Durée d'engagement réelle : trois suivis menés en parallèle pendant
+  // un mois font un mois, pas trois.
+  intervals.sort((a, b) => a[0] - b[0]);
+  let engagedMs = 0;
+  let cursor = -Infinity;
+  for (const [from, to] of intervals) {
+    const start = Math.max(from, cursor);
+    if (to > start) engagedMs += to - start;
+    cursor = Math.max(cursor, to);
+  }
+  const days = Math.floor(engagedMs / 86400000);
+  const weeks = engagedMs > 0 ? Math.max(1, Math.round(days / 7)) : 0;
+
+  // Le bilan revient au bénévole en charge au moment de la clôture
+  const closedByMe = list.filter((m) => String(m.mentor) === userId && m.status === 'closed');
+  const completed = closedByMe.filter((m) => ['goal_reached', 'partial'].includes(m.closure?.outcome)).length;
+  const goalReached = closedByMe.filter((m) => m.closure?.outcome === 'goal_reached').length;
+  const helpful = closedByMe.filter((m) => m.closure?.studentFeedback === 'helpful').length;
+  const feedbacks = closedByMe.filter((m) => !!m.closure?.studentFeedback).length;
   const active = list.filter((m) => String(m.mentor) === userId && ['active', 'paused'].includes(m.status)).length;
-  const helpful = list.filter((m) => String(m.mentor) === userId && m.closure?.studentFeedback === 'helpful').length;
-  const messages = await MentorshipMessage.countDocuments({ author: oid, authorRole: 'mentor', status: 'visible' });
+  const messages = written.reduce((n, r) => n + r.n, 0);
 
   const subjectList = [...subjects].sort();
-  const totalWeeks = Math.round(weeks);
   const lines: string[] = [];
   if (students.size) {
     lines.push(
       `Accompagnement personnalisé de ${students.size} élève${students.size > 1 ? 's' : ''} en ${subjectList.join(', ')}` +
-        (totalWeeks ? `, sur ${totalWeeks} semaine${totalWeeks > 1 ? 's' : ''} de suivi cumulées` : '') + '.'
+        (weeks ? `, pendant ${weeks} semaine${weeks > 1 ? 's' : ''}` : '') + '.'
     );
   }
   if (completed) {
@@ -318,8 +404,10 @@ export async function mentorEngagement(userId: string) {
     completed,
     goalReached,
     helpful,
+    feedbacks,
     messages,
-    weeks: totalWeeks,
+    days,
+    weeks,
     since: iso(firstFrom),
     certificateLines: lines
   };
