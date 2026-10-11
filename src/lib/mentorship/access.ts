@@ -1,4 +1,5 @@
 import { getServerSession } from 'next-auth';
+import { bearerUserId } from '@/lib/bearerUser';
 import mongoose from 'mongoose';
 import { authOptions } from '@/lib/authOptions';
 import dbConnect from '@/lib/mongodb';
@@ -18,13 +19,20 @@ export interface SuiviUser {
  * Helpeur perd l'accès immédiatement, sans attendre l'expiration du jeton.
  */
 export async function currentSuiviUser(): Promise<SuiviUser | null> {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.email) return null;
+  type Row = { _id: mongoose.Types.ObjectId; username: string; role: string };
+  let user: Row | null = null;
 
-  await dbConnect();
-  const user = await User.findOne({ email: session.user.email })
-    .select('_id username role')
-    .lean<{ _id: mongoose.Types.ObjectId; username: string; role: string }>();
+  const session = await getServerSession(authOptions);
+  if (session?.user?.email) {
+    await dbConnect();
+    user = await User.findOne({ email: session.user.email }).select('_id username role').lean<Row>();
+  } else {
+    // Application mobile : pas de cookie NextAuth, mais un jeton Bearer
+    const id = await bearerUserId();
+    if (!id) return null;
+    await dbConnect();
+    user = await User.findById(id).select('_id username role').lean<Row>();
+  }
 
   if (!user) return null;
   return { id: user._id.toString(), username: user.username, role: user.role };
