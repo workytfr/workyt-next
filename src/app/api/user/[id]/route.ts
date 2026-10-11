@@ -73,10 +73,12 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
         const countById = new Map(counts.map((c) => [String(c._id), c.n]));
         const questionsWithAnswerCount = questions.map((question) => ({ ...question, answersCount: countById.get(String(question._id)) ?? 0 }));
 
-        // ✅ Préparer la réponse utilisateur
+        // ✅ Préparer la réponse utilisateur. Le vrai nom n'est donné qu'au membre lui-même et aux admins.
+        const session = await getServerSession(authOptions);
+        const canSeeName = session?.user?.id === String(user._id) || session?.user?.role === "Admin";
         const userResponse = {
             _id: user._id,
-            name: user.name,
+            ...(canSeeName ? { name: user.name } : {}),
             username: user.username,
             role: user.role,
             points: user.points,
@@ -153,7 +155,9 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ id: st
 
         // 📌 Nom d'utilisateur : mêmes règles que le modèle (findByIdAndUpdate ne lance pas
         // ses validateurs). Avant, « Christophe B » passait tel quel ou échouait sans explication.
-        const update: Record<string, unknown> = { bio, socialLinks, name };
+        const update: Record<string, unknown> = {};
+        // Seulement les champs envoyés : un champ absent ne doit pas être effacé
+        for (const [k, v] of Object.entries({ bio, socialLinks, name })) if (v !== undefined) update[k] = v;
         if (username !== undefined && username !== user.username) {
             const clean = String(username).trim().toLowerCase();
             if (!/^[a-z0-9][a-z0-9_]{2,19}$/.test(clean)) {
@@ -175,13 +179,18 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ id: st
         if (isAdmin && badges !== undefined) update.badges = badges;
 
         // 📌 Mettre à jour l'utilisateur
-        const updatedUser = await User.findByIdAndUpdate(id, update, { new: true }).select("-password -email");
+        // runValidators : applique les règles du modèle (bio de 500 caractères au plus…)
+        const updatedUser = await User.findByIdAndUpdate(id, update, { new: true, runValidators: true }).select("-password -email");
 
         return NextResponse.json(
             { message: "User updated successfully", data: updatedUser },
             { status: 200 }
         );
     } catch (error) {
+        if (error instanceof mongoose.Error.ValidationError || error instanceof mongoose.Error.CastError) {
+            const first = error instanceof mongoose.Error.ValidationError ? Object.values(error.errors)[0]?.message : undefined;
+            return NextResponse.json({ error: first || "Données invalides" }, { status: 400 });
+        }
         console.error("Error updating user:", error);
         return NextResponse.json(
             { error: "Internal server error" },

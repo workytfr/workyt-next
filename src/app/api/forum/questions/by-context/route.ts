@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
         const type = searchParams.get("type"); // lesson | exercise
         const id = searchParams.get("id");
         const status = searchParams.get("status");
-        const limit = parseInt(searchParams.get("limit") || "5", 10);
+        const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "5", 10) || 5, 1), 50);
         const page = parseInt(searchParams.get("page") || "1", 10);
         const skip = (page - 1) * limit;
 

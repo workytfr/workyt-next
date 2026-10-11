@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
         // Paramètres de pagination
         const { searchParams } = new URL(req.url);
         const page = parseInt(searchParams.get('page') || '1', 10);
-        const limit = parseInt(searchParams.get('limit') || '10', 10);
+        const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '10', 10) || 10, 1), 100);
 
         // Récupération des notifications
         const result = await NotificationService.getUserNotifications(

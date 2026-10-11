@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Loader2, BookOpen, FileText, HelpCircle } from 'lucide-react';
+import { useSession } from 'next-auth/react';
 
 interface ContentResult {
     _id: string;
@@ -25,6 +26,8 @@ const TYPE_CONFIG = {
 };
 
 export default function ContentPicker({ contentType, onSelect, placeholder }: ContentPickerProps) {
+    const { data: session } = useSession();
+    const token = session?.accessToken;
     const [query, setQuery] = useState('');
     const [results, setResults] = useState<ContentResult[]>([]);
     const [loading, setLoading] = useState(false);
@@ -49,7 +52,9 @@ export default function ContentPicker({ contentType, onSelect, placeholder }: Co
         try {
             const params = new URLSearchParams({ type: contentType });
             if (searchQuery) params.set('q', searchQuery);
-            const res = await fetch(`/api/curriculum/content-search?${params}`);
+            const res = await fetch(`/api/curriculum/content-search?${params}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
             if (res.ok) {
                 const data = await res.json();
                 setResults(data.results || []);
@@ -59,7 +64,7 @@ export default function ContentPicker({ contentType, onSelect, placeholder }: Co
         } finally {
             setLoading(false);
         }
-    }, [contentType]);
+    }, [contentType, token]);
 
     useEffect(() => {
         if (!open) return;

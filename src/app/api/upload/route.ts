@@ -92,7 +92,8 @@ export async function POST(req: NextRequest) {
         }
 
         // Validation du type de fichier
-        const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.pdf'];
+        // Pas de SVG : il peut contenir du JavaScript exécuté sur workyt.fr
+        const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.pdf'];
         const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
 
         const extension = path.extname(filePart.filename).toLowerCase() || '.jpg';

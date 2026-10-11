@@ -3,6 +3,8 @@ import connectDB from '@/lib/mongodb';
 import Course from '@/models/Course';
 import Quiz from '@/models/Quiz';
 import Revision from '@/models/Revision';
+import { adminAuthMiddleware } from '@/middlewares/authMiddleware';
+import { escapeRegex } from '@/utils/escapeRegex';
 
 /**
  * GET /api/curriculum/content-search?type=course&q=algo
@@ -10,16 +12,23 @@ import Revision from '@/models/Revision';
  * Utilisé dans l'admin pour lier du contenu aux noeuds du programme.
  */
 export async function GET(req: NextRequest) {
+    // Réservé aux admins : la liste contient aussi les cours non publiés
+    try {
+        await adminAuthMiddleware(req);
+    } catch {
+        return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
+    }
+
     try {
         await connectDB();
 
         const { searchParams } = new URL(req.url);
         const type = searchParams.get('type'); // 'course' | 'quiz' | 'fiche'
         const q = searchParams.get('q') || '';
-        const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
+        const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20', 10) || 20, 1), 50);
 
         const textFilter = q
-            ? { title: { $regex: q, $options: 'i' } }
+            ? { title: { $regex: escapeRegex(q.slice(0, 100)), $options: 'i' } }
             : {};
 
         const results: { _id: string; title: string; type: string; extra?: string }[] = [];

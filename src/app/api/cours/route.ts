@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
         const niveau = searchParams.get("niveau");
         const matiere = searchParams.get("matiere");
         const page = parseInt(searchParams.get("page") || "1", 10);
-        const limit = parseInt(searchParams.get("limit") || "10", 10);
+        const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10", 10) || 10, 1), 200);
         const skip = (page - 1) * limit;
 
         // Construction des filtres de recherche

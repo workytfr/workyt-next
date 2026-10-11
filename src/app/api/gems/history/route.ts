@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
     // Récupérer les paramètres de pagination
     const { searchParams } = new URL(req.url);
-    const limit = parseInt(searchParams.get('limit') || '20');
+    const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '20', 10) || 20, 1), 100);
     const skip = parseInt(searchParams.get('skip') || '0');
 
     // Récupérer l'historique des transactions

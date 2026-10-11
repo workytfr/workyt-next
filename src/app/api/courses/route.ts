@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
         const authorId = searchParams.get("authorId");
 
         const page = parseInt(searchParams.get("page") || "1", 10);
-        const limit = parseInt(searchParams.get("limit") || "10", 10);
+        const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10", 10) || 10, 1), 200);
         const skip = (page - 1) * limit;
 
         // 🔍 Création des filtres

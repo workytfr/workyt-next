@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
         const sortOrder = searchParams.get("sortOrder") || "asc";
         const hasMedia = searchParams.get("hasMedia");
         const page = parseInt(searchParams.get("page") || "1", 10);
-        const limit = parseInt(searchParams.get("limit") || "10", 10);
+        const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "10", 10) || 10, 1), 200);
         const skip = (page - 1) * limit;
 
         // 🔍 Création des filtres

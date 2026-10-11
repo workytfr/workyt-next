@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
         const { searchParams } = new URL(req.url);
         const revisionId = searchParams.get("revisionId");
         const page = parseInt(searchParams.get("page") || "1", 10); // Page actuelle
-        const limit = parseInt(searchParams.get("limit") || "5", 10); // Nombre de commentaires par page
+        const limit = Math.min(Math.max(parseInt(searchParams.get("limit") || "5", 10) || 5, 1), 50); // Nombre de commentaires par page
 
         if (!revisionId) {
             return NextResponse.json(
