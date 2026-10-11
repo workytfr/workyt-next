@@ -88,6 +88,18 @@ export interface FicheOg {
     preview: { kind: "image"; data: Buffer } | { kind: "pdf"; data: Buffer } | { kind: "text"; text: string } | null;
 }
 
+/**
+ * Aperçus déjà calculés, par fichier. Un fichier remplacé a une nouvelle clé :
+ * pas de risque de garder un ancien aperçu. Sans ce cache, chaque image de
+ * partage retéléchargeait le PDF et redessinait sa première page.
+ */
+const PREVIEW_CACHE_MAX = 100;
+const previewCache = new Map<string, NonNullable<FicheOg["preview"]>>();
+function rememberPreview(key: string, preview: NonNullable<FicheOg["preview"]>) {
+    previewCache.set(key, preview);
+    if (previewCache.size > PREVIEW_CACHE_MAX) previewCache.delete(previewCache.keys().next().value!);
+}
+
 export async function ficheOg(idSlug: string, renderPdf: (data: Uint8Array) => Promise<Buffer | null>): Promise<FicheOg | null> {
     await dbConnect();
     const f = await findByIdSlug(Revision, idSlug, "title subject level likes status author files content");
@@ -100,13 +112,18 @@ export async function ficheOg(idSlug: string, renderPdf: (data: Uint8Array) => P
     if (first && bucket) {
         try {
             const key = extractFileKeyFromUrl(first);
-            const res = await getFileFromStorage(bucket, key);
-            const bytes = res.Body ? await res.Body.transformToByteArray() : null;
-            if (bytes?.length) {
-                if (/\.pdf$/i.test(key.split("?")[0])) {
-                    const png = await renderPdf(bytes);
-                    if (png) preview = { kind: "pdf", data: png };
-                } else preview = { kind: "image", data: Buffer.from(bytes) };
+            const cached = previewCache.get(key);
+            if (cached) preview = cached;
+            else {
+                const res = await getFileFromStorage(bucket, key);
+                const bytes = res.Body ? await res.Body.transformToByteArray() : null;
+                if (bytes?.length) {
+                    if (/\.pdf$/i.test(key.split("?")[0])) {
+                        const png = await renderPdf(bytes);
+                        if (png) preview = { kind: "pdf", data: png };
+                    } else preview = { kind: "image", data: Buffer.from(bytes) };
+                }
+                if (preview) rememberPreview(key, preview);
             }
         } catch (e) {
             console.error("[og] fichier de fiche illisible :", (e as Error).message);

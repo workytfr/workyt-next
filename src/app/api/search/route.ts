@@ -60,104 +60,85 @@ export async function GET(req: NextRequest) {
     const escaped = escapeRegex(query);
     const titleRegex = new RegExp(escaped, 'i');
 
-    const results: any[] = [];
+    const per = category === 'all' ? 4 : limit;
+    const wants = (c: string) => category === 'all' || category === c;
 
-    // Search forum questions — regex on title only (not on description content)
-    if (category === 'all' || category === 'forum') {
-      const Question = (await import('@/models/Question')).default;
-      const forumResults = await Question.find({
-        title: titleRegex
-      })
-        .select('title slug subject classLevel status createdAt')
-        .sort({ createdAt: -1 })
-        .limit(category === 'all' ? 4 : limit)
-        .lean();
-
-      results.push(...forumResults.map((q: any) => ({
-        type: 'forum',
-        id: q._id.toString(),
-        title: q.title,
-        subtitle: `${q.subject} - ${q.classLevel}`,
-        url: q.slug ? `/forum/${q.slug}` : `/forum/${q._id}`,
-        badge: q.status,
-        date: q.createdAt
-      })));
-    }
-
-    // Search fiches — regex on title + subject only (NOT on content, which is huge)
-    if (category === 'all' || category === 'fiches') {
-      const Revision = (await import('@/models/Revision')).default;
-      const fichesResults = await Revision.find({
-        $or: [
-          { title: titleRegex },
-          { subject: titleRegex }
-        ]
-      })
-        .select('title slug subject level status createdAt')
-        .sort({ createdAt: -1 })
-        .limit(category === 'all' ? 4 : limit)
-        .lean();
-
-      results.push(...fichesResults.map((f: any) => ({
-        type: 'fiches',
-        id: f._id.toString(),
-        title: f.title,
-        subtitle: `${f.subject} - ${f.level}`,
-        url: f.slug ? `/fiches/${f.slug}` : `/fiches/${f._id}`,
-        badge: f.status,
-        date: f.createdAt
-      })));
-    }
-
-    // Search courses — regex on title + matiere (short fields only)
-    if (category === 'all' || category === 'cours') {
-      const Course = (await import('@/models/Course')).default;
-      const coursResults = await Course.find({
-        $or: [
-          { title: titleRegex },
-          { matiere: titleRegex }
-        ],
-        status: 'publie'
-      })
-        .select('title slug description niveau matiere createdAt')
-        .sort({ createdAt: -1 })
-        .limit(category === 'all' ? 4 : limit)
-        .lean();
-
-      results.push(...coursResults.map((c: any) => ({
-        type: 'cours',
-        id: c._id.toString(),
-        title: c.title,
-        subtitle: [c.matiere, c.niveau].filter(Boolean).join(' - ') || c.description?.slice(0, 60),
-        url: c.slug ? `/cours/${c.slug}` : `/cours/${c._id}`,
-        date: c.createdAt
-      })));
-    }
-
-    // Search WordPress blog (cached by Next.js for 120s)
-    if (category === 'all' || category === 'blog') {
-      try {
-        const blogResponse = await fetch(
-          `https://blog.workyt.fr/wp-json/wp/v2/posts?search=${encodeURIComponent(query)}&per_page=${category === 'all' ? 3 : limit}&_fields=id,title,link,date,excerpt`,
-          { next: { revalidate: 120 } }
-        );
-
-        if (blogResponse.ok) {
-          const blogPosts = await blogResponse.json();
-          results.push(...blogPosts.map((post: any) => ({
-            type: 'blog',
-            id: `blog-${post.id}`,
-            title: decodeHtmlEntities(post.title?.rendered || ''),
-            subtitle: decodeHtmlEntities(stripHtml(post.excerpt?.rendered || '')).slice(0, 80),
-            url: post.link,
-            external: true,
-            date: post.date
-          })));
-        }
-      } catch {
-        // Blog search failed silently
-      }
-    }
+    // Les quatre sources en même temps (avant : l'une après l'autre)
+    const [forum, fiches, cours, blog] = await Promise.all([
+      // Questions du forum — sur le titre seulement
+      wants('forum')
+        ? import('@/models/Question').then(({ default: Question }) =>
+            Question.find({ title: titleRegex })
+              .select('title slug subject classLevel status createdAt')
+              .sort({ createdAt: -1 })
+              .limit(per)
+              .lean()
+              .then((rows: any[]) => rows.map((q) => ({
+                type: 'forum',
+                id: q._id.toString(),
+                title: q.title,
+                subtitle: `${q.subject} - ${q.classLevel}`,
+                url: q.slug ? `/forum/${q.slug}` : `/forum/${q._id}`,
+                badge: q.status,
+                date: q.createdAt
+              }))))
+        : [],
+      // Fiches — titre et matière (pas le contenu, trop long)
+      wants('fiches')
+        ? import('@/models/Revision').then(({ default: Revision }) =>
+            Revision.find({ $or: [{ title: titleRegex }, { subject: titleRegex }] })
+              .select('title slug subject level status createdAt')
+              .sort({ createdAt: -1 })
+              .limit(per)
+              .lean()
+              .then((rows: any[]) => rows.map((f) => ({
+                type: 'fiches',
+                id: f._id.toString(),
+                title: f.title,
+                subtitle: `${f.subject} - ${f.level}`,
+                url: f.slug ? `/fiches/${f.slug}` : `/fiches/${f._id}`,
+                badge: f.status,
+                date: f.createdAt
+              }))))
+        : [],
+      // Cours publiés — titre et matière
+      wants('cours')
+        ? import('@/models/Course').then(({ default: Course }) =>
+            Course.find({ $or: [{ title: titleRegex }, { matiere: titleRegex }], status: 'publie' })
+              .select('title slug description niveau matiere createdAt')
+              .sort({ createdAt: -1 })
+              .limit(per)
+              .lean()
+              .then((rows: any[]) => rows.map((c) => ({
+                type: 'cours',
+                id: c._id.toString(),
+                title: c.title,
+                subtitle: [c.matiere, c.niveau].filter(Boolean).join(' - ') || c.description?.slice(0, 60),
+                url: c.slug ? `/cours/${c.slug}` : `/cours/${c._id}`,
+                date: c.createdAt
+              }))))
+        : [],
+      // Articles du blog : API publique du nouveau blog (l'ancienne API WordPress n'existe plus).
+      // 2,5 s au plus : un blog lent ne doit pas ralentir toute la recherche.
+      wants('blog')
+        ? fetch(
+            `https://blog.workyt.fr/api/public/posts/?search=${encodeURIComponent(query)}&limit=${category === 'all' ? 3 : limit}`,
+            { next: { revalidate: 120 }, signal: AbortSignal.timeout(2500) }
+          )
+            .then((r) => (r.ok ? r.json() : null))
+            .then((j) => (Array.isArray(j?.data) ? j.data : []).map((post: any) => ({
+              type: 'blog',
+              id: `blog-${post.id}`,
+              title: decodeHtmlEntities(post.title || ''),
+              subtitle: decodeHtmlEntities(stripHtml(post.excerpt || '')).slice(0, 80),
+              url: post.url,
+              external: true,
+              date: post.publishedAt
+            })))
+            .catch(() => [])
+        : [],
+    ]);
+    const results: any[] = [...forum, ...fiches, ...cours, ...blog];
 
     const responseData = { results, query, total: results.length };
 

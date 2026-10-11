@@ -1,5 +1,6 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
+import mongoose from "mongoose";
 
 import { authOptions } from "@/lib/authOptions";
 import connectDB from "@/lib/mongodb";
@@ -17,57 +18,60 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
         const resolvedParams = await params;
         const { id } = resolvedParams;
 
-        // 📌 Récupération des paramètres de pagination
-        const url = new URL(req.url);
-        const page = parseInt(url.searchParams.get("page") || "1", 10);
-        const limit = parseInt(url.searchParams.get("limit") || "10", 10);
-        const skip = (page - 1) * limit;
-
-        // 📌 Vérifier si l'utilisateur existe
-        const user = await User.findById(id).select("-password -email");
-        if (!user) {
+        if (!mongoose.isValidObjectId(id)) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
-        // ✅ Récupération des fiches de révision de l'utilisateur
-        const totalRevisions = await Revision.countDocuments({ author: id });
-        const revisions = await Revision.find({ author: id })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .select("title content likes status subject level createdAt comments")
-            .lean();
+        // 📌 Pagination : 50 éléments au plus par page (sinon ?limit=100000 chargeait tout)
+        const url = new URL(req.url);
+        const page = Math.max(1, parseInt(url.searchParams.get("page") || "1", 10) || 1);
+        const limit = Math.min(50, Math.max(1, parseInt(url.searchParams.get("limit") || "10", 10) || 10));
+        const skip = (page - 1) * limit;
+
+        // Tout en parallèle (avant : une dizaine de requêtes l'une après l'autre)
+        const [user, totalRevisions, revisions, totalQuestions, questions, totalAnswers, answers] = await Promise.all([
+            User.findById(id).select("-password -email").lean<Record<string, any>>(),
+            Revision.countDocuments({ author: id }),
+            Revision.find({ author: id })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .select("title content likes status subject level createdAt comments")
+                .lean(),
+            Question.countDocuments({ user: id }),
+            Question.find({ user: id })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .select("title description subject classLevel points createdAt status answers")
+                .lean(),
+            Answer.countDocuments({ user: id }),
+            Answer.find({ user: id })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .populate("question", "title") // Récupérer le titre de la question associée
+                .select("content question createdAt likes status")
+                .lean(),
+        ]);
+        if (!user) {
+            return NextResponse.json({ error: "User not found" }, { status: 404 });
+        }
 
         const revisionsWithCommentCount = revisions.map((revision) => ({
             ...revision,
             comments: revision.comments?.length || 0,
         }));
 
-        // ✅ Récupération des questions posées par l'utilisateur
-        const totalQuestions = await Question.countDocuments({ user: id });
-        const questions = await Question.find({ user: id })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .select("title description subject classLevel points createdAt status answers")
-            .lean();
-
-        const questionsWithAnswerCount = await Promise.all(
-            questions.map(async (question) => {
-                const count = await Answer.countDocuments({ question: question._id });
-                return { ...question, answersCount: count };
-            })
-        );
-
-        // ✅ Récupération des réponses données par l'utilisateur
-        const totalAnswers = await Answer.countDocuments({ user: id });
-        const answers = await Answer.find({ user: id })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .populate("question", "title") // Récupérer le titre de la question associée
-            .select("content question createdAt likes status")
-            .lean();
+        // Nombre de réponses de chaque question : une seule requête groupée (avant : une par question)
+        const counts = questions.length
+            ? await Answer.aggregate<{ _id: mongoose.Types.ObjectId; n: number }>([
+                  { $match: { question: { $in: questions.map((q) => q._id) } } },
+                  { $group: { _id: "$question", n: { $sum: 1 } } },
+              ])
+            : [];
+        const countById = new Map(counts.map((c) => [String(c._id), c.n]));
+        const questionsWithAnswerCount = questions.map((question) => ({ ...question, answersCount: countById.get(String(question._id)) ?? 0 }));
 
         // ✅ Préparer la réponse utilisateur
         const userResponse = {

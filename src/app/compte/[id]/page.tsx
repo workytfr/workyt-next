@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -43,7 +43,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const { data: session, update: updateSession } = useSession();
     const router = useRouter();
 
-    const [id, setId] = useState<string | null>(null);
+    const { id } = use(params);
     const [user, setUser] = useState<any>(null);
     const [revisions, setRevisions] = useState<any[]>([]);
     const [questions, setQuestions] = useState<any[]>([]);
@@ -168,28 +168,18 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const userRank = calculateUserRank(formData.points);
 
     // Photo envoyée par le membre : signalable par les autres
-    const [hasCustomPhoto, setHasCustomPhoto] = useState(false);
+    const [customization, setCustomization] = useState<any>(undefined);
+    const hasCustomPhoto = !!customization?.customPhoto?.isActive;
     useEffect(() => {
-        if (!id) return;
         fetch(`/api/users/${id}/customization`)
             .then((r) => r.json())
-            .then((d) => setHasCustomPhoto(!!d?.data?.customization?.customPhoto?.isActive))
-            .catch(() => {});
+            .then((d) => setCustomization(d?.data?.customization ?? null))
+            .catch(() => setCustomization(null));
     }, [id]);
     useRankUp(formData.points);
 
-    // Resolve params promise
-    useEffect(() => {
-        async function resolveParams() {
-            const resolvedParams = await params;
-            setId(resolvedParams.id);
-        }
-        resolveParams();
-    }, [params]);
 
     useEffect(() => {
-        if (!id) return; // Wait for id to be resolved
-
         async function fetchUser() {
             try {
                 setLoading(true);
@@ -290,7 +280,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const isAdmin = session?.user?.role === "Admin";
 
 
-    if (loading || !id) {
+    if ((loading && !user) || customization === undefined) {
         return (
             <div className="min-h-screen bg-[var(--wk-paper)]">
                 <div className={`${PAGE_CONTAINER} py-10`}>
@@ -333,7 +323,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                     <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
                         <div className="flex flex-col gap-6 sm:flex-row sm:items-center">
                             <div className="shrink-0">
-                                <ProfileAvatar username={formData.username} size="large" userId={id} role={user?.role} points={formData.points} />
+                                <ProfileAvatar username={formData.username} size="large" userId={id} role={user?.role} points={formData.points} customization={customization ?? undefined} />
                                 {!isOwner && hasCustomPhoto && (
                                     <div className="mt-2 flex justify-center">
                                         <ReportButton contentId={id} contentType="profile_photo" className="text-xs" />
