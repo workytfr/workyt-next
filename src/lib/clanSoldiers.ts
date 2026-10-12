@@ -114,6 +114,9 @@ export async function buySoldier(
 
   const clan = await Clan.findById(membership.clan).lean<any>();
   if (!clan) return { success: false, message: 'Clan introuvable' };
+  // Bilan du dimanche passé : le trésor est déjà soldé, une recrue ne
+  // combattrait plus jamais.
+  if (clan.resolved) return { success: false, message: 'La guerre de la semaine est terminée' };
   if (clan.captain?.toString() !== userId) {
     return { success: false, message: 'Seul le capitaine recrute' };
   }

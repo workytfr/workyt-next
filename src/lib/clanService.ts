@@ -575,6 +575,54 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
     }
   }
 
+  /**
+   * Mon dispositif du jour, porte par porte : qui frappe où chez l'ennemi,
+   * qui tient quoi chez nous, et avec quelle force À CET INSTANT.
+   *
+   * Calculé par les MÊMES fonctions que la résolution de minuit (hors renforts
+   * fantômes, qui dépendent de l'adversaire) : ce n'est pas une prédiction,
+   * c'est l'état de la journée. Il n'expose que MON camp — l'ennemi reste
+   * secret, sauf via l'Éclaireur (voir `pressure`).
+   */
+  const deployment = await (async () => {
+    const { loadSide } = await import('@/lib/clanResolution');
+    const { computeAssault, computeDefense, targetGate, weakestGate, GATES } =
+      await import('@/lib/clanCombat');
+
+    const mySide = await loadSide(clan);
+    const enemyGates = rival?.gates ?? clan.gates;
+    const assault = computeAssault(mySide, enemyGates);
+    const defense = computeDefense(mySide);
+
+    const empty = () => ({ players: 0, soldiers: 0, force: 0 });
+    const attack = Object.fromEntries(GATES.map((g) => [g, empty()])) as Record<GateName, ReturnType<typeof empty>>;
+    const hold = Object.fromEntries(GATES.map((g) => [g, empty()])) as Record<GateName, ReturnType<typeof empty>>;
+
+    for (const m of mySide.members) {
+      if (m.role === 'attaquant') {
+        attack[targetGate(m, mySide.dailyOrder, enemyGates)].players++;
+      } else if (m.role === 'defenseur') {
+        hold[m.gate ?? mySide.dailyOrder ?? weakestGate(mySide.gates)].players++;
+      }
+    }
+    for (const u of mySide.soldiers ?? []) {
+      if (!u.gate || !u.stance) continue;
+      (u.stance === 'assaut' ? attack : hold)[u.gate].soldiers++;
+    }
+    for (const g of GATES) {
+      attack[g].force = assault.byGate[g] + assault.sapperByGate[g] + assault.ramByGate[g];
+      hold[g].force = defense[g];
+    }
+    return { attack, hold, healPool: Math.round(assault.healPool) };
+  })();
+
+  // Le fil des journées déjà jouées : une pastille par jour sur la frise
+  const history = await (await import('@/models/ClanDailyResult')).default
+    .find({ clan: clan._id })
+    .select('day outcome')
+    .sort({ day: 1 })
+    .lean<any[]>();
+
   const [members, rankings, lastResult] = await Promise.all([
     ClanMember.find({ clan: clan._id })
       .populate('user', 'username')
@@ -626,6 +674,8 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
         }
       : null,
     garrison: garrisonCount,
+    deployment,
+    history: history.map((h) => ({ day: h.day, outcome: h.outcome as 'win' | 'loss' | 'draw' })),
     me: {
       /** Mon identifiant — le tchat s'en sert pour repérer ce qui m'est adressé */
       userId,
