@@ -4,19 +4,31 @@ import React from 'react';
 import ClanBanner from './ClanBanner';
 
 /**
- * Le château d'un clan : trois portes et un donjon.
+ * Le château d'un clan : trois châtelets (une porte entre deux tourelles)
+ * reliés par la courtine, et le donjon qui les domine.
  *
- * Charte Workyt (voir SceneArt.tsx) : formes flat, contours épais foncés,
- * arrondis kawaii, aucune image externe. Tout est en SVG inline.
+ * Charte Workyt (voir SceneArt.tsx) : formes flat, contours épais à l'encre,
+ * arrondis, couleurs de la palette, aucune image externe. Tout est en SVG
+ * inline.
  *
- * Le relief ne vient d'aucune texture : c'est de l'appareillage de pierre
- * (lignes d'assises décalées) plus une bande d'ombre à droite de chaque volume.
- * Les dégâts se lisent sur trois registres qui se cumulent — la pierre fonce,
- * les fissures apparaissent, les créneaux s'effondrent — et la porte tombée
- * laisse des gravats. Une seule interpolation, aucun asset.
+ * Le relief ne vient d'aucune texture : de l'appareillage de pierre (assises
+ * décalées) et une bande d'ombre à droite de chaque volume. Les dégâts se
+ * lisent sur plusieurs registres qui se cumulent — la pierre fonce, les
+ * fissures apparaissent, les créneaux et les toits tombent, la fumée puis le
+ * feu montent — et la porte tombée laisse une brèche et des gravats.
+ *
+ * ⚠️ Règles de construction, toutes nées d'un défaut visible :
+ *  - chaque volume descend jusqu'au SOL : un volume qui s'arrête avant le
+ *    suivant laisse un vide, et le château flotte ;
+ *  - un toit se pose sur un PARAPET PLEIN, jamais sur des créneaux : les
+ *    merlons dépassaient sous l'avant-toit ;
+ *  - la courtine n'existe qu'ENTRE les châtelets, avec ses propres merlons :
+ *    tracée d'un bout à l'autre derrière eux, elle laissait des moignons de
+ *    créneaux dans les interstices.
  */
 
-const INK = '#3A2E2E';
+const INK = '#1a1512';
+const PAPER = '#fdfaf4';
 
 export interface CastleGate {
   name: string;
@@ -37,19 +49,66 @@ export function gateState(g: CastleGate): GateState {
 
 /** Pierre plus sombre à mesure que la porte encaisse. */
 const STONE: Record<GateState, string> = {
-  intacte: '#E4D9C6',
-  entamee: '#CDBFA8',
-  critique: '#B3A189',
-  tombee: '#8E8070'
+  intacte: '#EFE5D2',
+  entamee: '#E0D2B9',
+  critique: '#CDBB9E',
+  tombee: '#AD9C84'
 };
 
-/** Créneaux tombés — l'érosion se voit avant même de lire la jauge. */
+/** Jauges : mêmes teintes que les pastilles d'état de la page. */
+const GAUGE: Record<GateState, string> = {
+  intacte: '#7ed957',
+  entamee: '#ffb547',
+  critique: '#ff6a1a',
+  tombee: '#e5484d'
+};
+
+const STATE_LABEL: Record<GateState, string> = {
+  intacte: 'intacte',
+  entamee: 'entamée',
+  critique: 'critique',
+  tombee: 'tombée'
+};
+
+/** Créneaux tombés sur le corps du châtelet (3 merlons). */
 const MISSING: Record<GateState, number[]> = {
   intacte: [],
-  entamee: [3],
-  critique: [1, 3],
-  tombee: [0, 1, 3, 4]
+  entamee: [],
+  critique: [1],
+  tombee: [0, 2]
 };
+
+/** Couleur du camp : toits, fanions, bannière. */
+const TEAM = {
+  ally: { main: '#6ec1e4', deep: '#2f86b3' },
+  enemy: { main: '#e5484d', deep: '#b3262b' }
+} as const;
+
+/* ------------------------------------------------------------ géométrie */
+
+const W = 320;
+/** Haut du cadre : la hampe du donjon dépasse au-dessus de zéro */
+const TOP = -36;
+const H = 236;
+/** Le sol, sur lequel tout repose */
+const GROUND = 180;
+
+/** Châtelets : corps central + deux tourelles */
+const GH = {
+  w: 82,
+  xs: [14, 119, 224],
+  /** Haut du corps central (sous les merlons) */
+  bodyTop: 110,
+  /** Haut des tourelles (sous le parapet) */
+  turretTop: 92,
+  turretW: 20
+};
+
+/** Le donjon : plus haut que tout, en retrait */
+const KEEP = { x: 120, w: 80, top: 40 };
+
+/** La courtine : seulement entre les châtelets */
+const WALL_TOP = 124;
 
 /**
  * Silhouette d'un volume crénelé, en un seul tracé : montant gauche, crête
@@ -68,24 +127,101 @@ function crenelated(
   return `${d} L${x + w},${y + h} Z`;
 }
 
+/** Rangée de mâchicoulis : petits arcs sous un bandeau saillant. */
+function corbels(x: number, y: number, w: number, n: number): string {
+  const u = w / n;
+  let d = `M${x},${y}`;
+  for (let i = 0; i < n; i++) d += ` a${u / 2},${u / 2.4} 0 0,0 ${u},0`;
+  return d;
+}
+
 /** Assises de pierre : lignes horizontales, joints verticaux décalés. */
-function Courses({ x, y, w, h, clip }: { x: number; y: number; w: number; h: number; clip: string }) {
+function Courses({ x, y, w, h, clip, block = 22 }: { x: number; y: number; w: number; h: number; clip: string; block?: number }) {
   const COURSE = 11;
-  const BLOCK = 20;
   const rows: React.ReactElement[] = [];
 
   for (let r = 0; r * COURSE < h; r++) {
     const cy = y + r * COURSE;
     if (r > 0) rows.push(<line key={`h${r}`} x1={x} y1={cy} x2={x + w} y2={cy} />);
-    const offset = (r % 2) * (BLOCK / 2);
-    for (let jx = x + offset; jx < x + w; jx += BLOCK) {
+    const offset = (r % 2) * (block / 2);
+    for (let jx = x + offset; jx < x + w; jx += block) {
       rows.push(<line key={`v${r}-${jx}`} x1={jx} y1={cy} x2={jx} y2={Math.min(cy + COURSE, y + h)} />);
     }
   }
 
   return (
-    <g clipPath={`url(#${clip})`} stroke={INK} strokeWidth="1.2" opacity="0.16">
+    <g clipPath={`url(#${clip})`} stroke={INK} strokeWidth="1.1" opacity="0.12">
       {rows}
+    </g>
+  );
+}
+
+/** Toit conique sur un parapet plein. `broken` = charpente effondrée. */
+function ConeRoof({
+  cx, base, half, height, color, broken
+}: { cx: number; base: number; half: number; height: number; color: string; broken?: boolean }) {
+  if (broken) {
+    // Il ne reste que deux chevrons noircis
+    return (
+      <g stroke={INK} strokeWidth="2.5" strokeLinecap="round" fill="none">
+        <path d={`M${cx - half + 3},${base} l${half * 0.55},-${height * 0.45}`} />
+        <path d={`M${cx + half - 3},${base} l-${half * 0.35},-${height * 0.3}`} />
+      </g>
+    );
+  }
+  return (
+    <g>
+      <path
+        d={`M${cx - half},${base} L${cx},${base - height} L${cx + half},${base} Z`}
+        fill={color}
+        stroke={INK}
+        strokeWidth="3.5"
+        strokeLinejoin="round"
+      />
+      <path d={`M${cx},${base - height} L${cx + half},${base} L${cx},${base} Z`} fill={INK} opacity="0.13" />
+      {/* Rang de tuiles */}
+      <line
+        x1={cx - half * 0.5} y1={base - height * 0.45}
+        x2={cx + half * 0.5} y2={base - height * 0.45}
+        stroke={INK} strokeWidth="1.8" opacity="0.25" strokeLinecap="round"
+      />
+    </g>
+  );
+}
+
+/** Petit fanion à la pointe d'un toit. */
+function Pennant({ x, y, color }: { x: number; y: number; color: string }) {
+  return (
+    <g>
+      <line x1={x} y1={y} x2={x} y2={y - 12} stroke={INK} strokeWidth="2.2" strokeLinecap="round" />
+      <path d={`M${x},${y - 12} l11,3.5 l-11,3.5 z`} fill={color} stroke={INK} strokeWidth="1.8" strokeLinejoin="round" />
+    </g>
+  );
+}
+
+/** Panache de fumée — trois boules qui montent. */
+function Smoke({ x, y, cls, scale = 1 }: { x: number; y: number; cls: string; scale?: number }) {
+  return (
+    <g className={cls} fill="#b9ad9b" stroke={INK} strokeWidth="2" opacity="0.85">
+      <circle cx={x} cy={y} r={5 * scale} />
+      <circle cx={x + 6 * scale} cy={y - 8 * scale} r={6.5 * scale} />
+      <circle cx={x + 1 * scale} cy={y - 18 * scale} r={8 * scale} />
+    </g>
+  );
+}
+
+/** Flamme : deux gouttes emboîtées, orange et jaune Workyt. */
+function Flame({ x, y, cls }: { x: number; y: number; cls: string }) {
+  return (
+    <g className={cls}>
+      <path
+        d={`M${x},${y} c-7,0 -9,-7 -5,-12 c1,4 3,4 4,2 c-1,-5 2,-9 5,-11 c-1,5 6,8 5,15 c0,4 -4,6 -9,6 z`}
+        fill="#ff6a1a"
+        stroke={INK}
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+      <path d={`M${x},${y - 1} c-3,0 -4,-4 -1,-7 c1,2 2,2 3,0 c2,3 2,7 -2,7 z`} fill="#ffb547" />
     </g>
   );
 }
@@ -96,7 +232,7 @@ interface Props {
   keepHpMax: number;
   /** 'ally' = bleu (le tien) · 'enemy' = rouge (l'adversaire) */
   side?: 'ally' | 'enemy';
-  /** Graine du blason : l'écusson du clan est accroché sur le donjon. */
+  /** Graine du blason : l'écusson du clan orne la bannière du donjon. */
   bannerSeed?: string;
   /** Porte mise en avant — l'ordre du jour, ou la cible du joueur */
   highlight?: string | null;
@@ -109,6 +245,16 @@ interface Props {
    */
   threat?: string | null;
   onGateClick?: (gate: string) => void;
+  /**
+   * Bulles sous chaque porte, la pointe tournée vers elle : ce qui s'y
+   * passe aujourd'hui (qui attaque, qui défend, avec quelle force).
+   */
+  bubbles?: Partial<Record<string, React.ReactNode>>;
+  /**
+   * Chiffres sous le dessin (donjon et portes). À couper quand la page les
+   * affiche déjà ailleurs : deux fois la même jauge, c'est du bruit.
+   */
+  details?: boolean;
   className?: string;
 }
 
@@ -121,112 +267,184 @@ export default function ClanCastle({
   highlight,
   threat,
   onGateClick,
+  bubbles,
+  details = true,
   className
 }: Props) {
-  const banner = side === 'ally' ? '#0B4EA2' : '#C8102E';
+  const team = TEAM[side];
   const keepPct = keepHpMax > 0 ? Math.max(0, Math.min(1, keepHp / keepHpMax)) : 0;
   const keepDown = keepPct <= 0;
+  const keepHurt = !keepDown && keepPct < 0.5;
 
   // Les identifiants de clipPath doivent être uniques : deux châteaux
-  // cohabitent à l'écran. Les « : » de useId cassent url(#…), on les retire.
-  const uid = React.useId().replace(/:/g, '');
+  // cohabitent à l'écran. Selon la version de React, useId contient « : » ou
+  // « « » » qui cassent url(#…) et les sélecteurs CSS : on ne garde que le sûr.
+  const uid = 'castle' + React.useId().replace(/[^a-zA-Z0-9_-]/g, '');
 
-  const TOWER_TOP = 62;
-  const GROUND = 142;
+  const keepCx = KEEP.x + KEEP.w / 2;
+  const keepBody = `M${KEEP.x},${GROUND} V${KEEP.top} H${KEEP.x + KEEP.w} V${GROUND} Z`;
+  const keepParapet = keepDown
+    ? crenelated(KEEP.x - 5, KEEP.top - 12, KEEP.w + 10, 12, 5, 8, [1, 3])
+    : `M${KEEP.x - 6},${KEEP.top} V${KEEP.top - 12} H${KEEP.x + KEEP.w + 6} V${KEEP.top} Z`;
+
+  // Segments de courtine, entre deux châtelets — avec 4 px de recouvrement
+  const walls = GH.xs.slice(0, -1).map((x, i) => {
+    const from = x + GH.w - 4;
+    const to = GH.xs[i + 1] + 4;
+    return { x: from, w: to - from };
+  });
+
+  const label =
+    `Château ${side === 'ally' ? 'du clan' : 'adverse'} : donjon ` +
+    (keepDown ? 'abattu' : `${keepHp} sur ${keepHpMax} points`);
 
   return (
     <div className={className}>
-      <svg viewBox="0 0 300 190" className="w-full" role="img" aria-label="Château du clan">
+      <svg viewBox={`0 ${TOP} ${W} ${H - TOP}`} className="w-full overflow-visible" role="img" aria-label={label}>
         <defs>
-          <clipPath id={`${uid}-keep`}>
-            <path d={crenelated(120, 20, 60, 48, 5, 9, keepDown ? [1, 3] : [])} />
-          </clipPath>
-          <clipPath id={`${uid}-wall`}>
-            <path d={crenelated(8, 96, 284, 16, 19, 7)} />
-          </clipPath>
-          {gates.map((g, i) => (
-            <clipPath key={g.name} id={`${uid}-t${i}`}>
-              <path d={crenelated(20 + i * 96, TOWER_TOP, 76, GROUND - TOWER_TOP, 5, 10, MISSING[gateState(g)])} />
+          <clipPath id={`${uid}-keep`}><path d={keepBody} /></clipPath>
+          {walls.map((w, i) => (
+            <clipPath key={i} id={`${uid}-w${i}`}>
+              <path d={crenelated(w.x, WALL_TOP, w.w, GROUND - WALL_TOP, 2, 7)} />
             </clipPath>
           ))}
+          {gates.map((g, i) => {
+            const x = GH.xs[i];
+            return (
+              <React.Fragment key={g.name}>
+                <clipPath id={`${uid}-b${i}`}>
+                  <path d={crenelated(x + 14, GH.bodyTop, GH.w - 28, GROUND - GH.bodyTop, 3, 9, MISSING[gateState(g)])} />
+                </clipPath>
+                <clipPath id={`${uid}-tl${i}`}>
+                  <rect x={x} y={GH.turretTop} width={GH.turretW} height={GROUND - GH.turretTop} />
+                </clipPath>
+                <clipPath id={`${uid}-tr${i}`}>
+                  <rect x={x + GH.w - GH.turretW} y={GH.turretTop} width={GH.turretW} height={GROUND - GH.turretTop} />
+                </clipPath>
+              </React.Fragment>
+            );
+          })}
+          <style>{`
+            @keyframes ${uid}-march { to { stroke-dashoffset: -24; } }
+            .${uid}-march { animation: ${uid}-march 1.2s linear infinite; }
+            @keyframes ${uid}-pulse { 0%,100% { opacity: .95; } 50% { opacity: .4; } }
+            .${uid}-pulse { animation: ${uid}-pulse 1.6s ease-in-out infinite; }
+            @keyframes ${uid}-rise { 0% { transform: translateY(2px); opacity: .9; } 100% { transform: translateY(-5px); opacity: .55; } }
+            .${uid}-smoke { animation: ${uid}-rise 2.4s ease-in-out infinite alternate; }
+            @keyframes ${uid}-flick { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.82); } }
+            .${uid}-flame { animation: ${uid}-flick .5s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
+            .${uid}-gate { transition: transform .18s ease; transform-box: fill-box; transform-origin: center bottom; }
+            .${uid}-gate[role="button"]:hover, .${uid}-gate[role="button"]:focus-visible { transform: translateY(-3px); outline: none; }
+            @media (prefers-reduced-motion: reduce) {
+              .${uid}-march, .${uid}-pulse, .${uid}-smoke, .${uid}-flame { animation: none; }
+              .${uid}-gate { transition: none; }
+            }
+          `}</style>
         </defs>
 
-        {/* ── Le tertre : le château est posé sur quelque chose ── */}
+        {/* ── Le décor : collines au loin, puis le tertre ── */}
+        <path d={`M-10,${GROUND - 26} C40,${GROUND - 62} 90,${GROUND - 56} 130,${GROUND - 30} L-10,${GROUND - 30} Z`} fill="#f5efe3" />
+        <path d={`M180,${GROUND - 30} C222,${GROUND - 70} 284,${GROUND - 66} 330,${GROUND - 34} L330,${GROUND - 30} Z`} fill="#f5efe3" />
         <path
-          d="M0,150 C40,138 78,144 108,142 C150,139 186,145 226,141 C258,138 280,144 300,150 L300,190 L0,190 Z"
-          fill="#DCCDAF"
-          opacity="0.45"
+          d={`M2,${GROUND + 5} C40,${GROUND - 8} 280,${GROUND - 8} ${W - 2},${GROUND + 5} C250,${GROUND + 11} 70,${GROUND + 11} 2,${GROUND + 5} Z`}
+          fill="#efe6d4"
         />
+        {/* Touffes d'herbe */}
+        <g stroke="#5fae3c" strokeWidth="2" strokeLinecap="round" fill="none">
+          {[6, 110, 214, 310].map((gx) => (
+            <path key={gx} d={`M${gx},${GROUND + 2} l-2,-6 M${gx + 3},${GROUND + 2} v-8 M${gx + 6},${GROUND + 2} l2,-5`} />
+          ))}
+        </g>
 
         {/* ══════════════════ Le donjon, en retrait ══════════════════ */}
         <g>
-          {/* Hampe et bannière — la hauteur suit les PV du donjon */}
-          <line x1="150" y1="20" x2="150" y2={keepDown ? 14 : 0} stroke={INK} strokeWidth="3" strokeLinecap="round" />
-          {!keepDown && (
+          {keepDown ? (
+            /* Hampe brisée : il n'y a plus rien à hisser */
+            <path d={`M${keepCx - 8},${KEEP.top - 12} l3,-14 l-6,-6`} stroke={INK} strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+          ) : (
+            <g>
+              <ConeRoof cx={keepCx} base={KEEP.top - 12} half={KEEP.w / 2 + 12} height={44} color={team.main} />
+              {/* Hampe et bannière — la bannière s'amenuise avec les PV du donjon */}
+              <line x1={keepCx} y1={KEEP.top - 56} x2={keepCx} y2={KEEP.top - 72} stroke={INK} strokeWidth="3" strokeLinecap="round" />
+              <path
+                d={`M${keepCx},${KEEP.top - 72} h${10 + 14 * keepPct} l-5,${Math.max(3, 5 * keepPct + 2)} l5,${Math.max(3, 5 * keepPct + 2)} h-${10 + 14 * keepPct} z`}
+                fill={team.main}
+                stroke={INK}
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+              />
+            </g>
+          )}
+
+          {/* Corps du donjon : il descend jusqu'au sol, derrière la courtine */}
+          <path
+            d={keepBody}
+            fill={keepDown ? '#AD9C84' : keepHurt ? '#E0D2B9' : '#EAE0CC'}
+            stroke={INK}
+            strokeWidth="3.5"
+            strokeLinejoin="round"
+          />
+          <Courses x={KEEP.x} y={KEEP.top} w={KEEP.w} h={GROUND - KEEP.top} clip={`${uid}-keep`} />
+          <rect x={KEEP.x + KEEP.w - 20} y={KEEP.top} width="20" height={GROUND - KEEP.top} fill={INK} opacity="0.08" clipPath={`url(#${uid}-keep)`} />
+
+          {/* Parapet plein, sur ses mâchicoulis : le toit repose dessus */}
+          <path d={corbels(KEEP.x, KEEP.top, KEEP.w, 8)} fill="none" stroke={INK} strokeWidth="2" opacity="0.55" />
+          <path d={keepParapet} fill={keepDown ? '#A08F78' : '#DED2BC'} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
+
+          {/* Fenêtres : allumées tant que le donjon tient */}
+          {[KEEP.x + 14, KEEP.x + KEEP.w - 24].map((wx) => (
             <path
-              d={`M150,2 h22 l-6,${Math.max(4, 9 * keepPct)} l6,${Math.max(4, 9 * keepPct)} h-22 z`}
-              fill={banner}
+              key={wx}
+              d={`M${wx},${KEEP.top + 32} v-12 a5,5 0 0,1 10,0 v12 z`}
+              fill={keepDown ? '#2B211C' : '#ffb547'}
               stroke={INK}
               strokeWidth="2.5"
               strokeLinejoin="round"
             />
-          )}
-
-          <path
-            d={crenelated(120, 20, 60, 48, 5, 9, keepDown ? [1, 3] : [])}
-            fill={keepDown ? '#9A8B78' : '#D9CCB6'}
-            stroke={INK}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <Courses x={120} y={20} w={60} h={48} clip={`${uid}-keep`} />
-          {/* Ombre portée à droite : le volume se lit sans dégradé */}
-          <rect x="164" y="20" width="16" height="48" fill={INK} opacity="0.09" clipPath={`url(#${uid}-keep)`} />
-
-          {/* L'écusson du clan, accroché sur la face du donjon.
-              Un <svg> imbriqué est valide : on le place par une transformation
-              plutôt que de le superposer en HTML, pour qu'il suive l'échelle. */}
-          {bannerSeed && (
-            <g transform="translate(135 26) scale(0.3)" opacity={keepDown ? 0.5 : 1}>
-              <ClanBanner seed={bannerSeed} size={100} />
-            </g>
-          )}
-
-          {/* Archères, de part et d'autre de l'écusson */}
-          {[127, 170].map((bx) => (
-            <path
-              key={bx}
-              d={`M${bx + 1.5},34 v11 M${bx - 2},39 h7`}
-              stroke={INK}
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
           ))}
 
-          {/* Le donjon abattu se fend de haut en bas */}
-          {keepDown && (
-            <g stroke={INK} strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.75">
-              <path d="M138,24 l6,14 l-5,10 l7,12" />
-              <path d="M166,30 l-7,12 l5,11" />
+          {/* Bannière à queue d'aronde, frappée de l'écusson du clan */}
+          {!keepDown && (
+            <g>
+              <path
+                d={`M${keepCx - 13},${KEEP.top + 2} h26 v38 l-13,-7 l-13,7 z`}
+                fill={team.main}
+                stroke={INK}
+                strokeWidth="2.5"
+                strokeLinejoin="round"
+              />
+              <path d={`M${keepCx},${KEEP.top + 2} h13 v38 l-13,-7 z`} fill={INK} opacity="0.1" />
+              {bannerSeed && (
+                <g transform={`translate(${keepCx - 9} ${KEEP.top + 7}) scale(0.18)`}>
+                  <ClanBanner seed={bannerSeed} size={100} />
+                </g>
+              )}
             </g>
           )}
+
+          {/* Le donjon entamé se fissure ; abattu, il se fend et fume */}
+          {(keepDown || keepHurt) && (
+            <g stroke={INK} strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" opacity={keepDown ? 0.75 : 0.45} clipPath={`url(#${uid}-keep)`}>
+              <path d={`M${KEEP.x + 8},${KEEP.top + 4} l7,14 l-5,10 l7,12`} />
+              {keepDown && <path d={`M${KEEP.x + 70},${KEEP.top + 8} l-8,12 l5,11`} />}
+            </g>
+          )}
+          {keepDown && <Smoke x={keepCx + 6} y={KEEP.top - 18} cls={`${uid}-smoke`} scale={1.2} />}
         </g>
 
-        {/* ══════════════════ La courtine, derrière les tours ══════════════════ */}
-        <g>
-          <path
-            d={crenelated(8, 96, 284, 16, 19, 7)}
-            fill="#CFC2AC"
-            stroke={INK}
-            strokeWidth="4"
-            strokeLinejoin="round"
-          />
-          <Courses x={8} y={96} w={284} h={16} clip={`${uid}-wall`} />
-        </g>
+        {/* ══════════════════ La courtine, entre les châtelets ══════════════════ */}
+        {walls.map((w, i) => (
+          <g key={i}>
+            <path d={crenelated(w.x, WALL_TOP, w.w, GROUND - WALL_TOP, 2, 7)} fill="#E3D7C1" stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
+            <Courses x={w.x} y={WALL_TOP} w={w.w} h={GROUND - WALL_TOP} clip={`${uid}-w${i}`} block={16} />
+            <rect x={w.x} y={WALL_TOP} width={w.w} height="6" fill={INK} opacity="0.08" clipPath={`url(#${uid}-w${i})`} />
+          </g>
+        ))}
 
-        {/* ══════════════════ Les trois tours-portes ══════════════════ */}
+        {/* ══════════════════ Les trois châtelets ══════════════════ */}
         {gates.map((g, i) => {
-          const x = 20 + i * 96;
+          const x = GH.xs[i];
+          const cx = x + GH.w / 2;
           const st = gateState(g);
           const pct = g.hpMax > 0 ? Math.max(0, Math.min(1, g.hp / g.hpMax)) : 0;
           const damage = 1 - pct;
@@ -234,164 +452,203 @@ export default function ClanCastle({
           const isThreatened = threat === g.name;
           const clickable = !!onGateClick;
           const fallen = st === 'tombee';
+          const bodyX = x + 14;
+          const bodyW = GH.w - 28;
+          const body = crenelated(bodyX, GH.bodyTop, bodyW, GROUND - GH.bodyTop, 3, 9, MISSING[st]);
+          const stone = STONE[st];
+
+          // Les toits des tourelles tombent avant la porte : l'œil voit
+          // l'érosion de loin, avant même de lire la jauge.
+          const leftRoofBroken = st === 'tombee';
+          const rightRoofBroken = st === 'tombee' || st === 'critique';
+
+          // Le châtelet du centre est coiffé de créneaux, pas de toits : des
+          // toits pointus y masquaient la bannière et les fenêtres du donjon.
+          const roofed = i !== 1;
+
+          const turret = (tx: number, side: 'l' | 'r', broken: boolean) => (
+            <g>
+              <rect x={tx} y={GH.turretTop} width={GH.turretW} height={GROUND - GH.turretTop} fill={stone} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
+              <Courses x={tx} y={GH.turretTop} w={GH.turretW} h={GROUND - GH.turretTop} clip={`${uid}-t${side}${i}`} block={10} />
+              <rect x={tx + GH.turretW - 7} y={GH.turretTop} width="7" height={GROUND - GH.turretTop} fill={INK} opacity="0.08" />
+              {/* Archère */}
+              {!fallen && (
+                <path d={`M${tx + GH.turretW / 2},${GH.turretTop + 16} v10`} stroke={INK} strokeWidth="3" strokeLinecap="round" />
+              )}
+              {roofed ? (
+                <>
+                  {/* Parapet plein, un peu plus large que la tourelle */}
+                  <rect x={tx - 3} y={GH.turretTop - 7} width={GH.turretW + 6} height="8" rx="1.5" fill={stone} stroke={INK} strokeWidth="3" />
+                  <ConeRoof cx={tx + GH.turretW / 2} base={GH.turretTop - 7} half={GH.turretW / 2 + 5} height={26} color={team.main} broken={broken} />
+                  {!broken && <Pennant x={tx + GH.turretW / 2} y={GH.turretTop - 33} color={team.main} />}
+                </>
+              ) : (
+                <path
+                  d={crenelated(tx - 3, GH.turretTop - 1, GH.turretW + 6, 9, 2, 7, broken ? [1] : [])}
+                  fill={stone}
+                  stroke={INK}
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                />
+              )}
+            </g>
+          );
 
           return (
             <g
               key={g.name}
+              className={`${uid}-gate${clickable ? ' cursor-pointer' : ''}`}
               onClick={clickable ? () => onGateClick!(g.name) : undefined}
-              className={clickable ? 'cursor-pointer' : undefined}
+              onKeyDown={
+                clickable
+                  ? (e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        onGateClick!(g.name);
+                      }
+                    }
+                  : undefined
+              }
+              tabIndex={clickable ? 0 : undefined}
               role={clickable ? 'button' : undefined}
               aria-label={
-                `Porte ${g.name}, ${g.fallen ? 'tombée' : `${g.hp} sur ${g.hpMax} points`}` +
+                `Porte ${g.name}, ${fallen ? 'tombée' : `${g.hp} sur ${g.hpMax} points`}` +
+                (isHot ? ', désignée' : '') +
                 (isThreatened ? ", visée par l'ennemi" : '')
               }
             >
-              {/* Corps de la tour, créneaux compris */}
-              <path
-                d={crenelated(x, TOWER_TOP, 76, GROUND - TOWER_TOP, 5, 10, MISSING[st])}
-                fill={STONE[st]}
-                stroke={INK}
-                strokeWidth="4"
-                strokeLinejoin="round"
-              />
-              <Courses x={x} y={TOWER_TOP} w={76} h={GROUND - TOWER_TOP} clip={`${uid}-t${i}`} />
-              <rect
-                x={x + 54}
-                y={TOWER_TOP}
-                width={22}
-                height={GROUND - TOWER_TOP}
-                fill={INK}
-                opacity="0.09"
-                clipPath={`url(#${uid}-t${i})`}
-              />
-
-              {/* Mâchicoulis : le bandeau saillant sous les créneaux */}
-              <g stroke={INK} strokeWidth="2.5" clipPath={`url(#${uid}-t${i})`}>
-                <line x1={x} y1={TOWER_TOP + 12} x2={x + 76} y2={TOWER_TOP + 12} />
-                {[10, 25, 40, 55, 66].map((o) => (
-                  <line key={o} x1={x + o} y1={TOWER_TOP + 12} x2={x + o} y2={TOWER_TOP + 4} strokeWidth="2" opacity="0.6" />
-                ))}
-              </g>
-
-              {/* Archères, de part et d'autre de la porte */}
-              {!fallen && [16, 60].map((o) => (
-                <path
-                  key={o}
-                  d={`M${x + o},${TOWER_TOP + 24} v9 M${x + o - 3.5},${TOWER_TOP + 28} h7`}
-                  stroke={INK}
-                  strokeWidth="3"
-                  strokeLinecap="round"
+              {/* Halo de menace — révélé par l'Éclaireur. Plus large que le halo
+                  de désignation pour que les deux se lisent quand ils tombent
+                  sur la même porte : on frappe là où on est frappé. */}
+              {isThreatened && (
+                <rect
+                  x={x - 9}
+                  y={GH.turretTop - 52}
+                  width={GH.w + 18}
+                  height={GROUND - GH.turretTop + 58}
+                  rx="16"
+                  fill="#e5484d"
+                  fillOpacity="0.07"
+                  stroke="#e5484d"
+                  strokeWidth="3.5"
+                  className={`${uid}-pulse`}
                 />
-              ))}
+              )}
+
+              {/* Corps central, crénelé, avec ses mâchicoulis */}
+              <path d={body} fill={stone} stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
+              <Courses x={bodyX} y={GH.bodyTop} w={bodyW} h={GROUND - GH.bodyTop} clip={`${uid}-b${i}`} />
+              <g clipPath={`url(#${uid}-b${i})`}>
+                <rect x={bodyX} y={GH.bodyTop} width={bodyW} height="7" fill={INK} opacity="0.09" />
+                <path d={corbels(bodyX, GH.bodyTop + 7, bodyW, 5)} fill="none" stroke={INK} strokeWidth="2" opacity="0.5" />
+              </g>
 
               {/* ── La porte ── */}
               {fallen ? (
                 <g>
                   {/* Baie éventrée : on voit à travers */}
-                  <path d={`M${x + 21},${GROUND} v-24 a17,17 0 0,1 34,0 v24 z`} fill="#241D1B" stroke={INK} strokeWidth="3.5" />
-                  {/* Herse arrachée, tordue en travers */}
-                  <path
-                    d={`M${x + 25},${GROUND} l6,-20 l11,9 l9,-13 l4,24`}
-                    fill="none"
-                    stroke="#8E8070"
-                    strokeWidth="3.5"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                  {/* Gravats au pied de la brèche */}
-                  <g fill="#9A8B78" stroke={INK} strokeWidth="2" strokeLinejoin="round">
-                    <path d={`M${x + 8},${GROUND} l7,-8 l9,3 l2,5 z`} />
-                    <path d={`M${x + 52},${GROUND} l6,-6 l10,2 l3,4 z`} />
-                    <path d={`M${x + 34},${GROUND} l5,-5 l7,2 l1,3 z`} />
+                  <path d={`M${cx - 16},${GROUND} v-22 a16,16 0 0,1 32,0 v22 z`} fill="#2B211C" stroke={INK} strokeWidth="3.5" strokeLinejoin="round" />
+                  {/* Vantaux arrachés, en travers de la brèche */}
+                  <g fill="#B87A44" stroke={INK} strokeWidth="2.5" strokeLinejoin="round">
+                    <path d={`M${cx - 18},${GROUND - 2} l13,-20 l6,4 l-11,18 z`} />
+                    <path d={`M${cx + 3},${GROUND} l15,-9 l4,6 l-13,5 z`} />
                   </g>
                 </g>
               ) : (
                 <g>
                   {/* Voussoirs de l'arc */}
                   <path
-                    d={`M${x + 18},${GROUND} v-26 a20,20 0 0,1 40,0 v26`}
-                    fill="#C2B39B"
+                    d={`M${cx - 18},${GROUND} v-24 a18,18 0 0,1 36,0 v24`}
+                    fill="#D6C7AD"
                     stroke={INK}
                     strokeWidth="3.5"
                     strokeLinejoin="round"
                   />
-                  {/* Baie */}
-                  <path d={`M${x + 23},${GROUND} v-23 a15,15 0 0,1 30,0 v23 z`} fill="#5E4A3D" stroke={INK} strokeWidth="3" />
-                  {/* Herse à barreaux — pas un aplat : on voit la grille */}
-                  <g stroke="#241D1B" strokeWidth="2.2" opacity="0.8">
-                    {[30, 38, 46].map((o) => (
-                      <line key={o} x1={x + o} y1={GROUND} x2={x + o} y2={GROUND - 30} />
-                    ))}
-                    {[10, 20].map((o) => (
-                      <line key={o} x1={x + 24} y1={GROUND - o} x2={x + 52} y2={GROUND - o} />
-                    ))}
+                  {/* Clé de voûte */}
+                  <path d={`M${cx - 3.5},${GROUND - 43} h7 l-1.5,6 h-4 z`} fill="#C8B796" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+                  {/* Vantaux de bois, planches et ferrures */}
+                  <path d={`M${cx - 13},${GROUND} v-22 a13,13 0 0,1 26,0 v22 z`} fill="#C98A4B" stroke={INK} strokeWidth="3" strokeLinejoin="round" />
+                  <g stroke={INK} strokeLinecap="round">
+                    <line x1={cx} y1={GROUND} x2={cx} y2={GROUND - 35} strokeWidth="2.5" />
+                    <line x1={cx - 7} y1={GROUND} x2={cx - 7} y2={GROUND - 31} strokeWidth="1.4" opacity="0.4" />
+                    <line x1={cx + 7} y1={GROUND} x2={cx + 7} y2={GROUND - 31} strokeWidth="1.4" opacity="0.4" />
+                    <line x1={cx - 13} y1={GROUND - 9} x2={cx + 13} y2={GROUND - 9} strokeWidth="3" />
+                    <line x1={cx - 13} y1={GROUND - 22} x2={cx + 13} y2={GROUND - 22} strokeWidth="3" />
                   </g>
+                  <circle cx={cx - 3.5} cy={GROUND - 15} r="1.6" fill={INK} />
+                  <circle cx={cx + 3.5} cy={GROUND - 15} r="1.6" fill={INK} />
                 </g>
               )}
 
-              {/* Fissures : opacité proportionnelle aux dégâts, aucun asset */}
-              <g
-                stroke={INK}
-                strokeWidth="2.5"
-                fill="none"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                opacity={Math.max(0, damage * 0.8)}
-                clipPath={`url(#${uid}-t${i})`}
-              >
-                <path d={`M${x + 9},${TOWER_TOP + 16} l8,13 l-5,11 l6,9`} />
-                <path d={`M${x + 67},${TOWER_TOP + 26} l-9,14 l6,10 l-4,8`} />
-                <path d={`M${x + 38},${TOWER_TOP + 2} l-5,12 l8,9`} />
-              </g>
+              {/* Les deux tourelles, par-dessus les bords du corps */}
+              {turret(x, 'l', leftRoofBroken)}
+              {turret(x + GH.w - GH.turretW, 'r', rightRoofBroken)}
 
-              {/* Halo de menace — révélé par l'Éclaireur. Tracé plus large que
-                  le halo de désignation pour que les deux se lisent quand ils
-                  tombent sur la même porte : on frappe là où on est frappé. */}
-              {isThreatened && (
-                <rect
-                  x={x - 10}
-                  y={TOWER_TOP - 19}
-                  width="96"
-                  height={GROUND - TOWER_TOP + 30}
-                  rx="12"
+              {/* Fissures : elles s'ajoutent à mesure que la porte encaisse */}
+              {damage > 0.05 && (
+                <g
+                  stroke={INK}
+                  strokeWidth="2.3"
                   fill="none"
-                  stroke="#C8102E"
-                  strokeWidth="4"
-                />
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  opacity={Math.min(0.8, damage * 0.85)}
+                  clipPath={`url(#${uid}-b${i})`}
+                >
+                  <path d={`M${bodyX + 5},${GH.bodyTop + 12} l7,10 l-4,9 l5,8`} />
+                  {damage > 0.33 && <path d={`M${bodyX + bodyW - 6},${GH.bodyTop + 16} l-7,11 l4,8`} />}
+                  {damage > 0.66 && <path d={`M${cx + 4},${GH.bodyTop - 4} l-4,9 l6,6`} />}
+                </g>
               )}
 
-              {/* Halo de désignation */}
+              {/* Gravats au pied de la brèche */}
+              {fallen && (
+                <g fill="#B5A58C" stroke={INK} strokeWidth="2.3" strokeLinejoin="round">
+                  <path d={`M${x + 2},${GROUND + 2} l8,-9 l10,3 l2,6 z`} />
+                  <path d={`M${x + GH.w - 24},${GROUND + 2} l7,-7 l11,2 l4,5 z`} />
+                  <circle cx={cx + 20} cy={GROUND - 3} r="3.2" />
+                </g>
+              )}
+
+              {/* Fumée dès l'entame, feu quand la porte est à bout */}
+              {st === 'entamee' && <Smoke x={cx + 8} y={GH.bodyTop - 12} cls={`${uid}-smoke`} scale={0.6} />}
+              {st === 'critique' && (
+                <>
+                  <Smoke x={cx + 4} y={GH.bodyTop - 20} cls={`${uid}-smoke`} scale={0.75} />
+                  <Flame x={cx + 2} y={GH.bodyTop - 1} cls={`${uid}-flame`} />
+                </>
+              )}
+              {fallen && <Smoke x={cx - 2} y={GH.bodyTop - 4} cls={`${uid}-smoke`} />}
+
+              {/* Halo de désignation — pointillés qui défilent : « on y va » */}
               {isHot && (
                 <rect
-                  x={x - 5}
-                  y={TOWER_TOP - 14}
-                  width="86"
-                  height={GROUND - TOWER_TOP + 20}
-                  rx="9"
+                  x={x - 4}
+                  y={GH.turretTop - 47}
+                  width={GH.w + 8}
+                  height={GROUND - GH.turretTop + 49}
+                  rx="13"
                   fill="none"
                   stroke="#ff6a1a"
-                  strokeWidth="4"
-                  strokeDasharray="7 5"
+                  strokeWidth="3.5"
+                  strokeDasharray="8 4"
+                  strokeLinecap="round"
+                  className={`${uid}-march`}
                 />
               )}
 
               {/* Jauge de PV */}
-              <rect x={x + 6} y="150" width="64" height="9" rx="4.5" fill="#fff" stroke={INK} strokeWidth="2.5" />
-              <rect
-                x={x + 8}
-                y="152"
-                width={Math.max(0, 60 * pct)}
-                height="5"
-                rx="2.5"
-                fill={pct > 0.5 ? '#1E7A46' : pct > 0.2 ? '#ffb547' : '#C8102E'}
-              />
+              <rect x={x + 9} y={GROUND + 12} width={GH.w - 18} height="10" rx="5" fill={PAPER} stroke={INK} strokeWidth="2.5" />
+              {pct > 0 && (
+                <rect x={x + 11} y={GROUND + 14} width={Math.max(6, (GH.w - 22) * pct)} height="6" rx="3" fill={GAUGE[st]} />
+              )}
 
               <text
-                x={x + 38}
-                y="176"
+                x={cx}
+                y={GROUND + 42}
                 textAnchor="middle"
                 fill={INK}
-                fontSize="13"
+                fontSize="14"
                 fontWeight="700"
                 style={{ textTransform: 'capitalize' }}
               >
@@ -402,51 +659,75 @@ export default function ClanCastle({
         })}
       </svg>
 
-      {/* ── Le donjon, en chiffres ──
-          Sur le dessin, ses PV ne se lisent que dans la hauteur de la
-          bannière : illisible, alors que c'est LA jauge qui décide de la
-          guerre dès qu'une porte est tombée (les assauts sur une brèche
-          frappent le donjon, voir clanCombat.resolveGates). */}
-      <div className="mt-2 flex items-center gap-2 rounded-lg bg-gray-50 px-2.5 py-1.5">
-        <span className="text-[11px] font-bold uppercase tracking-wide text-gray-500">Donjon</span>
-        <span className="h-2 flex-1 overflow-hidden rounded-full bg-gray-200">
-          <span
-            className={`block h-full rounded-full ${
-              keepPct > 0.5 ? 'bg-emerald-600' : keepPct > 0.2 ? 'bg-amber-400' : 'bg-red-600'
-            }`}
-            style={{ width: `${keepPct * 100}%` }}
-          />
-        </span>
-        <span
-          className={`text-[11px] font-bold tabular-nums ${keepDown ? 'text-red-600' : 'text-gray-800'}`}
-        >
-          {keepDown ? 'abattu' : `${keepHp}/${keepHpMax}`}
-        </span>
-      </div>
-
-      {/* Chiffres, sous le dessin : l'état ne doit jamais reposer
-          sur la seule couleur */}
-      <div className="mt-1 grid grid-cols-3 gap-2 text-center">
-        {gates.map((g) => {
-          const st = gateState(g);
-          return (
-            <div key={g.name} className="text-[11px] leading-tight">
-              <p className="font-bold tabular-nums text-gray-800">
-                {g.fallen ? '—' : `${g.hp}/${g.hpMax}`}
-              </p>
-              <p
-                className={
-                  st === 'tombee' ? 'font-bold text-red-600'
-                  : st === 'critique' ? 'font-semibold text-orange-600'
-                  : 'text-gray-400'
-                }
-              >
-                {st === 'tombee' ? 'tombée' : st === 'critique' ? 'critique' : st === 'entamee' ? 'entamée' : 'intacte'}
-              </p>
+      {/* ── Les bulles : une par porte, la pointe tournée vers elle ── */}
+      {bubbles && (
+        <div className="mt-1 grid grid-cols-3 gap-2">
+          {gates.map((g) => (
+            <div key={g.name} className="relative min-w-0">
+              {bubbles[g.name] && (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="absolute -top-[7px] left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-l-2 border-t-2 border-[var(--wk-ink)] bg-white"
+                  />
+                  <div className="rounded-2xl border-2 border-[var(--wk-ink)] bg-white px-2 py-1.5 text-[11px] leading-snug shadow-[0_3px_0_rgba(26,21,18,0.9)]">
+                    {bubbles[g.name]}
+                  </div>
+                </>
+              )}
             </div>
-          );
-        })}
-      </div>
+          ))}
+        </div>
+      )}
+
+      {details && (
+        <>
+          {/* ── Le donjon, en chiffres ──
+              Sur le dessin, ses PV ne se lisent que dans la taille de la
+              bannière : illisible, alors que c'est LA jauge qui décide de la
+              guerre dès qu'une porte est tombée (les assauts sur une brèche
+              frappent le donjon, voir clanCombat.resolveGates). */}
+          <div className="mt-2 flex items-center gap-2 rounded-xl bg-[var(--wk-paper-2)] px-3 py-1.5">
+            <span className="font-mono-ui text-[10px] font-bold uppercase tracking-[0.12em] text-[rgba(26,21,18,0.55)]">Donjon</span>
+            <span className="h-2 flex-1 overflow-hidden rounded-full bg-[rgba(26,21,18,0.1)]">
+              <span
+                className="block h-full rounded-full transition-[width] duration-500"
+                style={{
+                  width: `${keepPct * 100}%`,
+                  backgroundColor: keepPct > 0.5 ? '#7ed957' : keepPct > 0.2 ? '#ffb547' : '#e5484d'
+                }}
+              />
+            </span>
+            <span className={`text-[11px] font-bold tabular-nums ${keepDown ? 'text-[#c2272d]' : 'text-[var(--wk-ink)]'}`}>
+              {keepDown ? 'abattu' : `${keepHp}/${keepHpMax}`}
+            </span>
+          </div>
+
+          {/* Chiffres, sous le dessin : l'état ne doit jamais reposer
+              sur la seule couleur */}
+          <div className="mt-1.5 grid grid-cols-3 gap-2 text-center">
+            {gates.map((g) => {
+              const st = gateState(g);
+              return (
+                <div key={g.name} className="text-[11px] leading-tight">
+                  <p className="font-bold tabular-nums text-[var(--wk-ink)]">
+                    {g.fallen ? '—' : `${g.hp}/${g.hpMax}`}
+                  </p>
+                  <p
+                    className={
+                      st === 'tombee' ? 'font-bold text-[#c2272d]'
+                      : st === 'critique' ? 'font-semibold text-[#c24a0a]'
+                      : 'text-[rgba(26,21,18,0.45)]'
+                    }
+                  >
+                    {STATE_LABEL[st]}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
     </div>
   );
 }

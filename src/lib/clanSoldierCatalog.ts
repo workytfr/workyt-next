@@ -61,7 +61,7 @@ export const SOLDIER_CATALOG: SoldierDef[] = [
   { key: 'medecin', name: 'Médecin de camp', emoji: '🩺', kind: 'soutien', cost: 120, atk: 0, def: 0,
     image: IMG('medecin.png'), effect: 'heal_soldier', description: 'Remet 1 unité à 100 % chaque jour.' },
   { key: 'forgeron', name: 'Forgeron', emoji: '🔨', kind: 'soutien', cost: 140, atk: 0, def: 0,
-    image: IMG('forgeron.png'), effect: 'repair', description: 'Répare 40 PV sur sa porte chaque jour.' },
+    image: IMG('forgeron.png'), effect: 'repair', description: 'Posté en défense, répare 40 PV sur sa porte chaque nuit.' },
   { key: 'etendard', name: 'Porte-étendard', emoji: '🚩', kind: 'soutien', cost: 160, atk: 0, def: 0,
     image: IMG('Porte.png'), effect: 'banner', description: '+10 % à toutes les unités de sa porte.' }
 ];

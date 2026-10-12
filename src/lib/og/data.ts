@@ -241,7 +241,11 @@ export async function profileOg(id: string): Promise<ProfileOg | null> {
         }
     }
     if (!photo && custom?.profileImage?.isActive && custom.profileImage.filename) photo = `/profile/${custom.profileImage.filename}`;
-    const border = custom?.profileBorder?.isActive && custom.profileBorder.filename ? `/profile/contour/${custom.profileBorder.filename}` : null;
+    // Les contours dessinés (anim:<id>) n'ont pas de fichier : l'image de partage
+    // retombe sur l'anneau par défaut.
+    const border = custom?.profileBorder?.isActive && custom.profileBorder.filename && !custom.profileBorder.filename.startsWith("anim:")
+        ? `/profile/contour/${custom.profileBorder.filename}`
+        : null;
     return {
         id: String(u._id),
         username: u.username,

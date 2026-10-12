@@ -145,7 +145,9 @@ export function supportEffects(soldiers: CombatSoldier[]): SupportEffects {
         soldierHeals++;
         break;
       case 'repair':
-        if (s.gate) repairByGate[s.gate] += FORGERON_REPAIR;
+        // Il répare NOS remparts : posté en garnison. Envoyé à l'assaut, il
+        // se trouve devant la porte ennemie du même nom — rien à réparer.
+        if (s.gate && s.stance === 'garnison') repairByGate[s.gate] += FORGERON_REPAIR;
         break;
       case 'reveal':
         scouts++;
@@ -180,9 +182,18 @@ const emptyGates = (): Record<GateName, number> => ({ nord: 0, est: 0, sud: 0 })
  * il suffisait de lui assigner une porte sans le mettre en assaut ni en
  * garnison : il donnait son bonus tout en échappant à l'usure, qui ne frappe
  * que les unités engagées.
+ *
+ * ⚠️ Même porte ET même posture. « Nord » en assaut, c'est la porte nord
+ * ADVERSE ; « nord » en garnison, c'est la NÔTRE : deux champs de bataille
+ * distincts. Un étendard planté sur nos remparts n'encourage pas ceux qui
+ * chargent chez l'ennemi.
  */
-function bannerBonus(soldiers: CombatSoldier[], gate: GateName): number {
-  return soldiers.some((s) => s.banner && s.gate === gate && s.stance !== null) ? 1.1 : 1;
+function bannerBonus(
+  soldiers: CombatSoldier[],
+  gate: GateName,
+  stance: 'assaut' | 'garnison'
+): number {
+  return soldiers.some((s) => s.banner && s.gate === gate && s.stance === stance) ? 1.1 : 1;
 }
 
 /**
@@ -203,7 +214,7 @@ export function soldierAssault(soldiers: CombatSoldier[]): {
 
   for (const s of soldiers) {
     if (s.stance !== 'assaut' || !s.gate || s.atk <= 0) continue;
-    const value = s.atk * bannerBonus(soldiers, s.gate);
+    const value = s.atk * bannerBonus(soldiers, s.gate, 'assaut');
     if (s.gatesOnly) ram[s.gate] += value;
     else if (s.sapper) sapper[s.gate] += value;
     else normal[s.gate] += value;
@@ -222,7 +233,7 @@ export function soldierDefense(soldiers: CombatSoldier[]): Record<GateName, numb
   const out = emptyGates();
   for (const s of soldiers) {
     if (s.stance !== 'garnison' || !s.gate || s.def <= 0) continue;
-    out[s.gate] += s.def * bannerBonus(soldiers, s.gate);
+    out[s.gate] += s.def * bannerBonus(soldiers, s.gate, 'garnison');
   }
   for (const g of GATES) out[g] = Math.round(out[g]);
   return out;
@@ -326,6 +337,9 @@ export interface GateOutcome {
    */
   keepDamage: number;
   overflow: number;
+  /** Quelqu'un a-t-il frappé ici — joueurs, sapeurs ou béliers ? Décide de
+   *  l'usure des unités postées sur cette porte. */
+  attacked: boolean;
   hpBefore: number;
   hpAfter: number;
   justFell: boolean;
@@ -390,6 +404,7 @@ export function resolveGates(
       damage,
       keepDamage,
       overflow,
+      attacked: a + sap + ram > 0,
       hpBefore: g.hp,
       hpAfter,
       justFell,
@@ -582,4 +597,55 @@ export function autoHealed(members: CombatMember[], now: Date): string[] {
   return members
     .filter((m) => m.wounded && m.woundedAt && m.woundedAt.getTime() <= limit)
     .map((m) => m.userId);
+}
+
+export interface SoldierLosses {
+  /** Unités qui survivent, avec leur nouvelle usure */
+  worn: { id: string; wear: number }[];
+  /** Unités détruites cette nuit */
+  destroyed: CombatSoldier[];
+}
+
+/**
+ * Usure et pertes de la garnison après une journée.
+ *
+ * ⚠️ Une unité n'a pas le même champ de bataille selon sa posture :
+ *  - en GARNISON, `gate` désigne NOTRE porte : elle s'use si l'ennemi y a
+ *    frappé, et disparaît si cette porte tombe ;
+ *  - en ASSAUT, `gate` désigne la porte ADVERSE : elle s'use au combat, mais
+ *    la chute de notre porte du même nom ne la concerne pas.
+ * Mélanger les deux faisait périr un assaut lancé sur la porte nord ennemie
+ * dès que NOTRE porte nord tombait — et user une garnison épargnée parce que
+ * nos propres troupes se battaient chez l'adversaire.
+ *
+ * Les unités à la caserne (sans porte ou sans posture) ne s'usent jamais.
+ */
+export function soldierLosses(
+  soldiers: CombatSoldier[],
+  outcomesOnMe: GateOutcome[],
+  outcomesOnEnemy: GateOutcome[]
+): SoldierLosses {
+  const mine = new Map(outcomesOnMe.map((o) => [o.gate, o]));
+  const theirs = new Map(outcomesOnEnemy.map((o) => [o.gate, o]));
+  const worn: SoldierLosses['worn'] = [];
+  const destroyed: CombatSoldier[] = [];
+
+  for (const s of soldiers) {
+    if (!s.gate || s.stance === null) continue;
+
+    const field = s.stance === 'garnison' ? mine.get(s.gate) : theirs.get(s.gate);
+    if (!field) continue;
+
+    if (s.stance === 'garnison' && field.justFell) {
+      destroyed.push(s);
+      continue;
+    }
+    if (!field.attacked) continue; // déployée, mais aucun combat ici
+
+    const wear = s.wear - WEAR_PER_ASSAULT;
+    if (wear <= 0) destroyed.push(s);
+    else worn.push({ id: s.id, wear });
+  }
+
+  return { worn, destroyed };
 }

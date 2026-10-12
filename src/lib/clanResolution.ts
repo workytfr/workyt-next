@@ -7,7 +7,6 @@ import { seasonKey, weekStart, parisDay } from '@/lib/clanService';
 import ClanSoldier from '@/models/ClanSoldier';
 import { SOLDIER_BY_KEY } from '@/lib/clanSoldiers';
 import {
-  WEAR_PER_ASSAULT,
   computeAssault,
   computeDefense,
   resolveGates,
@@ -21,6 +20,7 @@ import {
   weakestGate,
   emptyRoles,
   supportEffects,
+  soldierLosses,
   type CombatMember,
   type CombatSide,
   type CombatSoldier,
@@ -164,8 +164,17 @@ export async function resolveDay(now: Date = new Date(), which: 'current' | 'pre
   const clans = await Clan.find({ season, resolved: false }).lean<any[]>();
   if (clans.length === 0) return { resolved: false, reason: 'no_clans', ...base };
 
-  const already = await ClanDailyResult.countDocuments({ season, day });
-  if (already > 0) return { resolved: false, reason: 'already_resolved', ...base };
+  // Le verrou est PAR CLAN, pas par journée. Avec un verrou global, une seule
+  // paire en erreur (ou un process coupé en plein milieu) suffisait : les
+  // paires suivantes n'étaient jamais résolues, et le passage suivant répondait
+  // « déjà résolu » pour tout le monde — la journée était perdue pour elles.
+  const resolvedIds = new Set(
+    (await ClanDailyResult.find({ season, day }).select('clan').lean<any[]>())
+      .map((r) => r.clan.toString())
+  );
+  if (resolvedIds.size >= clans.length) {
+    return { resolved: false, reason: 'already_resolved', ...base };
+  }
 
   const byId = new Map(clans.map((c) => [c._id.toString(), c]));
   const done = new Set<string>();
@@ -180,8 +189,24 @@ export async function resolveDay(now: Date = new Date(), which: 'current' | 'pre
 
     done.add(id);
     done.add(rival._id.toString());
-    await resolvePair(clan, rival, season, day, now);
-    pairs++;
+    // Une paire à moitié écrite ne se rejoue pas : elle recréditerait le camp
+    // déjà persisté. Elle est signalée, la modération tranche.
+    const dejaA = resolvedIds.has(id);
+    const dejaB = resolvedIds.has(rival._id.toString());
+    if (dejaA || dejaB) {
+      if (dejaA !== dejaB) {
+        console.error(`[Clans] Paire ${clan.name} / ${rival.name} à moitié résolue au jour ${day}`);
+      }
+      continue;
+    }
+
+    try {
+      await resolvePair(clan, rival, season, day, now);
+      pairs++;
+    } catch (err) {
+      // Une paire en échec ne prive pas les autres de leur bataille
+      console.error(`[Clans] Échec de résolution ${clan.name} / ${rival.name}, jour ${day}:`, err);
+    }
   }
 
   return { resolved: true, season, day, pairs };
@@ -658,48 +683,29 @@ async function wearSoldiers(
   const soldiers = side.soldiers ?? [];
   if (soldiers.length === 0) return;
 
-  // Une porte est « le théâtre d'un assaut » si des dégâts y ont été échangés
-  const contested = new Set<string>();
-  for (const o of [...outcomesOnMe, ...outcomesOnEnemy]) {
-    if (o.assault > 0) contested.add(o.gate);
-  }
-  // Mes portes tombées : tout ce qui s'y trouvait est perdu, garnison ET soutien
-  const lostGates = new Set(outcomesOnMe.filter((o) => o.justFell).map((o) => o.gate));
-
   const ops: any[] = [];
-  /** Unités réellement perdues — c'est d'elles seules qu'on tire la ferraille */
-  const destroyedSoldiers: CombatSoldier[] = [];
+  const { worn, destroyed: destroyedSoldiers } = soldierLosses(soldiers, outcomesOnMe, outcomesOnEnemy);
 
-  for (const s of soldiers) {
-    if (!s.gate || s.stance === null) continue; // à la caserne : intacte
-
-    if (lostGates.has(s.gate)) {
-      ops.push({ deleteOne: { filter: { _id: new mongoose.Types.ObjectId(s.id) } } });
-      destroyedSoldiers.push(s);
-      continue;
-    }
-    if (!contested.has(s.gate)) continue; // déployée mais aucun combat
-
-    const wear = s.wear - WEAR_PER_ASSAULT;
-    if (wear <= 0) {
-      ops.push({ deleteOne: { filter: { _id: new mongoose.Types.ObjectId(s.id) } } });
-      destroyedSoldiers.push(s);
-    } else {
-      ops.push({
-        updateOne: {
-          filter: { _id: new mongoose.Types.ObjectId(s.id) },
-          update: { $set: { wear } }
-        }
-      });
-    }
+  for (const s of destroyedSoldiers) {
+    ops.push({ deleteOne: { filter: { _id: new mongoose.Types.ObjectId(s.id) } } });
+  }
+  for (const w of worn) {
+    ops.push({
+      updateOne: {
+        filter: { _id: new mongoose.Types.ObjectId(w.id) },
+        update: { $set: { wear: w.wear } }
+      }
+    });
   }
 
   // Médecins de camp : chacun remet UNE unité à 100 %, la plus abîmée d'abord.
-  // Calculé sur l'usure connue en début de nuit — une unité détruite ce soir ne
-  // se soigne pas, on l'exclut.
+  // Sur l'usure APRÈS le combat de la nuit : une unité intacte ce matin et
+  // entamée ce soir doit pouvoir être soignée. Une unité détruite, non.
   if (soldierHeals > 0) {
     const perdues = new Set(destroyedSoldiers.map((s) => s.id));
+    const usureFinale = new Map(worn.map((w) => [w.id, w.wear]));
     const soignables = soldiers
+      .map((s) => ({ id: s.id, wear: usureFinale.get(s.id) ?? s.wear }))
       .filter((s) => !perdues.has(s.id) && s.wear < 100)
       .sort((a, b) => a.wear - b.wear)
       .slice(0, soldierHeals);

@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { toast } from 'sonner';
 import {
   Loader2, Swords, Users, Hammer, ShieldQuestion, Check, Megaphone, Crosshair, Trophy,
-  Telescope, Crown, ArrowUpRight, BookOpen, X, Shield, HeartPulse, Sword, History, ChevronDown
+  Telescope, Crown, ArrowUpRight, BookOpen, X, Shield, HeartPulse, Sword, History, ChevronDown, Lock
 } from 'lucide-react';
 import ClanBanner from '@/components/clan/ClanBanner';
 import ClanCastle, { gateState, type GateState } from '@/components/clan/ClanCastle';
@@ -87,7 +87,17 @@ interface ClanData {
   } | null;
   /** Soldats actuellement à l'assaut / en garnison */
   garrison?: { assaut: number; garnison: number };
+  /** Mon dispositif du jour, porte par porte (calcul de la résolution, à l'instant) */
+  deployment?: {
+    attack: Record<string, GateDeploy>;
+    hold: Record<string, GateDeploy>;
+    healPool: number;
+  };
+  /** Issue des journées déjà jouées */
+  history?: { day: number; outcome: 'win' | 'loss' | 'draw' }[];
 }
+
+interface GateDeploy { players: number; soldiers: number; force: number }
 
 const ROLE_LABEL: Record<string, string> = {
   attaquant: 'Attaquant',
@@ -294,6 +304,8 @@ export default function ClanPage() {
 
   const { clan, rival, me, members = [], rankings, rewards, feed = [] } = data;
   const isAttacker = me?.role === 'attaquant';
+  /** Le serveur fige le rôle dès le premier point du jour (voir setRole) */
+  const roleLocked = (me?.dailyPoints ?? 0) > 0;
 
   return (
     <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
@@ -316,15 +328,16 @@ export default function ClanPage() {
             </p>
           </div>
 
-          <div className="lg:col-span-5">
+          <div className="space-y-3 lg:col-span-5">
+            {rival && (
+              <WarScoreboard
+                mine={clan}
+                rival={rival}
+                day={data.day ?? 1}
+                history={data.history ?? []}
+              />
+            )}
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
-              {rival && (
-                <span className="inline-flex items-center gap-3 rounded-full bg-[var(--wk-ink)] px-5 py-2.5 text-[var(--wk-paper)]">
-                  <span className="font-serif-display text-2xl leading-none tabular-nums">{clan.daysWon}</span>
-                  <span className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-white/60">journées</span>
-                  <span className="font-serif-display text-2xl leading-none tabular-nums">{rival.daysWon}</span>
-                </span>
-              )}
               <button
                 type="button"
                 onClick={() => setShowTutorial(true)}
@@ -377,12 +390,15 @@ export default function ClanPage() {
               threat={rival?.pressureGate ?? rival?.dailyOrder}
               threatShare={rival?.pressureShare}
               scouted={rival?.scouted}
+              deploy={data.deployment?.hold}
             />
 
-            <div className="flex items-center justify-center lg:h-full lg:flex-col lg:justify-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--wk-ink)] text-[var(--wk-accent-2)]">
+            <div className="flex items-center justify-center gap-3 lg:h-full lg:flex-col lg:justify-center">
+              <span className="font-serif-display text-3xl tabular-nums leading-none">{clan.daysWon}</span>
+              <span className="flex h-14 w-14 rotate-3 items-center justify-center rounded-2xl bg-[var(--wk-ink)] text-[var(--wk-accent-2)] shadow-[0_4px_0_var(--wk-accent)]">
                 <Swords className="h-7 w-7" />
               </span>
+              <span className="font-serif-display text-3xl tabular-nums leading-none text-[rgba(26,21,18,0.55)]">{rival?.daysWon ?? 0}</span>
             </div>
 
             {rival ? (
@@ -390,6 +406,7 @@ export default function ClanPage() {
                 side={rival}
                 enemy
                 highlight={isAttacker ? me?.gate ?? clan.dailyOrder : null}
+                deploy={data.deployment?.attack}
                 onGateClick={
                   isAttacker
                     ? (g) => post('gate', '/api/clan/deploy', { action: 'gate', gate: g }, `Tu vises la Porte ${g}`)
@@ -430,9 +447,18 @@ export default function ClanPage() {
             <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
               {/* Rôle */}
               <div>
-                <h3 className="font-semibold">Mon rôle</h3>
+                <h3 className="flex items-center gap-2 font-semibold">
+                  Mon rôle
+                  {roleLocked && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-[var(--wk-paper)] px-2 py-0.5 text-[11px] font-semibold text-[rgba(26,21,18,0.6)]">
+                      <Lock className="h-3 w-3" /> figé jusqu&apos;à minuit
+                    </span>
+                  )}
+                </h3>
                 <p className="mt-1 text-sm text-[rgba(26,21,18,0.62)]">
-                  Les mêmes points produisent un effet différent selon ton rôle.
+                  {roleLocked
+                    ? "Tu as déjà marqué des points aujourd'hui : tu pourras changer de rôle demain, avant ton premier point."
+                    : 'Les mêmes points produisent un effet différent selon ton rôle. Il se fige dès ton premier point du jour.'}
                 </p>
                 <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
                   {Object.keys(ROLE_LABEL).map((r) => {
@@ -441,9 +467,13 @@ export default function ClanPage() {
                       <button
                         key={r}
                         onClick={() => post(r, '/api/clan/role', { role: r }, `Rôle : ${ROLE_LABEL[r]}`)}
-                        disabled={busy !== null || active}
+                        disabled={busy !== null || active || roleLocked}
                         className={`rounded-2xl border-2 p-3.5 text-left transition disabled:cursor-default ${
-                          active ? ROLE_STYLE[r] : 'border-[rgba(26,21,18,0.1)] hover:border-[rgba(26,21,18,0.25)]'
+                          active
+                            ? ROLE_STYLE[r]
+                            : roleLocked
+                              ? 'border-[rgba(26,21,18,0.06)] opacity-50'
+                              : 'border-[rgba(26,21,18,0.1)] hover:border-[rgba(26,21,18,0.25)]'
                         }`}
                       >
                         <span className="flex items-center justify-between font-semibold">
@@ -658,54 +688,176 @@ export default function ClanPage() {
 
 /* ---------------------------------------------------------- morceaux */
 
-/** Une porte : nom, état, jauge de points de structure. */
-function GateBar({
-  gate, onClick, targeted, threatened
+/**
+ * Bulle d'une porte : son état, et ce que MON clan y engage aujourd'hui.
+ *
+ * Chez moi : qui tient la porte, avec quelle défense. Chez l'ennemi : qui
+ * la frappe, avec quelle force. Les forces sont celles que calculerait la
+ * résolution si la journée s'arrêtait maintenant — hors renforts de
+ * sous-effectif, qui dépendent de l'adversaire.
+ */
+function GateBubble({
+  gate, deploy, mine, targeted, threatened, onClick
 }: {
   gate: Gate;
-  onClick?: () => void;
-  /** Porte visée par le joueur / tenue par lui */
+  deploy?: GateDeploy;
+  mine?: boolean;
   targeted?: boolean;
-  /** Porte que l'ennemi vise */
   threatened?: boolean;
+  onClick?: () => void;
 }) {
   const st = gateState(gate);
   const meta = GATE_STATE_META[st];
-  const pct = gate.hpMax > 0 ? Math.max(0, Math.min(100, (gate.hp / gate.hpMax) * 100)) : 0;
+  const Icon = mine ? Shield : Sword;
+  const engaged = !!deploy && (deploy.players > 0 || deploy.soldiers > 0);
   const Tag = onClick ? 'button' : 'div';
 
   return (
     <Tag
-      {...(onClick ? { type: 'button' as const, onClick } : {})}
-      className={`w-full rounded-2xl border p-2.5 text-left transition ${
-        targeted
-          ? 'border-[var(--wk-accent)] bg-[rgba(255,106,26,0.06)]'
-          : threatened
-            ? 'border-[#e5484d] bg-[#fdecec]'
-            : 'border-[rgba(26,21,18,0.08)] bg-white'
-      } ${onClick ? 'hover:border-[var(--wk-accent)]' : ''}`}
+      {...(onClick ? { type: 'button' as const, onClick, title: `Viser la porte ${gate.name}` } : {})}
+      className={`block w-full text-left ${onClick ? 'cursor-pointer' : ''}`}
     >
-      <span className="flex items-center justify-between gap-2">
-        <span className="text-xs font-semibold capitalize">
-          {gate.name}
-          {threatened && <span className="ml-1 text-[#c2272d]">•</span>}
+      <span className="flex items-center justify-between gap-1">
+        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold ${meta.chip}`}>{meta.label}</span>
+        <span className="text-[10px] font-semibold tabular-nums text-[rgba(26,21,18,0.55)]">
+          {gate.fallen ? 'brèche' : `${Math.max(0, gate.hp)}/${gate.hpMax}`}
         </span>
-        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${meta.chip}`}>{meta.label}</span>
       </span>
-      <span className="mt-1.5 block h-1.5 overflow-hidden rounded-full bg-[rgba(26,21,18,0.08)]">
-        <span className="block h-full rounded-full transition-[width] duration-500" style={{ width: `${pct}%`, backgroundColor: meta.bar }} />
-      </span>
-      <span className="mt-1 block text-[10px] tabular-nums text-[rgba(26,21,18,0.5)]">
-        {Math.max(0, gate.hp)} / {gate.hpMax}
-      </span>
+
+      {deploy && (
+        engaged ? (
+          <span className="mt-1.5 block space-y-0.5">
+            <span className="flex items-center gap-1 font-semibold">
+              <Icon className={`h-3 w-3 shrink-0 ${mine ? 'text-[#2f86b3]' : 'text-[#c2272d]'}`} />
+              {deploy.players} {mine ? 'défenseur' : 'attaquant'}{deploy.players > 1 ? 's' : ''}
+            </span>
+            {deploy.soldiers > 0 && (
+              <span className="flex items-center gap-1 text-[rgba(26,21,18,0.65)]">
+                <Users className="h-3 w-3 shrink-0" />
+                {deploy.soldiers} unité{deploy.soldiers > 1 ? 's' : ''}
+              </span>
+            )}
+            <span className="block text-[10px] text-[rgba(26,21,18,0.55)]">
+              {mine ? 'Défense' : 'Force'} <b className="tabular-nums text-[var(--wk-ink)]">{deploy.force}</b>
+            </span>
+          </span>
+        ) : (
+          <span className="mt-1.5 block text-[10px] italic text-[rgba(26,21,18,0.5)]">
+            {mine ? 'Personne ne la tient' : 'Personne ne la vise'}
+          </span>
+        )
+      )}
+
+      {(targeted || threatened) && (
+        <span className="mt-1.5 flex flex-wrap gap-1">
+          {targeted && (
+            <span className="rounded-full bg-[rgba(255,106,26,0.12)] px-1.5 py-0.5 text-[10px] font-bold text-[#c24a0a]">
+              {mine ? 'Ordre du jour' : 'Ta cible'}
+            </span>
+          )}
+          {threatened && (
+            <span className="rounded-full bg-[#fdecec] px-1.5 py-0.5 text-[10px] font-bold text-[#c2272d]">
+              Visée par l&apos;ennemi
+            </span>
+          )}
+        </span>
+      )}
     </Tag>
   );
 }
 
+/** Ms avant le prochain minuit de Paris — l'heure de la bataille. */
+function msToParisMidnight(now = new Date()): number {
+  const p = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Paris' }));
+  const elapsed = ((p.getHours() * 60 + p.getMinutes()) * 60 + p.getSeconds()) * 1000;
+  return 24 * 3600_000 - elapsed;
+}
+
+/**
+ * Le tableau des scores : les journées gagnées de part et d'autre, la frise
+ * des sept batailles, et le temps qui reste avant celle de ce soir.
+ */
+function WarScoreboard({
+  mine, rival, day, history
+}: {
+  mine: ClanSide;
+  rival: ClanSide;
+  day: number;
+  history: { day: number; outcome: 'win' | 'loss' | 'draw' }[];
+}) {
+  const [left, setLeft] = useState(() => msToParisMidnight());
+  useEffect(() => {
+    const t = setInterval(() => setLeft(msToParisMidnight()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+  const h = Math.floor(left / 3600_000);
+  const m = Math.floor((left % 3600_000) / 60_000);
+
+  const byDay = new Map(history.map((r) => [r.day, r.outcome]));
+  const PIP: Record<string, string> = {
+    win: 'bg-[#7ed957] border-[var(--wk-paper)]',
+    loss: 'bg-[#e5484d] border-[var(--wk-paper)]',
+    draw: 'bg-[var(--wk-paper-2)] border-[var(--wk-paper)]'
+  };
+  const lead = mine.daysWon - rival.daysWon;
+
+  return (
+    <div className="rounded-3xl bg-[var(--wk-ink)] p-4 text-[var(--wk-paper)] shadow-[0_5px_0_var(--wk-accent)]">
+      <div className="flex items-center gap-3">
+        <ClanBanner seed={mine.bannerSeed} size={30} label={`Blason de ${mine.name}`} />
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{mine.name}</span>
+        <span className="font-serif-display text-3xl leading-none tabular-nums">{mine.daysWon}</span>
+        <span className="font-mono-ui text-[10px] uppercase tracking-[0.14em] text-white/50">vs</span>
+        <span className="font-serif-display text-3xl leading-none tabular-nums text-white/70">{rival.daysWon}</span>
+        <span className="min-w-0 flex-1 truncate text-right text-sm font-semibold text-white/70">{rival.name}</span>
+        <ClanBanner seed={rival.bannerSeed} size={30} label={`Blason de ${rival.name}`} />
+      </div>
+
+      {/* La frise : une pastille par journée */}
+      <ol className="mt-3 grid grid-cols-7 gap-1.5" aria-label="Les sept batailles de la semaine">
+        {Array.from({ length: 7 }, (_, i) => {
+          const d = i + 1;
+          const outcome = byDay.get(d);
+          const today = d === day && !outcome;
+          return (
+            <li key={d} className="flex flex-col items-center gap-1">
+              <span
+                className={`h-3 w-full rounded-full border-2 ${
+                  outcome ? PIP[outcome]
+                  : today ? 'animate-pulse border-[var(--wk-accent)] bg-[var(--wk-accent)]'
+                  : 'border-white/25 bg-transparent'
+                }`}
+                title={
+                  outcome ? `Jour ${d} : ${outcome === 'win' ? 'gagné' : outcome === 'loss' ? 'perdu' : 'nul'}`
+                  : today ? `Jour ${d} : en cours` : `Jour ${d} : à venir`
+                }
+              />
+              <span className={`font-mono-ui text-[9px] ${today ? 'text-[var(--wk-accent-2)]' : 'text-white/45'}`}>J{d}</span>
+            </li>
+          );
+        })}
+      </ol>
+
+      <p className="mt-2 flex items-center justify-between gap-2 text-xs text-white/65">
+        <span>
+          {lead > 0 ? `Tu mènes de ${lead} journée${lead > 1 ? 's' : ''}`
+          : lead < 0 ? `Tu es mené de ${-lead} journée${lead < -1 ? 's' : ''}`
+          : 'Égalité parfaite'}
+        </span>
+        <span className="font-semibold text-[var(--wk-accent-2)]">
+          Bataille dans {h} h {String(m).padStart(2, '0')}
+        </span>
+      </p>
+    </div>
+  );
+}
+
 function CastleCard({
-  side, mine, enemy, highlight, threat, threatShare, scouted, onGateClick
+  side, mine, enemy, highlight, threat, threatShare, scouted, onGateClick, deploy
 }: {
   side: ClanSide; mine?: boolean; enemy?: boolean;
+  /** Mon dispositif sur les portes de CE château (défense chez moi, assaut chez lui) */
+  deploy?: Record<string, GateDeploy>;
   highlight?: string | null;
   /** Porte visée par l'ennemi — connue seulement avec un Éclaireur */
   threat?: string | null;
@@ -738,8 +890,8 @@ function CastleCard({
         </span>
       </div>
 
-      {/* Le château */}
-      <div className="px-3 pt-3">
+      {/* Le château, posé sur le papier de la charte */}
+      <div className="bg-[linear-gradient(180deg,var(--wk-paper)_0%,#fff_100%)] px-3 pb-1 pt-4">
         <ClanCastle
           gates={side.gates}
           keepHp={side.keepHp}
@@ -749,6 +901,21 @@ function CastleCard({
           highlight={highlight}
           threat={threat}
           onGateClick={onGateClick}
+          details={false}
+          bubbles={Object.fromEntries(
+            side.gates.map((g) => [
+              g.name,
+              <GateBubble
+                key={g.name}
+                gate={g}
+                deploy={deploy?.[g.name]}
+                mine={mine}
+                targeted={highlight === g.name}
+                threatened={mine && threat === g.name}
+                onClick={onGateClick ? () => onGateClick(g.name) : undefined}
+              />
+            ])
+          )}
         />
       </div>
 
@@ -764,25 +931,12 @@ function CastleCard({
           <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[rgba(26,21,18,0.08)]">
             <div
               className="h-full rounded-full transition-[width] duration-500"
-              style={{ width: `${keepPct}%`, backgroundColor: keepDown ? '#e5484d' : mine ? '#6ec1e4' : '#ffb547' }}
+              style={{ width: `${keepPct}%`, backgroundColor: keepPct > 50 ? '#7ed957' : keepPct > 20 ? '#ffb547' : '#e5484d' }}
             />
           </div>
           <p className="mt-1 text-[11px] text-[rgba(26,21,18,0.5)]">
-            Les coups ne l&apos;atteignent qu&apos;une fois la porte tombée.
+            Les coups ne l&apos;atteignent qu&apos;une fois une porte tombée.
           </p>
-        </div>
-
-        {/* Les trois portes */}
-        <div className="grid grid-cols-3 gap-2">
-          {side.gates.map((g) => (
-            <GateBar
-              key={g.name}
-              gate={g}
-              targeted={highlight === g.name}
-              threatened={mine && threat === g.name}
-              onClick={onGateClick ? () => onGateClick(g.name) : undefined}
-            />
-          ))}
         </div>
 
         {/* Légendes : à quoi correspond ce qu'on voit */}

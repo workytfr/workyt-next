@@ -7,6 +7,7 @@ import OwnedCosmetic from '@/models/OwnedCosmetic';
 import ProfileCustomization from '@/models/ProfileCustomization';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { getAccessory, sanitizeLook } from '@/lib/avatarLook';
+import { borderFilename } from '@/lib/profileFrames';
 
 // GET /api/inventory - Récupérer l'inventaire de l'utilisateur
 export async function GET(req: NextRequest) {
@@ -88,17 +89,7 @@ export async function POST(req: NextRequest) {
         updateData['profileImage.filename'] = cosmeticId;
         updateData['profileImage.isActive'] = true;
       } else if (cosmeticType === 'profile_border') {
-        // Mapper les valeurs aux fichiers
-        const borderFileMap: Record<string, string> = {
-          'gold': 'gold.svg',
-          'silver': 'silver.svg',
-          'eclair_green': 'eclair_green.apng',
-          'fumee': 'fumee.png',
-          'poison_orange': 'poison_orange.png',
-          'halloween_pumpkins_apng': 'halloween_pumpkins_apng.png',
-          'yumego_manga': 'yumego_manga.apng',
-        };
-        updateData['profileBorder.filename'] = borderFileMap[cosmeticId] || cosmeticId;
+        updateData['profileBorder.filename'] = borderFilename(cosmeticId);
         updateData['profileBorder.isActive'] = true;
       } else if (cosmeticType === 'username_color') {
         updateData['usernameColor.type'] = cosmeticId;

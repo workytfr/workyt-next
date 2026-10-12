@@ -10,6 +10,7 @@ import OwnedCosmetic from '@/models/OwnedCosmetic';
 import mongoose from 'mongoose';
 import { GEM_CONFIG } from '@/lib/gemConfig';
 import { getAccessory } from '@/lib/avatarLook';
+import { borderFilename } from '@/lib/profileFrames';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
@@ -116,18 +117,8 @@ export async function POST(req: NextRequest) {
       updateData['profileImage.filename'] = itemValue;
       updateData['profileImage.isActive'] = true;
     } else if (itemType === 'profileBorder') {
-      // Mapper les valeurs aux fichiers SVG/PNG
-      const borderFileMap: { [key: string]: string } = {
-        'gold': 'gold.svg',
-        'silver': 'silver.svg',
-        'eclair_green': 'eclair_green.apng',
-        'fumee': 'fumee.png',
-        'poison_orange': 'poison_orange.png',
-        'halloween_pumpkins_apng': 'halloween_pumpkins_apng.png',
-        'yumego_manga': 'yumego_manga.apng'
-      };
-      const filename = borderFileMap[itemValue] || itemValue;
-      updateData['profileBorder.filename'] = filename;
+      // Fichier image, ou « anim:<id> » pour un contour dessiné (lib/profileFrames)
+      updateData['profileBorder.filename'] = borderFilename(itemValue);
       updateData['profileBorder.isActive'] = true;
     } else if (itemType === 'avatarAccessory') {
       // Équipé à l'achat, dans son emplacement (remplace l'accessoire précédent)

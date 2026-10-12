@@ -7,6 +7,8 @@ import { getPrestigeInfo } from "@/lib/rankSystem";
 import PrestigeGem from "@/components/ui/PrestigeGem";
 import { generatedAvatarUri } from "@/lib/blobatar";
 import { sanitizeLook, type AvatarLook } from "@/lib/avatarLook";
+import AnimatedFrame from "@/components/ui/frames/AnimatedFrame";
+import { animatedFrameId } from "@/lib/profileFrames";
 
 // Interface pour les personnalisations
 interface ProfileCustomization {
@@ -247,6 +249,11 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
 
     const profileImage = getProfileImage();
     const profileBorder = getProfileBorder();
+    // Contour dessiné en SVG (anim:<id>) : il remplace l'image du contour
+    const animatedBorder = (() => {
+        const custom = customization || propCustomization;
+        return custom?.profileBorder?.isActive ? animatedFrameId(custom.profileBorder.filename) : null;
+    })();
 
     // Contenu de l'avatar (cercle uniquement)
     const avatarContent = (
@@ -274,7 +281,9 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
                 </div>
 
                 {/* Contour personnalisé (en premier plan) */}
-                {profileBorder && (
+                {animatedBorder ? (
+                    <AnimatedFrame id={animatedBorder} />
+                ) : profileBorder && (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img 
                         src={profileBorder}
