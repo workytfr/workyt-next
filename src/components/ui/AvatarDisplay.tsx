@@ -4,6 +4,8 @@ import React, { useState, useEffect } from "react";
 import { generatedAvatarUri } from "@/lib/blobatar";
 import { sanitizeLook, type AvatarLook } from "@/lib/avatarLook";
 import { fetchCustomization } from "@/lib/customizationClient";
+import AnimatedFrame from "@/components/ui/frames/AnimatedFrame";
+import { animatedFrameId } from "@/lib/profileFrames";
 
 interface AvatarDisplayProps {
     name: string;
@@ -93,8 +95,13 @@ export const AvatarDisplay: React.FC<AvatarDisplayProps> = ({
                 )}
             </div>
 
-            {/* Contour personnalisé */}
-            {profileBorder && (
+            {/* Contour personnalisé : dessiné (anim:<id>) ou image */}
+            {animatedFrameId(profileBorder?.replace('/profile/contour/', '')) ? (
+                <AnimatedFrame
+                    id={animatedFrameId(profileBorder!.replace('/profile/contour/', ''))!}
+                    still={sizeConfig.pixels < 32}
+                />
+            ) : profileBorder && (
                 <img 
                     src={profileBorder}
                     alt="Contour"

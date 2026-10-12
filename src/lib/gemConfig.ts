@@ -1,3 +1,5 @@
+import { ANIMATED_FRAMES } from '@/lib/profileFrames';
+
 // Configuration du système de gemmes
 export const GEM_CONFIG = {
   // Taux de conversion points → gemmes
@@ -49,8 +51,9 @@ export const GEM_CONFIG = {
       fumee: 10,
       poison_orange: 20,
       halloween_pumpkins_apng: 3,
-      yumego_manga: 5
-    }
+      // Contours animés : le prix vit dans lib/profileFrames, une seule source
+      ...Object.fromEntries(ANIMATED_FRAMES.map((f) => [f.id, f.price]))
+    } as Record<string, number>
   },
   
   // Limites et contraintes
@@ -76,7 +79,10 @@ export const GEM_CONFIG = {
       'FoxyStagey.webp',
       'FoxyYumego.webp',
     ],
-    profileBorder: ['gold', 'silver', 'eclair_green', 'fumee', 'poison_orange', 'bronze', 'rainbow', 'halloween_pumpkins_apng', 'yumego_manga']
+    profileBorder: [
+      'gold', 'silver', 'eclair_green', 'fumee', 'poison_orange', 'bronze', 'rainbow', 'halloween_pumpkins_apng',
+      ...ANIMATED_FRAMES.map((f) => f.id)
+    ]
   },
   
   // Couleurs par défaut

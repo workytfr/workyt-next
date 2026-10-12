@@ -13,6 +13,8 @@ import ProfileAvatar from '@/components/ui/profile';
 import CustomPhotoCard from '@/components/ui/CustomPhotoCard';
 import AvatarAccessoryShop from '@/components/ui/AvatarAccessoryShop';
 import { getAccessory, type AvatarLook } from '@/lib/avatarLook';
+import AnimatedFrame from '@/components/ui/frames/AnimatedFrame';
+import { ANIMATED_FRAMES, borderIdFromFilename } from '@/lib/profileFrames';
 
 interface GemData {
   balance: number;
@@ -91,7 +93,7 @@ const GemManager: React.FC = () => {
 
   const isEquipped = (cosmeticType: string, cosmeticId: string) => {
     if (cosmeticType === 'profile_image') return equipped.profileImage === cosmeticId;
-    if (cosmeticType === 'profile_border') return equipped.profileBorder === cosmeticId;
+    if (cosmeticType === 'profile_border') return borderIdFromFilename(equipped.profileBorder) === cosmeticId;
     if (cosmeticType === 'username_color') return equipped.usernameColor?.type === cosmeticId;
     if (cosmeticType === 'avatar_accessory') {
       const accessory = getAccessory(cosmeticId);
@@ -769,7 +771,6 @@ const GemManager: React.FC = () => {
                 { id: 'fumee', label: 'Contour fumée', price: 10, file: 'fumee.png', animated: true, rarity: 'rare', borderColor: 'border-gray-400', btnColor: 'bg-gray-700 hover:bg-gray-800' },
                 { id: 'poison_orange', label: 'Contour poison orange', price: 20, file: 'poison_orange.png', animated: true, rarity: 'legendary', borderColor: 'border-orange-400', btnColor: 'bg-orange-600 hover:bg-orange-700' },
                 { id: 'halloween_pumpkins_apng', label: 'Contour Halloween citrouilles', price: 3, file: 'halloween_pumpkins_apng.png', animated: true, rarity: 'common', borderColor: 'border-orange-300', btnColor: 'bg-orange-500 hover:bg-orange-600' },
-                { id: 'yumego_manga', label: 'Contour Yumego Manga', price: 5, file: 'yumego_manga.apng', partner: true, btnColor: 'bg-pink-500 hover:bg-pink-600' },
               ].map((border) => {
                 const bp = getItemButtonProps('profileBorder', border.id, border.price);
                 const rarityBadge = border.rarity === 'common' ? { stars: '★', bg: 'bg-orange-100 text-orange-600' }
@@ -791,8 +792,8 @@ const GemManager: React.FC = () => {
                         <Image
                           src={`/profile/contour/${border.file}`}
                           alt={border.label}
-                          width={border.id === 'yumego_manga' ? 48 : 32}
-                          height={border.id === 'yumego_manga' ? 48 : 32}
+                          width={32}
+                          height={32}
                           className="mx-auto mb-2"
                           unoptimized
                         />
@@ -800,7 +801,6 @@ const GemManager: React.FC = () => {
                     ) : null}
                     <div className="text-sm text-[rgba(26,21,18,0.62)] mb-1">{border.label}</div>
                     {border.animated && <div className="text-xs text-purple-600 mb-2 font-semibold">✨ Animé</div>}
-                    {border.partner && <div className="text-xs text-pink-500 mb-2 font-semibold">🌸 Partenaire</div>}
                     <Button
                       size="sm"
                       onClick={() => purchaseCustomization('profileBorder', border.id)}
@@ -814,6 +814,57 @@ const GemManager: React.FC = () => {
               })}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Contours animés, dessinés en SVG (components/ui/frames) */}
+      <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="font-serif-display text-2xl leading-none">Contours animés</h3>
+          <span className="rounded-full bg-[rgba(255,106,26,0.12)] px-2.5 py-1 text-xs font-bold text-[#c24a0a]">Nouveau</span>
+        </div>
+        <p className="mt-2 text-sm text-[rgba(26,21,18,0.62)]">
+          Dessinés à la main, animés en continu, nets à toutes les tailles.
+        </p>
+        <div className="mt-5 grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+          {ANIMATED_FRAMES.map((frame, i) => {
+            const bp = getItemButtonProps('profileBorder', frame.id, frame.price);
+            const stars = { common: '★', rare: '★★', epic: '★★★', legendary: '★★★★' }[frame.rarity];
+            return (
+              <div
+                key={frame.id}
+                className="group relative flex flex-col items-center rounded-2xl border border-[rgba(26,21,18,0.08)] bg-[var(--wk-paper)] p-4 pt-8 text-center transition hover:-translate-y-0.5 hover:border-[var(--wk-accent)]"
+              >
+                <span className="absolute right-3 top-3 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-[#c24a0a]">{stars}</span>
+                {frame.tag && (
+                  <span className="absolute left-3 top-3 rounded-full bg-white px-2 py-0.5 text-[10px] font-bold text-[rgba(26,21,18,0.6)]">
+                    {frame.tag === 'partenaire' ? '🌸 Partenaire' : frame.tag === 'halloween' ? '🎃 Halloween 2026' : 'Hommage anime'}
+                  </span>
+                )}
+                {/* Aperçu vivant : le contour autour d'un avatar d'exemple */}
+                <div className="relative my-4 h-20 w-20">
+                  <div
+                    className="h-full w-full rounded-full"
+                    style={{
+                      transform: 'scale(.85)',
+                      background: `linear-gradient(135deg, hsl(${(i * 37) % 360} 75% 78%), hsl(${(i * 37 + 40) % 360} 70% 58%))`
+                    }}
+                  />
+                  <AnimatedFrame id={frame.id} />
+                </div>
+                <p className="text-sm font-bold">{frame.label}</p>
+                <p className="mt-1 min-h-[2.5rem] text-xs leading-snug text-[rgba(26,21,18,0.6)]">{frame.description}</p>
+                <Button
+                  size="sm"
+                  onClick={() => purchaseCustomization('profileBorder', frame.id)}
+                  disabled={bp.disabled}
+                  className={`mt-3 w-full ${bp.className || 'wk-btn-orange'}`}
+                >
+                  {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                </Button>
+              </div>
+            );
+          })}
         </div>
       </div>
 
