@@ -1,5 +1,6 @@
 "use client"
 
+import { hasRole } from "@/lib/userRoles";
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,7 @@ export default function CreateRewardPage() {
     ];
 
     // Vérification si l'utilisateur est admin
-    const isAdmin = session?.user?.role === 'Admin' || session?.user?.isAdmin === true;
+    const isAdmin = hasRole(session?.user, "Admin") || session?.user?.isAdmin === true;
 
     // Si pas de session, afficher le bouton de connexion
     if (status === "loading") {

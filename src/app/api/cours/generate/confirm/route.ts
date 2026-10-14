@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        if (!(await hasPermission(user.role, 'course.create'))) {
+        if (!(await hasPermission(user, 'course.create'))) {
             return NextResponse.json(
                 { success: false, message: "Rôle insuffisant." },
                 { status: 403 }

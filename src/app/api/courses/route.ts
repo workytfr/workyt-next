@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -214,7 +215,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Vérifier que l'utilisateur a les droits appropriés
-        if (session.user.role !== 'Admin' && session.user.role !== 'Rédacteur' && session.user.role !== 'Correcteur') {
+        if (!hasRole(session.user, "Admin", "Rédacteur", "Correcteur")) {
             return NextResponse.json({ error: 'Accès refusé. Seuls les Admins, rédacteurs et correcteurs peuvent créer des cours.' }, { status: 403 });
         }
 
@@ -262,7 +263,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (session.user.role !== 'Admin') {
+        if (!hasRole(session.user, "Admin")) {
             return NextResponse.json({ error: "Accès refusé. Réservé aux administrateurs." }, { status: 403 });
         }
 

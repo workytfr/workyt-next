@@ -1,5 +1,6 @@
 'use client';
 
+import { hasRole } from "@/lib/userRoles";
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
@@ -119,8 +120,8 @@ export default function ModerationPage() {
     const [reportToDelete, setReportToDelete] = useState<Report | null>(null);
     const [actionLoading, setActionLoading] = useState(false);
 
-    const isAdmin = session?.user?.role === 'Admin';
-    const isModerator = session?.user?.role === 'Modérateur' || isAdmin;
+    const isAdmin = hasRole(session?.user, "Admin");
+    const isModerator = hasRole(session?.user, "Modérateur") || isAdmin;
 
     // Fetch reports with filters
     const fetchReports = useCallback(async () => {

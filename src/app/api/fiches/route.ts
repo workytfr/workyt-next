@@ -93,7 +93,7 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const status = (await hasPermission(user.role, 'fiche.create')) ? "Certifiée" : "Non Certifiée";
+        const status = (await hasPermission(user, 'fiche.create')) ? "Certifiée" : "Non Certifiée";
 
         const newRevision = await Revision.create({
             title,

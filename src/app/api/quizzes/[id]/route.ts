@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Quiz, { IQuestion } from "@/models/Quiz";
@@ -41,7 +42,7 @@ export async function GET(
             String((quiz as any).author ?? "") === String(session.user.id);
         const canSeeAnswers =
             isAuthor ||
-            (!!session?.user && (await hasPermission(session.user.role, "quiz.edit")));
+            (!!session?.user && (await hasPermission(session.user, "quiz.edit")));
 
         if (canSeeAnswers) {
             return NextResponse.json({ quiz }, { status: 200 });
@@ -327,8 +328,7 @@ export async function PATCH(
         }
 
         // Check if user is admin or editor
-        const userRole = session.user.role;
-        if (!(await hasPermission(userRole, 'quiz.edit'))) {
+        if (!(await hasPermission(session.user, 'quiz.edit'))) {
             return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
         }
 
@@ -435,7 +435,7 @@ export async function DELETE(
         }
 
         // Check if user is admin
-        if (session.user.role !== "Admin") {
+        if (!hasRole(session.user, "Admin")) {
             return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
         }
 

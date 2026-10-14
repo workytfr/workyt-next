@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -296,16 +297,15 @@ export default function DashboardSidebar() {
 
   // Filtrer les éléments selon le rôle
   const filteredNavItems = navItems.filter((item) => {
-    if (item.roles && !item.roles.includes(user?.role || '')) {
+    if (item.roles && !hasRole(user, ...item.roles)) {
       return false;
     }
-    if (item.adminOnly && user?.role !== "Admin") {
+    if (item.adminOnly && !hasRole(user, "Admin")) {
       return false;
     }
     if (
       item.moderatorOnly &&
-      user?.role !== "Admin" &&
-      user?.role !== "Modérateur"
+      !hasRole(user, "Admin", "Modérateur")
     ) {
       return false;
     }

@@ -1,3 +1,4 @@
+import { hasRole, roleFilter, getUserRoles } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth/next";
 import mongoose, { type Model } from "mongoose";
@@ -125,7 +126,7 @@ function statusOf(activeDays: number, days: number, everActive: boolean) {
 export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.role || session.user.role !== "Admin") {
+    if (!session?.user?.role || !hasRole(session.user, "Admin")) {
       return NextResponse.json({ error: "Accès non autorisé. Admin uniquement." }, { status: 403 });
     }
 
@@ -134,9 +135,9 @@ export async function GET(req: NextRequest) {
 
     await dbConnect();
 
-    const users = await User.find({ role: { $in: ROLES } })
-      .select("_id name username role createdAt")
-      .lean<{ _id: mongoose.Types.ObjectId; name?: string; username: string; role: string; createdAt?: Date }[]>();
+    const users = await User.find(roleFilter(ROLES))
+      .select("_id name username role roles createdAt")
+      .lean<{ _id: mongoose.Types.ObjectId; name?: string; username: string; role: string; roles?: string[]; createdAt?: Date }[]>();
     const ids = users.map((u) => u._id);
 
     // Fenêtre de jours : la période, la période précédente (tendance) et 12 semaines (courbe)
@@ -218,7 +219,8 @@ export async function GET(req: NextRequest) {
         _id: id,
         name: u.name || u.username,
         username: u.username,
-        role: u.role,
+        // Rôle bénévole affiché : le principal s'il en est un, sinon le premier secondaire
+        role: getUserRoles(u).find((r) => (ROLES as readonly string[]).includes(r)) ?? u.role,
         joinedAt: u.createdAt || null,
         status: statusOf(a.days.size, days, total(a.lifetime) > 0),
         activeDays: a.days.size,

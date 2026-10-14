@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
@@ -1013,15 +1014,14 @@ export default function CourseManagementPage() {
   ];
 
   // Permissions de suppression (alignées sur l'API) — on masque les boutons sinon
-  const userRole = session?.user?.role;
   const userId = session?.user?.id;
-  const isAdmin = userRole === "Admin";
+  const isAdmin = hasRole(session?.user, "Admin");
   const canDeleteLesson = isAdmin; // API leçon : Admin uniquement
   const canDeleteQuiz = isAdmin; // API quiz : Admin uniquement
   const canDeleteExercise = (exercise: SectionExercise) =>
     isAdmin ||
-    userRole === "Correcteur" ||
-    (userRole === "Rédacteur" && String(exercise.author) === String(userId));
+    hasRole(session?.user, "Correcteur") ||
+    (hasRole(session?.user, "Rédacteur") && String(exercise.author) === String(userId));
 
   const roleBadgeClass = (role: string) => {
     switch (role) {

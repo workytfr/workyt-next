@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Course from "@/models/Course";
@@ -43,7 +44,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (user.role !== "Admin") {
+        if (!hasRole(user, "Admin")) {
             return NextResponse.json(
                 { error: "Accès refusé. Réservé aux administrateurs." },
                 { status: 403 }

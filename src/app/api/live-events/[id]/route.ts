@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -11,7 +12,7 @@ async function requireAdmin(req: NextRequest) {
     if (!session?.user?.id) return null;
     await connectDB();
     const user = await User.findById(session.user.id).select("role");
-    if (user?.role !== "Admin") return null;
+    if (!hasRole(user, "Admin")) return null;
     return user;
 }
 

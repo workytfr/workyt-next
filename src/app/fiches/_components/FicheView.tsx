@@ -1,4 +1,5 @@
 "use client";
+import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -171,9 +172,9 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
     }
 
     const allowedRoles = ["Helpeur", "Rédacteur", "Correcteur", "Admin"];
-    const userHasPermission = allowedRoles.includes(currentUser?.role ?? "");
+    const userHasPermission = hasRole(currentUser, ...allowedRoles);
     const isCreator = currentUser && fiche && currentUser.id === fiche.author._id.toString();
-    const isAdmin = currentUser?.role === "Admin";
+    const isAdmin = hasRole(currentUser, "Admin");
 
     // Type du premier fichier joint
     const firstFileUrl = fiche.files?.[0] || "";

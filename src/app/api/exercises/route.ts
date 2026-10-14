@@ -92,7 +92,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!(await hasPermission(user.role, 'course.edit'))) {
+        if (!(await hasPermission(user, 'course.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

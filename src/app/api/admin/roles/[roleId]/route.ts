@@ -1,3 +1,4 @@
+import { roleFilter } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import authMiddleware from '@/middlewares/authMiddleware';
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: Params) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'role.manage'))) {
+        if (!(await hasPermission(user, 'role.manage'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 
@@ -26,7 +27,7 @@ export async function GET(req: NextRequest, { params }: Params) {
             return NextResponse.json({ error: 'Rôle non trouvé.' }, { status: 404 });
         }
 
-        const userCount = await User.countDocuments({ role: role.name });
+        const userCount = await User.countDocuments(roleFilter(role.name));
 
         return NextResponse.json({ role: { ...role, userCount } });
     } catch (error: any) {
@@ -44,7 +45,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'role.manage'))) {
+        if (!(await hasPermission(user, 'role.manage'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 
@@ -72,6 +73,7 @@ export async function PUT(req: NextRequest, { params }: Params) {
             }
             // Mettre à jour tous les users qui avaient l'ancien nom
             await User.updateMany({ role: role.name }, { role: body.name });
+            await User.updateMany({ roles: role.name }, { $set: { 'roles.$': body.name } });
             role.name = body.name;
         }
 
@@ -108,7 +110,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'role.manage'))) {
+        if (!(await hasPermission(user, 'role.manage'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 
@@ -122,7 +124,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
             return NextResponse.json({ error: 'Impossible de supprimer un rôle système.' }, { status: 400 });
         }
 
-        const userCount = await User.countDocuments({ role: role.name });
+        const userCount = await User.countDocuments(roleFilter(role.name));
         if (userCount > 0) {
             return NextResponse.json({
                 error: `${userCount} utilisateur(s) ont ce rôle. Réassignez-les d'abord.`,
@@ -146,7 +148,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'role.manage'))) {
+        if (!(await hasPermission(user, 'role.manage'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 

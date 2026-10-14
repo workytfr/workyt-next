@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Vérifier que l'utilisateur a les droits appropriés
-        if (session.user.role !== 'Admin' && session.user.role !== 'Rédacteur' && session.user.role !== 'Correcteur' && session.user.role !== 'Helpeur') {
+        if (!hasRole(session.user, "Admin", "Rédacteur", "Correcteur", "Helpeur")) {
             return NextResponse.json({ error: 'Accès refusé. Seuls les Admins, rédacteurs, correcteurs et helpeurs peuvent créer des quiz.' }, { status: 403 });
         }
 

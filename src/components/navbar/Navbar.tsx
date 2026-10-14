@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import {
@@ -76,7 +77,7 @@ export default function Navbar() {
     const blogRef = useRef<HTMLDivElement>(null);
     const { data: session } = useSession();
     const pathname = usePathname();
-    const isStaff = !!session && STAFF_ROLES.includes((session.user as any)?.role);
+    const isStaff = !!session && hasRole(session.user, ...STAFF_ROLES);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {

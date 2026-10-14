@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Revision from "@/models/Revision";
@@ -81,7 +82,7 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ success: false, message: "Non autorisé." }, { status: 401 });
         }
 
-        if (!(await hasPermission(session.user.role as string, 'fiche.edit'))) {
+        if (!(await hasPermission(session.user, 'fiche.edit'))) {
             return NextResponse.json(
                 { success: false, message: "Accès refusé. Vous n'avez pas les permissions nécessaires pour modifier cette fiche." },
                 { status: 403 }
@@ -134,8 +135,8 @@ export const DELETE = async (req: NextRequest, { params }: { params: Promise<{ i
             return NextResponse.json({ success: false, message: "Fiche non trouvée." }, { status: 404 });
         }
 
-        const isAdmin = session.user.role === "Admin";
-        const isModerator = session.user.role === "Modérateur";
+        const isAdmin = hasRole(session.user, "Admin");
+        const isModerator = hasRole(session.user, "Modérateur");
         const isCreator = fiche.author.toString() === session.user.id;
 
         if (!isAdmin && !isModerator && !isCreator) {

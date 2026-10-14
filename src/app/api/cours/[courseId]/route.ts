@@ -38,7 +38,7 @@ export async function GET(
         const query: any = { _id: courseId };
 
         // If user is not authorized to see unpublished content
-        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
+        if (!user || !(await hasPermission(user, 'course.edit'))) {
             query.status = "publie";
         }
 
@@ -64,7 +64,7 @@ export async function GET(
         const response = {
             cours,
             userRole: user?.role || "anonymous",
-            canEdit: user ? await hasPermission(user.role, 'course.edit') : false
+            canEdit: user ? await hasPermission(user, 'course.edit') : false
         };
 
         return NextResponse.json(response, { status: 200 });
@@ -95,7 +95,7 @@ export async function PATCH(
         // Require authentication for updates
         const user = await authMiddleware(req);
 
-        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
+        if (!user || !(await hasPermission(user, 'course.edit'))) {
             return NextResponse.json(
                 { error: "Accès non autorisé" },
                 { status: 403 }

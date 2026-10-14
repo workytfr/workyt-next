@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!(await hasPermission(session.user.role, "dashboard.access"))) {
+        if (!(await hasPermission(session.user, "dashboard.access"))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

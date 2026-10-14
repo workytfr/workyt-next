@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
         }
         
         // Vérifier que l'utilisateur est admin
-        if (session.user.role !== 'Admin') {
+        if (!hasRole(session.user, "Admin")) {
             return NextResponse.json({ error: 'Accès refusé - Admin requis' }, { status: 403 });
         }
         

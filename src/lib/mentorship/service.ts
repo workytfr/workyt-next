@@ -236,9 +236,9 @@ export async function takeRequest(
   if (reassign && m.mentor && id(m.mentor) === mentorId) return fail(409, 'Ce bénévole suit déjà cet élève.');
 
   if (byModerator) {
-    const target = await User.findById(mentorId).select('role').lean<{ role: string }>();
+    const target = await User.findById(mentorId).select('role roles').lean<{ role: string; roles?: string[] }>();
     const { hasPermission } = await import('@/lib/roles');
-    if (!target || !(await hasPermission(target.role, 'mentorship.take'))) {
+    if (!target || !(await hasPermission(target, 'mentorship.take'))) {
       return fail(400, 'Cette personne n’a pas le rôle de bénévole accompagnant.');
     }
   }

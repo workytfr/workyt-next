@@ -27,7 +27,7 @@ export async function POST(
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'evaluation.grade'))) {
+        if (!(await hasPermission(user, 'evaluation.grade'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 

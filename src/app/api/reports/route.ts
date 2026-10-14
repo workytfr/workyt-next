@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -127,7 +128,7 @@ export async function GET(request: NextRequest) {
         await connectDB();
         
         const user = await User.findOne({ email: session.user.email });
-        if (!user || (user.role !== 'Admin' && user.role !== 'Modérateur')) {
+        if (!user || (!hasRole(user, "Admin", "Modérateur"))) {
             return NextResponse.json(
                 { error: 'Accès non autorisé' },
                 { status: 403 }

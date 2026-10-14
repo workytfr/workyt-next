@@ -55,6 +55,7 @@ interface User {
     email: string;
     username: string;
     role: "Apprenti" | "Helpeur" | "Rédacteur" | "Correcteur" | "Modérateur" | "Admin";
+    roles?: string[];
     points: number;
     badges: string[];
     bio: string;
@@ -282,12 +283,13 @@ export default function UsersPage() {
     // Export des données
     const handleExport = () => {
         const csvContent = [
-            ['Nom', 'Email', 'Username', 'Rôle', 'Points', 'Badges', 'Bio', 'Date de création'],
+            ['Nom', 'Email', 'Username', 'Rôle', 'Rôles secondaires', 'Points', 'Badges', 'Bio', 'Date de création'],
             ...users.map(user => [
                 user.name,
                 user.email,
                 user.username,
                 user.role,
+                (user.roles || []).join(', '),
                 user.points.toString(),
                 user.badges.join(', '),
                 user.bio || '',
@@ -458,6 +460,15 @@ export default function UsersPage() {
                                                     <SelectItem value="Admin">Admin</SelectItem>
                                                 </SelectContent>
                                             </Select>
+                                            {user.roles && user.roles.length > 0 && (
+                                                <div className="mt-1 flex flex-wrap gap-1">
+                                                    {user.roles.map((r) => (
+                                                        <Badge key={r} variant="outline" className="text-xs">
+                                                            + {r}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center">

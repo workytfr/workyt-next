@@ -16,7 +16,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!(await hasPermission(user.role, 'section.edit'))) {
+        if (!(await hasPermission(user, 'section.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

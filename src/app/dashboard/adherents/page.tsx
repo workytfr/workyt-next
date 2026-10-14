@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import {
@@ -27,7 +28,7 @@ interface Assembly {
 
 export default function AdherentsAdminPage() {
     const { data: session, status } = useSession();
-    const isAdmin = (session?.user as any)?.role === "Admin";
+    const isAdmin = hasRole(session?.user, "Admin");
 
     const [tab, setTab] = useState<"members" | "assemblies">("members");
     const [members, setMembers] = useState<Member[]>([]);

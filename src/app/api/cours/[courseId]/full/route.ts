@@ -37,7 +37,7 @@ export async function GET(
         const query: any = { _id: courseId };
 
         // If user is not authorized to see unpublished content
-        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
+        if (!user || !(await hasPermission(user, 'course.edit'))) {
             query.status = "publie";
         }
 

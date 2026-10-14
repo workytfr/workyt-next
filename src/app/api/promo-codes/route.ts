@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -44,7 +45,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Admin : voir les codes d'un partenaire
-    if (session.user.role !== 'Admin') {
+    if (!hasRole(session.user, "Admin")) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
@@ -74,7 +75,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email || session.user.role !== 'Admin') {
+    if (!session?.user?.email || !hasRole(session.user, "Admin")) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 
@@ -144,7 +145,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.email || session.user.role !== 'Admin') {
+    if (!session?.user?.email || !hasRole(session.user, "Admin")) {
       return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
     }
 

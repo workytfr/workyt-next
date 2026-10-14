@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { Types } from "mongoose";
@@ -33,7 +34,7 @@ export async function POST(
         }
 
         // 🔒 Seuls les Correcteurs et Admins peuvent vérifier un cours
-        if (session.user.role !== "Correcteur" && session.user.role !== "Admin") {
+        if (!hasRole(session.user, "Correcteur", "Admin")) {
             return NextResponse.json(
                 { error: "Accès refusé. Seuls les correcteurs peuvent vérifier un cours." },
                 { status: 403 }

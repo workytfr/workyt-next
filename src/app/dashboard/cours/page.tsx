@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -187,8 +188,7 @@ export default function CoursesPage() {
 
   // Peut vérifier : Correcteur/Admin, cours à vérifier, et pas auteur du cours
   const canVerify = (course: Course) => {
-    const role = session?.user?.role;
-    if (role !== "Correcteur" && role !== "Admin") return false;
+    if (!hasRole(session?.user, "Correcteur", "Admin")) return false;
     if (course.status !== "en_attente_verification") return false;
     const userId = session?.user?.id;
     if (userId && course.authors?.some((a) => a._id === userId)) return false;
@@ -500,7 +500,7 @@ export default function CoursesPage() {
                   </button>
                 )}
                 {/* Changement de statut */}
-                {session?.user?.role === "Admin" && (
+                {hasRole(session?.user, "Admin") && (
                   <select
                     className="dash-input text-sm w-full"
                     value={course.status}
@@ -533,7 +533,7 @@ export default function CoursesPage() {
                       {course.status === "publie" ? "Voir" : "Preview"}
                     </span>
                   </Link>
-                  {session?.user?.role === "Admin" && (
+                  {hasRole(session?.user, "Admin") && (
                     <button
                       onClick={() => deleteCourse(course._id)}
                       className="dash-button dash-button-ghost dash-button-sm text-red-500 hover:bg-red-50"
@@ -605,7 +605,7 @@ export default function CoursesPage() {
                     </div>
                   </td>
                   <td>
-                    {session?.user?.role === "Admin" ? (
+                    {hasRole(session?.user, "Admin") ? (
                       <select
                         className="dash-input text-sm py-1"
                         value={course.status}
@@ -656,7 +656,7 @@ export default function CoursesPage() {
                       >
                         <ExternalLink className="w-4 h-4 text-[#6b625c]" />
                       </Link>
-                      {session?.user?.role === "Admin" && (
+                      {hasRole(session?.user, "Admin") && (
                         <button
                           onClick={() => deleteCourse(course._id)}
                           className="p-2 hover:bg-red-50 rounded-lg transition-colors"

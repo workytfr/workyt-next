@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -16,7 +17,7 @@ export async function POST(request: NextRequest) {
     const { userId } = await request.json();
     
     // Vérifier que l'utilisateur peut vérifier ses propres badges ou est admin
-    if (session.user.id !== userId && session.user.role !== 'Admin') {
+    if (session.user.id !== userId && !hasRole(session.user, "Admin")) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 

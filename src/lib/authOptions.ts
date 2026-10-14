@@ -14,6 +14,7 @@ function generateJWT(user: any) {
             id: user.id || user._id?.toString(),
             email: user.email,
             role: user.role,
+            roles: user.roles || [],
             points: user.points,
             badges: user.badges,
             bio: user.bio,
@@ -56,6 +57,7 @@ export const authOptions: NextAuthOptions = {
                     email: user.email,
                     username: user.username || "",
                     role: user.role,
+                    roles: user.roles || [],
                     points: user.points || 0,
                     badges: user.badges || [],
                     bio: user.bio || "",
@@ -144,6 +146,7 @@ export const authOptions: NextAuthOptions = {
                 token.username = user.username;
                 token.email = user.email;
                 token.role = user.role;
+                token.roles = user.roles || [];
                 token.points = user.points;
                 token.accessToken = generateJWT(user);
 
@@ -161,6 +164,7 @@ export const authOptions: NextAuthOptions = {
                         token.id = dbUser._id.toString();
                         token.username = dbUser.username;
                         token.role = dbUser.role;
+                        token.roles = dbUser.roles || [];
                         token.points = dbUser.points;
                         token.badges = dbUser.badges;
                         token.bio = dbUser.bio;
@@ -179,6 +183,7 @@ export const authOptions: NextAuthOptions = {
                             id: token.id,
                             email: token.email,
                             role: token.role,
+                            roles: token.roles,
                             points: token.points,
                             badges: token.badges,
                             bio: token.bio,
@@ -191,6 +196,7 @@ export const authOptions: NextAuthOptions = {
                         id: token.id,
                         email: token.email,
                         role: token.role,
+                        roles: token.roles,
                         points: token.points,
                         badges: token.badges,
                         bio: token.bio,
@@ -206,6 +212,7 @@ export const authOptions: NextAuthOptions = {
                 username: token.username as string,
                 email: token.email as string,
                 role: token.role as string,
+                roles: (token.roles as string[]) || [],
                 points: token.points as number || 0,
                 badges: token.badges as any[] || [],
                 bio: token.bio as string || "",

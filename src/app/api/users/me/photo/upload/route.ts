@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
-        if (!(await hasPermission(session.user.role as string, "profile.custom_photo"))) {
+        if (!(await hasPermission(session.user, "profile.custom_photo"))) {
             return NextResponse.json(
                 { error: "Cette fonctionnalité est réservée aux bénévoles de l'association." },
                 { status: 403 },

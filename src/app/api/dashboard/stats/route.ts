@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
     try {
         const user = await authMiddleware(req);
 
-        if (!user || !(await hasPermission(user.role, 'dashboard.access'))) {
+        if (!user || !(await hasPermission(user, 'dashboard.access'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 

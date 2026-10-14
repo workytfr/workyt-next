@@ -1,3 +1,4 @@
+import { roleFilter } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -17,12 +18,12 @@ export async function GET(req: NextRequest) {
         if (!isValidBoard(board)) {
             return NextResponse.json({ error: 'Board invalide' }, { status: 400 });
         }
-        if (!canAccessBoard(session.user.role, board)) {
+        if (!canAccessBoard(session.user, board)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
 
         await dbConnect();
-        const members = await User.find({ role: board })
+        const members = await User.find(roleFilter(board))
             .select('username image role')
             .sort({ username: 1 })
             .lean();

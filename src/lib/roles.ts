@@ -1,5 +1,6 @@
 import connectDB from '@/lib/mongodb';
 import Role, { IRole } from '@/models/Role';
+import { getUserRoles, type RoleSubject } from '@/lib/userRoles';
 
 /* ═══════════════════════════════════════════════
    Liste de toutes les permissions du système
@@ -252,32 +253,33 @@ export function invalidateRolesCache() {
    ═══════════════════════════════════════════════ */
 
 /**
- * Vérifie si un rôle possède une permission donnée.
+ * Vérifie si un utilisateur possède une permission donnée, via n'importe
+ * lequel de ses rôles (principal + secondaires).
+ * Accepte un nom de rôle, une liste, ou un objet `{ role, roles }`.
  * Admin a toujours toutes les permissions.
  */
 export async function hasPermission(
-    roleName: string,
+    subject: RoleSubject,
     permission: Permission
 ): Promise<boolean> {
-    if (roleName === 'Admin') return true;
-    const roles = await getRolesMap();
-    const role = roles.get(roleName);
-    if (!role) return false;
-    return role.permissions.includes(permission);
+    return hasAnyPermission(subject, [permission]);
 }
 
 /**
- * Vérifie si un rôle possède au moins une des permissions données.
+ * Vérifie si un utilisateur possède au moins une des permissions données.
  */
 export async function hasAnyPermission(
-    roleName: string,
+    subject: RoleSubject,
     permissions: Permission[]
 ): Promise<boolean> {
-    if (roleName === 'Admin') return true;
+    const names = getUserRoles(subject);
+    if (names.includes('Admin')) return true;
+    if (names.length === 0) return false;
     const roles = await getRolesMap();
-    const role = roles.get(roleName);
-    if (!role) return false;
-    return permissions.some((p) => role.permissions.includes(p));
+    return names.some((name) => {
+        const role = roles.get(name);
+        return !!role && permissions.some((p) => role.permissions.includes(p));
+    });
 }
 
 /**

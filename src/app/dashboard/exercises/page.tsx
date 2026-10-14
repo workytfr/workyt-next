@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect, useCallback, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
@@ -55,7 +56,7 @@ export default function ExercisePage() {
     const [totalExercises, setTotalExercises] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
-    const isAdmin = session?.user?.role === "Admin";
+    const isAdmin = hasRole(session?.user, "Admin");
 
     // Hierarchy nav state
     const [selectedCourseId, setSelectedCourseId] = useState("");
@@ -68,7 +69,7 @@ export default function ExercisePage() {
 
     // Update myExercises default when session loads
     useEffect(() => {
-        if (session?.user?.role && session.user.role !== "Admin") {
+        if (session?.user?.role && !hasRole(session.user, "Admin")) {
             setMyExercises(true);
         }
     }, [session?.user?.role]);

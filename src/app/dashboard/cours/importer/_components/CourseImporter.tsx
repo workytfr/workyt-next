@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -48,8 +49,8 @@ export default function CourseImporter() {
   // Foxy
   const [foxyReport, setFoxyReport] = useState<FoxyResult["report"] | null>(null);
 
-  const role = (session?.user as any)?.role;
-  const canImport = role === "Admin" || role === "Rédacteur" || role === "Correcteur";
+  const isAdmin = hasRole(session?.user, "Admin");
+  const canImport = hasRole(session?.user, "Admin", "Rédacteur", "Correcteur");
   const m = MODES[mode];
 
   const switchMode = (next: ImportMode) => {
@@ -580,7 +581,7 @@ export default function CourseImporter() {
           )}
 
           {/* Migration depuis l'ancienne version (Admin) */}
-          {role === "Admin" && (
+          {isAdmin && (
             <label className="flex cursor-pointer items-center gap-3 rounded-2xl border border-[#e6e0d6] bg-[#fdfaf4] p-3">
               <input
                 type="checkbox"

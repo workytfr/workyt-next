@@ -1,8 +1,10 @@
+import { getUserRoles, type RoleSubject } from '@/lib/userRoles';
+
 /**
  * Configuration partagée du Kanban d'équipe.
  *
  * Un board par rôle staff. L'Admin a accès à tous les boards ;
- * les autres rôles n'accèdent qu'au board correspondant à leur rôle.
+ * les autres n'accèdent qu'aux boards correspondant à leurs rôles.
  */
 
 export type BoardId = 'Rédacteur' | 'Correcteur' | 'Helpeur' | 'Modérateur' | 'Admin';
@@ -80,15 +82,15 @@ export const LINK_TYPES: { id: LinkType; label: string }[] = [
     { id: 'evaluation', label: 'Évaluation' },
 ];
 
-/** Boards auxquels un rôle a accès. Admin = tous. */
-export function getAccessibleBoards(role?: string | null): BoardId[] {
-    if (!role) return [];
-    if (role === 'Admin') return BOARD_IDS as BoardId[];
-    return BOARD_IDS.includes(role as BoardId) ? [role as BoardId] : [];
+/** Boards auxquels un utilisateur a accès : un par rôle qu'il possède. Admin = tous. */
+export function getAccessibleBoards(subject: RoleSubject): BoardId[] {
+    const roles = getUserRoles(subject);
+    if (roles.includes('Admin')) return BOARD_IDS as BoardId[];
+    return BOARD_IDS.filter((b) => roles.includes(b)) as BoardId[];
 }
 
-export function canAccessBoard(role: string | null | undefined, board: string): boolean {
-    return getAccessibleBoards(role).includes(board as BoardId);
+export function canAccessBoard(subject: RoleSubject, board: string): boolean {
+    return getAccessibleBoards(subject).includes(board as BoardId);
 }
 
 export function isValidBoard(board: string): board is BoardId {

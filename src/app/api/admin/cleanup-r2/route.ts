@@ -14,6 +14,7 @@
  * effective passe par un déclenchement explicite admin.
  */
 
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import authMiddleware from "@/middlewares/authMiddleware";
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
         await dbConnect();
         // GET = consultation : admin uniquement
         const user = await authMiddleware(req).catch(() => null);
-        if (!user || user.role !== "Admin") {
+        if (!user || !hasRole(user, "Admin")) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
         }
         const lastLog = await R2CleanupLog.findOne().sort({ runAt: -1 }).lean();
@@ -55,7 +56,7 @@ export async function POST(req: NextRequest) {
         let userId: any = null;
         if (!cronCall) {
             const user = await authMiddleware(req).catch(() => null);
-            if (!user || user.role !== "Admin") {
+            if (!user || !hasRole(user, "Admin")) {
                 return NextResponse.json({ error: "Non autorisé." }, { status: 403 });
             }
             userId = user._id;

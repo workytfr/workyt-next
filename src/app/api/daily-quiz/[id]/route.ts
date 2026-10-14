@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -25,7 +26,7 @@ async function authorize() {
     if (!session?.user?.email) {
         return { error: NextResponse.json({ error: 'Non autorisé' }, { status: 401 }) };
     }
-    if (!session.user.role || !AUTHORIZED_ROLES.includes(session.user.role)) {
+    if (!hasRole(session.user, ...AUTHORIZED_ROLES)) {
         return { error: NextResponse.json({ error: 'Accès refusé' }, { status: 403 }) };
     }
     return { session };

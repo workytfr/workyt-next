@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'evaluation.create'))) {
+        if (!(await hasPermission(user, 'evaluation.create'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 
@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'evaluation.create'))) {
+        if (!(await hasPermission(user, 'evaluation.create'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 

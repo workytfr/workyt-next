@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
@@ -75,7 +76,7 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
 
         // ✅ Préparer la réponse utilisateur. Le vrai nom n'est donné qu'au membre lui-même et aux admins.
         const session = await getServerSession(authOptions);
-        const canSeeName = session?.user?.id === String(user._id) || session?.user?.role === "Admin";
+        const canSeeName = session?.user?.id === String(user._id) || hasRole(session?.user, "Admin");
         const userResponse = {
             _id: user._id,
             ...(canSeeName ? { name: user.name } : {}),
@@ -145,7 +146,7 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ id: st
         }
 
         // 📌 Vérifier les autorisations (propriétaire ou admin)
-        const isAdmin = session.user?.role === "Admin";
+        const isAdmin = hasRole(session.user, "Admin");
         if (user.email !== session?.user?.email && !isAdmin) {
             return NextResponse.json(
                 { error: "You are not authorized to perform this action" },

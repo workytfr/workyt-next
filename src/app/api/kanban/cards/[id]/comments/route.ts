@@ -30,7 +30,7 @@ export async function POST(
         if (!card) {
             return NextResponse.json({ error: 'Carte introuvable' }, { status: 404 });
         }
-        if (!canAccessBoard(session.user.role, card.board)) {
+        if (!canAccessBoard(session.user, card.board)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
 

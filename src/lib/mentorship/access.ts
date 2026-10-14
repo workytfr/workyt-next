@@ -11,6 +11,7 @@ export interface SuiviUser {
   id: string;
   username: string;
   role: string;
+  roles: string[];
 }
 
 /**
@@ -19,33 +20,33 @@ export interface SuiviUser {
  * Helpeur perd l'accès immédiatement, sans attendre l'expiration du jeton.
  */
 export async function currentSuiviUser(): Promise<SuiviUser | null> {
-  type Row = { _id: mongoose.Types.ObjectId; username: string; role: string };
+  type Row = { _id: mongoose.Types.ObjectId; username: string; role: string; roles?: string[] };
   let user: Row | null = null;
 
   const session = await getServerSession(authOptions);
   if (session?.user?.email) {
     await dbConnect();
-    user = await User.findOne({ email: session.user.email }).select('_id username role').lean<Row>();
+    user = await User.findOne({ email: session.user.email }).select('_id username role roles').lean<Row>();
   } else {
     // Application mobile : pas de cookie NextAuth, mais un jeton Bearer
     const id = await bearerUserId();
     if (!id) return null;
     await dbConnect();
-    user = await User.findById(id).select('_id username role').lean<Row>();
+    user = await User.findById(id).select('_id username role roles').lean<Row>();
   }
 
   if (!user) return null;
-  return { id: user._id.toString(), username: user.username, role: user.role };
+  return { id: user._id.toString(), username: user.username, role: user.role, roles: user.roles ?? [] };
 }
 
 /** Peut accompagner des élèves (prendre des demandes dans la file) */
 export async function canMentor(user: SuiviUser): Promise<boolean> {
-  return hasPermission(user.role, 'mentorship.take');
+  return hasPermission(user, 'mentorship.take');
 }
 
 /** Peut piloter le dispositif : tout voir, attribuer, modérer */
 export async function canManage(user: SuiviUser): Promise<boolean> {
-  return hasPermission(user.role, 'mentorship.manage');
+  return hasPermission(user, 'mentorship.manage');
 }
 
 /**

@@ -63,7 +63,7 @@ export async function GET(req: NextRequest) {
         if (!isValidBoard(board)) {
             return NextResponse.json({ error: 'Board invalide' }, { status: 400 });
         }
-        if (!canAccessBoard(session.user.role, board)) {
+        if (!canAccessBoard(session.user, board)) {
             return NextResponse.json({ error: 'Accès refusé à ce board' }, { status: 403 });
         }
 
@@ -98,7 +98,7 @@ export async function POST(req: NextRequest) {
         if (!isValidBoard(board)) {
             return NextResponse.json({ error: 'Board invalide' }, { status: 400 });
         }
-        if (!canAccessBoard(session.user.role, board)) {
+        if (!canAccessBoard(session.user, board)) {
             return NextResponse.json({ error: 'Accès refusé à ce board' }, { status: 403 });
         }
 
@@ -170,7 +170,7 @@ export async function PATCH(req: NextRequest) {
 
         const body = await req.json();
         const board = body.board;
-        if (!isValidBoard(board) || !canAccessBoard(session.user.role, board)) {
+        if (!isValidBoard(board) || !canAccessBoard(session.user, board)) {
             return NextResponse.json({ error: 'Accès refusé à ce board' }, { status: 403 });
         }
 

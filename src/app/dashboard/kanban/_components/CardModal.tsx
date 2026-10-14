@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -79,7 +80,7 @@ export default function CardModal({
     const isEdit = !!initial;
     const { data: session } = useSession();
     const myId = (session?.user as any)?.id as string | undefined;
-    const myRole = (session?.user as any)?.role as string | undefined;
+    const isAdmin = hasRole(session?.user, "Admin");
 
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
@@ -622,7 +623,7 @@ export default function CardModal({
                                             );
                                         }
                                         const author = typeof c.author === "object" ? c.author : null;
-                                        const canDelete = (author && author._id === myId) || myRole === "Admin";
+                                        const canDelete = (author && author._id === myId) || isAdmin;
                                         return (
                                             <div key={c._id || idx} className="flex items-start gap-2 group">
                                                 {author ? (

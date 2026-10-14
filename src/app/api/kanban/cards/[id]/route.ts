@@ -63,7 +63,7 @@ export async function GET(
         if (!card) {
             return NextResponse.json({ error: 'Carte introuvable' }, { status: 404 });
         }
-        if (!canAccessBoard(session.user.role, (card as any).board)) {
+        if (!canAccessBoard(session.user, (card as any).board)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
 
@@ -92,7 +92,7 @@ export async function PATCH(
         if (!card) {
             return NextResponse.json({ error: 'Carte introuvable' }, { status: 404 });
         }
-        if (!canAccessBoard(session.user.role, card.board)) {
+        if (!canAccessBoard(session.user, card.board)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
 
@@ -183,7 +183,7 @@ export async function DELETE(
         if (!card) {
             return NextResponse.json({ error: 'Carte introuvable' }, { status: 404 });
         }
-        if (!canAccessBoard(session.user.role, card.board)) {
+        if (!canAccessBoard(session.user, card.board)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
 

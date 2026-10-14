@@ -1,3 +1,4 @@
+import { roleFilter } from "@/lib/userRoles";
 import mongoose from 'mongoose';
 import Notification, { INotification } from '@/models/Notification';
 import User from '@/models/User';
@@ -55,7 +56,7 @@ export async function moderatorIds(limit = 20): Promise<string[]> {
   for (const [name, role] of roles) {
     if (role.permissions?.includes('mentorship.manage')) roleNames.push(name);
   }
-  const users = await User.find({ role: { $in: roleNames } })
+  const users = await User.find(roleFilter(roleNames))
     .select('_id')
     .limit(limit)
     .lean<{ _id: mongoose.Types.ObjectId }[]>();

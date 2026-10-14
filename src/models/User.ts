@@ -10,6 +10,8 @@ export interface IUser extends Document {
     username: string;
     password: string;
     role: 'Apprenti' | 'Helpeur' | 'Rédacteur' | 'Correcteur' | 'Modérateur' | 'Admin';
+    /** Rôles secondaires : leurs droits s'ajoutent à ceux du rôle principal */
+    roles: string[];
     points: number;
     badges: string[];
     selectedBadge: string | null;
@@ -116,6 +118,15 @@ const UserSchema = new Schema<IUser>({
         type: String,
         required: true,
         default: 'Apprenti',
+    },
+    /**
+     * Rôles en plus du rôle principal (ex. Rédacteur + Modérateur).
+     * `role` reste le rôle affiché ; les vérifications passent par
+     * getUserRoles / hasRole / hasPermission qui lisent les deux champs.
+     */
+    roles: {
+        type: [String],
+        default: [],
     },
     points: {
         type: Number,

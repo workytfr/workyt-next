@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -42,7 +43,7 @@ export default function CertificatesPage() {
       return;
     }
     
-    if (status === 'authenticated' && session?.user?.role !== 'Admin') {
+    if (status === 'authenticated' && !hasRole(session?.user, "Admin")) {
       router.push('/dashboard');
       return;
     }

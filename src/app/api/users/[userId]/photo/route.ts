@@ -18,7 +18,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ u
         if (!session?.user?.id) {
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
-        if (!(await hasAnyPermission(session.user.role as string, ["forum.moderate", "user.manage"]))) {
+        if (!(await hasAnyPermission(session.user, ["forum.moderate", "user.manage"]))) {
             return NextResponse.json({ error: "Droits insuffisants." }, { status: 403 });
         }
 

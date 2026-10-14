@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { getServerSession } from "next-auth/next";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
@@ -28,7 +29,7 @@ export default async function DashboardLayout({
   const allowedRoles = ["Rédacteur", "Correcteur", "Admin", "Modérateur", "Helpeur"];
 
   // Vérifie que l'utilisateur existe et que son rôle est autorisé
-  if (!session.user || !allowedRoles.includes(session.user.role as string)) {
+  if (!session.user || !hasRole(session.user, ...allowedRoles)) {
     redirect("/");
   }
 

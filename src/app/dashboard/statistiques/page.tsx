@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -180,7 +181,7 @@ export default function StatisticsPage() {
   const [showHelp, setShowHelp] = useState(false);
 
   useEffect(() => {
-    if (user && user.role !== "Admin") router.push("/dashboard");
+    if (user && !hasRole(user, "Admin")) router.push("/dashboard");
   }, [user, router]);
 
   const fetchData = useCallback(async (period: number) => {
@@ -199,7 +200,7 @@ export default function StatisticsPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "Admin") void fetchData(days);
+    if (hasRole(user, "Admin")) void fetchData(days);
   }, [user, days, fetchData]);
 
   const list = useMemo(() => {

@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import dbConnect from "@/lib/mongodb";
@@ -147,7 +148,7 @@ export async function DELETE(
         }
         
         // Vérifier que l'utilisateur est modérateur ou admin
-        if (user.role !== 'Admin' && user.role !== 'Modérateur') {
+        if (!hasRole(user, "Admin", "Modérateur")) {
             return NextResponse.json(
                 { success: false, message: "Accès non autorisé. Rôle modérateur requis." },
                 { status: 403 }
@@ -173,7 +174,7 @@ export async function DELETE(
         }
         
         // Vérifier qu'il existe un signalement actif pour ce contenu (uniquement pour les modérateurs)
-        const isAdmin = user.role === 'Admin';
+        const isAdmin = hasRole(user, "Admin");
         if (!isAdmin) {
             const existingReport = await Report.findOne({
                 'reportedContent.type': 'forum_question',

@@ -150,7 +150,7 @@ function fidelity(source: string, sections: any[]) {
 export async function POST(req: NextRequest) {
     // --- Étape 1 : Authentification AVANT le stream SSE ---
     // Cela évite que le stream soit "aborted" si l'auth ou la DB est lente
-    let user: { _id: any; role: string } | null = null;
+    let user: { _id: any; role: string; roles?: string[] } | null = null;
 
     const authHeader = req.headers.get("authorization");
     if (authHeader?.startsWith("Bearer ")) {
@@ -187,7 +187,7 @@ export async function POST(req: NextRequest) {
         );
     }
 
-    if (!(await hasPermission(user.role, 'course.create'))) {
+    if (!(await hasPermission(user, 'course.create'))) {
         return NextResponse.json(
             { message: "Rôle insuffisant pour générer un cours." },
             { status: 403 }

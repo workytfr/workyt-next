@@ -1,3 +1,4 @@
+import { roleFilter } from "@/lib/userRoles";
 import Notification, { INotification } from '@/models/Notification';
 import Question from '@/models/Question';
 import Answer from '@/models/Answer';
@@ -526,7 +527,7 @@ export class NotificationService {
     ): Promise<void> {
         try {
             const helpers = await User.find(
-                { role: { $in: ['Correcteur', 'Helpeur', 'Admin'] } },
+                roleFilter(['Correcteur', 'Helpeur', 'Admin']),
                 '_id'
             ).lean();
 

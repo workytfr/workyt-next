@@ -31,7 +31,7 @@ export async function GET() {
         const user = await currentUser();
         if (!user) return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
 
-        const allowed = await hasPermission(user.role as string, "profile.custom_photo");
+        const allowed = await hasPermission(user, "profile.custom_photo");
         await dbConnect();
         const custom = await ProfileCustomization.findOne({ user: user.id }).select("customPhoto");
 
@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
     try {
         const user = await currentUser();
         if (!user) return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
-        if (!(await hasPermission(user.role as string, "profile.custom_photo"))) {
+        if (!(await hasPermission(user, "profile.custom_photo"))) {
             return NextResponse.json(
                 { error: "Cette fonctionnalité est réservée aux bénévoles de l'association." },
                 { status: 403 },
@@ -104,7 +104,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Aucune photo enregistrée." }, { status: 404 });
         }
         // Réactiver demande toujours le droit ; désactiver reste possible
-        if (isActive && !(await hasPermission(user.role as string, "profile.custom_photo"))) {
+        if (isActive && !(await hasPermission(user, "profile.custom_photo"))) {
             return NextResponse.json({ error: "Fonctionnalité réservée aux bénévoles." }, { status: 403 });
         }
 

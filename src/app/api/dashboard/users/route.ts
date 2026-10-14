@@ -1,3 +1,4 @@
+import { hasRole, roleFilter } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
@@ -10,6 +11,14 @@ import { hasPermission, getRolesMap } from '@/lib/roles';
 // Forcer le rendu dynamique pour cette route
 export const dynamic = "force-dynamic";
 
+/** Rôles secondaires reçus du client : liste de rôles existants, dédoublonnée. null si invalide. */
+async function validateRoles(roles: unknown): Promise<string[] | null> {
+    if (!Array.isArray(roles) || !roles.every((r) => typeof r === 'string')) return null;
+    const rolesMap = await getRolesMap();
+    if (!roles.every((r) => rolesMap.has(r))) return null;
+    return [...new Set(roles as string[])];
+}
+
 /**
  * GET /api/dashboard/users
  * Affiche la liste de tous les utilisateurs avec filtres avancés et pagination
@@ -19,7 +28,7 @@ export async function GET(req: NextRequest) {
 
     try {
         const admin = await authMiddleware(req);
-        if (!admin || admin.role !== 'Admin') {
+        if (!admin || !hasRole(admin, "Admin")) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 
@@ -51,9 +60,9 @@ export async function GET(req: NextRequest) {
             ];
         }
 
-        // Filtre par rôle
+        // Filtre par rôle (principal ou secondaire)
         if (roleParam && roleParam !== 'all') {
-            query.role = roleParam;
+            query.$and = [roleFilter(roleParam)];
         }
 
         // Filtre par badges
@@ -89,9 +98,9 @@ export async function GET(req: NextRequest) {
         // Calculer les statistiques pour les filtres
         const stats = await Promise.all([
             User.countDocuments({ role: 'Apprenti' }),
-            User.countDocuments({ role: 'Rédacteur' }),
-            User.countDocuments({ role: 'Correcteur' }),
-            User.countDocuments({ role: 'Admin' }),
+            User.countDocuments(roleFilter('Rédacteur')),
+            User.countDocuments(roleFilter('Correcteur')),
+            User.countDocuments(roleFilter('Admin')),
             User.countDocuments({ badges: { $exists: true, $ne: [], $not: { $size: 0 } } }),
             User.aggregate([
                 { $group: { _id: null, minPoints: { $min: '$points' }, maxPoints: { $max: '$points' }, avgPoints: { $avg: '$points' } } }
@@ -130,19 +139,20 @@ export async function GET(req: NextRequest) {
  * PATCH /api/dashboard/users
  * Permet à l'administrateur de mettre à jour les informations d'un utilisateur.
  * Le corps de la requête doit contenir au moins "userId".
- * Vous pouvez envoyer d'autres champs (role, name, email, username, bio, points, badges) à modifier.
+ * Vous pouvez envoyer d'autres champs (role, roles, name, email, username, bio, points, badges) à modifier.
+ * `roles` = rôles secondaires (le rôle principal en est retiré s'il y figure).
  */
 export async function PATCH(req: NextRequest) {
     await dbConnect();
 
     try {
         const admin = await authMiddleware(req);
-        if (!admin || admin.role !== 'Admin') {
+        if (!admin || !hasRole(admin, "Admin")) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 
         const body = await req.json();
-        const { userId, role, ...rest } = body;
+        const { userId, role, roles, ...rest } = body;
 
         if (!userId) {
             return NextResponse.json({ error: 'Identifiant de l\'utilisateur manquant.' }, { status: 400 });
@@ -156,6 +166,24 @@ export async function PATCH(req: NextRequest) {
                 return NextResponse.json({ error: 'Rôle invalide.' }, { status: 400 });
             }
             updateObj.role = role;
+        }
+
+        if (roles !== undefined) {
+            const checked = await validateRoles(roles);
+            if (!checked) {
+                return NextResponse.json({ error: 'Rôles secondaires invalides.' }, { status: 400 });
+            }
+            updateObj.roles = checked;
+        }
+
+        // Un rôle secondaire identique au principal ne sert à rien
+        if (updateObj.role || updateObj.roles) {
+            const current = await User.findById(userId).select('role roles').lean<{ role: string; roles?: string[] }>();
+            if (!current) {
+                return NextResponse.json({ error: 'Utilisateur non trouvé.' }, { status: 404 });
+            }
+            const primary = updateObj.role ?? current.role;
+            updateObj.roles = (updateObj.roles ?? current.roles ?? []).filter((r: string) => r !== primary);
         }
 
         if (rest.name) updateObj.name = rest.name;
@@ -188,16 +216,21 @@ export async function POST(req: NextRequest) {
 
     try {
         const admin = await authMiddleware(req);
-        if (!admin || admin.role !== 'Admin') {
+        if (!admin || !hasRole(admin, "Admin")) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 
         const body = await req.json();
-        const { name, email, username, role, bio, points, badges } = body;
+        const { name, email, username, role, roles, bio, points, badges } = body;
 
         // Validation des champs requis
         if (!name || !email || !username || !role) {
             return NextResponse.json({ error: 'Tous les champs obligatoires doivent être remplis.' }, { status: 400 });
+        }
+
+        const extraRoles = roles === undefined ? [] : await validateRoles(roles);
+        if (!extraRoles) {
+            return NextResponse.json({ error: 'Rôles secondaires invalides.' }, { status: 400 });
         }
 
         // Vérifier si l'email ou username existe déjà
@@ -217,6 +250,7 @@ export async function POST(req: NextRequest) {
             email,
             username,
             role,
+            roles: extraRoles.filter((r) => r !== role),
             bio: bio || '',
             points: points || 20,
             badges: badges || [],

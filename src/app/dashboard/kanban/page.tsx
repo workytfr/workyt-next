@@ -91,9 +91,8 @@ function Column({
 
 export default function KanbanPage() {
     const { data: session, status } = useSession();
-    const role = (session?.user as any)?.role as string | undefined;
-
-    const accessible = useMemo(() => getAccessibleBoards(role), [role]);
+    const user = session?.user;
+    const accessible = useMemo(() => getAccessibleBoards(user), [user]);
     const [board, setBoard] = useState<string>("");
     const [columns, setColumns] = useState<ColumnsState>(emptyColumns());
     const [members, setMembers] = useState<KanbanMember[]>([]);

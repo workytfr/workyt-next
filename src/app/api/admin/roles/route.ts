@@ -15,15 +15,18 @@ export async function GET(req: NextRequest) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'role.manage'))) {
+        if (!(await hasPermission(user, 'role.manage'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 
         const roles = await Role.find().sort({ priority: -1 }).lean();
 
         // Compter les utilisateurs par rôle
+        // Rôle principal + rôles secondaires, chaque utilisateur compté une fois par rôle
         const roleCounts = await User.aggregate([
-            { $group: { _id: '$role', count: { $sum: 1 } } },
+            { $project: { all: { $setUnion: [['$role'], { $ifNull: ['$roles', []] }] } } },
+            { $unwind: '$all' },
+            { $group: { _id: '$all', count: { $sum: 1 } } },
         ]);
         const countMap = new Map(roleCounts.map((r: any) => [r._id, r.count]));
 
@@ -51,7 +54,7 @@ export async function POST(req: NextRequest) {
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'role.manage'))) {
+        if (!(await hasPermission(user, 'role.manage'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 

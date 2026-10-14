@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -15,7 +16,7 @@ export const dynamic = 'force-dynamic';
 export async function POST() {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user || (session.user as any).role !== 'Admin') {
+    if (!session?.user || !hasRole(session.user, "Admin")) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 403 });
     }
 

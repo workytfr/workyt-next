@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -89,7 +90,7 @@ export default function SectionsPage() {
 
     // Activer "Mes cours" par défaut pour les non-Admins
     useEffect(() => {
-        if (session?.user?.role && session.user.role !== "Admin") {
+        if (session?.user?.role && !hasRole(session.user, "Admin")) {
             setMySections(true);
         }
     }, [session?.user?.role]);

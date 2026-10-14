@@ -1,14 +1,16 @@
 import { withAuth } from "next-auth/middleware";
 import { NextResponse } from "next/server";
+import { getUserRoles, type RoleSubject } from "@/lib/userRoles";
 
 export default withAuth(
     function middleware(req) {
         const { pathname } = req.nextUrl;
         const token = req.nextauth.token;
 
-        // Protection des routes dashboard : seul "Apprenti" (rôle par défaut) est bloqué.
+        // Protection des routes dashboard : bloqué si l'on n'a aucun rôle autre
+        // qu'"Apprenti" (rôle par défaut), rôles secondaires compris.
         // Les permissions fines sont vérifiées côté API via hasPermission().
-        if (pathname.startsWith("/dashboard") && (token?.role === "Apprenti" || !token?.role)) {
+        if (pathname.startsWith("/dashboard") && getUserRoles(token as RoleSubject).every((r) => r === "Apprenti")) {
             return NextResponse.redirect(new URL("/", req.url));
         }
 

@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     try {
         // Vérification de l'authentification et des rôles autorisés
         const user = await authMiddleware(req);
-        if (!user || !(await hasPermission(user.role, 'dashboard.access'))) {
+        if (!user || !(await hasPermission(user, 'dashboard.access'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 

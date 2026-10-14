@@ -35,7 +35,7 @@ export async function DELETE(
         // Auteur du commentaire OU auteur de la fiche OU modérateur/admin
         const isCommentAuthor = commentAuthorId === userId;
         const isFicheAuthor = ficheAuthorId === userId;
-        const isModerator = await hasPermission(user.role, "fiche.delete").catch(() => false);
+        const isModerator = await hasPermission(user, "fiche.delete").catch(() => false);
 
         if (!isCommentAuthor && !isFicheAuthor && !isModerator) {
             return NextResponse.json(

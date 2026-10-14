@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
                 name: user.name,
                 email: user.email,
                 role: user.role,
+                roles: user.roles || [],
                 points: user.points,
                 badges: user.badges || [],
                 selectedBadge: user.selectedBadge || null,

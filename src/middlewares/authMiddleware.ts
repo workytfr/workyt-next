@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest } from "next/server";
 import jwt from "jsonwebtoken";
 import User from "@/models/User";
@@ -105,7 +106,7 @@ export const moderatorAuthMiddleware = async (req: NextRequest) => {
     try {
         const user = await authMiddleware(req);
         
-        if (user.role !== 'Admin' && user.role !== 'Modérateur') {
+        if (!hasRole(user, "Admin", "Modérateur")) {
             throw new Error("Accès non autorisé. Rôle insuffisant.");
         }
         
@@ -121,7 +122,7 @@ export const adminAuthMiddleware = async (req: NextRequest) => {
     try {
         const user = await authMiddleware(req);
         
-        if (user.role !== 'Admin') {
+        if (!hasRole(user, "Admin")) {
             throw new Error("Accès non autorisé. Rôle admin requis.");
         }
         

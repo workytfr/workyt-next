@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import React, { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -73,7 +74,7 @@ export default function CleanupR2Page() {
 
     useEffect(() => {
         if (status === "unauthenticated") router.push("/");
-        if (session && (session.user as any)?.role !== "Admin") router.push("/dashboard");
+        if (session && !hasRole(session.user, "Admin")) router.push("/dashboard");
     }, [session, status, router]);
 
     useEffect(() => {
@@ -122,7 +123,7 @@ export default function CleanupR2Page() {
         }
     };
 
-    if (status === "loading" || (session && (session.user as any)?.role !== "Admin")) {
+    if (status === "loading" || (session && !hasRole(session.user, "Admin"))) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <Loader2 className="animate-spin text-gray-400" />

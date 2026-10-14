@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Exercise, { DifficultyLevel } from "@/models/Exercise";
@@ -38,7 +39,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!(await hasPermission(user.role, 'course.edit'))) {
+        if (!(await hasPermission(user, 'course.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -121,7 +122,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!(await hasPermission(user.role, 'course.edit'))) {
+        if (!(await hasPermission(user, 'course.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -133,7 +134,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         }
 
         // Un Rédacteur ne peut supprimer que ses propres exercices
-        if (user.role === "Rédacteur" && String(existingExercise.author) !== String(user._id)) {
+        if (hasRole(user, "Rédacteur") && !hasRole(user, "Admin", "Correcteur") && String(existingExercise.author) !== String(user._id)) {
             return NextResponse.json({ error: "Vous ne pouvez supprimer que vos propres exercices." }, { status: 403 });
         }
 

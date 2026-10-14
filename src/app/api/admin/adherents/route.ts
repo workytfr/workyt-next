@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -9,7 +10,7 @@ import '@/models/User';
 export async function GET() {
     try {
         const session = await getServerSession(authOptions);
-        if (!session?.user || session.user.role !== 'Admin') {
+        if (!session?.user || !hasRole(session.user, "Admin")) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
 

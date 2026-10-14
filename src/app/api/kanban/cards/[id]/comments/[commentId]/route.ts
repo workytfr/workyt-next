@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -24,7 +25,7 @@ export async function DELETE(
         if (!card) {
             return NextResponse.json({ error: 'Carte introuvable' }, { status: 404 });
         }
-        if (!canAccessBoard(session.user.role, card.board)) {
+        if (!canAccessBoard(session.user, card.board)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
 
@@ -36,7 +37,7 @@ export async function DELETE(
             return NextResponse.json({ error: "L'activité ne peut pas être supprimée" }, { status: 400 });
         }
         const isOwner = comment.author && String(comment.author) === session.user.id;
-        if (!isOwner && session.user.role !== 'Admin') {
+        if (!isOwner && !hasRole(session.user, "Admin")) {
             return NextResponse.json({ error: 'Action non autorisée' }, { status: 403 });
         }
 

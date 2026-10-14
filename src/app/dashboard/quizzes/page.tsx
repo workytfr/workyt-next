@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
@@ -69,7 +70,7 @@ export default function QuizzesPage() {
 
     // Activer "Mes quiz" par défaut pour les non-Admins
     useEffect(() => {
-        if (session?.user?.role && session.user.role !== "Admin") {
+        if (session?.user?.role && !hasRole(session.user, "Admin")) {
             setMyQuizzes(true);
         }
     }, [session?.user?.role]);

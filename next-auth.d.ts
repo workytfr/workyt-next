@@ -5,6 +5,7 @@ declare module "next-auth" {
         id: string;
         username: string;
         role: string;
+        roles?: string[];
         points: number;
         badges: string[];
         bio: string;
@@ -23,6 +24,7 @@ declare module "next-auth" {
         username: string;
         email: string;
         role: string;
+        roles?: string[];
         points: number;
         accessToken: string;
     }

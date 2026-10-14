@@ -22,11 +22,15 @@ interface User {
     email: string;
     username: string;
     role: "Apprenti" | "Helpeur" | "Rédacteur" | "Correcteur" | "Modérateur" | "Admin";
+    roles?: string[];
     points: number;
     badges: string[];
     bio: string;
     createdAt: string;
 }
+
+/** Rôles qu'on peut cumuler avec le rôle principal (Apprenti n'apporte rien) */
+const SECONDARY_ROLES = ["Helpeur", "Rédacteur", "Correcteur", "Modérateur", "Admin"];
 
 interface UserFormProps {
     user?: User | null;
@@ -41,6 +45,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
     const [email, setEmail] = useState(user?.email || "");
     const [username, setUsername] = useState(user?.username || "");
     const [role, setRole] = useState<"Apprenti" | "Helpeur" | "Rédacteur" | "Correcteur" | "Modérateur" | "Admin">(user?.role || "Apprenti");
+    const [roles, setRoles] = useState<string[]>(user?.roles || []);
     const [points, setPoints] = useState(user?.points || 20);
     const [badges, setBadges] = useState(user?.badges?.join(", ") || "");
     const [bio, setBio] = useState(user?.bio || "");
@@ -78,6 +83,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
             email: email.trim().toLowerCase(),
             username: username.trim().toLowerCase(),
             role,
+            roles: roles.filter((r) => r !== role),
             points: Math.max(0, points),
             badges: badges.split(",").map((b) => b.trim()).filter((b) => b.length > 0),
             bio: bio.trim(),
@@ -114,6 +120,7 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
                 setEmail("");
                 setUsername("");
                 setRole("Apprenti");
+                setRoles([]);
                 setPoints(20);
                 setBadges("");
                 setBio("");
@@ -220,6 +227,37 @@ export default function UserForm({ user, onSuccess }: UserFormProps) {
                                 <SelectItem value="Admin">Admin</SelectItem>
                             </SelectContent>
                         </Select>
+                    </div>
+
+                    <div>
+                        <Label>Rôles secondaires</Label>
+                        <p className="text-xs text-gray-500 mb-2">
+                            Leurs droits s&apos;ajoutent à ceux du rôle principal.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                            {SECONDARY_ROLES.filter((r) => r !== role).map((r) => {
+                                const active = roles.includes(r);
+                                return (
+                                    <button
+                                        key={r}
+                                        type="button"
+                                        aria-pressed={active}
+                                        onClick={() =>
+                                            setRoles((prev) =>
+                                                active ? prev.filter((x) => x !== r) : [...prev, r]
+                                            )
+                                        }
+                                        className={`rounded-full border px-3 py-1 text-sm transition-colors ${
+                                            active
+                                                ? "border-orange-500 bg-orange-50 text-orange-700"
+                                                : "border-gray-300 text-gray-600 hover:bg-gray-50"
+                                        }`}
+                                    >
+                                        {r}
+                                    </button>
+                                );
+                            })}
+                        </div>
                     </div>
 
                     <div>

@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Course from "@/models/Course";
@@ -57,11 +58,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         // Vérification des permissions : auteur du cours, correcteur ou admin
-        if (user.role === "Rédacteur" && !existingCourse.authors.includes(user._id)) {
+        if (hasRole(user, "Rédacteur") && !hasRole(user, "Admin", "Correcteur") && !existingCourse.authors.includes(user._id)) {
             return NextResponse.json({ error: "Vous ne pouvez modifier que vos propres cours." }, { status: 403 });
         }
 
-        if (!(await hasPermission(user.role, 'course.edit'))) {
+        if (!(await hasPermission(user, 'course.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -162,7 +163,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (user.role !== "Admin") {
+        if (!hasRole(user, "Admin")) {
             return NextResponse.json({ error: "Seul un Admin peut supprimer un cours." }, { status: 403 });
         }
 

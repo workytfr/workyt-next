@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import ProfileAvatar from "@/components/ui/profile";
@@ -122,7 +123,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
                 <div className="space-y-4">
                     {updatedAnswers.map((answer) => {
                         const isQuestionOwner = question?.user && session?.user.id === question.user._id;
-                        const isStaff = session?.user.role && ["Admin", "Helpeur"].includes(session.user.role);
+                        const isStaff = hasRole(session?.user, "Admin", "Helpeur");
                         const isValidated = answer.status === "Validée";
                         const isBestAnswer = answer.status === "Meilleure Réponse";
                         const hasLiked = answer.likedBy.includes(session?.user.username);

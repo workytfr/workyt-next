@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
 
         // Pour un accès public aux cours, on affiche uniquement ceux qui sont publiés
         // Les utilisateurs avec des rôles spécifiques peuvent voir tous les cours
-        if (!user || !(await hasPermission(user.role, 'course.edit'))) {
+        if (!user || !(await hasPermission(user, 'course.edit'))) {
             filters.status = "publie";
         }
 

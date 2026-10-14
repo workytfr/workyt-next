@@ -33,7 +33,7 @@ export async function GET(
 
         // Vérifier les permissions : helper ou propriétaire
         const isOwner = (submission.userId as any)._id.toString() === user._id.toString();
-        const isHelper = await hasPermission(user.role, 'evaluation.grade');
+        const isHelper = await hasPermission(user, 'evaluation.grade');
 
         if (!isOwner && !isHelper) {
             return NextResponse.json({ error: 'Accès interdit' }, { status: 403 });

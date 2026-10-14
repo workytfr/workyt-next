@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
         const user = await authMiddleware(req);
 
         // 🔒 Vérification des permissions (Accès staff uniquement)
-        if (!user || !(await hasPermission(user.role, 'lesson.create'))) {
+        if (!user || !(await hasPermission(user, 'lesson.create'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -107,7 +107,7 @@ export async function POST(req: NextRequest) {
         await dbConnect();
         const user = await authMiddleware(req);
 
-        if (!user || !(await hasPermission(user.role, 'lesson.create'))) {
+        if (!user || !(await hasPermission(user, 'lesson.create'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -153,7 +153,7 @@ export async function PATCH(req: NextRequest) {
         const user = await authMiddleware(req);
 
         // 🔒 Vérification des permissions (Accès Correcteur et Admin uniquement)
-        if (!user || !(await hasPermission(user.role, 'lesson.approve'))) {
+        if (!user || !(await hasPermission(user, 'lesson.approve'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 

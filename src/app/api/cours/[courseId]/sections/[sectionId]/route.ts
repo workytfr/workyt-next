@@ -37,7 +37,7 @@ export async function GET(
         // Si l'utilisateur n'est pas authentifié (ou n'est pas staff),
         // n'autoriser l'accès qu'aux cours publiés.
         if (
-            (!user || !(await hasPermission(user.role, 'section.edit'))) &&
+            (!user || !(await hasPermission(user, 'section.edit'))) &&
             course.status !== "publie"
         ) {
             return NextResponse.json({ error: "Section non trouvée" }, { status: 404 });

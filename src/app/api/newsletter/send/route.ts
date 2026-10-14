@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
 
         if (!isValidCron) {
             const session = await getServerSession(authOptions);
-            if (!session?.user?.role || session.user.role !== 'Admin') {
+            if (!session?.user?.role || !hasRole(session.user, "Admin")) {
                 return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
             }
         }

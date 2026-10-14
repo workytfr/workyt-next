@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
@@ -46,7 +47,7 @@ export default function LessonsPage() {
     const [itemsPerPage, setItemsPerPage] = useState(10);
     const [totalLessons, setTotalLessons] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
-    const isAdmin = session?.user?.role === "Admin";
+    const isAdmin = hasRole(session?.user, "Admin");
     const [myLessonsOnly, setMyLessonsOnly] = useState(false);
 
     // Hierarchy nav state
@@ -66,7 +67,7 @@ export default function LessonsPage() {
 
     // Activer "Mes leçons" par défaut pour les non-Admins
     useEffect(() => {
-        if (session?.user?.role && session.user.role !== "Admin" && session.user.id) {
+        if (session?.user?.role && !hasRole(session.user, "Admin") && session.user.id) {
             setMyLessonsOnly(true);
             setFilters(prev => ({ ...prev, authorId: session.user.id }));
         }
@@ -463,7 +464,7 @@ export default function LessonsPage() {
                                         </div>
                                     </TableCell>
                                     <TableCell>
-                                        {session?.user?.role === "Admin" || session?.user?.role === "Correcteur" ? (
+                                        {hasRole(session?.user, "Admin", "Correcteur") ? (
                                             <Select
                                                 value={lesson.status}
                                                 onValueChange={(newValue) => handleStatusChange(String(lesson._id), newValue)}

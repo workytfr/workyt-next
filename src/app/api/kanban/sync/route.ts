@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
         if (!isValidBoard(board)) {
             return NextResponse.json({ error: 'Board invalide' }, { status: 400 });
         }
-        if (!canAccessBoard(session.user.role, board)) {
+        if (!canAccessBoard(session.user, board)) {
             return NextResponse.json({ error: 'Accès refusé' }, { status: 403 });
         }
         if (!boardHasAutoSources(board)) {

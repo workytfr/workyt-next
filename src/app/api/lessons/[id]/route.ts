@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Lesson from "@/models/Lesson";
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Non autorisé." }, { status: 401 });
         }
 
-        if (!(await hasPermission(user.role, 'lesson.edit'))) {
+        if (!(await hasPermission(user, 'lesson.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -62,11 +63,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         }
 
         // Vérification des permissions
-        if (user.role === "Rédacteur" && String(existingLesson.author) !== String(user._id)) {
+        if (hasRole(user, "Rédacteur") && !hasRole(user, "Admin", "Correcteur") && String(existingLesson.author) !== String(user._id)) {
             return NextResponse.json({ error: "Vous ne pouvez modifier que vos propres leçons." }, { status: 403 });
         }
 
-        if (!(await hasPermission(user.role, 'lesson.edit'))) {
+        if (!(await hasPermission(user, 'lesson.edit'))) {
             return NextResponse.json({ error: "Accès interdit." }, { status: 403 });
         }
 
@@ -118,7 +119,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
         // 🔹 Await the params Promise
         const resolvedParams = await params;
 
-        if (user.role !== "Admin") {
+        if (!hasRole(user, "Admin")) {
             return NextResponse.json({ error: "Seul un Admin peut supprimer une leçon." }, { status: 403 });
         }
 

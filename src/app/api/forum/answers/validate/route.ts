@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
 
         // ✅ Vérifier si l'utilisateur est autorisé à valider la réponse
         const isOwner = user._id.toString() === question.user._id.toString();
-        const isStaff = await hasPermission(user.role, 'forum.validate_answer');
+        const isStaff = await hasPermission(user, 'forum.validate_answer');
 
         if (!isOwner && !isStaff) {
             return NextResponse.json(

@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { evalFileUrl } from "@/lib/evalFile";
@@ -1020,7 +1021,7 @@ export default function ManageEvaluationsPage() {
                                     >
                                         <Pencil className="w-4 h-4 text-[#6b625c]" />
                                     </button>
-                                    {session?.user?.role === "Admin" && (
+                                    {hasRole(session?.user, "Admin") && (
                                         <AuthorReassign
                                             type="evaluation"
                                             id={ev._id}
@@ -1028,7 +1029,7 @@ export default function ManageEvaluationsPage() {
                                             currentAuthorName={ev.createdBy?.username}
                                         />
                                     )}
-                                    {session?.user?.role === "Admin" && (
+                                    {hasRole(session?.user, "Admin") && (
                                         <button
                                             onClick={() => handleDelete(ev._id)}
                                             className="p-1.5 hover:bg-red-50 rounded-lg transition-colors"

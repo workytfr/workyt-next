@@ -1,3 +1,4 @@
+import { hasRole } from "@/lib/userRoles";
 import { NextRequest, NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import authMiddleware from '@/middlewares/authMiddleware';
@@ -16,7 +17,7 @@ export async function GET(
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'evaluation.create'))) {
+        if (!(await hasPermission(user, 'evaluation.create'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 
@@ -47,7 +48,7 @@ export async function PUT(
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'evaluation.create'))) {
+        if (!(await hasPermission(user, 'evaluation.create'))) {
             return NextResponse.json({ error: 'Accès interdit.' }, { status: 403 });
         }
 
@@ -58,7 +59,7 @@ export async function PUT(
         }
 
         // Seul le créateur ou un admin peut modifier
-        if (evaluation.createdBy.toString() !== user._id.toString() && user.role !== 'Admin') {
+        if (evaluation.createdBy.toString() !== user._id.toString() && !hasRole(user, "Admin")) {
             return NextResponse.json({ error: 'Seul le créateur peut modifier.' }, { status: 403 });
         }
 
@@ -91,7 +92,7 @@ export async function DELETE(
         const user = await authMiddleware(req);
         await connectDB();
 
-        if (!(await hasPermission(user.role, 'evaluation.delete'))) {
+        if (!(await hasPermission(user, 'evaluation.delete'))) {
             return NextResponse.json({ error: 'Permission refusée.' }, { status: 403 });
         }
 

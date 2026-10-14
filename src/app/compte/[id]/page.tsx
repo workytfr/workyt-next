@@ -1,5 +1,6 @@
 "use client";
 
+import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect, use } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
@@ -101,7 +102,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
 
     useEffect(() => {
         if (!id || !session?.user?.id) return;
-        if (session.user.id !== id && session.user.role !== 'Admin') return;
+        if (session.user.id !== id && !hasRole(session.user, "Admin")) return;
         fetch('/api/newsletter/preferences')
             .then(res => res.json())
             .then(data => {
@@ -277,7 +278,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     };
 
     const isOwner = session?.user?.id === id;
-    const isAdmin = session?.user?.role === "Admin";
+    const isAdmin = hasRole(session?.user, "Admin");
 
 
     if ((loading && !user) || customization === undefined) {
