@@ -56,8 +56,9 @@ async function fetchNewFiches(since: Date) {
 async function fetchBlogPosts(since: Date): Promise<Array<{ title: string; link: string; pubDate: string; thumbnail: string }>> {
     try {
         const afterDate = since.toISOString();
+        // API publique du nouveau blog (l'ancienne API WordPress n'existe plus)
         const res = await fetch(
-            `https://blog.workyt.fr/wp-json/wp/v2/posts?after=${afterDate}&per_page=10&_fields=id,title,link,date,_embedded&_embed=wp:featuredmedia`,
+            `https://blog.workyt.fr/api/public/posts/?after=${encodeURIComponent(afterDate)}&limit=10`,
             { signal: AbortSignal.timeout(10000) }
         );
 
@@ -66,20 +67,13 @@ async function fetchBlogPosts(since: Date): Promise<Array<{ title: string; link:
             return [];
         }
 
-        const posts = await res.json();
-        return posts.map((p: any) => {
-            const media = p._embedded?.['wp:featuredmedia']?.[0];
-            const thumbnail = media?.media_details?.sizes?.thumbnail?.source_url
-                || media?.media_details?.sizes?.medium?.source_url
-                || media?.source_url
-                || '';
-            return {
-                title: p.title?.rendered || p.title || '',
-                link: p.link || '',
-                pubDate: p.date || '',
-                thumbnail,
-            };
-        });
+        const json = await res.json();
+        return (Array.isArray(json?.data) ? json.data : []).map((p: any) => ({
+            title: p.title || '',
+            link: p.url || '',
+            pubDate: p.publishedAt || '',
+            thumbnail: p.image || '',
+        }));
     } catch (error) {
         console.warn('Impossible de recuperer les articles du blog:', error);
         return [];
