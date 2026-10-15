@@ -16,6 +16,15 @@ export interface CalendarDay {
   claimed: boolean;
 }
 
+/** Une semaine de la Guerre des Clans (voir clanService.getWarWeeks) */
+export interface WarWeek {
+  season: string;
+  /** Lundi de la semaine, 'YYYY-MM-DD' */
+  monday: string;
+  status: 'war' | 'planned' | 'truce';
+  theme: string;
+}
+
 export type CellState = 'claimed' | 'missed' | 'today' | 'future';
 
 export interface CollectionCard {

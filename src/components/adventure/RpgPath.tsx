@@ -4,7 +4,8 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import type { BoardTheme } from './boardThemes';
-import type { CalendarDay } from './types';
+import type { CalendarDay, WarWeek } from './types';
+import { warIcon } from './warIcons';
 import { getMonsterForDate } from '@/lib/monsters';
 import { GROUND_COMPONENTS } from './SceneArt';
 
@@ -17,6 +18,8 @@ import { GROUND_COMPONENTS } from './SceneArt';
 
 interface RpgPathProps {
   days: CalendarDay[];
+  /** Semaines de la Guerre des Clans : une bannière au lundi de chacune */
+  wars?: WarWeek[];
   todayStr: string;
   theme: BoardTheme;
   heroLevel: number;
@@ -46,7 +49,7 @@ function mulberry32(seed: number) {
 const FLOWER_COLORS = ['#F472B6', '#A78BFA', '#FDE047', '#FB923C', '#F87171', '#FFFFFF'];
 
 export default function RpgPath({
-  days, todayStr, theme, heroLevel, avatarUrl, flameTrailSet, flameMilestones,
+  days, wars = [], todayStr, theme, heroLevel, avatarUrl, flameTrailSet, flameMilestones,
   claiming, quizLocked, canClaim, fainted = false, onClaim, vertical = false
 }: RpgPathProps) {
   const W = vertical ? 480 : 1400;
@@ -231,6 +234,34 @@ export default function RpgPath({
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [monthSeed, nodes, vertical, W, H]);
+
+  // Bannières de guerre : au lundi de chaque semaine (au 1er du mois si la
+  // semaine a commencé le mois d'avant), du côté opposé au panneau de semaine.
+  const warMarkers = useMemo(() => {
+    if (N < 2) return [];
+    return wars.flatMap((w) => {
+      const idx = w.monday < days[0].date ? 0 : days.findIndex((d) => d.date === w.monday);
+      if (idx < 0) return [];
+      const p = nodes[idx];
+      const perp = segPerp(Math.min(idx, N - 2));
+      const sign = [7, 14, 21, 28].indexOf(idx);
+      const side = sign >= 0 && sign % 2 === 0 ? -1 : 1;
+      // C'est le MÉDAILLON qu'on écarte de la case (le mât pend dessous) :
+      // écarter le pied du mât laissait le médaillon retomber sur la route.
+      const dist = roadW * 0.5 + r * 2.2;
+      const s = r / 16;
+      const cx = Math.min(W - 16 * s, Math.max(16 * s, p.x + perp.x * side * dist));
+      const cy = Math.min(H - 36 * s, Math.max(16 * s, p.y + perp.y * side * dist));
+      return [{
+        key: w.season,
+        x: cx,
+        y: cy + 33 * s,
+        planned: w.status === 'planned',
+        ...warIcon(w)
+      }];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wars, days, nodes, N, W, H, roadW, r]);
 
   const todayNode = nodes[days.findIndex(d => d.date === todayStr)];
 
@@ -430,6 +461,18 @@ export default function RpgPath({
             </g>
           );
         })}
+
+        {/* --- Bannières de la Guerre des Clans (trêve = colombe), par-dessus les cases --- */}
+        {warMarkers.map((m) => (
+          // Taille calée sur celle des cases : lisible sur les deux plateaux
+          <g key={`war-${m.key}`} transform={`translate(${m.x}, ${m.y}) scale(${r / 16})`} opacity={m.planned ? 0.7 : 1}>
+            <title>{m.title}</title>
+            <line x1="0" y1="0" x2="0" y2="-20" stroke="#6B4F2E" strokeWidth="3" strokeLinecap="round" />
+            <circle cy="-33" r="15" fill={m.fill} stroke="#3A2E2E" strokeWidth="2.2" />
+            <circle cy="-33" r="11.5" fill="none" stroke={m.ring} strokeWidth="2" strokeDasharray={m.planned ? '4 3' : undefined} />
+            <text y="-33" textAnchor="middle" dominantBaseline="central" fontSize="15">{m.icon}</text>
+          </g>
+        ))}
       </svg>
 
       {/* --- Arbres en bordure (overlay, taille maîtrisée) --- */}

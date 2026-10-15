@@ -21,6 +21,7 @@ import ChestCard from '@/components/chests/ChestCard';
 import type { ChestWithOdds } from '@/lib/chestOdds';
 import { Eyebrow } from '@/components/wk/primitives';
 import ProfileAvatar from '@/components/ui/profile';
+import { clanThemeFor, isClanThemeId, THEMES, type ClanTheme } from '@/lib/clanThemes';
 
 /**
  * Tableau de bord de la Guerre des Clans.
@@ -208,12 +209,17 @@ export default function ClanPage() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState<string | null>(null);
   const [showTutorial, setShowTutorial] = useState(false);
+  // Aperçu d'un thème hors saison : /clan?theme=halloween (décor seulement)
+  const [previewTheme, setPreviewTheme] = useState<string | null>(null);
 
   const load = useCallback(
     () =>
       fetch('/api/clan')
         .then((r) => (r.ok ? r.json() : null))
-        .then((j) => setData(j?.data ?? null))
+        .then((j) => {
+          setPreviewTheme(new URLSearchParams(window.location.search).get('theme'));
+          setData(j?.data ?? null);
+        })
         .catch(() => {}),
     []
   );
@@ -271,14 +277,18 @@ export default function ClanPage() {
     );
   }
 
+  const theme = isClanThemeId(previewTheme) ? THEMES[previewTheme] : clanThemeFor(data?.season);
+
   /* ── Pas encore enrôlé, ou semaine d'événement ── */
   if (!data?.clan) {
     return (
       <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
         <header className="relative overflow-hidden border-b border-[rgba(26,21,18,0.08)]">
           <div className="wk-dotgrid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+          <ThemeGlow theme={theme} />
           <div className={`${WIDE} relative pb-10 pt-10 md:pb-14 md:pt-14`}>
             <Eyebrow>Guerre des Clans</Eyebrow>
+            <ThemeBadge theme={theme} />
             <h1 className="font-serif-display mt-3 max-w-[20ch] text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95]">
               {data?.reason === 'event_week' ? 'Guerre suspendue' : "Tu n'es pas encore enrôlé"}
               <span className="text-[var(--wk-accent)]">.</span>
@@ -315,9 +325,11 @@ export default function ClanPage() {
       {/* ─── En-tête ─── */}
       <header className="relative overflow-hidden border-b border-[rgba(26,21,18,0.08)]">
         <div className="wk-dotgrid pointer-events-none absolute inset-0 opacity-50" aria-hidden="true" />
+        <ThemeGlow theme={theme} />
         <div className={`${WIDE} relative grid grid-cols-1 gap-8 pb-10 pt-10 md:pb-12 md:pt-14 lg:grid-cols-12 lg:items-end`}>
           <div className="lg:col-span-7">
             <Eyebrow>Guerre des Clans · Jour {data.day ?? 1} sur 7</Eyebrow>
+            <ThemeBadge theme={theme} />
             <h1 className="font-serif-display mt-3 text-[clamp(2.2rem,5vw,3.75rem)] leading-[0.95]">
               {clan.tierName}<span className="text-[var(--wk-accent)]">.</span>
             </h1>
@@ -382,6 +394,7 @@ export default function ClanPage() {
           <div className="mt-5 grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
             <CastleCard
               side={clan}
+              theme={theme}
               mine
               highlight={isAttacker ? clan.dailyOrder : me?.gate ?? clan.dailyOrder}
               /* La pression réelle prime sur l'ordre affiché : c'est là que les
@@ -404,6 +417,7 @@ export default function ClanPage() {
             {rival ? (
               <CastleCard
                 side={rival}
+                theme={theme}
                 enemy
                 highlight={isAttacker ? me?.gate ?? clan.dailyOrder : null}
                 deploy={data.deployment?.attack}
@@ -852,10 +866,33 @@ function WarScoreboard({
   );
 }
 
+/** Halo d'ambiance de l'en-tête, pendant une semaine à thème. */
+function ThemeGlow({ theme }: { theme: ClanTheme }) {
+  if (!theme.page) return null;
+  return <div className="pointer-events-none absolute inset-0" style={{ background: theme.page.headerGlow }} aria-hidden="true" />;
+}
+
+/** Nom et ambiance de la semaine à thème, sous le surtitre. */
+function ThemeBadge({ theme }: { theme: ClanTheme }) {
+  if (!theme.page) return null;
+  return (
+    <p className="mt-3 flex max-w-[62ch] flex-wrap items-center gap-x-3 gap-y-1.5">
+      <span
+        className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold text-white shadow-[0_2px_0_rgba(26,21,18,0.9)]"
+        style={{ backgroundColor: theme.page.accent }}
+      >
+        <span aria-hidden="true">{theme.emoji}</span> {theme.label}
+      </span>
+      {theme.tagline && <span className="text-sm text-[rgba(26,21,18,0.62)]">{theme.tagline}</span>}
+    </p>
+  );
+}
+
 function CastleCard({
-  side, mine, enemy, highlight, threat, threatShare, scouted, onGateClick, deploy
+  side, mine, enemy, highlight, threat, threatShare, scouted, onGateClick, deploy, theme
 }: {
   side: ClanSide; mine?: boolean; enemy?: boolean;
+  theme: ClanTheme;
   /** Mon dispositif sur les portes de CE château (défense chez moi, assaut chez lui) */
   deploy?: Record<string, GateDeploy>;
   highlight?: string | null;
@@ -902,6 +939,7 @@ function CastleCard({
           threat={threat}
           onGateClick={onGateClick}
           details={false}
+          theme={theme}
           bubbles={Object.fromEntries(
             side.gates.map((g) => [
               g.name,

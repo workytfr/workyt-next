@@ -10,10 +10,11 @@ import CardCollection from './CardCollection';
 import RewardCeremony from './RewardCeremony';
 import SeasonalScene from './SeasonalScene';
 import RpgPath from './RpgPath';
+import { warIcon } from './warIcons';
 import GameRules from './GameRules';
 import HeroPanel, { type HeroState } from './rpg/HeroPanel';
 import { fetchHero, invalidateHero } from '@/lib/heroClient';
-import type { CalendarDay, ClaimResult, CollectionInfo } from './types';
+import type { CalendarDay, ClaimResult, CollectionInfo, WarWeek } from './types';
 import { formatDateLocal, monthNames } from './types';
 import { generatedAvatarUri } from '@/lib/blobatar';
 import { sanitizeLook } from '@/lib/avatarLook';
@@ -30,6 +31,7 @@ import { sanitizeLook } from '@/lib/avatarLook';
 export default function AdventureBoard() {
   const { data: session } = useSession();
   const [days, setDays] = useState<CalendarDay[]>([]);
+  const [wars, setWars] = useState<WarWeek[]>([]);
   const [collection, setCollection] = useState<CollectionInfo>({ cards: [], totalWeeks: 5, setCompleted: false });
   const [streak, setStreak] = useState<{ current: number; milestoneName: string | null }>({ current: 0, milestoneName: null });
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,7 @@ export default function AdventureBoard() {
         date: formatDateLocal(new Date(day.date))
       })));
       if (calData.collection) setCollection(calData.collection);
+      setWars(Array.isArray(calData.wars) ? calData.wars : []);
 
       // Héros RPG (Ã  part : ne doit pas bloquer le plateau)
       // fetchHero mutualise la requête avec BattleModal monté sur la même page
@@ -257,6 +260,7 @@ export default function AdventureBoard() {
       <div className="relative hidden sm:block">
         <RpgPath
           days={days}
+          wars={wars}
           todayStr={todayStr}
           theme={theme}
           heroLevel={hero?.level || 1}
@@ -275,6 +279,7 @@ export default function AdventureBoard() {
       <div className="relative sm:hidden">
         <RpgPath
           days={days}
+          wars={wars}
           todayStr={todayStr}
           theme={theme}
           heroLevel={hero?.level || 1}
@@ -296,6 +301,13 @@ export default function AdventureBoard() {
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Réclamé</span>
         <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-500" /> Traînée de flamme</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-slate-600" /> Brouillard</span>
+        {/* Une entrée par icône réellement présente sur le chemin */}
+        {wars
+          .map((w) => warIcon(w))
+          .filter((w, i, all) => all.findIndex((o) => o.icon === w.icon) === i)
+          .map(({ icon, label }) => (
+            <span key={icon} className="flex items-center gap-1">{icon} {label}</span>
+          ))}
       </div>
 
       {/* Collection du mois */}

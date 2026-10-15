@@ -40,16 +40,23 @@ export async function GET(req: NextRequest) {
       setCompleted: false
     };
 
-    const [calendarData, collection] = await Promise.all([
+    const { getWarWeeks } = await import('@/lib/clanService');
+
+    const [calendarData, collection, wars] = await Promise.all([
       getCalendarData(userId, startDate, endDate),
       // La collection ne doit jamais bloquer l'affichage du calendrier
       getCollection(userId, getMonthKey(startDate)).catch((err) => {
         console.error('Erreur getCollection:', err);
         return fallback;
+      }),
+      // Les guerres non plus : sans elles, le chemin s'affiche sans bannières
+      getWarWeeks(startDate, endDate).catch((err) => {
+        console.error('Erreur getWarWeeks:', err);
+        return [];
       })
     ]);
 
-    return NextResponse.json({ ...calendarData, collection });
+    return NextResponse.json({ ...calendarData, collection, wars });
   } catch (error: any) {
     console.error('Erreur lors de la récupération du calendrier:', error);
     return NextResponse.json(

@@ -94,14 +94,21 @@ export const TOUS_LES_NOMS: string[] = [...ROYAUMES, ...GUILDES];
  * Mélange de Fisher-Yates sur une copie — l'ordre de la liste source ne
  * doit pas déterminer qui obtient les premiers noms.
  */
-export function pickClanNames(count: number, exclude: string[] = []): string[] {
+export function pickClanNames(count: number, exclude: string[] = [], themed: readonly string[] = []): string[] {
   const taken = new Set(exclude);
-  const pool = TOUS_LES_NOMS.filter((n) => !taken.has(n));
+  const shuffled = (list: readonly string[]) => {
+    const pool = list.filter((n) => !taken.has(n));
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    return pool;
+  };
 
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [pool[i], pool[j]] = [pool[j], pool[i]];
-  }
+  // Les noms du thème de la semaine d'abord, le catalogue habituel en renfort
+  const themedPool = shuffled(themed);
+  const themedSet = new Set(themedPool);
+  const pool = [...themedPool, ...shuffled(TOUS_LES_NOMS).filter((n) => !themedSet.has(n))];
 
   // Repli si la population dépasse le catalogue : on suffixe (II, III…)
   const picked = pool.slice(0, count);

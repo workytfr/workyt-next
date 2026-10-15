@@ -6,6 +6,7 @@ import UserLeague from '@/models/UserLeague';
 import PointTransaction from '@/models/PointTransaction';
 import Calendar from '@/models/Calendar';
 import { pickClanNames } from '@/lib/clanNames';
+import { clanThemeFor, type ClanThemeId } from '@/lib/clanThemes';
 // clanCombat ne dépend d'aucun modèle : l'importer ici ne crée pas de cycle.
 import { multiplierFor } from '@/lib/clanCombat';
 
@@ -91,6 +92,48 @@ export async function isEventWeek(from: Date = new Date()): Promise<boolean> {
     isSpecial: true
   });
   return !!special;
+}
+
+/**
+ * Les semaines de guerre d'une période, pour le calendrier des récompenses.
+ *
+ *  - `war`     : les clans ont été formés, la guerre a lieu (ou a eu lieu) ;
+ *  - `planned` : semaine à venir sans événement, la guerre est prévue ;
+ *  - `truce`   : pas de guerre — semaine d'événement, ou trop peu d'actifs
+ *                le lundi (formClans n'a créé aucun clan).
+ *
+ * Une semaine prévue peut encore tourner à la trêve faute de joueurs : on ne
+ * le sait qu'à la formation du lundi.
+ */
+export interface WarWeek {
+  season: string;
+  /** Lundi de la semaine, 'YYYY-MM-DD' */
+  monday: string;
+  status: 'war' | 'planned' | 'truce';
+  theme: ClanThemeId;
+}
+
+export async function getWarWeeks(from: Date, to: Date, now: Date = new Date()): Promise<WarWeek[]> {
+  await dbConnect();
+
+  const current = weekStart(now).getTime();
+  const mondays: Date[] = [];
+  for (let d = weekStart(from); d.getTime() <= to.getTime(); d = new Date(d.getTime() + 7 * 86400000)) {
+    mondays.push(d);
+  }
+  const seasons = mondays.map((m) => seasonKey(m));
+  const formed = new Set<string>(await Clan.distinct('season', { season: { $in: seasons } }));
+
+  return Promise.all(
+    mondays.map(async (monday, i): Promise<WarWeek> => {
+      const season = seasons[i];
+      let status: WarWeek['status'];
+      if (formed.has(season)) status = 'war';
+      else if (monday.getTime() <= current) status = 'truce';
+      else status = (await isEventWeek(monday)) ? 'truce' : 'planned';
+      return { season, monday: monday.toISOString().slice(0, 10), status, theme: clanThemeFor(season).id };
+    })
+  );
 }
 
 /* ---------------------------------------------------------- actifs */
@@ -271,7 +314,7 @@ export async function formClans(now: Date = new Date()): Promise<FormationResult
     return { created: false, reason: 'truce', ...base, players: actives.length };
   }
 
-  const names = pickClanNames(plans.length);
+  const names = pickClanNames(plans.length, [], clanThemeFor(season).names);
 
   // Épaisseur des murs, calibrée sur ce que la PAIRE produit réellement.
   //

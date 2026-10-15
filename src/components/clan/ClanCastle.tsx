@@ -2,6 +2,10 @@
 
 import React from 'react';
 import ClanBanner from './ClanBanner';
+import { THEMES, type ClanTheme } from '@/lib/clanThemes';
+import { DecorSky, DecorFront, decorStyles } from './castleDecor';
+import { KeepOrnaments, GateOrnaments } from './castleOrnaments';
+import { INK, W, TOP, H, GROUND, GH, KEEP, WALL_TOP, WALLS } from './castleGeometry';
 
 /**
  * Le château d'un clan : trois châtelets (une porte entre deux tourelles)
@@ -27,7 +31,6 @@ import ClanBanner from './ClanBanner';
  *    créneaux dans les interstices.
  */
 
-const INK = '#1a1512';
 const PAPER = '#fdfaf4';
 
 export interface CastleGate {
@@ -86,29 +89,7 @@ const TEAM = {
 
 /* ------------------------------------------------------------ géométrie */
 
-const W = 320;
-/** Haut du cadre : la hampe du donjon dépasse au-dessus de zéro */
-const TOP = -36;
-const H = 236;
-/** Le sol, sur lequel tout repose */
-const GROUND = 180;
-
-/** Châtelets : corps central + deux tourelles */
-const GH = {
-  w: 82,
-  xs: [14, 119, 224],
-  /** Haut du corps central (sous les merlons) */
-  bodyTop: 110,
-  /** Haut des tourelles (sous le parapet) */
-  turretTop: 92,
-  turretW: 20
-};
-
-/** Le donjon : plus haut que tout, en retrait */
-const KEEP = { x: 120, w: 80, top: 40 };
-
-/** La courtine : seulement entre les châtelets */
-const WALL_TOP = 124;
+// W, TOP, H, GROUND, GH, KEEP, WALL_TOP : voir castleGeometry
 
 /**
  * Silhouette d'un volume crénelé, en un seul tracé : montant gauche, crête
@@ -200,9 +181,9 @@ function Pennant({ x, y, color }: { x: number; y: number; color: string }) {
 }
 
 /** Panache de fumée — trois boules qui montent. */
-function Smoke({ x, y, cls, scale = 1 }: { x: number; y: number; cls: string; scale?: number }) {
+function Smoke({ x, y, cls, scale = 1, color = '#b9ad9b' }: { x: number; y: number; cls: string; scale?: number; color?: string }) {
   return (
-    <g className={cls} fill="#b9ad9b" stroke={INK} strokeWidth="2" opacity="0.85">
+    <g className={cls} fill={color} stroke={INK} strokeWidth="2" opacity="0.85">
       <circle cx={x} cy={y} r={5 * scale} />
       <circle cx={x + 6 * scale} cy={y - 8 * scale} r={6.5 * scale} />
       <circle cx={x + 1 * scale} cy={y - 18 * scale} r={8 * scale} />
@@ -210,18 +191,18 @@ function Smoke({ x, y, cls, scale = 1 }: { x: number; y: number; cls: string; sc
   );
 }
 
-/** Flamme : deux gouttes emboîtées, orange et jaune Workyt. */
-function Flame({ x, y, cls }: { x: number; y: number; cls: string }) {
+/** Flamme : deux gouttes emboîtées, orange et jaune Workyt (selon le thème). */
+function Flame({ x, y, cls, colors = ['#ff6a1a', '#ffb547'] }: { x: number; y: number; cls: string; colors?: readonly [string, string] }) {
   return (
     <g className={cls}>
       <path
         d={`M${x},${y} c-7,0 -9,-7 -5,-12 c1,4 3,4 4,2 c-1,-5 2,-9 5,-11 c-1,5 6,8 5,15 c0,4 -4,6 -9,6 z`}
-        fill="#ff6a1a"
+        fill={colors[0]}
         stroke={INK}
         strokeWidth="2"
         strokeLinejoin="round"
       />
-      <path d={`M${x},${y - 1} c-3,0 -4,-4 -1,-7 c1,2 2,2 3,0 c2,3 2,7 -2,7 z`} fill="#ffb547" />
+      <path d={`M${x},${y - 1} c-3,0 -4,-4 -1,-7 c1,2 2,2 3,0 c2,3 2,7 -2,7 z`} fill={colors[1]} />
     </g>
   );
 }
@@ -255,6 +236,8 @@ interface Props {
    * affiche déjà ailleurs : deux fois la même jauge, c'est du bruit.
    */
   details?: boolean;
+  /** Thème saisonnier : décor seulement, jamais les couleurs des camps */
+  theme?: ClanTheme;
   className?: string;
 }
 
@@ -269,9 +252,11 @@ export default function ClanCastle({
   onGateClick,
   bubbles,
   details = true,
+  theme = THEMES.classique,
   className
 }: Props) {
   const team = TEAM[side];
+  const decor = theme.castle;
   const keepPct = keepHpMax > 0 ? Math.max(0, Math.min(1, keepHp / keepHpMax)) : 0;
   const keepDown = keepPct <= 0;
   const keepHurt = !keepDown && keepPct < 0.5;
@@ -287,12 +272,7 @@ export default function ClanCastle({
     ? crenelated(KEEP.x - 5, KEEP.top - 12, KEEP.w + 10, 12, 5, 8, [1, 3])
     : `M${KEEP.x - 6},${KEEP.top} V${KEEP.top - 12} H${KEEP.x + KEEP.w + 6} V${KEEP.top} Z`;
 
-  // Segments de courtine, entre deux châtelets — avec 4 px de recouvrement
-  const walls = GH.xs.slice(0, -1).map((x, i) => {
-    const from = x + GH.w - 4;
-    const to = GH.xs[i + 1] + 4;
-    return { x: from, w: to - from };
-  });
+  const walls = WALLS;
 
   const label =
     `Château ${side === 'ally' ? 'du clan' : 'adverse'} : donjon ` +
@@ -335,6 +315,7 @@ export default function ClanCastle({
             .${uid}-flame { animation: ${uid}-flick .5s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
             .${uid}-gate { transition: transform .18s ease; transform-box: fill-box; transform-origin: center bottom; }
             .${uid}-gate[role="button"]:hover, .${uid}-gate[role="button"]:focus-visible { transform: translateY(-3px); outline: none; }
+            ${decor.decor !== 'none' ? decorStyles(uid) : ''}
             @media (prefers-reduced-motion: reduce) {
               .${uid}-march, .${uid}-pulse, .${uid}-smoke, .${uid}-flame { animation: none; }
               .${uid}-gate { transition: none; }
@@ -342,15 +323,34 @@ export default function ClanCastle({
           `}</style>
         </defs>
 
-        {/* ── Le décor : collines au loin, puis le tertre ── */}
-        <path d={`M-10,${GROUND - 26} C40,${GROUND - 62} 90,${GROUND - 56} 130,${GROUND - 30} L-10,${GROUND - 30} Z`} fill="#f5efe3" />
-        <path d={`M180,${GROUND - 30} C222,${GROUND - 70} 284,${GROUND - 66} 330,${GROUND - 34} L330,${GROUND - 30} Z`} fill="#f5efe3" />
+        {/* ── Le ciel du thème, en vignette arrondie derrière le château ── */}
+        {decor.sky && (
+          <>
+            <defs>
+              <linearGradient id={`${uid}-sky`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stopColor={decor.sky[0]} />
+                <stop offset="1" stopColor={decor.sky[1]} />
+              </linearGradient>
+              <clipPath id={`${uid}-skyclip`}>
+                <rect x={-6} y={TOP + 2} width={W + 12} height={GROUND - TOP + 2} rx="18" />
+              </clipPath>
+            </defs>
+            <rect x={-6} y={TOP + 2} width={W + 12} height={GROUND - TOP + 2} rx="18" fill={`url(#${uid}-sky)`} />
+          </>
+        )}
+        <DecorSky id={decor.decor} uid={uid} />
+
+        {/* ── Le décor : collines au loin (dans la vignette du ciel s'il y en a une), puis le tertre ── */}
+        <g clipPath={decor.sky ? `url(#${uid}-skyclip)` : undefined}>
+          <path d={`M-10,${GROUND - 26} C40,${GROUND - 62} 90,${GROUND - 56} 130,${GROUND - 30} L-10,${GROUND - 30} Z`} fill={decor.hills} />
+          <path d={`M180,${GROUND - 30} C222,${GROUND - 70} 284,${GROUND - 66} 330,${GROUND - 34} L330,${GROUND - 30} Z`} fill={decor.hills} />
+        </g>
         <path
           d={`M2,${GROUND + 5} C40,${GROUND - 8} 280,${GROUND - 8} ${W - 2},${GROUND + 5} C250,${GROUND + 11} 70,${GROUND + 11} 2,${GROUND + 5} Z`}
-          fill="#efe6d4"
+          fill={decor.ground}
         />
         {/* Touffes d'herbe */}
-        <g stroke="#5fae3c" strokeWidth="2" strokeLinecap="round" fill="none">
+        <g stroke={decor.grass} strokeWidth="2" strokeLinecap="round" fill="none">
           {[6, 110, 214, 310].map((gx) => (
             <path key={gx} d={`M${gx},${GROUND + 2} l-2,-6 M${gx + 3},${GROUND + 2} v-8 M${gx + 6},${GROUND + 2} l2,-5`} />
           ))}
@@ -429,8 +429,11 @@ export default function ClanCastle({
               {keepDown && <path d={`M${KEEP.x + 70},${KEEP.top + 8} l-8,12 l5,11`} />}
             </g>
           )}
-          {keepDown && <Smoke x={keepCx + 6} y={KEEP.top - 18} cls={`${uid}-smoke`} scale={1.2} />}
+          {keepDown && <Smoke x={keepCx + 6} y={KEEP.top - 18} cls={`${uid}-smoke`} color={decor.smoke} scale={1.2} />}
         </g>
+
+        {/* Ornements de saison du donjon : les châtelets passent devant */}
+        <KeepOrnaments id={decor.decor} uid={uid} keepDown={keepDown} />
 
         {/* ══════════════════ La courtine, entre les châtelets ══════════════════ */}
         {walls.map((w, i) => (
@@ -611,14 +614,14 @@ export default function ClanCastle({
               )}
 
               {/* Fumée dès l'entame, feu quand la porte est à bout */}
-              {st === 'entamee' && <Smoke x={cx + 8} y={GH.bodyTop - 12} cls={`${uid}-smoke`} scale={0.6} />}
+              {st === 'entamee' && <Smoke x={cx + 8} y={GH.bodyTop - 12} cls={`${uid}-smoke`} color={decor.smoke} scale={0.6} />}
               {st === 'critique' && (
                 <>
-                  <Smoke x={cx + 4} y={GH.bodyTop - 20} cls={`${uid}-smoke`} scale={0.75} />
-                  <Flame x={cx + 2} y={GH.bodyTop - 1} cls={`${uid}-flame`} />
+                  <Smoke x={cx + 4} y={GH.bodyTop - 20} cls={`${uid}-smoke`} color={decor.smoke} scale={0.75} />
+                  <Flame x={cx + 2} y={GH.bodyTop - 1} cls={`${uid}-flame`} colors={decor.flame} />
                 </>
               )}
-              {fallen && <Smoke x={cx - 2} y={GH.bodyTop - 4} cls={`${uid}-smoke`} />}
+              {fallen && <Smoke x={cx - 2} y={GH.bodyTop - 4} cls={`${uid}-smoke`} color={decor.smoke} />}
 
               {/* Halo de désignation — pointillés qui défilent : « on y va » */}
               {isHot && (
@@ -657,6 +660,9 @@ export default function ClanCastle({
             </g>
           );
         })}
+
+        <GateOrnaments id={decor.decor} uid={uid} states={gates.map(gateState)} />
+        <DecorFront id={decor.decor} uid={uid} />
       </svg>
 
       {/* ── Les bulles : une par porte, la pointe tournée vers elle ── */}
