@@ -76,14 +76,14 @@ export default function MentionsLegalesPage() {
                     protection contre les attaques) avant d&apos;atteindre
                     l&apos;hébergeur. La base de données du site est hébergée par{" "}
                     <a
-                        href="https://sliplane.io/"
+                        href="https://www.ovhcloud.com/fr/"
                         className="text-orange-500 hover:underline"
                         target="_blank"
                         rel="noopener noreferrer"
                     >
-                        Sliplane
+                        OVHcloud
                     </a>
-                    , <strong>en Allemagne</strong>.
+                    , <strong>en France</strong>.
                 </p>
 
                 <h2>Propriété intellectuelle</h2>

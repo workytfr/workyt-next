@@ -210,7 +210,7 @@ export default function PolitiqueConfidentialitePage() {
                 <ul>
                     <li><strong>youss.dev</strong> (hébergement du site et du blog, en France)</li>
                     <li><strong>Cloudflare</strong> (DNS, CDN et protection DDoS en amont de l&apos;hébergeur)</li>
-                    <li><strong>Sliplane</strong> (hébergement de la base de données, en Allemagne)</li>
+                    <li><strong>OVHcloud</strong> (hébergement de la base de données, en France)</li>
                     <li><strong>Cloudflare R2</strong> (stockage des fichiers déposés)</li>
                     <li><strong>UploadThing</strong> (téléversement de fichiers depuis l&apos;éditeur)</li>
                     <li><strong>Mailchimp</strong> (envoi d&apos;emails — uniquement si tu t&apos;es inscrit)</li>
@@ -227,8 +227,8 @@ export default function PolitiqueConfidentialitePage() {
                     <strong>à Paris, en France</strong>.
                 </p>
                 <p>
-                    La base de données principale du site est hébergée par Sliplane,{" "}
-                    <strong>en Allemagne</strong>. Tout cela reste donc au sein de
+                    La base de données principale du site est hébergée par OVHcloud,{" "}
+                    <strong>en France</strong>. Tout cela reste donc au sein de
                     l&apos;Union européenne.
                 </p>
                 <p>
