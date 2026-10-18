@@ -22,86 +22,44 @@ import "@/models/EvaluationSubmission";
 import "@/models/EvaluationGrade";
 import "@/models/Role";
 
-const connectDB = async (): Promise<void> => {
-    const { MONGODB_URI, NODE_ENV } = process.env;
+// Les écouteurs ne sont posés qu'une fois : chaque reconnexion en ajoutait
+// une nouvelle série (fuite + logs en double).
+let listenersAttached = false;
 
-    if (!MONGODB_URI) {
-        throw new Error("MONGODB_URI is not defined. Please check your environment variables.");
-    }
+function attachListeners() {
+    if (listenersAttached) return;
+    listenersAttached = true;
 
-    // Vérifier l'état actuel de la connexion
-    const connectionState = mongoose.connection.readyState;
+    mongoose.connection.on('error', (err) => {
+        console.error('MongoDB connection error:', err);
+    });
+    mongoose.connection.on('disconnected', () => {
+        console.warn('MongoDB disconnected. Le driver retente la connexion tout seul.');
+    });
+    mongoose.connection.on('reconnected', () => {
+        console.log('MongoDB reconnected successfully.');
+    });
+}
 
-    switch (connectionState) {
-        case 1: // Connected
-            // Vérifier que la connexion est vraiment active en faisant un ping
-            try {
-                if (mongoose.connection.db) {
-                    await mongoose.connection.db.admin().ping();
-                    if (NODE_ENV === "development") {
-                        console.log("MongoDB is already connected and active.");
-                    }
-                    return;
-                } else {
-                    // La base de données n'est pas disponible, on va se reconnecter
-                    console.warn("MongoDB connection appears inactive, reconnecting...");
-                    await mongoose.connection.close();
-                }
-            } catch (error) {
-                // La connexion semble inactive, on va se reconnecter
-                console.warn("MongoDB connection appears inactive, reconnecting...");
-                // Fermer la connexion existante avant de se reconnecter
-                try {
-                    await mongoose.connection.close();
-                } catch (closeError) {
-                    // Ignorer les erreurs de fermeture
-                }
-            }
-            break;
-        case 2: // Connecting
-            if (NODE_ENV === "development") {
-                console.log("MongoDB connection is currently in progress...");
-            }
-            // Attendre un peu pour voir si la connexion se termine
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            // Vérifier à nouveau l'état
-            if (mongoose.connection.readyState === 1) {
-                return;
-            }
-            break;
-        case 3: // Disconnecting
-            // Attendre que la déconnexion se termine
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            break;
-    }
+// Connexion en cours ou établie, partagée par toutes les requêtes de cette copie
+// du site : jamais deux mongoose.connect() en parallèle.
+let connectionPromise: Promise<void> | null = null;
 
+async function openConnection(uri: string): Promise<void> {
+    attachListeners();
     try {
-        // Options de connexion améliorées
-        await mongoose.connect(MONGODB_URI, {
+        await mongoose.connect(uri, {
             serverSelectionTimeoutMS: 10000,
             connectTimeoutMS: 10000,
-            socketTimeoutMS: 45000, // Timeout pour les opérations socket
-            maxPoolSize: 10, // Maintenir jusqu'à 10 connexions socket
-            minPoolSize: 1, // Maintenir au moins 1 connexion socket
-            maxIdleTimeMS: 30000, // Fermer les connexions après 30s d'inactivité
-            heartbeatFrequencyMS: 10000, // Ping toutes les 10s pour maintenir la connexion
+            socketTimeoutMS: 45000,
+            maxPoolSize: 10,
+            minPoolSize: 1,
+            // Pas de maxIdleTimeMS : fermer les sockets inactives au bout de 30 s
+            // obligeait à refaire une poignée de main TLS à presque chaque
+            // requête, justement ce qui expire quand la base est chargée.
+            heartbeatFrequencyMS: 10000,
         });
-
         console.log("MongoDB connected successfully.");
-
-        // Gérer les événements de connexion
-        mongoose.connection.on('error', (err) => {
-            console.error('MongoDB connection error:', err);
-        });
-
-        mongoose.connection.on('disconnected', () => {
-            console.warn('MongoDB disconnected. Will attempt to reconnect on next request.');
-        });
-
-        mongoose.connection.on('reconnected', () => {
-            console.log('MongoDB reconnected successfully.');
-        });
-
     } catch (error: any) {
         console.error("Error connecting to MongoDB:", error.message);
 
@@ -113,27 +71,33 @@ const connectDB = async (): Promise<void> => {
 
         throw new Error("MongoDB connection failed");
     }
-};
+}
 
-// Initialisation unique pour éviter des connexions multiples
-let initialized = false;
-let connectionPromise: Promise<void> | null = null;
+/**
+ * Garantit une connexion à MongoDB.
+ *
+ * Une fois connecté, le driver gère seul les coupures (pool + heartbeat) : on ne
+ * ferme jamais la connexion nous-mêmes, sinon toutes les requêtes en vol
+ * échouent et chaque copie du site refait des poignées de main TLS en rafale.
+ */
+const connectDB = async (): Promise<void> => {
+    const { MONGODB_URI } = process.env;
 
-const defaultExport = async (): Promise<void> => {
-    if (!initialized) {
-        if (!connectionPromise) {
-            connectionPromise = connectDB();
-        }
-        await connectionPromise;
-        initialized = true; // Marquer comme initialisé
-    } else {
-        // Vérifier que la connexion est toujours active
-        if (mongoose.connection.readyState !== 1) {
-            connectionPromise = connectDB();
-            await connectionPromise;
-        }
+    if (!MONGODB_URI) {
+        throw new Error("MONGODB_URI is not defined. Please check your environment variables.");
     }
+
+    // Déjà connecté (ou en cours) : même si le lien tombe ensuite, le driver
+    // reconnecte et mongoose met les requêtes en attente d'ici là.
+    if (!connectionPromise) {
+        connectionPromise = openConnection(MONGODB_URI).catch((error) => {
+            // Un échec ne doit pas rester en cache : la requête suivante retente.
+            connectionPromise = null;
+            throw error;
+        });
+    }
+    return connectionPromise;
 };
 
 export { connectDB };
-export default defaultExport;
+export default connectDB;
