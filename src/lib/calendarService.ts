@@ -5,7 +5,7 @@
 import Calendar from '@/models/Calendar';
 import CalendarClaim from '@/models/CalendarClaim';
 import User from '@/models/User';
-import Gem from '@/models/Gem';
+import { creditGems } from '@/lib/rewardLedger';
 import PointTransaction from '@/models/PointTransaction';
 import Chest from '@/models/Chest';
 import ChestReward from '@/models/ChestReward';
@@ -340,18 +340,7 @@ async function openChest(userId: string, chestType: 'common' | 'rare'): Promise<
     const { addPointsWithBoost } = await import('@/lib/pointsService');
     await addPointsWithBoost(userId, selectedReward.amount || 0, 'completeQuiz');
   } else if (selectedReward.type === 'gems') {
-    let gem = await Gem.findOne({ user: userId });
-    if (!gem) {
-      gem = new Gem({
-        user: userId,
-        balance: 0,
-        totalEarned: 0,
-        totalSpent: 0
-      });
-    }
-    gem.balance += selectedReward.amount || 0;
-    gem.totalEarned += selectedReward.amount || 0;
-    await gem.save();
+    await creditGems(userId, selectedReward.amount || 0);
   } else if (selectedReward.type === 'mushrooms') {
     const { MushroomService } = await import('@/lib/mushroomService');
     await MushroomService.addMushrooms(userId, selectedReward.amount || 0, 'chest');
@@ -437,12 +426,10 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     console.error('Erreur hero fainted check:', err); // ne jamais bloquer le claim si le RPG est en panne
   }
 
-  // Récupérer le calendrier pour ce jour
-  const calendarDay = await Calendar.findOne({ date: normalizedDate });
-
+  // Récupérer le calendrier pour ce jour (créé avec une récompense par défaut s'il manque)
+  let calendarDay = await Calendar.findOne({ date: normalizedDate });
   if (!calendarDay) {
-    // Si le jour n'existe pas, créer un jour par défaut
-    const defaultDay = await Calendar.findOneAndUpdate(
+    calendarDay = await Calendar.findOneAndUpdate(
       { date: normalizedDate },
       {
         date: normalizedDate,
@@ -453,57 +440,34 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
       },
       { upsert: true, new: true }
     );
-
-    if (!defaultDay) {
+    if (!calendarDay) {
       return {
         success: false,
         message: 'Erreur lors de la création du jour du calendrier'
       };
     }
+  }
 
-    // Appliquer la récompense
-    let defaultRewardAmount = defaultDay.reward.amount || 0;
-    let defaultChestReward = null;
-
-    if (defaultDay.reward.type === 'points') {
-      const { addPointsWithBoost } = await import('@/lib/pointsService');
-      defaultRewardAmount = await addPointsWithBoost(userId, defaultRewardAmount, 'completeQuiz');
-    } else if (defaultDay.reward.type === 'gems') {
-      let gem = await Gem.findOne({ user: userId });
-      if (!gem) {
-        gem = new Gem({
-          user: userId,
-          balance: 0,
-          totalEarned: 0,
-          totalSpent: 0
-        });
-      }
-      gem.balance += defaultRewardAmount;
-      gem.totalEarned += defaultRewardAmount;
-      await gem.save();
-    } else if (defaultDay.reward.type === 'chest' && defaultDay.reward.chestType) {
-      // Ouvrir le coffre
-      defaultChestReward = await openChest(userId, defaultDay.reward.chestType);
-      defaultRewardAmount = defaultChestReward.amount || 0;
-    }
-
-    // Enregistrer la réclamation
-    const claim = new CalendarClaim({
+  // Réservation AVANT de verser : l'index unique { user, date } ne laisse
+  // passer qu'une requête. Avant, la réclamation était enregistrée après le
+  // versement — des clics simultanés étaient tous payés, puis plantaient en 500.
+  let claim;
+  try {
+    claim = await CalendarClaim.create({
       user: userId,
-      calendar: defaultDay._id,
+      calendar: calendarDay._id,
       date: normalizedDate,
-      rewardType: defaultDay.reward.type,
-      rewardAmount: defaultRewardAmount
+      rewardType: calendarDay.reward.type,
+      rewardAmount: 0
     });
-    await claim.save();
-
-    return {
-      success: true,
-      rewardType: defaultDay.reward.type,
-      amount: defaultRewardAmount,
-      chestType: defaultDay.reward.chestType,
-      chestReward: defaultChestReward
-    };
+  } catch (err: any) {
+    if (err?.code === 11000) {
+      return {
+        success: false,
+        message: 'Récompense déjà réclamée pour ce jour'
+      };
+    }
+    throw err;
   }
 
   // Appliquer la récompense
@@ -514,33 +478,15 @@ export async function claimDailyReward(userId: string, date: Date): Promise<{
     const { addPointsWithBoost } = await import('@/lib/pointsService');
     rewardAmount = await addPointsWithBoost(userId, rewardAmount, 'completeQuiz');
   } else if (calendarDay.reward.type === 'gems') {
-    let gem = await Gem.findOne({ user: userId });
-    if (!gem) {
-      gem = new Gem({
-        user: userId,
-        balance: 0,
-        totalEarned: 0,
-        totalSpent: 0
-      });
-    }
-    gem.balance += rewardAmount;
-    gem.totalEarned += rewardAmount;
-    await gem.save();
+    await creditGems(userId, rewardAmount);
   } else if (calendarDay.reward.type === 'chest' && calendarDay.reward.chestType) {
     // Ouvrir le coffre
     chestReward = await openChest(userId, calendarDay.reward.chestType);
     rewardAmount = chestReward.amount || 0;
   }
 
-  // Enregistrer la réclamation
-  const claim = new CalendarClaim({
-    user: userId,
-    calendar: calendarDay._id,
-    date: normalizedDate,
-    rewardType: calendarDay.reward.type,
-    rewardAmount: rewardAmount
-  });
-  await claim.save();
+  // Montant réellement versé (boost, coffre)
+  await CalendarClaim.updateOne({ _id: claim._id }, { $set: { rewardAmount } });
 
   // Enregistrer l'activite pour le streak
   try {

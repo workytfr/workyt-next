@@ -16,7 +16,7 @@ import {
     Copy, Clock, Target, MapPin, SquareDashedMousePointer, LineChart
 } from 'lucide-react';
 import 'katex/dist/katex.min.css';
-import { InlineMath, BlockMath } from 'react-katex';
+import { InlineMath, BlockMath } from '@/components/ui/KatexMath';
 import SkillPicker from '@/components/ui/SkillPicker';
 import ImageCanvas from '@/app/cours/_components/quiz/inputs/ImageCanvas';
 import GraphInput from '@/app/cours/_components/quiz/inputs/GraphInput';

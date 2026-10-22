@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Metadata } from "next";
 import Link from "next/link";
 import { GraduationCap, Heart, Shield, Users, Mail } from "lucide-react";
@@ -68,8 +69,8 @@ export default function AProposPage() {
 
     return (
         <>
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(aboutLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(aboutLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbLd) }} />
             <main className="mx-auto max-w-3xl px-6 py-12">
                 <nav aria-label="Fil d'Ariane" className="mb-6 text-sm text-gray-500">
                     <Link href="/" className="hover:text-orange-500">Accueil</Link>

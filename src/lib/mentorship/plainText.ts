@@ -66,6 +66,8 @@ export function plainText(text: string): string {
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/(^|[^\w*])\*([^*\s][^*]*?)\*(?!\w)/g, '$1$2')
     .replace(/`([^`]+)`/g, '$1')
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replace(/^\s*#{1,6}\s+/gm, '')
     .replace(/^\s*(?:[-*+]|\d+[.)])\s+/gm, '')
     .replace(/^\s*>\s?/gm, '')
     .replace(/\s+/g, ' ')

@@ -1,18 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import { hasRole } from "@/lib/userRoles";
 import dbConnect from "@/lib/mongodb";
 import { slugify } from "@/utils/slugify";
 import mongoose from "mongoose";
 
 // Route API temporaire pour générer les slugs SEO sur les documents existants.
-// Appeler en GET : /api/admin/generate-slugs
-// Réservé aux admins authentifiés.
-export async function GET(req: NextRequest) {
+// Appeler en POST : /api/admin/generate-slugs
+// Réservé aux admins. (En GET avec une simple session, n'importe quel membre —
+// ou une balise <img> sur un site tiers — pouvait réécrire toute la base.)
+export async function POST(req: NextRequest) {
     try {
         // Vérification d'authentification
-        const session = await getServerSession();
+        const session = await getServerSession(authOptions);
         if (!session?.user) {
             return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
+        }
+        if (!hasRole(session.user, "Admin")) {
+            return NextResponse.json({ error: "Accès interdit" }, { status: 403 });
         }
 
         await dbConnect();
@@ -82,7 +88,7 @@ export async function GET(req: NextRequest) {
     } catch (error: any) {
         console.error("Erreur generate-slugs:", error);
         return NextResponse.json(
-            { error: error.message || "Erreur interne" },
+            { error: "Erreur interne" },
             { status: 500 }
         );
     }

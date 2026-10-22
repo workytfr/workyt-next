@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Cours gratuits | Workyt - Plateforme d'apprentissage",
+    title: { absolute: "Cours gratuits | Workyt - Plateforme d'apprentissage" },
     description: "Accédez à des cours gratuits sur Workyt : mathématiques, physique, français, histoire et plus. Contenu de qualité pour collégiens et lycéens.",
     keywords: "cours gratuits, apprentissage, mathématiques, physique, français, lycée, collège, bac, brevet",
     openGraph: {

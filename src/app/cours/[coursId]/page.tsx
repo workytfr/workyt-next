@@ -1,4 +1,6 @@
+import { jsonLd as serializeJsonLd } from "@/lib/jsonLd";
 import { Metadata } from "next";
+import { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import CourseClientWrapper from "@/app/cours/_components/CourseClientWrapper";
 import dbConnect from "@/lib/mongodb";
@@ -14,29 +16,17 @@ interface PageProps {
 export const revalidate = 300;
 
 /**
- * Trouve un cours par ID (composite id-slug) ou par slug pur.
+ * Trouve un cours par ID (composite id-slug) ou par slug pur, avec tout ce
+ * dont la page a besoin (auteurs, vérificateur, sections) : même payload que
+ * GET /api/cours/[id]. `cache()` partage le résultat entre generateMetadata et
+ * la page — une seule requête par rendu au lieu de trois.
  */
-async function findCourse(idSlug: string) {
+const findCourse = cache(async (idSlug: string) => {
+    await dbConnect();
     const objectId = extractIdFromSlug(idSlug);
+    const filter = objectId ? { _id: objectId } : { slug: idSlug };
 
-    if (objectId) {
-        const cours: any = await Course.findById(objectId).populate('authors', 'username').lean();
-        if (cours) return { cours, id: objectId };
-    }
-
-    // Fallback : chercher par slug
-    const cours: any = await Course.findOne({ slug: idSlug }).populate('authors', 'username').lean();
-    if (cours) return { cours, id: cours._id.toString() };
-
-    return null;
-}
-
-/**
- * Charge le cours avec ses sections (même payload que GET /api/cours/[id]),
- * pour pouvoir hydrater le client côté serveur et garantir l'indexation Google.
- */
-async function findCourseWithSections(id: string) {
-    const cours: any = await Course.findOne({ _id: id, status: 'publie' })
+    let cours: any = await Course.findOne(filter)
         .populate('authors', 'username image')
         .populate('verifiedBy', 'username image')
         .populate({
@@ -45,10 +35,18 @@ async function findCourseWithSections(id: string) {
             options: { sort: { order: 1 } },
         })
         .lean();
+
+    // Fallback : un ID mal formé peut aussi être un slug pur
+    if (!cours && objectId) {
+        cours = await Course.findOne({ slug: idSlug })
+            .populate('authors', 'username image')
+            .populate('verifiedBy', 'username image')
+            .populate({ path: 'sections', select: 'title order', options: { sort: { order: 1 } } })
+            .lean();
+    }
     if (!cours) return null;
-    // Sérialisation JSON-safe (ObjectId, Date → string)
-    return JSON.parse(JSON.stringify(cours));
-}
+    return { cours, id: cours._id.toString() };
+});
 
 // Génération des paramètres statiques pour les cours publiés
 export async function generateStaticParams() {
@@ -105,7 +103,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
         const imageUrl = cours.image || "https://workyt.fr/default-thumbnail.png";
 
         return {
-            title: `${cours.title} - Cours ${cours.matiere} ${cours.niveau} | Workyt`,
+            title: { absolute: `${cours.title} - Cours ${cours.matiere} ${cours.niveau} | Workyt` },
             description: metaDescription,
             keywords: [
                 cours.matiere,
@@ -117,7 +115,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             authors: [{ name: "Workyt" }],
             creator: "Workyt",
             publisher: "Workyt",
-            robots: {
+            // Brouillon : la page reste accessible (aperçu auteur côté client)
+            // mais ne doit pas être indexée.
+            robots: cours.status !== 'publie' ? { index: false, follow: false } : {
                 index: true,
                 follow: true,
                 googleBot: {
@@ -167,7 +167,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function CoursePage({ params }: PageProps) {
     const { coursId: coursIdSlug } = await params;
 
-    await dbConnect();
     const result = await findCourse(coursIdSlug);
 
     if (!result) {
@@ -276,8 +275,10 @@ export default async function CoursePage({ params }: PageProps) {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
-    // Pré-charge le cours avec sections pour l'hydratation côté serveur (SEO)
-    const initialCours = await findCourseWithSections(id);
+    // Hydratation côté serveur (SEO) : seulement pour un cours publié, les
+    // brouillons restent chargés par le client avec les droits de l'auteur.
+    // Sérialisation JSON-safe (ObjectId, Date → string).
+    const initialCours = cours.status === 'publie' ? JSON.parse(JSON.stringify(cours)) : null;
 
     return (
         <>
@@ -285,7 +286,7 @@ export default async function CoursePage({ params }: PageProps) {
                 <script
                     key={index}
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+                    dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
                 />
             ))}
             <CourseClientWrapper params={{ coursId: id }} initialCours={initialCours} />

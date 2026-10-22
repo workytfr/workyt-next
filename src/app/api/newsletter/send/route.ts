@@ -4,6 +4,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import connectDB from '@/lib/mongodb';
 import { sendNewsletterBatch } from '@/lib/newsletter/sendBatch';
+import { safeCompare } from '@/lib/safeCompare';
 
 /**
  * POST /api/newsletter/send - Declencher l'envoi d'un batch newsletter
@@ -13,7 +14,7 @@ export async function POST(req: NextRequest) {
     try {
         // Verification : CRON_SECRET ou Admin
         const cronSecret = req.headers.get('x-cron-secret');
-        const isValidCron = cronSecret && process.env.CRON_SECRET && cronSecret === process.env.CRON_SECRET;
+        const isValidCron = safeCompare(cronSecret, process.env.CRON_SECRET);
 
         if (!isValidCron) {
             const session = await getServerSession(authOptions);

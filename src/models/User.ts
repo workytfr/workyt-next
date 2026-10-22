@@ -1,5 +1,6 @@
 import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 import crypto from 'crypto';
+import { escapeRegex } from '../utils/escapeRegex';
 
 /**
  * Interface représentant un utilisateur
@@ -87,7 +88,7 @@ const UserSchema = new Schema<IUser>({
                 }
 
                 const existingUser = await mongoose.models.User.findOne({
-                    username: { $regex: `^${username}$`, $options: 'i' },
+                    username: { $regex: `^${escapeRegex(String(username))}$`, $options: 'i' },
                     _id: { $ne: this._id }
                 });
 
@@ -242,7 +243,7 @@ UserSchema.pre('save', function(next) {
 // Méthode statique pour rechercher par username
 UserSchema.statics.findByUsername = function(username: string) {
     return this.findOne({
-        username: { $regex: `^${username}$`, $options: 'i' }
+        username: { $regex: `^${escapeRegex(String(username))}$`, $options: 'i' }
     });
 };
 
@@ -255,7 +256,7 @@ UserSchema.statics.isUsernameAvailable = async function(username: string): Promi
         .replace(/[^a-z0-9_]/g, '');
 
     const user = await this.findOne({
-        username: { $regex: `^${normalizedUsername}$`, $options: 'i' }
+        username: { $regex: `^${escapeRegex(String(normalizedUsername))}$`, $options: 'i' }
     });
     return !user;
 };

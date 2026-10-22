@@ -71,7 +71,23 @@ async function getManualFallback(): Promise<LiveStatus> {
     }
 }
 
+// Appelée par la pastille live sur chaque chargement de page, pour tous les
+// visiteurs : on garde le résultat 60 s en mémoire (et en cache HTTP) au lieu
+// d'interroger la base à chaque fois.
+const CACHE_MS = 60_000;
+let cached: { at: number; body: LiveStatus } | null = null;
+
 export async function GET(): Promise<NextResponse<LiveStatus>> {
+    if (!cached || Date.now() - cached.at > CACHE_MS) {
+        const res = await computeLiveStatus();
+        cached = { at: Date.now(), body: await res.json() };
+    }
+    return NextResponse.json(cached.body, {
+        headers: { "Cache-Control": "public, max-age=60, stale-while-revalidate=300" },
+    });
+}
+
+async function computeLiveStatus(): Promise<NextResponse<LiveStatus>> {
     const apiKey = process.env.YOUTUBE_API_KEY;
     const channelId = process.env.YOUTUBE_CHANNEL_ID;
 

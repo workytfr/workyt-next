@@ -10,6 +10,7 @@ import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { notifySeo } from '@/lib/seoNotify';
 import { buildIdSlug } from '@/utils/slugify';
 import { emitForumEvent } from '@/lib/realtime/emit';
+import { forumUploadError } from "@/lib/uploadValidation";
 
 // Exécuter ce route handler en runtime Node.js
 export const runtime = "nodejs";
@@ -95,6 +96,10 @@ export async function POST(req: NextRequest) {
         const incomingFiles: File[] = [];
         for (const [_, value] of formData.entries()) {
             if (value instanceof File && value.size > 0) incomingFiles.push(value);
+        }
+        const uploadError = forumUploadError(incomingFiles);
+        if (uploadError) {
+            return NextResponse.json({ success: false, message: uploadError, error: uploadError }, { status: 400 });
         }
 
         // Compte aussi les dessins inline (markdown `![dessin](url)`) — sur le forum, dessin = image

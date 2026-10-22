@@ -6,6 +6,7 @@ import Course from "@/models/Course";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { isValidObjectId } from "mongoose";
 import { hasPermission } from "@/lib/roles";
+import { hasRole } from "@/lib/userRoles";
 import { notifySeo } from "@/lib/seoNotify";
 import { buildIdSlug } from "@/utils/slugify";
 
@@ -111,15 +112,31 @@ export async function PATCH(
             );
         }
 
-        const updates = await req.json();
+        const body = await req.json();
 
         // Validate updates object here
-        if (!updates || typeof updates !== "object") {
+        if (!body || typeof body !== "object") {
             return NextResponse.json(
                 { error: "Données de mise à jour invalides" },
                 { status: 400 }
             );
         }
+
+        // Même règles que PUT /api/courses/[id] : un rédacteur ne modifie que ses
+        // cours, et jamais le statut, le vérificateur ni la liste des auteurs.
+        const existing = await Course.findById(courseId).select("authors");
+        if (!existing) {
+            return NextResponse.json({ error: "Cours non trouvé" }, { status: 404 });
+        }
+        const isReviewer = hasRole(user, "Admin", "Correcteur");
+        if (!isReviewer && !existing.authors.some((a: any) => String(a) === String(user._id))) {
+            return NextResponse.json({ error: "Vous ne pouvez modifier que vos propres cours." }, { status: 403 });
+        }
+        const updates: Record<string, any> = {};
+        for (const field of ["title", "description", "niveau", "matiere", "image", "slug"]) {
+            if (body[field] !== undefined) updates[field] = body[field];
+        }
+        if (isReviewer && body.authors !== undefined) updates.authors = body.authors;
 
         const updatedCourse = await Course.findByIdAndUpdate(
             courseId,

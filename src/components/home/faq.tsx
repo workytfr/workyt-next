@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Plus } from "lucide-react";
 
 /* Source unique : ces mêmes questions/réponses alimentent l'accordéon ET
@@ -45,7 +46,7 @@ export default function FaqSection() {
         <section id="faq" className="bg-[var(--wk-paper-2)] px-4 py-20 md:py-28">
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+                dangerouslySetInnerHTML={{ __html: jsonLd(faqSchema) }}
             />
 
             <div className="mx-auto grid max-w-[1200px] gap-12 lg:grid-cols-12 lg:gap-16">

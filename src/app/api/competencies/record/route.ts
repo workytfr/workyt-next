@@ -97,6 +97,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 401 });
         }
         console.error('Erreur POST /api/competencies/record:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
     }
 }

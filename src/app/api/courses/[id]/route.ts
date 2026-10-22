@@ -49,7 +49,20 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
 
         const body = await req.json();
         // `version` = numéro de version (__v) chargé par le client → verrou optimiste
-        const { version, ...updateData } = body;
+        const { version, ...rawData } = body;
+
+        // Champs modifiables. Le statut et le vérificateur passent par les routes
+        // dédiées (/api/courses PATCH, /verify) : les accepter ici permettait à un
+        // rédacteur de publier son cours sans relecture. Les auteurs restent
+        // réservés aux correcteurs/admins (sinon on s'ajoute à n'importe quel cours).
+        const EDITABLE = ["title", "description", "niveau", "matiere", "image", "slug"];
+        const updateData: Record<string, any> = {};
+        for (const field of EDITABLE) {
+            if (rawData[field] !== undefined) updateData[field] = rawData[field];
+        }
+        if (rawData.authors !== undefined && hasRole(user, "Admin", "Correcteur")) {
+            updateData.authors = rawData.authors;
+        }
         const { id } = await params;
         const existingCourse = await Course.findById(id);
 

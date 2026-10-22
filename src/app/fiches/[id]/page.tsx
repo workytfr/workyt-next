@@ -1,6 +1,7 @@
+import { jsonLd as serializeJsonLd } from "@/lib/jsonLd";
 import { Metadata } from "next";
 import FicheView from "@/app/fiches/_components/FicheView";
-import React from "react";
+import React, { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import dbConnect from "@/lib/mongodb";
 import Revision from "@/models/Revision";
@@ -12,8 +13,10 @@ interface PageProps {
 
 /**
  * Trouve une fiche par ID (composite id-slug) ou par slug pur.
+ * `cache()` partage le résultat entre generateMetadata et la page.
  */
-async function findFiche(idSlug: string) {
+const findFiche = cache(async (idSlug: string) => {
+    await dbConnect();
     const objectId = extractIdFromSlug(idSlug);
 
     const populates = [
@@ -31,7 +34,7 @@ async function findFiche(idSlug: string) {
     if (fiche) return { fiche, id: fiche._id.toString() };
 
     return null;
-}
+});
 
 // Génération des paramètres statiques pour l'indexation SEO (avec slug)
 export async function generateStaticParams() {
@@ -291,7 +294,7 @@ export default async function FichePage({ params }: PageProps) {
                 <script
                     key={index}
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+                    dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
                 />
             ))}
             <FicheView id={id} initialFiche={initialFiche} />

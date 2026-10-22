@@ -104,6 +104,16 @@ export const PUT = async (req: NextRequest, { params }: { params: Promise<{ id: 
             }
         }
 
+        // `files` ne peut que retirer ou réordonner des fichiers déjà attachés :
+        // y écrire une clé arbitraire permettait ensuite de faire supprimer du
+        // stockage le fichier d'un autre membre en supprimant la fiche.
+        if (updatedData.files !== undefined) {
+            const current = new Set((fiche.files || []).map(String));
+            if (!Array.isArray(updatedData.files) || !updatedData.files.every((f: unknown) => typeof f === "string" && current.has(f))) {
+                return NextResponse.json({ success: false, message: "Fichiers invalides." }, { status: 400 });
+            }
+        }
+
         const updatedFiche = await Revision.findByIdAndUpdate(id, updatedData, { new: true });
 
         return NextResponse.json({ success: true, data: updatedFiche }, { status: 200 });

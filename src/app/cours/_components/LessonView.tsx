@@ -18,6 +18,7 @@ import "katex/dist/katex.min.css";
 
 // Blocs de code partagés (leçons / exercices / quiz)
 import { highlightCodeBlocks } from "@/lib/codeHighlight";
+import { sanitizeHastTree } from "@/lib/sanitizeHtml";
 import { useCodeBlockCopy } from "@/components/ui/CodeBlock";
 import "@/components/ui/code-block.css";
 import "./styles/lesson-blocks.css";
@@ -398,6 +399,9 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
             .use(enhancedStylePlugin)
             .parse(preprocessedContent);
 
+        // Retire scripts, gestionnaires on* et URL javascript: du HTML saisi.
+        sanitizeHastTree(tree);
+
         // Coloration syntaxique des <pre><code> : on transforme l'arbre avant
         // sérialisation, donc le code arrive colorisé dès le rendu serveur.
         highlightCodeBlocks(tree as any);
@@ -408,7 +412,8 @@ export default function LessonView({ title, content, audioUrl, lessonId, courseI
 
     } catch (error) {
         console.warn('Erreur lors du traitement HTML:', error);
-        processedHtml = content;
+        // Jamais le HTML brut : il n'a pas été nettoyé.
+        processedHtml = '';
     }
 
     const sanitizeForKatex = (formula: string): string =>

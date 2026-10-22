@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Sidebar } from "./SidebarCours";
 import { Course, Lesson, Section, Exercise, Quiz, SelectedContent, QuizCompletionResult, NavigableItem } from "./types";
@@ -542,7 +541,6 @@ export function SidebarWrapper({
 
 // Composant principal
 export default function CoursePage({ params, initialCours }: { params: { coursId: string }; initialCours?: Course | null }) {
-    const searchParams = useSearchParams();
     const { data: session, status: sessionStatus } = useSession();
     const accessToken = (session as any)?.accessToken as string | undefined;
     const authHeaders: Record<string, string> = accessToken
@@ -675,6 +673,10 @@ export default function CoursePage({ params, initialCours }: { params: { coursId
 
     useEffect(() => {
         if (!cours) return;
+        // Lu dans l'effet plutôt que via useSearchParams() : sur une page
+        // pré-rendue, ce hook fait basculer tout le cours en rendu client
+        // (HTML vide pour Google) jusqu'au Suspense le plus proche.
+        const searchParams = new URLSearchParams(window.location.search);
         const sectionId = searchParams.get('section');
         const lessonId = searchParams.get('lesson');
         const view = searchParams.get('view');

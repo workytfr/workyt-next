@@ -7,7 +7,7 @@ import BookmarkButton from "@/components/BookmarkButton";
 import ProfileAvatar from "@/components/ui/profile";
 import { SubjectLabel, LevelChip } from "@/components/wk/primitives";
 import { buildIdSlug } from "@/utils/slugify";
-import CourseDescription from "./CourseDescription";
+import { previewText } from "@/lib/mentorship/plainText";
 import { CourseListing } from "./types";
 
 /**
@@ -53,9 +53,11 @@ export default function CourseCard({ course }: { course: CourseListing }) {
                 </h2>
 
                 {course.description && (
-                    <div className="mt-2.5 text-sm leading-relaxed text-[rgba(26,21,18,0.62)] line-clamp-3">
-                        <CourseDescription content={course.description} maxLength={140} />
-                    </div>
+                    // Texte brut : react-markdown + KaTeX pèseraient ~117 Ko gz
+                    // sur le catalogue pour un extrait de 140 caractères.
+                    <p className="mt-2.5 text-sm leading-relaxed text-[rgba(26,21,18,0.62)] line-clamp-3">
+                        {previewText(course.description, 140)}
+                    </p>
                 )}
 
                 {/* Premiers chapitres */}

@@ -1,12 +1,12 @@
-"use client";
-
-import { motion, useReducedMotion } from "framer-motion";
+import type { CSSProperties } from "react";
 import { WORKYT_BIRD } from "@/lib/workytMark";
 
 /**
  * Logo Workyt animé (SVG inline).
  * - Au montage : chaque glyphe + l'oiseau se "dessinent" au tracé
- *   (framer-motion pathLength / stroke-dashoffset), puis se remplissent.
+ *   (stroke-dashoffset en CSS, classe `.wk-logo-path` dans globals.css), puis se
+ *   remplissent. Pas de framer-motion : le logo est sur toutes les pages, la
+ *   lib (~39 Ko gz) partait dans le bundle commun rien que pour lui.
  * - Remplissage : dégradé SMIL qui cycle sur toutes les couleurs de la marque.
  * - Survol : lift + glow (classe `.wk-logo` dans globals.css).
  */
@@ -27,26 +27,8 @@ const wordmark: { d: string; t: string }[] = [
 const bird = WORKYT_BIRD;
 
 export default function WorkytLogo({ className = "" }: { className?: string }) {
-    const reduce = useReducedMotion();
-
-    // Anim. de tracé puis remplissage, décalée par glyphe.
-    // Le stroke ne sert qu'au "dessin" : il s'efface dès que le fill apparaît,
-    // pour ne pas épaissir les glyphes (sinon le logo paraît trop gras).
-    const drawPath = (i: number) => {
-        if (reduce) {
-            return { initial: { pathLength: 1, fillOpacity: 1, strokeOpacity: 0 }, animate: { pathLength: 1, fillOpacity: 1, strokeOpacity: 0 } };
-        }
-        const delay = 0.15 + i * 0.09;
-        return {
-            initial: { pathLength: 0, fillOpacity: 0, strokeOpacity: 1 },
-            animate: { pathLength: 1, fillOpacity: 1, strokeOpacity: 0 },
-            transition: {
-                pathLength: { delay, duration: 0.9, ease: "easeInOut" as const },
-                fillOpacity: { delay: delay + 0.5, duration: 0.45, ease: "easeOut" as const },
-                strokeOpacity: { delay: delay + 0.55, duration: 0.4, ease: "easeOut" as const },
-            },
-        };
-    };
+    // Décalage du tracé par glyphe, lu par l'animation CSS.
+    const delay = (i: number) => ({ "--wk-delay": `${0.15 + i * 0.09}s` }) as CSSProperties;
 
     const stroke = "url(#wkLogoGrad)";
     const fill = "url(#wkLogoGrad)";
@@ -75,13 +57,15 @@ export default function WorkytLogo({ className = "" }: { className?: string }) {
                 <g transform="matrix(2.175642,0,0,2.175642,-3553.536171,2008.190791)">
                     {wordmark.map((p, i) => (
                         <g key={`w${i}`} transform={p.t}>
-                            <motion.path
+                            <path
                                 d={p.d}
+                                pathLength={1}
+                                className="wk-logo-path"
+                                style={delay(i)}
                                 fill={fill}
                                 stroke={stroke}
                                 strokeWidth={5}
                                 strokeLinejoin="round"
-                                {...drawPath(i)}
                             />
                         </g>
                     ))}
@@ -90,14 +74,16 @@ export default function WorkytLogo({ className = "" }: { className?: string }) {
                 {/* Oiseau / origami */}
                 <g transform="matrix(1,0,0,1,410.354895,3874.216062)">
                     {bird.map((d, i) => (
-                        <motion.path
+                        <path
                             key={`b${i}`}
                             d={d}
+                            pathLength={1}
+                            className="wk-logo-path"
+                            style={delay(wordmark.length + i)}
                             fill={fill}
                             stroke={stroke}
                             strokeWidth={9}
                             strokeLinejoin="round"
-                            {...drawPath(wordmark.length + i)}
                         />
                     ))}
                 </g>

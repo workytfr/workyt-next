@@ -75,6 +75,6 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ results });
     } catch (error: any) {
         console.error('Erreur GET /api/curriculum/content-search:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
     }
 }

@@ -109,6 +109,21 @@ export async function POST(req: NextRequest) {
       transactionDescription = `Offre premium ${partner.name} - ${offer.description}`;
     }
 
+    // Débit atomique AVANT d'attribuer le code : la condition de solde fait
+    // partie de l'écriture. Avant, le solde était vérifié puis débité sans
+    // condition — des requêtes parallèles obtenaient plusieurs codes et le
+    // solde passait en négatif.
+    if (gemsCost > 0) {
+      const debited = await Gem.findOneAndUpdate(
+        { user: user._id, balance: { $gte: gemsCost } },
+        { $inc: { balance: -gemsCost, totalSpent: gemsCost } },
+        { new: true }
+      );
+      if (!debited) {
+        return NextResponse.json({ error: `Solde insuffisant. Coût: ${gemsCost} gemmes` }, { status: 400 });
+      }
+    }
+
     // Attribuer le code à l'utilisateur (atomic pour éviter les races)
     const assignedCode = await PromoCode.findOneAndUpdate(
       {
@@ -125,7 +140,10 @@ export async function POST(req: NextRequest) {
     );
 
     if (!assignedCode) {
-      // Race condition : le code a été pris entre-temps
+      // Race condition : le code a été pris entre-temps → on rembourse
+      if (gemsCost > 0) {
+        await Gem.updateOne({ user: user._id }, { $inc: { balance: gemsCost, totalSpent: -gemsCost } });
+      }
       return NextResponse.json({
         error: 'Le code a été attribué à un autre utilisateur. Réessayez.'
       }, { status: 409 });
@@ -150,17 +168,7 @@ export async function POST(req: NextRequest) {
 
     await transaction.save();
 
-    // Mettre à jour le solde de gemmes si nécessaire
-    if (gemsCost > 0) {
-      await Gem.findOneAndUpdate(
-        { user: user._id },
-        {
-          $inc: { balance: -gemsCost, totalSpent: gemsCost },
-          $setOnInsert: { totalEarned: 0 }
-        },
-        { upsert: true, new: true }
-      );
-    }
+    // Solde déjà débité avant l'attribution du code
 
     // Mettre à jour les statistiques du partenaire
     await Partner.findByIdAndUpdate(partnerId, {

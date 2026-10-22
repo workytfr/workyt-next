@@ -60,7 +60,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('Erreur lors de l\'initialisation des quêtes:', error);
     return NextResponse.json(
-      { error: error.message || 'Erreur interne du serveur' },
+      { error: 'Erreur interne du serveur' },
       { status: 500 }
     );
   }

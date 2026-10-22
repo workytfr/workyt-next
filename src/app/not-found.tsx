@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Page non trouvée | Workyt",
+    title: { absolute: "Page non trouvée | Workyt" },
     description: "La page que vous recherchez n'existe pas ou a été déplacée.",
     robots: { index: false, follow: true },
 };

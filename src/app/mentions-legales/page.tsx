@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Mentions légales | Workyt",
+    title: { absolute: "Mentions légales | Workyt" },
     description:
         "Mentions légales du site Workyt : éditeur (asso loi 1901), hébergeur, propriété intellectuelle et obligations légales.",
     alternates: { canonical: "https://workyt.fr/mentions-legales" },

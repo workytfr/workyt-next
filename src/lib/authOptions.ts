@@ -6,6 +6,7 @@ import bcrypt from "bcryptjs";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 import jwt from "jsonwebtoken";
+import { rateLimit, getIPFromHeaders } from "@/lib/rateLimit";
 
 // Fonction pour générer un JWT
 function generateJWT(user: any) {
@@ -38,18 +39,28 @@ export const authOptions: NextAuthOptions = {
                 email: { label: "Email", type: "text", placeholder: "email@example.com" },
                 password: { label: "Password", type: "password" },
             },
-            async authorize(credentials) {
+            async authorize(credentials, req) {
                 const { email, password } = credentials || {};
-                if (!email || !password) {
+                // NextAuth accepte un corps JSON : sans ce contrôle, un objet
+                // ({"$regex": "^a"}) arriverait tel quel dans le filtre Mongo.
+                if (typeof email !== "string" || typeof password !== "string" || !email || !password) {
                     throw new Error("Email and password are required");
                 }
 
-                await connectDB();
-                const user = await User.findOne({ email }).select("+password");
-                if (!user) throw new Error("No user found with this email");
+                // Rate limit : 10 tentatives / min par IP et 20 / 15 min par email
+                const ip = getIPFromHeaders(req?.headers);
+                const rlIp = rateLimit(`credentials:${ip}`, 10, 60_000);
+                const rlEmail = rateLimit(`credentials-email:${email.trim().toLowerCase()}`, 20, 900_000);
+                if (!rlIp.success || !rlEmail.success) {
+                    throw new Error("Trop de tentatives, réessaie dans quelques minutes.");
+                }
 
-                const isValidPassword = await bcrypt.compare(password, user.password);
-                if (!isValidPassword) throw new Error("Invalid password");
+                await connectDB();
+                const user = await User.findOne({ email: email.trim() }).select("+password");
+                // Même message dans les deux cas : ne pas révéler si l'email existe
+                if (!user?.password || !(await bcrypt.compare(password, user.password))) {
+                    throw new Error("Identifiants incorrects");
+                }
 
                 return {
                     id: user._id.toString(),
@@ -73,13 +84,17 @@ export const authOptions: NextAuthOptions = {
                 try {
                     await connectDB();
                     
+                    // Un email non vérifié côté Discord ne prouve pas que la
+                    // personne le possède : on ne s'en sert ni pour rattacher un
+                    // compte existant ni pour en créer un.
+                    const discordEmailVerified = (profile as { verified?: boolean } | undefined)?.verified === true;
+
                     // Vérifier si l'utilisateur existe déjà
-                    let existingUser = await User.findOne({ 
-                        $or: [
-                            { email: user.email },
-                            { discordId: account.providerAccountId }
-                        ]
-                    });
+                    let existingUser = await User.findOne({ discordId: account.providerAccountId });
+                    if (!existingUser && user.email) {
+                        if (!discordEmailVerified) return false;
+                        existingUser = await User.findOne({ email: user.email });
+                    }
 
                     if (existingUser) {
                         // Mettre à jour l'utilisateur existant avec les infos Discord
@@ -113,7 +128,7 @@ export const authOptions: NextAuthOptions = {
                             email: user.email,
                             username: finalUsername,
                             discordId: account.providerAccountId,
-                            role: 'user',
+                            role: 'Apprenti',
                             points: 0,
                             badges: [],
                             bio: '',
@@ -153,12 +168,10 @@ export const authOptions: NextAuthOptions = {
                 // Si c'est une connexion Discord, récupérer les données utilisateur depuis la DB
                 if (account?.provider === "discord") {
                     await connectDB();
-                    const dbUser = await User.findOne({
-                        $or: [
-                            { email: user.email },
-                            { discordId: account.providerAccountId }
-                        ]
-                    });
+                    // discordId d'abord : c'est l'identité prouvée par Discord
+                    const dbUser =
+                        (await User.findOne({ discordId: account.providerAccountId })) ||
+                        (await User.findOne({ email: user.email }));
 
                     if (dbUser) {
                         token.id = dbUser._id.toString();
@@ -172,7 +185,28 @@ export const authOptions: NextAuthOptions = {
                         token.accessToken = generateJWT(dbUser);
                     }
                 }
-            } else if (token.accessToken) {
+            } else if (token.id) {
+                // Rôles relus en base toutes les 5 min : sans ça, un admin rétrogradé
+                // (ou un compte supprimé) gardait ses droits tant que sa session vivait.
+                const now = Date.now();
+                if (!token.rolesCheckedAt || now - (token.rolesCheckedAt as number) > 5 * 60_000) {
+                    await connectDB();
+                    const fresh = await User.findById(token.id)
+                        .select("role roles isAdmin")
+                        .lean<{ role: string; roles?: string[]; isAdmin?: boolean }>();
+                    const changed = !fresh
+                        || fresh.role !== token.role
+                        || JSON.stringify(fresh.roles || []) !== JSON.stringify(token.roles || [])
+                        || !!fresh.isAdmin !== !!token.isAdmin;
+                    token.role = fresh?.role ?? "Apprenti";
+                    token.roles = fresh ? fresh.roles || [] : [];
+                    token.isAdmin = fresh?.isAdmin ?? false;
+                    token.rolesCheckedAt = now;
+                    // Le JWT Bearer embarque aussi les rôles : on le réémet
+                    if (changed) token.accessToken = undefined;
+                }
+            }
+            if (!user && token.id) {
                 // Vérifier si le JWT custom est expiré ou proche de l'expiration et le régénérer
                 try {
                     const decoded: any = jwt.verify(token.accessToken as string, process.env.JWT_SECRET!);

@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Metadata } from 'next'
 import FicheHub from '@/app/fiches/_components/FicheHub'
 import type { FicheTileData } from '@/app/fiches/_components/ficheUi'
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { niveau: slug } = await params
     const level = slugToLevel(slug)
     if (!level) {
-        return { title: 'Niveau introuvable | Workyt', robots: { index: false, follow: false } }
+        return { title: { absolute: 'Niveau introuvable | Workyt' }, robots: { index: false, follow: false } }
     }
     const url = `https://workyt.fr/fiches/niveau/${slug}`
     const title = `Fiches de révision ${level} gratuites | Workyt`
@@ -104,8 +105,8 @@ export default async function NiveauFichesPage({ params }: PageProps) {
 
     return (
         <>
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbLd) }} />
             <FicheHub kind="niveau" label={level} fiches={items} />
         </>
     )

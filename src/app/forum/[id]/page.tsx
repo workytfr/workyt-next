@@ -1,5 +1,6 @@
+import { jsonLd as serializeJsonLd } from "@/lib/jsonLd";
 import { Metadata } from "next";
-import React from "react";
+import React, { cache } from "react";
 import { notFound, redirect } from "next/navigation";
 import QuestionDetailPage from "@/app/forum/_components/QuestionDetailPage";
 import dbConnect from "@/lib/mongodb";
@@ -11,29 +12,35 @@ interface PageProps {
     params: Promise<{ id: string }>;
 }
 
+// Filet de sécurité : les réponses ajoutées revalident déjà la page
+// (revalidatePath), mais sans délai max elle pouvait rester figée indéfiniment.
+export const revalidate = 600;
+
 /**
  * Trouve une question par ID (composite id-slug) ou par slug pur.
  * Supporte : "64a1b2c3...-mon-slug", "64a1b2c3...", "mon-slug"
+ * `cache()` partage le résultat entre generateMetadata et la page.
  */
-async function findQuestion(idSlug: string, populateFields?: any) {
+const findQuestion = cache(async (idSlug: string) => {
+    await dbConnect();
     const objectId = extractIdFromSlug(idSlug);
 
     // Cas 1 : on a trouvé un ObjectID valide au début
     if (objectId) {
-        const query = Question.findById(objectId);
-        if (populateFields) query.populate(populateFields);
-        const question = await query;
+        const question: any = await Question.findById(objectId)
+            .populate({ path: 'user', select: 'username points' })
+            .lean();
         if (question) return { question, id: objectId };
     }
 
     // Cas 2 : pas d'ObjectID → chercher par slug
-    const query = Question.findOne({ slug: idSlug });
-    if (populateFields) query.populate(populateFields);
-    const question = await query;
+    const question: any = await Question.findOne({ slug: idSlug })
+        .populate({ path: 'user', select: 'username points' })
+        .lean();
     if (question) return { question, id: question._id.toString() };
 
     return null;
-}
+});
 
 // Génération des paramètres statiques pour l'indexation SEO (avec slug dans l'URL)
 export async function generateStaticParams() {
@@ -71,7 +78,7 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
             )
         ]);
 
-        const result = await findQuestion(idSlug, { path: "user", select: "username points" });
+        const result = await findQuestion(idSlug);
 
         if (!result) {
             return {
@@ -160,15 +167,14 @@ export const generateMetadata = async ({ params }: PageProps): Promise<Metadata>
 export default async function QuestionPage({ params }: PageProps) {
     const { id: idSlug } = await params;
 
-    await dbConnect();
-    const result = await findQuestion(idSlug, { path: 'user', select: 'username' });
+    const result = await findQuestion(idSlug);
 
     if (!result) {
         notFound();
     }
 
     const { id } = result;
-    const question: any = result.question.toObject ? result.question.toObject() : result.question;
+    const question: any = result.question;
 
     // Redirection 301 vers l'URL canonique si le format n'est pas id-slug
     const slug = question.slug || slugify(question.title);
@@ -186,24 +192,22 @@ export default async function QuestionPage({ params }: PageProps) {
     let bestAnswer: any = null;
     let initialAnswers: any[] = [];
     try {
-        answerCount = await Answer.countDocuments({ question: id });
-        // Priorité 1 : meilleure réponse explicite
-        bestAnswer = await Answer.findOne({
-            question: id,
-            status: 'Meilleure Réponse',
-        }).populate('user', 'username').lean();
-        // Priorité 2 : réponse validée par le staff (équivaut à une acceptedAnswer)
-        if (!bestAnswer) {
-            bestAnswer = await Answer.findOne({
-                question: id,
-                status: 'Validée',
-            }).populate('user', 'username').lean();
-        }
-        initialAnswers = await Answer.find({ question: id })
-            .populate({ path: 'user', select: 'username points image' })
-            .sort({ createdAt: 1 })
-            .limit(10)
-            .lean();
+        // Requêtes indépendantes : en parallèle plutôt qu'en série.
+        const [count, best, validated, answers] = await Promise.all([
+            Answer.countDocuments({ question: id }),
+            // Priorité 1 : meilleure réponse explicite
+            Answer.findOne({ question: id, status: 'Meilleure Réponse' }).populate('user', 'username').lean(),
+            // Priorité 2 : réponse validée par le staff (équivaut à une acceptedAnswer)
+            Answer.findOne({ question: id, status: 'Validée' }).populate('user', 'username').lean(),
+            Answer.find({ question: id })
+                .populate({ path: 'user', select: 'username points image' })
+                .sort({ createdAt: 1 })
+                .limit(10)
+                .lean(),
+        ]);
+        answerCount = count;
+        bestAnswer = best || validated;
+        initialAnswers = answers;
     } catch {
         // Non bloquant
     }
@@ -342,7 +346,7 @@ export default async function QuestionPage({ params }: PageProps) {
                 <script
                     key={index}
                     type="application/ld+json"
-                    dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+                    dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
                 />
             ))}
             <QuestionDetailPage

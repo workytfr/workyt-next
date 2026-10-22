@@ -84,7 +84,6 @@ const PartenairesView = () => {
                                     width={140}
                                     height={56}
                                     className="max-h-11 w-auto object-contain opacity-75 transition duration-300 group-hover:opacity-100"
-                                    unoptimized
                                 />
                             </div>
                             <span className="text-center text-xs leading-snug text-[rgba(26,21,18,0.55)] transition-colors group-hover:text-[var(--wk-ink)]">

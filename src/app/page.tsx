@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import HeroBackdrop from "@/components/home/hero-backdrop";
 import Hero2026 from "@/components/home/hero-2026";
 import NosServices from "@/components/home/nos-services";
@@ -101,7 +102,7 @@ export default function Home() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(educationalOrganizationSchema),
+                    __html: jsonLd(educationalOrganizationSchema),
                 }}
             />
             {/* Parcours : ce qu'on propose → la preuve jouable → qui on est →

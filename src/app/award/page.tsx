@@ -2,7 +2,7 @@ import { Metadata } from 'next';
 import AwardPageClient from './AwardPageClient';
 
 export const metadata: Metadata = {
-  title: 'Workyt Award - Réductions exclusives | Workyt',
+  title: { absolute: 'Workyt Award - Réductions exclusives | Workyt' },
   description: 'Découvrez les réductions exclusives Workyt Award ! Utilisez vos gemmes pour obtenir des codes promo chez nos partenaires : tech, culture, sport et plus encore.',
   keywords: 'réductions, codes promo, partenaires, étudiants, gemmes, Workyt Award',
   openGraph: {

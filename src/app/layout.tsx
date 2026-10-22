@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import "./globals.css";
 import Script from "next/script";
 import ClientProviders from "@/components/ClientProviders";
@@ -137,11 +138,11 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <body className={`${funnelDisplay.variable} ${montserrat.variable} font-sans overflow-x-hidden`}>
         <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+            dangerouslySetInnerHTML={{ __html: jsonLd(websiteSchema) }}
         />
         <script
             type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+            dangerouslySetInnerHTML={{ __html: jsonLd(organizationSchema) }}
         />
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <ClientProviders>
@@ -182,11 +183,13 @@ export default function RootLayout({ children }: RootLayoutProps) {
             strategy="lazyOnload"
             referrerPolicy="unsafe-url"
         />
-        {/* Google Ads / GTM — afterInteractive pour ne pas bloquer le LCP */}
+        {/* Google Ads / GTM — lazyOnload : en afterInteractive, Next ajoutait un
+            preload dans le <head> qui concurrençait le CSS et les polices. Les
+            appels gtag() ci-dessous s'empilent dans dataLayer en attendant. */}
         <Script
             id="gtag-src"
             src="https://www.googletagmanager.com/gtag/js?id=AW-10979332706"
-            strategy="afterInteractive"
+            strategy="lazyOnload"
         />
         <Script id="google-analytics" strategy="afterInteractive">
             {`

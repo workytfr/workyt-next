@@ -27,7 +27,7 @@ export async function GET(
         return NextResponse.json(node);
     } catch (error: any) {
         console.error('Erreur GET /api/curriculum/[nodeId]:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
     }
 }
 
@@ -62,7 +62,7 @@ export async function PUT(
         return NextResponse.json(node);
     } catch (error: any) {
         console.error('Erreur PUT /api/curriculum/[nodeId]:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
     }
 }
 
@@ -92,6 +92,6 @@ export async function DELETE(
         return NextResponse.json({ message: 'Noeud supprimé' });
     } catch (error: any) {
         console.error('Erreur DELETE /api/curriculum/[nodeId]:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
     }
 }

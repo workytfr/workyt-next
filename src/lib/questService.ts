@@ -4,7 +4,6 @@ import QuestProgress from '../models/QuestProgress';
 import Chest from '../models/Chest';
 import ChestReward from '../models/ChestReward';
 import User from '../models/User';
-import Gem from '../models/Gem';
 import PointTransaction from '../models/PointTransaction';
 import { IQuest, QuestActionType } from '../models/Quest';
 import { IQuestProgress } from '../models/QuestProgress';
@@ -19,6 +18,7 @@ import OwnedCosmetic from '../models/OwnedCosmetic';
 import { MushroomService } from './mushroomService';
 import { StreakService } from './streakService';
 import { addPointsWithBoost } from './pointsService';
+import { creditGems } from '@/lib/rewardLedger';
 
 export class QuestService {
   /**
@@ -381,6 +381,18 @@ export class QuestService {
       throw new Error('La quête n\'est pas encore complétée');
     }
 
+    // Réservation atomique AVANT de verser : seule la requête qui fait passer
+    // le statut de « completed » à « claimed » distribue les récompenses
+    // (avant : vérifier → verser → marquer, donc des clics simultanés payaient N fois).
+    const reserved = await QuestProgress.findOneAndUpdate(
+      { _id: progress._id, status: 'completed' },
+      { $set: { status: 'claimed', claimedAt: new Date() } },
+      { new: true }
+    );
+    if (!reserved) {
+      throw new Error('Récompenses déjà réclamées');
+    }
+
     const rewards = [];
 
     for (const reward of quest.rewards) {
@@ -388,20 +400,8 @@ export class QuestService {
         const finalAmount = await addPointsWithBoost(userId, reward.amount || 0, 'completeQuiz');
         rewards.push({ type: 'points', amount: finalAmount });
       } else if (reward.type === 'gems') {
-        // Ajouter des gemmes
-        let gem = await Gem.findOne({ user: userId });
-        if (!gem) {
-          gem = new Gem({
-            user: userId,
-            balance: 0,
-            totalEarned: 0,
-            totalSpent: 0
-          });
-        }
-
-        gem.balance += reward.amount || 0;
-        gem.totalEarned += reward.amount || 0;
-        await gem.save();
+        // Ajouter des gemmes (crédit atomique)
+        await creditGems(userId, reward.amount || 0);
 
         rewards.push({ type: 'gems', amount: reward.amount });
       } else if (reward.type === 'mushrooms') {
@@ -422,10 +422,7 @@ export class QuestService {
       }
     }
 
-    // Marquer la quête comme réclamée
-    progress.status = 'claimed';
-    progress.claimedAt = new Date();
-    await progress.save();
+    // Quête déjà marquée « claimed » par la réservation ci-dessus
 
     return rewards;
   }
@@ -487,18 +484,7 @@ export class QuestService {
     if (selectedReward.type === 'points') {
       await addPointsWithBoost(userId, selectedReward.amount || 0, 'completeQuiz');
     } else if (selectedReward.type === 'gems') {
-      let gem = await Gem.findOne({ user: userId });
-      if (!gem) {
-        gem = new Gem({
-          user: userId,
-          balance: 0,
-          totalEarned: 0,
-          totalSpent: 0
-        });
-      }
-      gem.balance += selectedReward.amount || 0;
-      gem.totalEarned += selectedReward.amount || 0;
-      await gem.save();
+      await creditGems(userId, selectedReward.amount || 0);
     } else if (selectedReward.type === 'mushrooms') {
       await MushroomService.addMushrooms(userId, selectedReward.amount || 0, 'chest');
     } else if (selectedReward.type === 'cosmetic' && selectedReward.cosmeticType && selectedReward.cosmeticId) {

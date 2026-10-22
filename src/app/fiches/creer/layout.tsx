@@ -2,7 +2,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
     title:
-        "Créer une fiche de révision | Workyt",
+        { absolute: "Créer une fiche de révision | Workyt" },
     description:
         "Créez une fiche de révision pour aider les autres étudiants à réussir leurs examens.",
     openGraph: {

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Suivi personnalisé avec un bénévole | Workyt",
+    title: { absolute: "Suivi personnalisé avec un bénévole | Workyt" },
     description:
         "Un bénévole de l'association Workyt t'accompagne pendant plusieurs semaines : conversation privée, plan d'objectifs, cours et quiz choisis pour toi. Gratuit, du collège au supérieur.",
     alternates: { canonical: "https://workyt.fr/suivi" },

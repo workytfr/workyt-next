@@ -5,6 +5,7 @@ import User from "@/models/User";
 import StudentAcademicProfile from "@/models/StudentAcademicProfile";
 import nodemailer from "nodemailer";
 import { rateLimit, getIP, rateLimitResponse } from '@/lib/rateLimit';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 export async function POST(req: NextRequest) {
     // Rate limit: 3 inscriptions par 30 min par IP
@@ -13,7 +14,8 @@ export async function POST(req: NextRequest) {
 
     const { name, email, password, username, hasAcceptedPrivacyPolicy, academicProfile } = await req.json();
 
-    if (!name || !email || !password || !username) {
+    // Chaînes obligatoires (un objet passerait tel quel dans les filtres Mongo)
+    if ([name, email, password, username].some((v) => typeof v !== "string" || !v)) {
         return NextResponse.json({ message: "Tous les champs sont requis" }, { status: 400 });
     }
 
@@ -120,14 +122,14 @@ export async function POST(req: NextRequest) {
             subject: "Bienvenue sur Workyt!",
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h1 style="color: #333; text-align: center;">Bienvenue, ${name} !</h1>
+                    <h1 style="color: #333; text-align: center;">Bienvenue, ${escapeHtml(name)} !</h1>
                     <p>Merci de vous être inscrit sur Workyt. Nous sommes ravis de vous accueillir parmi nous.</p>
                     <div style="background-color: #f5f5f5; padding: 20px; border-radius: 8px; margin: 20px 0;">
                         <h3 style="color: #333; margin-top: 0;">Vos informations :</h3>
                         <ul style="list-style: none; padding: 0;">
-                            <li style="padding: 5px 0;"><strong>Nom:</strong> ${name}</li>
-                            <li style="padding: 5px 0;"><strong>Email:</strong> ${email}</li>
-                            <li style="padding: 5px 0;"><strong>Nom d'utilisateur:</strong> ${newUser.username}</li>
+                            <li style="padding: 5px 0;"><strong>Nom:</strong> ${escapeHtml(name)}</li>
+                            <li style="padding: 5px 0;"><strong>Email:</strong> ${escapeHtml(email)}</li>
+                            <li style="padding: 5px 0;"><strong>Nom d'utilisateur:</strong> ${escapeHtml(newUser.username)}</li>
                             <li style="padding: 5px 0;"><strong>Rôle:</strong> ${newUser.role}</li>
                             <li style="padding: 5px 0;"><strong>Points de départ:</strong> ${newUser.points}</li>
                         </ul>

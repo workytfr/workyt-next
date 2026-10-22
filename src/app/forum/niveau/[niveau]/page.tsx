@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Metadata } from 'next'
 import ForumHub from '@/app/forum/_components/ForumHub'
 import { notFound } from 'next/navigation'
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { niveau: slug } = await params
     const level = slugToLevel(slug)
     if (!level) {
-        return { title: 'Niveau introuvable | Workyt', robots: { index: false, follow: false } }
+        return { title: { absolute: 'Niveau introuvable | Workyt' }, robots: { index: false, follow: false } }
     }
     const url = `https://workyt.fr/forum/niveau/${slug}`
     const title = `Forum ${level} : aide aux devoirs gratuite | Workyt`
@@ -91,8 +92,8 @@ export default async function NiveauForumPage({ params }: PageProps) {
 
     return (
         <>
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbLd) }} />
             <ForumHub kind="niveau" label={level} questions={questions} />
         </>
     )

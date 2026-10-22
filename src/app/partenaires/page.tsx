@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import PartenairesPageClient from "./PartenairesPageClient";
 
 export const metadata: Metadata = {
-    title: "Nos Partenaires | Workyt",
+    title: { absolute: "Nos Partenaires | Workyt" },
     description:
         "Découvrez les partenaires Workyt : des entreprises et organisations engagées pour la réussite étudiante. Profitez de réductions exclusives, offres spéciales et avantages partout en France.",
     keywords: [

@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Conditions d'utilisation | Workyt",
+    title: { absolute: "Conditions d'utilisation | Workyt" },
     description:
         "Conditions générales d'utilisation de Workyt : services proposés, système de points et de badges, certification des fiches, règles du forum, modération et responsabilités.",
     alternates: { canonical: "https://workyt.fr/conditions-utilisation" },

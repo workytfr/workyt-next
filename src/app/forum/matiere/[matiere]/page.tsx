@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Metadata } from 'next'
 import ForumHub from '@/app/forum/_components/ForumHub'
 import { notFound } from 'next/navigation'
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { matiere: slug } = await params
     const subject = slugToSubject(slug)
     if (!subject) {
-        return { title: 'Matière introuvable | Workyt', robots: { index: false, follow: false } }
+        return { title: { absolute: 'Matière introuvable | Workyt' }, robots: { index: false, follow: false } }
     }
     const url = `https://workyt.fr/forum/matiere/${slug}`
     const title = `Forum ${subject} : aide aux devoirs gratuite | Workyt`
@@ -90,8 +91,8 @@ export default async function MatiereForumPage({ params }: PageProps) {
 
     return (
         <>
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbLd) }} />
             <ForumHub kind="matiere" label={subject} questions={questions} />
         </>
     )

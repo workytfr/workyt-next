@@ -20,6 +20,7 @@ const nextConfig = {
     // Desktop/workyt-next/… au lieu de produire .next/standalone/server.js.
     outputFileTracingRoot: import.meta.dirname,
     images: {
+        formats: ["image/avif", "image/webp"],
         remotePatterns: [
             {
                 protocol: "https",

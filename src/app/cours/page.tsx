@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -11,7 +12,7 @@ import CoursesPageClient from "./_components/CoursesPageClient";
 import "@/app/cours/_components/styles/notion-theme.css";
 
 export const metadata: Metadata = {
-    title: "Cours gratuits collège, lycée et supérieur | Workyt",
+    title: { absolute: "Cours gratuits collège, lycée et supérieur | Workyt" },
     description:
         "Bibliothèque pédagogique gratuite : cours de mathématiques, français, SVT, physique-chimie, histoire-géographie, anglais et plus. Du collège au supérieur, par les bénévoles de l'asso Workyt.",
     keywords:
@@ -98,7 +99,7 @@ export default async function CoursesPage() {
 
     return (
         <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionLd) }} />
 
             {/* En-tête — entièrement rendu côté serveur pour Googlebot */}
             <header className="relative overflow-hidden border-b border-[rgba(26,21,18,0.08)]">

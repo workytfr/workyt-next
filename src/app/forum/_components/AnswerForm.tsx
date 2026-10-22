@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import FicheEditor from "@/app/fiches/_components/FicheEditor";
 import { compressImage, FORUM_ANSWER_IMAGE_OPTS } from "@/app/fiches/_components/imageCompression";
 import { countDrawings } from "@/app/forum/_components/imageCounting";
 import {
@@ -21,6 +21,13 @@ import {
     AtSign,
 } from "lucide-react";
 import PointsIcon from "@/components/ui/PointsIcon";
+
+// Éditeur tiptap + KaTeX (~120 Ko gz) : chargé seulement quand le formulaire
+// est déplié, pour ne pas alourdir chaque page de question du forum.
+const FicheEditor = dynamic(() => import("@/app/fiches/_components/FicheEditor"), {
+    ssr: false,
+    loading: () => <div className="h-40 animate-pulse rounded-lg border border-gray-200 bg-gray-50" />,
+});
 
 const MAX_IMAGES = 2;
 const MAX_FILES = 4;

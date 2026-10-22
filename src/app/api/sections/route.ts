@@ -5,6 +5,18 @@ import Section from '@/models/Section';
 import Course from '@/models/Course';
 import connectDB from '@/lib/mongodb';
 import { escapeRegex } from '@/utils/escapeRegex';
+import User from '@/models/User';
+import { hasPermission, type Permission } from '@/lib/roles';
+
+/**
+ * Rôles relus en base (le JWT peut être périmé) puis permission exigée.
+ * Avant, une simple session suffisait : n'importe quel élève pouvait créer,
+ * renommer ou déplacer les sections de n'importe quel cours.
+ */
+async function requirePermission(email: string, permission: Permission) {
+    const user = await User.findOne({ email }).select('role roles').lean();
+    return !!user && (await hasPermission(user as any, permission));
+}
 
 // GET - Récupérer les sections avec pagination et filtres
 export async function GET(request: NextRequest) {
@@ -100,6 +112,10 @@ export async function POST(request: NextRequest) {
 
         await connectDB();
 
+        if (!(await requirePermission(session.user.email, 'section.create'))) {
+            return NextResponse.json({ error: 'Accès interdit' }, { status: 403 });
+        }
+
         const body = await request.json();
         
         // Si on reçoit un tableau de sections, les traiter toutes
@@ -136,19 +152,21 @@ export async function POST(request: NextRequest) {
                     sectionData.order = lastSection ? lastSection.order + 1 : 1;
                 }
                 
-                sectionData.courseId = courseId;
-                
+                // Champs autorisés uniquement (pas de corps brut dans la mise à jour)
+                const fields = { title: String(sectionData.title), order: Number(sectionData.order) };
+
                 if (sectionData._id) {
-                    // Mettre à jour une section existante
-                    const updatedSection = await Section.findByIdAndUpdate(
-                        sectionData._id,
-                        sectionData,
+                    // Mettre à jour une section existante — de CE cours seulement :
+                    // une section d'un autre cours ne peut plus être déplacée ici.
+                    const updatedSection = await Section.findOneAndUpdate(
+                        { _id: sectionData._id, courseId },
+                        fields,
                         { new: true }
                     );
-                    savedSections.push(updatedSection);
+                    if (updatedSection) savedSections.push(updatedSection);
                 } else {
                     // Créer une nouvelle section
-                    const section = new Section(sectionData);
+                    const section = new Section({ ...fields, courseId });
                     await section.save();
                     savedSections.push(section);
                 }
@@ -190,7 +208,7 @@ export async function POST(request: NextRequest) {
             body.order = lastSection ? lastSection.order + 1 : 1;
         }
 
-        const section = new Section(body);
+        const section = new Section({ title: String(body.title), order: Number(body.order), courseId: body.courseId });
         await section.save();
 
         // Retourner la section avec les données populées
@@ -217,6 +235,10 @@ export async function PUT(request: NextRequest) {
         }
 
         await connectDB();
+
+        if (!(await requirePermission(session.user.email, 'section.edit'))) {
+            return NextResponse.json({ error: 'Accès interdit' }, { status: 403 });
+        }
 
         const body = await request.json();
         

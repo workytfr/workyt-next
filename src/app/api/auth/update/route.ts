@@ -8,8 +8,11 @@ export async function POST(req: Request) {
     try {
         const { token, password } = await req.json();
 
-        if (!token || !password) {
+        if (typeof token !== 'string' || typeof password !== 'string' || !token || !password) {
             return NextResponse.json({ error: 'Token and password are required' }, { status: 400 });
+        }
+        if (password.length < 6 || password.length > 200) {
+            return NextResponse.json({ error: 'Le mot de passe doit contenir entre 6 et 200 caractères' }, { status: 400 });
         }
 
         await connectDB();

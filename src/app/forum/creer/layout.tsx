@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Déposer une question | Workyt",
+    title: { absolute: "Déposer une question | Workyt" },
     description: "Déposez une question pour obtenir de l'aide de la communauté Workyt. Forum d'entraide scolaire gratuit.",
     robots: { index: false, follow: true },
     openGraph: {

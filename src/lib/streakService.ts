@@ -1,10 +1,8 @@
 import Streak, { IStreak } from '@/models/Streak';
 import User from '@/models/User';
-import Gem from '@/models/Gem';
-import MushroomInventory from '@/models/MushroomInventory';
-import MushroomTransaction from '@/models/MushroomTransaction';
 import PointTransaction from '@/models/PointTransaction';
 import dbConnect from '@/lib/mongodb';
+import { creditGems, creditMushrooms } from '@/lib/rewardLedger';
 
 /**
  * Configuration des paliers de streak
@@ -180,6 +178,18 @@ export class StreakService {
       return { success: false, message: 'Palier deja reclame' };
     }
 
+    // Réservation atomique AVANT de verser : la condition « pas encore réclamé »
+    // fait partie de l'écriture, donc une seule requête parallèle passe.
+    // (Avant : vérifier → verser → marquer, et 5 clics simultanés = 5 récompenses.)
+    const reserved = await Streak.findOneAndUpdate(
+      { _id: streak._id, claimedMilestones: { $ne: milestoneDays }, currentStreak: { $gte: milestone.days } },
+      { $addToSet: { claimedMilestones: milestoneDays } },
+      { new: true }
+    );
+    if (!reserved) {
+      return { success: false, message: 'Palier deja reclame' };
+    }
+
     // Distribuer les recompenses
     const { points, gems, mushrooms } = milestone.rewards;
 
@@ -189,35 +199,9 @@ export class StreakService {
       await addPointsWithBoost(userId, points, 'completeQuiz');
     }
 
-    // Gems
-    if (gems > 0) {
-      let gemDoc = await Gem.findOne({ user: userId });
-      if (!gemDoc) {
-        gemDoc = new Gem({ user: userId, balance: 0, totalEarned: 0, totalSpent: 0 });
-      }
-      gemDoc.balance += gems;
-      gemDoc.totalEarned += gems;
-      await gemDoc.save();
-    }
-
-    // Champignons
-    if (mushrooms > 0) {
-      let inventory = await MushroomInventory.findOne({ user: userId });
-      if (!inventory) {
-        inventory = new MushroomInventory({ user: userId, balance: 0, totalEarned: 0, totalUsed: 0 });
-      }
-      inventory.balance += mushrooms;
-      inventory.totalEarned += mushrooms;
-      await inventory.save();
-
-      const tx = new MushroomTransaction({
-        user: userId,
-        type: 'earn',
-        amount: mushrooms,
-        source: 'streak'
-      });
-      await tx.save();
-    }
+    // Gems + champignons : crédits atomiques
+    await creditGems(userId, gems);
+    await creditMushrooms(userId, mushrooms, 'streak');
 
     // Badge
     if (milestone.badge) {
@@ -226,9 +210,7 @@ export class StreakService {
       });
     }
 
-    // Marquer le palier comme reclame
-    streak.claimedMilestones.push(milestoneDays);
-    await streak.save();
+    // Palier déjà marqué comme réclamé par la réservation ci-dessus
 
     return {
       success: true,

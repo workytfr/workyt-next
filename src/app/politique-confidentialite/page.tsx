@@ -2,7 +2,7 @@ import { Metadata } from "next";
 import Link from "next/link";
 
 export const metadata: Metadata = {
-    title: "Politique de confidentialité | Workyt",
+    title: { absolute: "Politique de confidentialité | Workyt" },
     description:
         "Politique de confidentialité de Workyt : quelles données nous collectons, pourquoi, et comment exercer tes droits RGPD. Asso loi 1901, sans tracking commercial.",
     alternates: { canonical: "https://workyt.fr/politique-confidentialite" },

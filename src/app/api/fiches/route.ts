@@ -29,6 +29,24 @@ async function fileToBuffer(file: File): Promise<Buffer> {
     return Buffer.from(arrayBuffer);
 }
 
+// Pièces jointes acceptées : le type est déduit de l'extension, jamais de
+// file.type (fourni par le client). Un .html ou un .svg téléversé ici était
+// ensuite servi tel quel par /api/file-proxy (XSS stocké).
+const ALLOWED_FILE_TYPES: Record<string, string> = {
+    pdf: "application/pdf",
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    gif: "image/gif",
+};
+const MAX_FILE_BYTES = 20 * 1024 * 1024;
+const MAX_FILES = 10;
+
+function fileExtension(name: string): string {
+    return name.split(".").pop()?.toLowerCase() ?? "";
+}
+
 // Fonction pour téléverser un fichier sur Cloudflare R2
 async function uploadFileToR2(file: File) {
     try {
@@ -41,7 +59,7 @@ async function uploadFileToR2(file: File) {
                 Bucket: bucketName,
                 Key: fileKey,
                 Body: fileBuffer,
-                ContentType: file.type,
+                ContentType: ALLOWED_FILE_TYPES[fileExtension(file.name)],
                 ACL: "public-read",
             })
         );
@@ -85,12 +103,26 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Données obligatoires manquantes." }, { status: 400 });
         }
 
-        const fileURLs: string[] = [];
-        for (const [key, value] of formData.entries()) {
-            if (key === "file" && value instanceof File) {
-                const fileUrl = await uploadFileToR2(value);
-                fileURLs.push(fileUrl);
+        if (typeof title !== "string" || title.length > 200) {
+            return NextResponse.json({ error: "Titre invalide (200 caractères max)." }, { status: 400 });
+        }
+
+        const files = formData.getAll("file").filter((v): v is File => v instanceof File);
+        if (files.length > MAX_FILES) {
+            return NextResponse.json({ error: `${MAX_FILES} fichiers maximum.` }, { status: 400 });
+        }
+        for (const file of files) {
+            if (!ALLOWED_FILE_TYPES[fileExtension(file.name)]) {
+                return NextResponse.json({ error: "Formats acceptés : PDF, PNG, JPG, WEBP, GIF." }, { status: 400 });
             }
+            if (file.size > MAX_FILE_BYTES) {
+                return NextResponse.json({ error: "Fichier trop lourd (20 Mo max)." }, { status: 400 });
+            }
+        }
+
+        const fileURLs: string[] = [];
+        for (const file of files) {
+            fileURLs.push(await uploadFileToR2(file));
         }
 
         const status = (await hasPermission(user, 'fiche.create')) ? "Certifiée" : "Non Certifiée";

@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Récompenses & Calendrier Mensuel | Workyt",
+    title: { absolute: "Récompenses & Calendrier Mensuel | Workyt" },
     description: "Découvrez les récompenses disponibles, participez aux événements et réclamez votre récompense quotidienne avec le calendrier mensuel. Gagnez des points et des diamants chaque jour !",
     keywords: "récompenses, événements, calendrier mensuel, récompenses quotidiennes, points, diamants, classement, Workyt",
     openGraph: {

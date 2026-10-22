@@ -83,7 +83,7 @@ export async function POST(req: NextRequest) {
                         <p><strong>Type :</strong> ${typeLabel[doc.type] || doc.type}</p>
                         <p><strong>Structure :</strong> ${escapeHtml(doc.companyName)}</p>
                         <p><strong>Contact :</strong> ${escapeHtml(doc.contactName)}</p>
-                        <p><strong>E-mail :</strong> <a href="mailto:${doc.email}">${doc.email}</a></p>
+                        <p><strong>E-mail :</strong> <a href="mailto:${encodeURIComponent(doc.email)}">${escapeHtml(doc.email)}</a></p>
                         ${doc.website ? `<p><strong>Site / lien :</strong> ${escapeHtml(doc.website)}</p>` : ''}
                         <p><strong>Message :</strong></p>
                         <p style="white-space:pre-wrap">${escapeHtml(doc.message)}</p>

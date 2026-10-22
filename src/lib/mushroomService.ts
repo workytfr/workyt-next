@@ -2,6 +2,7 @@ import MushroomInventory from '@/models/MushroomInventory';
 import MushroomTransaction, { BoostType, MushroomSource } from '@/models/MushroomTransaction';
 import ActiveBoost from '@/models/ActiveBoost';
 import dbConnect from '@/lib/mongodb';
+import { creditMushrooms } from '@/lib/rewardLedger';
 
 /**
  * Configuration des boosts disponibles
@@ -60,28 +61,8 @@ export class MushroomService {
    */
   static async addMushrooms(userId: string, amount: number, source: MushroomSource): Promise<void> {
     await dbConnect();
-
-    let inventory = await MushroomInventory.findOne({ user: userId });
-    if (!inventory) {
-      inventory = new MushroomInventory({
-        user: userId,
-        balance: 0,
-        totalEarned: 0,
-        totalUsed: 0
-      });
-    }
-
-    inventory.balance += amount;
-    inventory.totalEarned += amount;
-    await inventory.save();
-
-    const tx = new MushroomTransaction({
-      user: userId,
-      type: 'earn',
-      amount,
-      source
-    });
-    await tx.save();
+    // Crédit atomique ($inc) : deux gains simultanés ne s'écrasent plus
+    await creditMushrooms(userId, amount, source);
   }
 
   /**

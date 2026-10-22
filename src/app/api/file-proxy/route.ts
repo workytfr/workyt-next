@@ -3,20 +3,48 @@ import connectDB from "@/lib/mongodb";
 import Revision from "@/models/Revision";
 import Question from "@/models/Question";
 import { getFileFromStorage, extractFileKeyFromUrl } from "@/lib/b2Utils";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
 // Dossiers R2 autorisés en accès direct via ?file= (clés à UUID non devinables)
 const ALLOWED_FILE_PREFIXES = ["audio-tts/", "evaluations/", "fiches/"];
 
-function contentTypeFor(key: string, fallback?: string): string {
+/**
+ * Type servi, déduit de l'extension uniquement : le ContentType stocké vient du
+ * client à l'upload. Sinon un .html ou un .svg téléversé était servi « inline »
+ * sur workyt.fr et son script s'exécutait avec la session du visiteur.
+ * Tout ce qui n'est pas dans cette liste part en téléchargement.
+ */
+const INLINE_TYPES: Record<string, string> = {
+    ".pdf": "application/pdf",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".webp": "image/webp",
+    ".gif": "image/gif",
+    // Dessins des fiches : affichés via <img> (aucun script n'y tourne) ; ouverts
+    // directement, la CSP sandbox ci-dessous bloque leurs scripts.
+    ".svg": "image/svg+xml",
+    ".mp3": "audio/mpeg",
+};
+
+function fileResponse(bytes: Uint8Array, key: string, cacheControl: string) {
     const lower = key.toLowerCase();
-    if (lower.endsWith(".pdf")) return "application/pdf";
-    if (lower.endsWith(".png")) return "image/png";
-    if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) return "image/jpeg";
-    if (lower.endsWith(".webp")) return "image/webp";
-    if (lower.endsWith(".gif")) return "image/gif";
-    if (lower.endsWith(".mp3")) return "audio/mpeg";
-    if (key.startsWith("audio-tts/")) return "audio/mpeg";
-    return fallback || "application/octet-stream";
+    const ext = Object.keys(INLINE_TYPES).find((e) => lower.endsWith(e));
+    const type = ext ? INLINE_TYPES[ext] : key.startsWith("audio-tts/") ? "audio/mpeg" : null;
+    return new NextResponse(Buffer.from(bytes), {
+        status: 200,
+        headers: {
+            "Content-Type": type ?? "application/octet-stream",
+            "Content-Disposition": type ? "inline" : "attachment",
+            "X-Content-Type-Options": "nosniff",
+            // Même ouvert directement, le fichier ne peut ni exécuter de script ni
+            // accéder à l'origine. Pas sur les PDF : Chrome refuse d'afficher un
+            // PDF dans un document sandboxé.
+            ...(type === "application/pdf" ? {} : { "Content-Security-Policy": "sandbox; default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'" }),
+            "Cache-Control": cacheControl,
+        },
+    });
 }
 
 connectDB();
@@ -59,20 +87,20 @@ export const GET = async (req: NextRequest) => {
                 return NextResponse.json({ error: "Accès non autorisé" }, { status: 403 });
             }
 
+            // Copies d'évaluation : réservées aux membres connectés, jamais en
+            // cache partagé (la clé circule dans les URL et les logs).
+            const isEvaluation = key.startsWith("evaluations/");
+            if (isEvaluation && !(await getServerSession(authOptions))) {
+                return NextResponse.json({ error: "Connexion requise" }, { status: 401 });
+            }
+
             const response = await getFileFromStorage(bucketName, key);
             if (!response.Body) {
                 return NextResponse.json({ error: "Fichier vide" }, { status: 500 });
             }
 
             const bytes = await response.Body.transformToByteArray();
-            return new NextResponse(Buffer.from(bytes), {
-                status: 200,
-                headers: {
-                    "Content-Type": contentTypeFor(key, response.ContentType),
-                    "Content-Disposition": "inline",
-                    "Cache-Control": "public, max-age=604800",
-                },
-            });
+            return fileResponse(bytes, key, isEvaluation ? "private, max-age=3600" : "public, max-age=604800");
         }
 
         let fileUrl: string;
@@ -109,25 +137,8 @@ export const GET = async (req: NextRequest) => {
             return NextResponse.json({ error: "Fichier vide" }, { status: 500 });
         }
 
-        // Déterminer le Content-Type
-        const fileNameLower = fileKey.toLowerCase();
-        let contentType = response.ContentType || "application/octet-stream";
-        if (fileNameLower.endsWith(".pdf")) contentType = "application/pdf";
-        else if (fileNameLower.endsWith(".png")) contentType = "image/png";
-        else if (fileNameLower.endsWith(".jpg") || fileNameLower.endsWith(".jpeg")) contentType = "image/jpeg";
-        else if (fileNameLower.endsWith(".webp")) contentType = "image/webp";
-        else if (fileNameLower.endsWith(".gif")) contentType = "image/gif";
-
         const bytes = await response.Body.transformToByteArray();
-
-        return new NextResponse(Buffer.from(bytes), {
-            status: 200,
-            headers: {
-                "Content-Type": contentType,
-                "Content-Disposition": "inline",
-                "Cache-Control": "public, max-age=86400",
-            },
-        });
+        return fileResponse(bytes, fileKey, "public, max-age=86400");
     } catch (error: any) {
         console.error("File proxy error:", error?.message || error, { ficheId, fileIndex });
         return NextResponse.json(

@@ -100,14 +100,29 @@ function background(tint: string, base: string, strength = 1): Promise<Buffer> {
     return sharp(Buffer.from(svg)).png().toBuffer();
 }
 
+function isPrivateHost(host: string): boolean {
+    const h = host.toLowerCase().replace(/^\[|\]$/g, "");
+    return h === "localhost" || h.endsWith(".local") || h.endsWith(".internal") || h === "::1" || h === "0.0.0.0"
+        || /^(127|10)\./.test(h) || /^192\.168\./.test(h) || /^169\.254\./.test(h)
+        || /^172\.(1[6-9]|2\d|3[01])\./.test(h) || /^f[cd][0-9a-f]{2}:/.test(h) || /^fe80:/.test(h);
+}
+
 /** Image distante ou locale → PNG recadré, lisible par next/og (qui ne lit ni le WebP ni le SVG) */
 export async function loadImage(src: Buffer | string | null | undefined, width: number, height: number, fit: "cover" | "inside" = "cover"): Promise<Buffer | null> {
     if (!src) return null;
     try {
         let buf: Buffer;
         if (Buffer.isBuffer(src)) buf = src;
-        else if (src.startsWith("/")) buf = await readFile(path.join(process.cwd(), "public", decodeURIComponent(src.split("?")[0])));
-        else {
+        else if (src.startsWith("/")) {
+            // Reste dans public/ : « /../../.env » ne doit pas lire un fichier du serveur
+            const publicDir = path.join(process.cwd(), "public");
+            const file = path.resolve(publicDir, "." + decodeURIComponent(src.split("?")[0]));
+            if (!file.startsWith(publicDir + path.sep)) return null;
+            buf = await readFile(file);
+        } else {
+            // Image distante : HTTPS public uniquement (pas de requête vers le réseau interne)
+            const url = new URL(src);
+            if (url.protocol !== "https:" || isPrivateHost(url.hostname)) return null;
             const res = await fetch(src, { signal: AbortSignal.timeout(8000), headers: { "User-Agent": "WorkytOG/1.0 (+https://workyt.fr)" } });
             if (!res.ok) return null;
             buf = Buffer.from(await res.arrayBuffer());

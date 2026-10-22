@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo } from "react";
-import { InlineMath, BlockMath } from "react-katex";
+import { InlineMath, BlockMath } from "@/components/ui/KatexMath";
 import "katex/dist/katex.min.css";
 
 /**

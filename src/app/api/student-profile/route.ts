@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 401 });
         }
         console.error('Erreur GET /api/student-profile:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
     }
 }
 
@@ -76,6 +76,6 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: error.message }, { status: 401 });
         }
         console.error('Erreur PUT /api/student-profile:', error.message);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: "Erreur interne du serveur" }, { status: 500 });
     }
 }

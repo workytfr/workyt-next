@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { escapeHtml } from '@/lib/escapeHtml';
 
 export async function GET(req: NextRequest) {
     const token = req.nextUrl.searchParams.get('token');
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
         return new Response(
             renderPage(
                 'Desabonnement confirme',
-                `${user.name}, tu as ete desabonne(e) de la newsletter Workyt. Tu peux te reabonner a tout moment depuis les parametres de ton compte.`,
+                `${escapeHtml(user.name)}, tu as ete desabonne(e) de la newsletter Workyt. Tu peux te reabonner a tout moment depuis les parametres de ton compte.`,
                 true
             ),
             {

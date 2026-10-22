@@ -9,8 +9,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import AuthPage from "@/components/forms/RegisterForm";
 import { useState, useEffect, useRef } from "react";
+import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import {
     InstagramLogoIcon,
@@ -46,11 +46,16 @@ import {
 const STAFF_ROLES = ["Admin", "Rédacteur", "Correcteur", "Modérateur", "Helpeur"];
 import WorkytLogo from "@/components/ui/WorkytLogo";
 import ProfileCard from "@/components/ui/ProfileCard";
-import SearchCommandPalette from "@/components/SearchCommandPalette";
-import StatusCluster from "@/components/navbar/StatusCluster";
-import NotificationBell from "@/components/NotificationBell";
-import BookmarkBell from "@/components/BookmarkBell";
-import QuestsPanel from "@/components/quests/QuestsPanel";
+
+// Chargés à la demande : modales (à l'ouverture) et outils de l'espace connecté
+// (seulement si session). Sinon tout finit dans le chunk du layout, payé par
+// chaque visiteur anonyme sur chaque page.
+const AuthPage = dynamic(() => import("@/components/forms/RegisterForm"), { ssr: false });
+const SearchCommandPalette = dynamic(() => import("@/components/SearchCommandPalette"), { ssr: false });
+const QuestsPanel = dynamic(() => import("@/components/quests/QuestsPanel"), { ssr: false });
+const StatusCluster = dynamic(() => import("@/components/navbar/StatusCluster"), { ssr: false });
+const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false });
+const BookmarkBell = dynamic(() => import("@/components/BookmarkBell"), { ssr: false });
 
 const navLinks = [
     { href: "/cours", label: "Cours", icon: BookOpen },
@@ -73,11 +78,25 @@ export default function Navbar() {
     const [isBlogOpenMobile, setIsBlogOpenMobile] = useState(false);
     const [isBlogOpen, setIsBlogOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
+    // Le panneau des quêtes reste monté après la 1re ouverture (animation de fermeture).
+    const [questsMounted, setQuestsMounted] = useState(false);
+    // Les cloches existent en version desktop et mobile (bascule CSS) : on n'en
+    // monte qu'une, sinon chaque timer de polling tourne en double.
+    const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+    if (isQuestsOpen && !questsMounted) setQuestsMounted(true);
     const profileRef = useRef<HTMLDivElement>(null);
     const blogRef = useRef<HTMLDivElement>(null);
     const { data: session } = useSession();
     const pathname = usePathname();
     const isStaff = !!session && hasRole(session.user, ...STAFF_ROLES);
+
+    useEffect(() => {
+        const mq = window.matchMedia("(min-width: 1024px)");
+        const update = () => setIsDesktop(mq.matches);
+        update();
+        mq.addEventListener("change", update);
+        return () => mq.removeEventListener("change", update);
+    }, []);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -265,9 +284,13 @@ export default function Navbar() {
 
                             {session ? (
                                 <>
-                                    <StatusCluster userId={session.user.id} />
-                                    <BookmarkBell />
-                                    <NotificationBell />
+                                    {isDesktop && (
+                                        <>
+                                            <StatusCluster userId={session.user.id} />
+                                            <BookmarkBell />
+                                            <NotificationBell />
+                                        </>
+                                    )}
 
                                     <div ref={profileRef} className="relative">
                                         <button
@@ -395,7 +418,7 @@ export default function Navbar() {
                             BookmarkBell descend dans le drawer — à 360px, cinq
                             cibles de 44px plus le logo ne tiennent pas. */}
                         <div className="ml-2 flex flex-1 items-center justify-end gap-1 lg:hidden sm:gap-2">
-                            {session && <StatusCluster userId={session.user.id} />}
+                            {session && isDesktop === false && <StatusCluster userId={session.user.id} />}
                             <button
                                 onClick={() => setIsSearchOpen(true)}
                                 className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-[rgba(26,21,18,0.7)] transition-colors touch-manipulation active:bg-[rgba(26,21,18,0.08)]"
@@ -403,7 +426,7 @@ export default function Navbar() {
                             >
                                 <Search className="h-5 w-5" />
                             </button>
-                            {session && <NotificationBell />}
+                            {session && isDesktop === false && <NotificationBell />}
                             <button
                                 className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full p-2 text-[var(--wk-ink)] transition-colors touch-manipulation focus:outline-none focus:ring-2 focus:ring-[rgba(255,106,26,0.3)] active:bg-[rgba(26,21,18,0.08)]"
                                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -642,11 +665,11 @@ export default function Navbar() {
                 </DialogContent>
             </Dialog>
 
-            {session && (
+            {session && questsMounted && (
                 <QuestsPanel externalOpen={isQuestsOpen} onOpenChange={setIsQuestsOpen} />
             )}
 
-            <SearchCommandPalette open={isSearchOpen} onOpenChange={setIsSearchOpen} />
+            {isSearchOpen && <SearchCommandPalette open={isSearchOpen} onOpenChange={setIsSearchOpen} />}
         </>
     );
 }

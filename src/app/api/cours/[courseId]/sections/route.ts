@@ -40,7 +40,7 @@ export async function GET(
     } catch (error: any) {
         console.error("Erreur lors de la récupération des sections :", error.message);
         return NextResponse.json(
-            { error: "Impossible de récupérer les sections.", details: error.message },
+            { error: "Impossible de récupérer les sections." },
             { status: 500 }
         );
     }

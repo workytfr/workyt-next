@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Forum d'entraide | Workyt - Posez vos questions et obtenez de l'aide",
+    title: { absolute: "Forum d'entraide | Workyt - Posez vos questions et obtenez de l'aide" },
     description: "Posez vos questions et obtenez des réponses de la communauté Workyt. Forum d'entraide scolaire gratuit pour tous les niveaux d'études.",
     keywords: "forum d'entraide, aide scolaire, questions réponses, communauté étudiante, entraide, soutien scolaire",
     authors: [{ name: "Workyt" }],

@@ -13,13 +13,16 @@ export async function POST(req: NextRequest) {
 
         const { email } = await req.json();
 
-        if (!email) {
+        // Chaîne obligatoire : un tableau serait converti en $in par Mongoose
+        // (et accepté comme liste de destinataires par nodemailer), un objet en
+        // opérateur ({"$ne": null}) — de quoi recevoir le lien d'un autre compte.
+        if (typeof email !== 'string' || !email.trim() || email.length > 100) {
             return NextResponse.json({ error: 'Email is required' }, { status: 400 });
         }
 
         await connectDB();
 
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: email.trim() });
         if (!user) {
             // Retourner le même message que si l'utilisateur existait pour éviter l'énumération
             return NextResponse.json({ message: 'Si un compte existe avec cet email, un lien de réinitialisation a été envoyé.' }, { status: 200 });
@@ -46,7 +49,8 @@ export async function POST(req: NextRequest) {
         const resetUrl = `${process.env.NEXTAUTH_URL}/compte/reset-password?token=${resetToken}`;
         const mailOptions = {
             from: '"Julie de Workyt" <noreply@workyt.fr>',
-            to: email,
+            // Toujours l'adresse enregistrée, jamais la valeur reçue
+            to: user.email,
             subject: 'Réinitialisation de mot de passe',
             html: `
                 <p>Bonjour,</p>

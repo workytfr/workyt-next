@@ -21,7 +21,9 @@ export async function POST(req: NextRequest) {
         const body = await req.json();
         const { email, password } = body;
 
-        if (!email || !password) {
+        // Chaînes obligatoires : un objet ({"$regex": "^a"}) passerait tel quel
+        // dans le filtre Mongo (injection NoSQL).
+        if (typeof email !== 'string' || typeof password !== 'string' || !email || !password) {
             return NextResponse.json(
                 { error: 'Email et mot de passe requis.' },
                 { status: 400 }
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
 
         await connectDB();
 
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email: email.trim() }).select('+password');
         if (!user) {
             return NextResponse.json(
                 { error: 'Identifiants incorrects.' },

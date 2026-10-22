@@ -106,8 +106,15 @@ export default function QuestionDetailPage({
     }, [id, initialQuestion]);
 
     useEffect(() => {
+        // Déjà rendue côté serveur : le rafraîchissement (pièces jointes signées,
+        // fiches liées, réponses récentes) attend que le navigateur soit libre
+        // pour ne pas concurrencer l'affichage et l'hydratation.
+        if (initialQuestion && typeof window.requestIdleCallback === "function") {
+            const handle = window.requestIdleCallback(() => fetchQuestion(), { timeout: 2000 });
+            return () => window.cancelIdleCallback(handle);
+        }
         fetchQuestion();
-    }, [fetchQuestion]);
+    }, [fetchQuestion, initialQuestion]);
 
     // Temps réel : réponses en direct + indicateur de frappe + présence
     const { typingUsers, startTyping, stopTyping, presentMembers } = useForumRealtime(id, fetchQuestion);

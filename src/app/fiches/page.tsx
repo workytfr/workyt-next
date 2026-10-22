@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -10,7 +11,7 @@ import { buildIdSlug } from "@/utils/slugify";
 import FichesPageClient from "./_components/FichesPageClient";
 
 export const metadata: Metadata = {
-    title: "Fiches de révision gratuites | Brevet, Bac, examens | Workyt",
+    title: { absolute: "Fiches de révision gratuites | Brevet, Bac, examens | Workyt" },
     description:
         "Toutes les fiches de révision gratuites de la communauté Workyt : mathématiques, français, SVT, physique-chimie, histoire-géographie, SES, philosophie. Brevet, Bac, examens du supérieur — révise sans pub.",
     keywords:
@@ -94,7 +95,7 @@ export default async function FichesPage() {
 
     return (
         <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionLd) }} />
 
             {/* En-tête — rendu côté serveur pour Googlebot */}
             <header className="relative overflow-hidden border-b border-[rgba(26,21,18,0.08)]">

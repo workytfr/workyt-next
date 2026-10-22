@@ -1,3 +1,4 @@
+import { jsonLd } from "@/lib/jsonLd";
 import { Metadata } from 'next'
 import CourseHub from '@/app/cours/_components/CourseHub'
 import { plainExcerpt } from '@/app/forum/_components/forumUi'
@@ -20,7 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     const { matiere: slug } = await params
     const subject = slugToSubject(slug)
     if (!subject) {
-        return { title: 'Matière introuvable | Workyt', robots: { index: false, follow: false } }
+        return { title: { absolute: 'Matière introuvable | Workyt' }, robots: { index: false, follow: false } }
     }
     const url = `https://workyt.fr/cours/matiere/${slug}`
     const title = `Cours de ${subject} gratuits | Workyt`
@@ -99,8 +100,8 @@ export default async function MatiereCoursPage({ params }: PageProps) {
 
     return (
         <>
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }} />
-            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(collectionLd) }} />
+            <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(breadcrumbLd) }} />
             <CourseHub kind="matiere" label={subject} courses={courseItems} />
         </>
     )

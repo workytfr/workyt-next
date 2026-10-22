@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import dbConnect from '@/lib/mongodb';
 import Friendship from '@/models/Friendship';
 import User from '@/models/User';
+import { escapeRegex } from '@/utils/escapeRegex';
 
 /**
  * Service des amitiés.
@@ -62,7 +63,7 @@ export async function sendRequest(
   await dbConnect();
 
   const target = await User.findOne({
-    username: { $regex: `^${username.trim()}$`, $options: 'i' }
+    username: { $regex: `^${escapeRegex(String(username).trim())}$`, $options: 'i' }
   })
     .select('_id username')
     .lean<{ _id: any; username: string }>();

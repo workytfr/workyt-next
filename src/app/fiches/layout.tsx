@@ -1,7 +1,7 @@
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Fiches de révision gratuites | Workyt",
+    title: { absolute: "Fiches de révision gratuites | Workyt" },
     description:
         "Consultez et partagez des fiches de révision gratuites créées par la communauté Workyt. Mathématiques, physique, français, histoire, SVT et plus pour le bac, brevet et examens.",
     keywords: "fiches de révision, révision bac, révision brevet, fiches gratuites, mathématiques, physique, français, histoire, SVT, lycée, collège",

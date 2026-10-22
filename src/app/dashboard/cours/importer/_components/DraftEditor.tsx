@@ -17,6 +17,7 @@ import {
   Eye,
 } from "lucide-react";
 import RichTextEditor from "@/components/ui/RichTextEditorClientWrapper";
+import { sanitizeHtml } from "@/lib/sanitizeHtml";
 
 export interface LessonDraft {
   title: string;
@@ -286,7 +287,7 @@ export default function DraftEditor({ draft, setDraft, summary, saving, error, o
                         ) : lesson.content.replace(/<[^>]*>/g, "").trim() ? (
                           <div
                             className="wk-draft-preview prose prose-sm max-w-none rounded-2xl border border-[#e6e0d6] bg-white px-4 py-3 max-h-72 overflow-y-auto"
-                            dangerouslySetInnerHTML={{ __html: lesson.content }}
+                            dangerouslySetInnerHTML={{ __html: sanitizeHtml(lesson.content) }}
                           />
                         ) : (
                           <p className="text-sm text-[#97938e]">Leçon vide.</p>

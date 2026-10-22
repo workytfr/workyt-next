@@ -49,14 +49,36 @@ export function rateLimit(key: string, max: number, windowMs: number) {
 }
 
 /**
- * Extrait l'IP depuis la requête Next.js
+ * IP du client, lue dans des en-têtes que le client ne peut pas falsifier.
+ *
+ * Le PREMIER élément de X-Forwarded-For est fourni par le client : il suffisait
+ * d'en changer à chaque requête pour contourner toutes les limites. Le DERNIER
+ * est ajouté par le proxy le plus proche, c'est lui qu'on retient.
+ * Derrière un proxy qui pose son propre en-tête (Cloudflare : cf-connecting-ip),
+ * le désigner via TRUSTED_IP_HEADER.
  */
-export function getIP(req: NextRequest): string {
+export function getIPFromHeaders(headers: Headers | Record<string, unknown> | undefined): string {
+  if (!headers) return 'unknown';
+  const get = (name: string): string | undefined => {
+    if (typeof (headers as Headers).get === 'function') return (headers as Headers).get(name) ?? undefined;
+    const v = (headers as Record<string, unknown>)[name];
+    return Array.isArray(v) ? v.join(',') : typeof v === 'string' ? v : undefined;
+  };
+
+  const trusted = process.env.TRUSTED_IP_HEADER?.toLowerCase();
+  if (trusted) {
+    const v = get(trusted)?.split(',').pop()?.trim();
+    if (v) return v;
+  }
   return (
-    req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-    req.headers.get('x-real-ip') ||
+    get('x-forwarded-for')?.split(',').pop()?.trim() ||
+    get('x-real-ip')?.trim() ||
     'unknown'
   );
+}
+
+export function getIP(req: NextRequest): string {
+  return getIPFromHeaders(req.headers);
 }
 
 /**

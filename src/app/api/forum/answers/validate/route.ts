@@ -66,6 +66,16 @@ export async function POST(req: NextRequest) {
             );
         }
 
+        // On ne valide pas sa propre réponse : l'auteur récupérait sa mise
+        // (multipliée par le boost) et faisait avancer badges et quêtes.
+        const answerAuthorId = String((answer.user as any)?._id ?? answer.user);
+        if (answerAuthorId === user._id.toString()) {
+            return NextResponse.json(
+                { success: false, message: "Tu ne peux pas valider ta propre réponse." },
+                { status: 400 }
+            );
+        }
+
         // ✅ Vérifier si une autre réponse est déjà marquée comme "Meilleure Réponse"
         const existingBestAnswer = await Answer.findOne({
             question: question._id,
@@ -81,13 +91,24 @@ export async function POST(req: NextRequest) {
                 );
             }
 
+            // 🔹 Marquer la question comme "Résolue" — de façon atomique : deux
+            // validations simultanées ne peuvent plus verser les points deux fois.
+            const resolved = await Question.findOneAndUpdate(
+                { _id: question._id, status: { $ne: "Résolue" } },
+                { $set: { status: "Résolue" } },
+                { new: true }
+            );
+            if (!resolved) {
+                return NextResponse.json(
+                    { success: false, message: "Une réponse est déjà validée comme Meilleure Réponse." },
+                    { status: 400 }
+                );
+            }
+            question.status = "Résolue";
+
             // 🔹 Marquer la réponse comme "Meilleure Réponse"
             answer.status = "Meilleure Réponse";
             await answer.save();
-
-            // 🔹 Marquer la question comme "Résolue"
-            question.status = "Résolue";
-            await question.save();
 
             // 🔹 Ajouter les points au répondant (avec boost)
             const { addPointsWithBoost } = await import('@/lib/pointsService');
@@ -119,8 +140,19 @@ export async function POST(req: NextRequest) {
 
         // ✅ Cas où l'utilisateur est un membre du staff → Il peut valider plusieurs réponses
         if (isStaff) {
+            // Atomique : une réponse déjà validée ne redonne pas les points
+            const validated = await Answer.findOneAndUpdate(
+                { _id: answer._id, status: { $nin: ["Validée", "Meilleure Réponse"] } },
+                { $set: { status: "Validée" } },
+                { new: true }
+            );
+            if (!validated) {
+                return NextResponse.json(
+                    { success: false, message: "Cette réponse est déjà validée." },
+                    { status: 400 }
+                );
+            }
             answer.status = "Validée";
-            await answer.save();
 
             // 🔹 Si la question était "Non validée", elle passe en "Validée"
             if (question.status === "Non validée") {

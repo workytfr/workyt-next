@@ -20,6 +20,7 @@ import dbConnect from "@/lib/mongodb";
 import authMiddleware from "@/middlewares/authMiddleware";
 import R2CleanupLog from "@/models/R2CleanupLog";
 import { runR2Cleanup } from "@/lib/r2Cleanup";
+import { safeCompare } from "@/lib/safeCompare";
 
 export const runtime = "nodejs";
 export const maxDuration = 300; // 5 minutes max (Vercel Pro)
@@ -28,7 +29,7 @@ function isCronCall(req: NextRequest): boolean {
     const secret = process.env.CRON_SECRET;
     if (!secret) return false;
     const auth = req.headers.get("authorization");
-    return auth === `Bearer ${secret}`;
+    return safeCompare(auth, `Bearer ${secret}`);
 }
 
 export async function GET(req: NextRequest) {

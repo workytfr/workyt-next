@@ -13,6 +13,7 @@ import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 import { buildIdSlug } from "@/utils/slugify";
 import { parseMentions, type Participant } from "@/lib/mentionsParser";
 import { emitAnswerChanged } from "@/lib/realtime/emit";
+import { forumUploadError } from "@/lib/uploadValidation";
 
 // Configuration S3/R2 (compatible S3_* et R2_*)
 const s3Client = new S3Client({
@@ -126,6 +127,10 @@ export async function POST(
             if (key === "file" && value instanceof File && value.size > 0) {
                 incomingFiles.push(value);
             }
+        }
+        const uploadError = forumUploadError(incomingFiles);
+        if (uploadError) {
+            return NextResponse.json({ success: false, message: uploadError, error: uploadError }, { status: 400 });
         }
         const MAX_ANSWER_IMAGES = 2;
         // Sur le forum, les dessins inline (markdown `![dessin](url)`) comptent comme images
