@@ -6,7 +6,11 @@ import QuestionDetailPage from "@/app/forum/_components/QuestionDetailPage";
 import dbConnect from "@/lib/mongodb";
 import Question from "@/models/Question";
 import Answer from "@/models/Answer";
+import Course from "@/models/Course";
+import Section from "@/models/Section";
 import { extractIdFromSlug, buildIdSlug, slugify } from "@/utils/slugify";
+import { courseHref, exercisesHref, lessonHref } from "@/app/cours/_components/courseLinks";
+import type { CourseContext } from "@/app/forum/_components/QuestionView";
 
 interface PageProps {
     params: Promise<{ id: string }>;
@@ -41,6 +45,36 @@ const findQuestion = cache(async (idSlug: string) => {
 
     return null;
 });
+
+/**
+ * Fil d'Ariane d'une question posée depuis un cours : cours › chapitre › leçon
+ * (ou exercices du chapitre). Null si le cours n'est plus publié.
+ */
+async function findCourseContext(question: any): Promise<CourseContext | null> {
+    if (!question.courseId || !question.contextId) return null;
+    try {
+        const [course, section]: any[] = await Promise.all([
+            Course.findById(question.courseId).select("title slug status").lean(),
+            question.sectionId ? Section.findById(question.sectionId).select("title").lean() : null,
+        ]);
+        if (!course || course.status !== "publie") return null;
+        const ref = { _id: String(course._id), title: course.title, slug: course.slug };
+        const contentHref =
+            question.contextType === "lesson"
+                ? lessonHref(ref, { _id: String(question.contextId), title: question.contextTitle || "" })
+                : section
+                    ? exercisesHref(ref, { _id: String(section._id), title: section.title })
+                    : courseHref(ref);
+        return {
+            courseTitle: course.title,
+            courseHref: courseHref(ref),
+            sectionTitle: section?.title,
+            contentHref,
+        };
+    } catch {
+        return null;
+    }
+}
 
 // Génération des paramètres statiques pour l'indexation SEO (avec slug dans l'URL)
 export async function generateStaticParams() {
@@ -336,6 +370,8 @@ export default async function QuestionPage({ params }: PageProps) {
         // Ignorer l'erreur, on affiche la page sans JSON-LD
     }
 
+    const courseContext = await findCourseContext(question);
+
     // Sérialise pour passer en props au composant client (hydratation SEO)
     const initialQuestion = JSON.parse(JSON.stringify(question));
     const initialAnswersSerialized = JSON.parse(JSON.stringify(initialAnswers));
@@ -353,6 +389,7 @@ export default async function QuestionPage({ params }: PageProps) {
                 id={id}
                 initialQuestion={initialQuestion}
                 initialAnswers={initialAnswersSerialized}
+                courseContext={courseContext}
             />
         </>
     );

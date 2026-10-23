@@ -2,7 +2,7 @@
 
 import React from "react";
 import Link from "next/link";
-import { Paperclip, Download, BookOpen, CheckCircle2, PenLine, Quote, FileText, ArrowUpRight, Target } from "lucide-react";
+import { Paperclip, Download, BookOpen, CheckCircle2, PenLine, Quote, FileText, ArrowUpRight, Target, ChevronRight } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import MentionMarkdown from "./MentionMarkdown";
@@ -16,16 +16,26 @@ import "katex/dist/katex.min.css";
  * Le corps d'une question. Titre, auteur et statut sont affichés par l'en-tête
  * de la page (QuestionDetailPage) : cette carte se concentre sur le contenu.
  */
+export interface CourseContext {
+    courseTitle: string;
+    courseHref: string;
+    sectionTitle?: string;
+    /** Leçon, ou page d'exercices du chapitre */
+    contentHref: string;
+}
+
 const QuestionDetail = ({
     question,
     revisions,
     onAnswerClick,
     onQuote,
+    courseContext,
 }: {
     question: any;
     revisions: any[];
     onAnswerClick: () => void;
     onQuote?: (text: string, userId: string, username: string) => void;
+    courseContext?: CourseContext | null;
 }) => {
     // Extension d'un fichier joint, sans la query string
     const getFileExtension = (url: string) => {
@@ -48,29 +58,62 @@ const QuestionDetail = ({
             </div>
 
             <div className="space-y-6 p-5 sm:p-7">
-                {/* Ressource à l'origine de la question */}
+                {/* Ressource à l'origine de la question : fil d'Ariane du cours et passage cité */}
                 {question.contextType && question.contextType !== "general" && question.contextTitle && (
-                    <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-[rgba(26,21,18,0.08)] bg-[var(--wk-paper)] px-4 py-3">
-                        <BookOpen className="h-4 w-4 shrink-0 text-[var(--wk-accent)]" />
-                        <span className="text-sm text-[rgba(26,21,18,0.75)]">
-                            À propos {question.contextType === "lesson" ? "de la leçon" : "de l'exercice"} : <strong>{question.contextTitle}</strong>
-                        </span>
-                        {question.courseId && (
+                    <div className="rounded-2xl border border-[rgba(26,21,18,0.08)] bg-[var(--wk-paper)] px-4 py-3">
+                        <nav aria-label="Origine de la question" className="flex flex-wrap items-center gap-1.5 text-sm text-[rgba(26,21,18,0.65)]">
+                            <BookOpen className="h-4 w-4 shrink-0 text-[var(--wk-accent)]" />
+                            {courseContext ? (
+                                <>
+                                    <Link href={courseContext.courseHref} className="font-semibold hover:text-[var(--wk-accent)]">{courseContext.courseTitle}</Link>
+                                    {courseContext.sectionTitle && (
+                                        <>
+                                            <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                                            <span>{courseContext.sectionTitle}</span>
+                                        </>
+                                    )}
+                                    <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                                    <Link href={courseContext.contentHref} className="font-semibold text-[var(--wk-ink)] hover:text-[var(--wk-accent)]">
+                                        {question.contextType === "exercise" ? `Exercice : ${question.contextTitle}` : question.contextTitle}
+                                    </Link>
+                                </>
+                            ) : (
+                                <span>
+                                    À propos {question.contextType === "lesson" ? "de la leçon" : "de l'exercice"} : <strong>{question.contextTitle}</strong>
+                                </span>
+                            )}
+                        </nav>
+
+                        {question.anchor?.exact && (
+                            <figure className="mt-3 rounded-xl border-l-4 border-[var(--wk-accent)] bg-white px-4 py-3">
+                                <figcaption className="font-mono-ui mb-1 flex items-center gap-1.5 text-[10px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.5)]">
+                                    <Quote className="h-3 w-3" /> Le passage de la leçon
+                                </figcaption>
+                                <blockquote className="text-[15px] italic leading-relaxed text-[rgba(26,21,18,0.85)]">« {question.anchor.exact} »</blockquote>
+                            </figure>
+                        )}
+
+                        {courseContext && (
                             <Link
-                                href={`/cours/${question.courseId}?section=${question.sectionId || ""}&lesson=${question.contextType === "lesson" ? question.contextId : ""}`}
-                                className="ml-auto inline-flex items-center gap-1 whitespace-nowrap text-sm font-semibold text-[var(--wk-accent)] hover:underline"
+                                href={courseContext.contentHref + (question.anchor?.exact ? `#question-${question._id}` : "")}
+                                className="mt-3 inline-flex items-center gap-1 text-sm font-semibold text-[var(--wk-accent)] hover:underline"
                             >
-                                Voir la ressource <ArrowUpRight className="h-3.5 w-3.5" />
+                                {question.anchor?.exact ? "Voir le passage dans la leçon" : question.contextType === "lesson" ? "Ouvrir la leçon" : "Ouvrir les exercices"}
+                                <ArrowUpRight className="h-3.5 w-3.5" />
                             </Link>
                         )}
                     </div>
                 )}
 
                 {/* Les deux temps de la question, en sections numérotées comme la page d'accueil */}
-                {[
-                    { n: "01", title: "Ce que j'ai fait", Icon: PenLine, tile: "bg-[var(--wk-ink)] text-[var(--wk-accent-2)]", content: question.description.whatIDid },
-                    { n: "02", title: "Ce dont j'ai besoin", Icon: Target, tile: "bg-[var(--wk-accent)] text-white", content: question.description.whatINeed },
-                ].map((part, i) => (
+                {/* Une question posée depuis un cours n'a qu'un champ : « Ma question » */}
+                {(question.description.whatIDid?.trim()
+                    ? [
+                          { n: "01", title: "Ce que j'ai fait", Icon: PenLine, tile: "bg-[var(--wk-ink)] text-[var(--wk-accent-2)]", content: question.description.whatIDid },
+                          { n: "02", title: "Ce dont j'ai besoin", Icon: Target, tile: "bg-[var(--wk-accent)] text-white", content: question.description.whatINeed },
+                      ]
+                    : [{ n: "01", title: "Ma question", Icon: Target, tile: "bg-[var(--wk-accent)] text-white", content: question.description.whatINeed }]
+                ).map((part, i) => (
                     <section
                         key={part.n}
                         className={`grid grid-cols-1 gap-4 md:grid-cols-[190px_minmax(0,1fr)] md:gap-8 ${i > 0 ? "border-t border-dashed border-[rgba(26,21,18,0.14)] pt-6" : ""}`}

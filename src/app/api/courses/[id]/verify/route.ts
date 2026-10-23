@@ -7,6 +7,7 @@ import connectDB from "@/lib/mongodb";
 import Course from "@/models/Course";
 import { awardPointsOnce } from "@/lib/pointsService";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 const VERIFY_POINTS = 13; // Points gagnés par le correcteur qui vérifie un cours
 
 /**
@@ -79,6 +80,7 @@ export async function POST(
             course: course._id.toString(),
         });
 
+        revalidateCoursePages();
         return NextResponse.json(
             {
                 message: "Cours vérifié avec succès. Il est maintenant en attente de publication.",

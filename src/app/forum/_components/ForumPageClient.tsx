@@ -67,6 +67,8 @@ export default function ForumPageClient() {
     const [showInfoModal, setShowInfoModal] = useState<boolean>(false);
     const [contextFilter, setContextFilter] = useState<string>(searchParams.get("contextType") || "");
     const [contextIdFilter, setContextIdFilter] = useState<string>(searchParams.get("contextId") || "");
+    // Questions d'un cours (lien « Les questions du forum » de l'accueil d'un cours)
+    const [courseIdFilter, setCourseIdFilter] = useState<string>(searchParams.get("courseId") || "");
     const [refreshKey, setRefreshKey] = useState<number>(0);
 
     // Temps réel : nombre de nouvelles questions postées pendant la consultation
@@ -84,6 +86,7 @@ export default function ForumPageClient() {
         });
         if (contextFilter) params.set("contextType", contextFilter);
         if (contextIdFilter) params.set("contextId", contextIdFilter);
+        if (courseIdFilter) params.set("courseId", courseIdFilter);
 
         fetch(`/api/forum/questions?${params}`)
             .then((r) => r.json())
@@ -98,7 +101,7 @@ export default function ForumPageClient() {
         return () => {
             alive = false;
         };
-    }, [page, query, subject, classLevel, status, contextFilter, contextIdFilter, refreshKey]);
+    }, [page, query, subject, classLevel, status, contextFilter, contextIdFilter, courseIdFilter, refreshKey]);
 
     const change = (fn: () => void) => {
         setLoading(true);
@@ -136,7 +139,7 @@ export default function ForumPageClient() {
             setClassLevel("");
             setStatus("");
             setContextFilter("");
-            setContextIdFilter("");
+            setContextIdFilter(""); setCourseIdFilter("");
         });
 
     const goToPage = (p: number) => {
@@ -157,7 +160,7 @@ export default function ForumPageClient() {
             onContext={(v) =>
                 change(() => {
                     setContextFilter(v);
-                    setContextIdFilter("");
+                    setContextIdFilter(""); setCourseIdFilter("");
                 })
             }
         />
@@ -285,7 +288,7 @@ export default function ForumPageClient() {
                             {contextFilter && (
                                 <ActiveChip
                                     label={contextFilter === "lesson" ? "Leçons" : "Exercices"}
-                                    onClear={() => change(() => { setContextFilter(""); setContextIdFilter(""); })}
+                                    onClear={() => change(() => { setContextFilter(""); setContextIdFilter(""); setCourseIdFilter(""); })}
                                 />
                             )}
                             {hasActiveFilters && (

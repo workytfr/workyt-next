@@ -5,7 +5,7 @@
    Même vocabulaire que le reste du site : carte blanche arrondie sur le
    papier, tuile d'icône colorée, type en capitales espacées, titre en
    Funnel Display. Pas de bordure latérale ni de fond teinté.
-   Le balisage est produit par LessonView (deux chemins de rendu).
+   Le balisage est produit par lib/lessonHtml (deux chemins de rendu).
    ========================================== */
 
 .wk-block {
@@ -120,4 +120,34 @@
   --wk-block-icon: #ffffff;
   --wk-block-label: #c2272d;
   --wk-block-border: rgba(229, 72, 77, 0.35);
+}
+
+/* ── Passages commentés (questions du forum ancrées dans la leçon) ── */
+.notion-lesson-content mark.wk-qmark {
+  background: rgba(255, 181, 71, 0.32);
+  color: inherit;
+  border-bottom: 2px solid var(--wk-accent);
+  border-radius: 2px;
+  padding: 0 1px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.notion-lesson-content mark.wk-qmark:hover,
+.notion-lesson-content mark.wk-qmark.is-active {
+  background: rgba(255, 106, 26, 0.3);
+}
+/* Petit compteur de questions en fin de passage */
+.notion-lesson-content mark.wk-qmark[data-count]::after {
+  content: attr(data-count);
+  display: inline-block;
+  margin-left: 3px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--wk-ink);
+  color: var(--wk-paper);
+  font-size: 10px;
+  font-weight: 700;
+  font-style: normal;
+  line-height: 1.6;
+  vertical-align: super;
 }

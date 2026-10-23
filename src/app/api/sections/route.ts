@@ -8,6 +8,7 @@ import { escapeRegex } from '@/utils/escapeRegex';
 import User from '@/models/User';
 import { hasPermission, type Permission } from '@/lib/roles';
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 /**
  * Rôles relus en base (le JWT peut être périmé) puis permission exigée.
  * Avant, une simple session suffisait : n'importe quel élève pouvait créer,
@@ -177,6 +178,7 @@ export async function POST(request: NextRequest) {
                 .sort({ order: 1 })
                 .populate('courseId', 'title niveau matiere');
 
+            revalidateCoursePages();
             return NextResponse.json({ 
                 sections: allSections,
                 message: `${savedSections.length} sections traitées avec succès`
@@ -215,6 +217,7 @@ export async function POST(request: NextRequest) {
         const populatedSection = await Section.findById(section._id)
             .populate('courseId', 'title niveau matiere');
 
+        revalidateCoursePages();
         return NextResponse.json(populatedSection, { status: 201 });
 
     } catch (error) {

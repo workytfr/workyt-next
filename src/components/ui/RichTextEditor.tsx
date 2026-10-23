@@ -106,7 +106,7 @@ export default function RichTextEditor({ content, onChange, fullHeight = false, 
         immediatelyRender: false,
         editorProps: {
             attributes: {
-                // Mêmes classes que LessonView : ce qu'on écrit ressemble à la leçon publiée
+                // Mêmes classes que la leçon publiée (LessonReader) : ce qu'on écrit ressemble à la leçon publiée
                 class: fullHeight
                     ? 'ProseMirror wk-editor-page prose prose-lg max-w-none notion-lesson-content outline-none'
                     : 'ProseMirror wk-editor-compact prose prose-sm max-w-none min-h-[156px] border rounded-md bg-white py-2 px-3',

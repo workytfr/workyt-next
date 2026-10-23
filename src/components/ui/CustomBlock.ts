@@ -111,7 +111,7 @@ export const CustomBlock = Node.create<CustomBlockOptions>({
              * Met le paragraphe courant (ou la sélection) dans un bloc
              * "blockType" (ex: "definition", "remarque", etc.). Le curseur reste
              * dedans : on écrit tout de suite. Pas de titre inséré : l'en-tête
-             * du bloc est affiché par CustomBlockView et recréé par LessonView.
+             * du bloc est affiché par CustomBlockView et recréé par lib/lessonHtml.
              */
             setCustomBlock:
                 (blockType: string) =>

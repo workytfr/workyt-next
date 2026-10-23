@@ -10,7 +10,7 @@ import {
 
 /**
  * Blocs pédagogiques de l'éditeur. Mêmes types, libellés et icônes que le
- * rendu publié (LessonView + styles/lesson-blocks.css) : ce qu'on voit en
+ * rendu publié (lib/lessonHtml + styles/lesson-blocks.css) : ce qu'on voit en
  * écrivant est ce que l'élève verra.
  */
 export interface BlockTypeDef {

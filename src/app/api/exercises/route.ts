@@ -7,6 +7,7 @@ import { uploadFiles } from "@/lib/uploadFiles";
 import { escapeRegex } from "@/utils/escapeRegex";
 import { hasPermission } from "@/lib/roles";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 /**
  * GET - Récupérer les exercices avec pagination et filtres
  * Filtres : difficulty, sectionId, courseId, search, authorId
@@ -177,6 +178,7 @@ export async function POST(req: NextRequest) {
             console.error("Erreur attribution points exercices:", (e as any)?.message);
         }
 
+        revalidateCoursePages();
         return NextResponse.json(newExercise, { status: 201 });
     } catch (error: any) {
         console.error("Erreur lors de la création de l'exercice :", error.message);

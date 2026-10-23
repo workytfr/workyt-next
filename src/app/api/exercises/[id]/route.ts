@@ -6,6 +6,7 @@ import authMiddleware from "@/middlewares/authMiddleware";
 import { uploadFiles } from "@/lib/uploadFiles";
 import { hasPermission } from "@/lib/roles";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 /**
  * 🚀 GET - Récupérer un exercice spécifique (Accès public)
  */
@@ -100,6 +101,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             return NextResponse.json({ error: "Exercice non trouvé." }, { status: 404 });
         }
 
+        revalidateCoursePages();
         return NextResponse.json(updatedExercise, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la mise à jour de l'exercice :", error.message);
@@ -140,6 +142,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
 
         await Exercise.findByIdAndDelete(id);
 
+        revalidateCoursePages();
         return NextResponse.json({ message: "Exercice supprimé avec succès." }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la suppression de l'exercice :", error.message);

@@ -4,7 +4,7 @@
  * Une seule instance lowlight et un seul jeu de classes CSS pour les trois
  * points de rendu du site :
  *  - les leçons, dont le contenu est du HTML injecté → transformateur hast
- *    `highlightCodeBlocks` appliqué dans le pipeline unified de LessonView ;
+ *    `highlightCodeBlocks` appliqué dans le pipeline unified de lib/lessonHtml ;
  *  - les exercices et la description de cours, rendus par react-markdown →
  *    composant React `<CodeBlock>` ;
  *  - les quiz, qui affichent du code dans l'énoncé et la correction.

@@ -13,7 +13,7 @@ export function remarkContainerDirectives() {
                 data.hName = "div";
                 data.hProperties = data.hProperties || {};
 
-                // Ajoute la classe qui sera reconnue dans LessonView
+                // Ajoute la classe qui sera reconnue par lib/lessonHtml
                 // ex: className="definition" ou "exemple"
                 data.hProperties.className = directiveName;
             }

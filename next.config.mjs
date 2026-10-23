@@ -47,6 +47,33 @@ const nextConfig = {
                 destination: "https://workyt.fr/:path*",
                 permanent: true,
             },
+            // Anciennes adresses du lecteur de cours (?section=…&lesson=…) : chaque
+            // leçon, chaque page d'exercices ou de quiz a désormais sa propre URL.
+            // La page cible redirige ensuite vers son id-slug canonique (sans query).
+            {
+                source: "/cours/:coursId",
+                has: [{ type: "query", key: "lesson", value: "(?<lesson>[a-f0-9]{24})" }],
+                destination: "/cours/:coursId/:lesson",
+                permanent: true,
+            },
+            {
+                source: "/cours/:coursId",
+                has: [
+                    { type: "query", key: "view", value: "exercises" },
+                    { type: "query", key: "section", value: "(?<section>[a-f0-9]{24})" },
+                ],
+                destination: "/cours/:coursId/exercices/:section",
+                permanent: true,
+            },
+            {
+                source: "/cours/:coursId",
+                has: [
+                    { type: "query", key: "view", value: "quizzes" },
+                    { type: "query", key: "section", value: "(?<section>[a-f0-9]{24})" },
+                ],
+                destination: "/cours/:coursId/quiz/:section",
+                permanent: true,
+            },
         ];
     },
     // Exclure pdf-parse du bundling serveur (nécessite le worker pdf.js en natif)

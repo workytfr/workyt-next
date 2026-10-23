@@ -5,6 +5,7 @@ import Lesson from "@/models/Lesson";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { hasPermission } from "@/lib/roles";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 /**
  * 🚀 GET - Récupérer une leçon complète (titre + contenu) pour l'édition
  */
@@ -94,6 +95,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             updatedLesson = await Lesson.findByIdAndUpdate(resolvedParams.id, updateData, { new: true });
         }
 
+        revalidateCoursePages();
         return NextResponse.json(updatedLesson, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la mise à jour de la leçon :", error.message);
@@ -128,6 +130,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             return NextResponse.json({ error: "Leçon non trouvée." }, { status: 404 });
         }
 
+        revalidateCoursePages();
         return NextResponse.json({ message: "Leçon supprimée avec succès." }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la suppression de la leçon :", error.message);

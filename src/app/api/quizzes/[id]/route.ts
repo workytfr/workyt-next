@@ -10,6 +10,7 @@ import { hasPermission } from "@/lib/roles";
 import { codeAnswersMatch } from "@/lib/codeAnswer";
 import { graphMatches, parseGraphSettings, pinMatches, zoneMatches } from "@/lib/imageQuestion";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 /**
  * GET /api/quizzes/[id]
  * 
@@ -408,6 +409,7 @@ export async function PATCH(
             }
         }
 
+        revalidateCoursePages();
         return NextResponse.json({ quiz }, { status: 200 });
     } catch (error: any) {
         console.error("[PATCH /api/quizzes/[id]] Error:", error);
@@ -452,6 +454,7 @@ export async function DELETE(
             return NextResponse.json({ error: "Quiz non trouvé" }, { status: 404 });
         }
 
+        revalidateCoursePages();
         return NextResponse.json({ message: "Quiz supprimé avec succès" }, { status: 200 });
     } catch (error: any) {
         console.error("[DELETE /api/quizzes/[id]] Error:", error);

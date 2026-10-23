@@ -7,6 +7,7 @@ import Section from '@/models/Section';
 import connectDB from '@/lib/mongodb';
 import { escapeRegex } from '@/utils/escapeRegex';
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 // GET - Récupérer les quiz avec pagination et filtres
 export async function GET(request: NextRequest) {
     try {
@@ -255,6 +256,7 @@ export async function POST(request: NextRequest) {
             }
         }
 
+        revalidateCoursePages();
         return NextResponse.json(quiz, { status: 201 });
     } catch (error) {
         console.error('Erreur lors de la création du quiz:', error);

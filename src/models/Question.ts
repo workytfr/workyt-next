@@ -21,6 +21,12 @@ export interface IQuestion extends Document {
     contextTitle?: string;
     courseId?: Types.ObjectId;
     sectionId?: Types.ObjectId;
+    /** Passage de la leçon visé par la question (citation + contexte avant/après) */
+    anchor?: {
+        exact: string;
+        prefix?: string;
+        suffix?: string;
+    };
 }
 
 const QuestionSchema: Schema = new Schema({
@@ -34,7 +40,8 @@ const QuestionSchema: Schema = new Schema({
     classLevel: { type: String, required: true },
     subject: { type: String, required: true },
     description: {
-        whatIDid: { type: String, required: true },
+        // Vide pour une question posée sur un passage de leçon : la citation en tient lieu
+        whatIDid: { type: String, default: '' },
         whatINeed: { type: String, required: true }
     },
     attachments: [{ type: String }],
@@ -53,7 +60,15 @@ const QuestionSchema: Schema = new Schema({
     contextId: { type: Schema.Types.ObjectId },
     contextTitle: { type: String },
     courseId: { type: Schema.Types.ObjectId, ref: 'Course' },
-    sectionId: { type: Schema.Types.ObjectId, ref: 'Section' }
+    sectionId: { type: Schema.Types.ObjectId, ref: 'Section' },
+    anchor: {
+        type: new Schema({
+            exact: { type: String, required: true, maxlength: 600 },
+            prefix: { type: String, default: '', maxlength: 64 },
+            suffix: { type: String, default: '', maxlength: 64 },
+        }, { _id: false }),
+        default: undefined,
+    }
 }, { timestamps: true });
 
 // Auto-génération du slug à partir du titre

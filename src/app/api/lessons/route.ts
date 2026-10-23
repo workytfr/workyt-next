@@ -8,6 +8,7 @@ import { handleApiError } from "@/utils/apiErrorResponse";
 import { escapeRegex } from "@/utils/escapeRegex";
 import { hasPermission } from "@/lib/roles";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 /**
  * 🚀 GET - Récupérer les leçons avec pagination et recherche avancée
  */
@@ -137,6 +138,7 @@ export async function POST(req: NextRequest) {
             status: "En attente de correction",
         });
 
+        revalidateCoursePages();
         return NextResponse.json(newLesson, { status: 201 });
 
     } catch (error: any) {
@@ -210,6 +212,7 @@ export async function PATCH(req: NextRequest) {
             return NextResponse.json({ error: "Leçon introuvable." }, { status: 404 });
         }
 
+        revalidateCoursePages();
         return NextResponse.json(
             {
                 message: "Statut de la leçon mis à jour avec succès.",

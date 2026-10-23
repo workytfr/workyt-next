@@ -2,60 +2,11 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { List, X } from "lucide-react";
+import type { TocItem } from "@/lib/lessonHtml";
 import "./styles/notion-theme.css";
-
-interface TocItem {
-    id: string;
-    text: string;
-    level: number;
-}
 
 interface LessonTableOfContentsProps {
     items: TocItem[];
-}
-
-export function extractHeadings(html: string): TocItem[] {
-    const items: TocItem[] = [];
-    const regex = /<h([23])\s[^>]*id="([^"]*)"[^>]*>(.*?)<\/h[23]>/gi;
-    let match;
-
-    while ((match = regex.exec(html)) !== null) {
-        const level = parseInt(match[1]);
-        const id = match[2];
-        const text = match[3].replace(/<[^>]*>/g, '').trim();
-        if (text && id) {
-            items.push({ id, text, level });
-        }
-    }
-
-    return items;
-}
-
-export function slugify(text: string): string {
-    return text
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 60);
-}
-
-export function addHeadingIds(html: string): string {
-    const slugCounts = new Map<string, number>();
-
-    return html.replace(/<h([23])([^>]*)>(.*?)<\/h[23]>/gi, (match, level, attrs, content) => {
-        if (attrs.includes('id="')) return match;
-
-        const text = content.replace(/<[^>]*>/g, '').trim();
-        let slug = slugify(text);
-
-        const count = slugCounts.get(slug) || 0;
-        slugCounts.set(slug, count + 1);
-        if (count > 0) slug += `-${count}`;
-
-        return `<h${level}${attrs} id="${slug}">${content}</h${level}>`;
-    });
 }
 
 export default function LessonTableOfContents({ items }: LessonTableOfContentsProps) {

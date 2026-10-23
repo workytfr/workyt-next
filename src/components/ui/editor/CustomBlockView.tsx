@@ -7,7 +7,7 @@ import '@/app/cours/_components/styles/lesson-blocks.css';
 /**
  * Affichage d'un bloc pédagogique PENDANT la rédaction : même carte, même
  * tuile d'icône et même libellé que sur la leçon publiée. L'en-tête n'est pas
- * éditable (il n'existe pas dans le HTML enregistré, LessonView le recrée).
+ * éditable (il n'existe pas dans le HTML enregistré, lib/lessonHtml le recrée).
  */
 export default function CustomBlockView({ node }: ReactNodeViewProps) {
     const type: string = node.attrs.blockType;

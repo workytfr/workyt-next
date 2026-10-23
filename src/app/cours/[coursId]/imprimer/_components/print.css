@@ -1,0 +1,253 @@
+/* Versions imprimables d'un cours : charte des documents PDF Workyt
+   (docs/_pdf/workyt-print.css — guides, dossier partenaires…).
+   Papier crème, titres Funnel Display, surtitres en capitales, numéros
+   orange, couverture à grille de points et bandeau encre.
+   Le navigateur fabrique le PDF (Imprimer → Enregistrer en PDF). */
+
+.wk-print {
+  --accent: #ff6a1a;
+  --accent-2: #ffb547;
+  --accent-3: #6ec1e4;
+  --accent-4: #7ed957;
+  --ink: #1a1512;
+  --paper: #fdfaf4;
+  --paper-2: #f5efe3;
+  --orange-dark: #c24a0a;
+  --line: rgba(26, 21, 18, 0.08);
+  --line-2: rgba(26, 21, 18, 0.12);
+  --muted: rgba(26, 21, 18, 0.64);
+  --soft: rgba(26, 21, 18, 0.46);
+  --display: var(--font-funnel-display), system-ui, sans-serif;
+  --text: var(--font-montserrat), system-ui, sans-serif;
+  --mono: Consolas, "Courier New", monospace;
+  font-family: var(--text);
+  color: var(--ink);
+  font-size: 10pt;
+  line-height: 1.55;
+}
+.wk-print * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* ── Pages ── */
+@page {
+  size: A4;
+  margin: 17mm 15mm 16mm;
+  background: #fdfaf4;
+  @top-left { content: "WORKYT"; font-family: Consolas, "Courier New", monospace; font-size: 7pt; letter-spacing: 0.18em; color: #ff6a1a; }
+  @bottom-right { content: counter(page, decimal-leading-zero); font-family: Consolas, "Courier New", monospace; font-size: 7pt; letter-spacing: 0.14em; color: rgba(26, 21, 18, 0.46); }
+}
+@page :first {
+  margin: 0;
+  @top-left { content: none; }
+  @top-right { content: none; }
+  @bottom-left { content: none; }
+  @bottom-right { content: none; }
+}
+
+@media print {
+  html, body { background: var(--paper, #fdfaf4) !important; }
+  /* Seul le document s'imprime : ni bannière cookies, ni bouton « Paramètres
+     cookies », ni notifications (tout ce qui est injecté à côté du <main>) */
+  body:has(.wk-print) > *:not(#main-content) { display: none !important; }
+  .wk-print-toolbar { display: none !important; }
+  .wk-sheet { break-before: page; }
+  .wk-cover + .wk-sheet { break-before: page; }
+}
+
+/* À l'écran : des feuilles A4 sur fond gris, comme l'aperçu des guides */
+@media screen {
+  .wk-print { background: #ddd; padding: 76px 16px 64px; min-height: 100vh; }
+  .wk-cover, .wk-sheet {
+    width: 210mm;
+    margin: 0 auto 10mm;
+    background: var(--paper);
+    box-shadow: 0 10px 40px rgba(26, 21, 18, 0.15);
+  }
+  .wk-sheet { padding: 17mm 15mm 16mm; min-height: 297mm; }
+}
+
+/* ── Couverture ── */
+.wk-cover { height: 297mm; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+.wk-cover-top { flex: 1; padding: 20mm 20mm 0; position: relative; }
+.wk-dotgrid { background-image: radial-gradient(rgba(26, 21, 18, 0.12) 1px, transparent 1px); background-size: 18px 18px; }
+.wk-cover-logo { height: 18mm; width: auto; display: block; }
+.wk-cover h1 { font-size: 52pt; line-height: 0.95; margin-top: 6mm; }
+.wk-cover .wk-lead { font-size: 12pt; max-width: 150mm; }
+.wk-sticker {
+  position: absolute; border-radius: 999px; padding: 7px 15px; font-weight: 600; font-size: 9.5pt;
+  box-shadow: 0 10px 24px rgba(26, 21, 18, 0.12); white-space: nowrap; max-width: 90mm; overflow: hidden; text-overflow: ellipsis;
+}
+.wk-swatch-row { display: flex; height: 8mm; }
+.wk-swatch-row span { flex: 1; }
+.wk-cover-band { background: var(--ink); color: var(--paper); padding: 11mm 20mm; display: flex; gap: 10mm; justify-content: space-between; align-items: flex-end; }
+.wk-cover-band .k { font-family: var(--mono); font-size: 7pt; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(253, 250, 244, 0.55); }
+.wk-cover-band .v { font-size: 10.5pt; font-weight: 600; margin-top: 1mm; }
+
+/* ── Typographie ── */
+.wk-print h1, .wk-print h2, .wk-print h3, .wk-print h4 { font-family: var(--display); font-weight: 400; letter-spacing: -0.01em; margin: 0; }
+.wk-print h2 { font-size: 24pt; line-height: 1.02; margin-top: 2.5mm; }
+.wk-print h3 { font-size: 14pt; line-height: 1.15; }
+.wk-print h4 { font-size: 11pt; line-height: 1.2; }
+.wk-dot { color: var(--accent); }
+.wk-lead { font-size: 10.5pt; color: var(--muted); margin: 2.5mm 0 0; }
+.wk-eyebrow {
+  font-family: var(--mono); display: inline-flex; align-items: center; gap: 10px;
+  font-size: 7.2pt; letter-spacing: 0.18em; text-transform: uppercase; color: rgba(26, 21, 18, 0.6);
+}
+.wk-eyebrow::before { content: ""; width: 24px; border-top: 1px solid rgba(26, 21, 18, 0.3); }
+.wk-runner { display: flex; align-items: center; justify-content: space-between; margin-bottom: 7mm; }
+.wk-runner svg { height: 6.5mm; width: auto; }
+.wk-runner span { font-family: var(--mono); font-size: 7pt; letter-spacing: 0.18em; text-transform: uppercase; color: var(--soft); }
+.wk-print h1, .wk-print h2, .wk-print h3, .wk-print h4, .wk-eyebrow, .wk-runner { break-after: avoid; }
+
+/* ── Couleur du chapitre (onglet de manuel) ── */
+.wk-chapter { --ch: #ff6a1a; --ch-tint: color-mix(in srgb, var(--ch) 14%, #fff); }
+.wk-label { display: block; font-family: var(--mono); font-size: 6.8pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--soft); margin-bottom: 2mm; }
+.wk-chip.white { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+
+/* ── Sommaire ── */
+.wk-toc { list-style: none; padding: 0; margin: 7mm 0 0; }
+.wk-toc > li { display: flex; gap: 4mm; padding: 4mm 0 4mm 4mm; border-left: 2.5mm solid var(--ch, var(--accent)); margin-bottom: 3mm; background: #fff; border-radius: 0 14px 14px 0; break-inside: avoid; }
+.wk-n { font-family: var(--display); font-size: 22pt; line-height: 1; color: var(--ch, var(--accent)); width: 13mm; flex-shrink: 0; }
+.wk-toc h3 { font-size: 13.5pt; }
+.wk-toc ul { list-style: none; padding: 0; margin: 1.5mm 0 0; columns: 2; column-gap: 6mm; font-size: 8.6pt; color: var(--muted); }
+.wk-toc ul li { break-inside: avoid; padding: 0.4mm 0; }
+.wk-toc ul b { color: var(--ink); font-weight: 600; margin-right: 1mm; }
+.wk-toc-tags { display: flex; flex-wrap: wrap; gap: 1.5mm; margin-top: 2mm; padding-right: 4mm; }
+.wk-toc-tags span { font-size: 7pt; font-weight: 600; padding: 1px 8px; border-radius: 99px; background: var(--paper-2); color: rgba(26, 21, 18, 0.7); }
+.wk-toc-end { margin-top: 5mm; font-size: 8.6pt; color: var(--muted); }
+
+/* ── Mode d'emploi ── */
+.wk-howto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; margin-top: 8mm; }
+.wk-howto-card { display: flex; gap: 3.5mm; align-items: flex-start; background: #fff; border: 1px solid var(--line); border-radius: 16px; padding: 4.5mm; break-inside: avoid; }
+.wk-howto-card h4 { font-size: 11.5pt; margin-bottom: 1mm; }
+.wk-howto-card p { margin: 0; font-size: 8.6pt; color: var(--muted); }
+.wk-howto-card.ink { background: var(--ink); color: var(--paper); grid-column: 1 / -1; }
+.wk-howto-card.ink p { color: rgba(253, 250, 244, 0.7); }
+
+/* Pastille d'icône des rubriques */
+.wk-rubric-icon { width: 9mm; height: 9mm; border-radius: 11px; background: var(--ch, var(--accent)); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.wk-rubric-icon svg { width: 16px; height: 16px; }
+.wk-howto-card .wk-rubric-icon { background: var(--paper-2); }
+.wk-howto-card.ink .wk-rubric-icon { background: var(--accent); color: #fff; }
+
+/* Titre de rubrique : pastille + libellé + filet */
+.wk-rubric { display: flex; align-items: center; gap: 3mm; margin: 0 0 5mm; break-after: avoid; }
+.wk-rubric-label { font-family: var(--display); font-size: 17pt; line-height: 1; }
+.wk-rubric-extra { font-family: var(--mono); font-size: 7pt; letter-spacing: 0.16em; text-transform: uppercase; color: var(--soft); }
+.wk-rubric::after { content: ""; flex: 1; border-top: 1.5px solid var(--ch, var(--accent)); opacity: 0.6; margin-left: 2mm; }
+
+/* ── Page d'ouverture de chapitre ── */
+.wk-opener { height: 258mm; display: flex; flex-direction: column; gap: 6mm; break-after: page; }
+.wk-opener-top { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; border-radius: 22px; padding: 10mm 10mm 11mm; background-color: var(--ch-tint); }
+.wk-opener-num { font-family: var(--display); font-size: 150pt; line-height: 0.85; color: var(--ch); margin: 4mm 0 4mm -2mm; }
+.wk-opener-top .wk-eyebrow { margin-bottom: auto; }
+.wk-opener-top h1 { font-size: 32pt; line-height: 1.02; max-width: 165mm; }
+.wk-opener-grid { display: grid; grid-template-columns: 1.15fr 1fr; gap: 5mm; align-items: start; }
+.wk-opener-side { display: flex; flex-direction: column; gap: 5mm; }
+.wk-opener-card { background: #fff; border: 1px solid var(--line); border-radius: 18px; padding: 5mm; }
+.wk-opener-card.tint { border-left: 2.5mm solid var(--ch); }
+.wk-opener-card.ink { background: var(--ink); color: var(--paper); border-color: transparent; }
+.wk-opener-card.ink .wk-label { color: rgba(253, 250, 244, 0.55); }
+.wk-opener-card.ink p { margin: 0; font-size: 8.6pt; color: rgba(253, 250, 244, 0.75); }
+.wk-opener-lessons { list-style: none; margin: 0; padding: 0; }
+.wk-opener-lessons li { display: flex; gap: 3mm; padding: 2mm 0; border-top: 1px solid var(--line); font-weight: 600; font-size: 9.6pt; }
+.wk-opener-lessons li:first-child { border-top: 0; }
+.wk-opener-lessons b { font-family: var(--display); font-weight: 400; color: var(--ch); min-width: 9mm; font-size: 11pt; }
+.wk-opener-chips { display: flex; flex-wrap: wrap; gap: 2mm; margin-top: 4mm; }
+.wk-skills { margin: 0; padding: 0; list-style: none; font-size: 8.8pt; }
+.wk-skills li { position: relative; padding: 1.2mm 0 1.2mm 6mm; }
+.wk-skills li::before { content: ""; position: absolute; left: 0; top: 2.6mm; width: 3mm; height: 3mm; border-radius: 99px; background: var(--ch); }
+.wk-qr-card { display: flex; gap: 4mm; align-items: center; }
+.wk-qr { width: 26mm; height: 26mm; flex-shrink: 0; background: #fff; border-radius: 10px; padding: 2mm; }
+.wk-qr svg { width: 100%; height: 100%; display: block; }
+.wk-qr.small { width: 19mm; height: 19mm; padding: 1.5mm; border: 1px solid var(--line); }
+
+/* ── Parties du chapitre : liseré de couleur continu, d'une page à l'autre ── */
+.wk-part { border-left: 2.5mm solid var(--ch); padding-left: 6mm; margin-top: 8mm; }
+.wk-essentials, .wk-exercises { break-before: page; margin-top: 0; }
+
+/* ── Cours ── */
+.wk-lesson { margin-top: 7mm; counter-reset: h2 h3; }
+.wk-lesson:first-of-type { margin-top: 0; }
+.wk-lesson-head { display: flex; flex-direction: column; gap: 1.5mm; padding-bottom: 2.5mm; margin-bottom: 3mm; border-bottom: 1px solid var(--line-2); break-after: avoid; }
+.wk-lesson-head h3 { font-size: 17pt; }
+.wk-lesson-tag { align-self: flex-start; font-size: 7.4pt; font-weight: 700; letter-spacing: 0.04em; padding: 2px 10px; border-radius: 99px; background: var(--ch); color: var(--ink); }
+/* Titres internes numérotés comme dans un manuel : A, B… puis 1, 2… */
+.wk-lesson-body h2 { counter-increment: h2; counter-reset: h3; }
+.wk-lesson-body h2::before { content: counter(h2, upper-alpha) ". "; color: var(--ch); }
+.wk-lesson-body h3 { counter-increment: h3; }
+.wk-lesson-body h3::before { content: counter(h3) ". "; color: var(--ch); }
+
+.wk-print .prose { font-size: 10pt; max-width: none; color: var(--ink); line-height: 1.6; }
+.wk-print .prose :where(p) { margin: 0.55em 0; }
+.wk-print .prose :where(h2) { font-size: 15pt; margin: 1.1em 0 0.35em; }
+.wk-print .prose :where(h3) { font-size: 12.5pt; margin: 1em 0 0.3em; }
+.wk-print .prose :where(strong) { font-weight: 600; }
+.wk-print .prose :where(table) { font-size: 9pt; }
+.wk-print .wk-block, .wk-print figure, .wk-print table, .wk-print pre, .wk-print img, .wk-print .katex-display { break-inside: avoid; }
+.wk-print img { max-width: 100%; height: auto; border-radius: 10px; }
+
+/* ── Je retiens l'essentiel : fiche synthèse sur deux colonnes ── */
+.wk-essentials-grid { columns: 2; column-gap: 5mm; }
+.wk-essential { break-inside: avoid; margin-bottom: 4mm; font-size: 9pt; }
+.wk-essential .wk-block { margin: 0 !important; }
+
+/* ── Je teste mes connaissances ── */
+.wk-quiz-list { list-style: none; padding: 0; margin: 0; }
+.wk-quiz-item { display: flex; gap: 3mm; padding: 3mm 0; border-top: 1px dashed var(--line-2); break-inside: avoid; }
+.wk-quiz-item:first-child { border-top: 0; padding-top: 0; }
+.wk-quiz-n { width: 6.5mm; height: 6.5mm; border-radius: 99px; background: var(--ch); color: var(--ink); font-weight: 700; font-size: 8pt; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.wk-quiz-body { flex: 1; min-width: 0; font-size: 9.6pt; }
+.wk-md-inline, .wk-md-inline p { display: inline; margin: 0; }
+.wk-choices { list-style: none; padding: 0; margin: 2mm 0 0; display: grid; grid-template-columns: 1fr; gap: 1.2mm 6mm; }
+.wk-choices.two { grid-template-columns: 1fr 1fr; }
+.wk-choices li { display: flex; align-items: baseline; gap: 2mm; font-size: 9.2pt; }
+.wk-choices b { color: var(--soft); font-weight: 600; }
+.wk-box { width: 3.4mm; height: 3.4mm; border: 1.2px solid rgba(26, 21, 18, 0.45); border-radius: 3px; flex-shrink: 0; transform: translateY(0.5mm); }
+.wk-quiz-foot { display: flex; align-items: center; gap: 4mm; margin-top: 4mm; padding: 3.5mm; border-radius: 14px; background: var(--ch-tint); break-inside: avoid; }
+.wk-quiz-foot p { margin: 0; font-size: 8.6pt; }
+
+/* ── Exercices ── */
+.wk-ex-group + .wk-ex-group { margin-top: 7mm; }
+.wk-exercise { padding: 3mm 0 4mm; border-top: 1px solid var(--line); }
+.wk-exercise:first-of-type { border-top: 0; padding-top: 0; }
+.wk-exercise.short { break-inside: avoid; }
+.wk-exercise-head { display: flex; align-items: center; gap: 3mm; margin-bottom: 1.5mm; break-after: avoid; }
+.wk-exercise-head h4 { flex: 1; min-width: 0; font-size: 11.5pt; }
+.wk-exercise-n { width: 7.5mm; height: 7.5mm; border-radius: 8px; background: var(--ink); color: var(--paper); font-family: var(--display); font-size: 11pt; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.wk-level { color: var(--ch); letter-spacing: 1px; font-size: 9pt; }
+.wk-level span { color: rgba(26, 21, 18, 0.15); }
+.wk-writing { margin-top: 2mm; height: 14mm; background-image: repeating-linear-gradient(transparent 0 6.6mm, rgba(26, 21, 18, 0.14) 6.6mm 6.9mm); }
+.wk-writing.short { height: 7mm; }
+
+/* ── Bandeau de chapitre (cahier d'exercices) ── */
+.wk-banner { display: flex; align-items: center; gap: 6mm; padding: 6mm 7mm; border-radius: 20px; background: var(--ch-tint); margin-bottom: 8mm; break-after: avoid; }
+.wk-banner-num { font-family: var(--display); font-size: 56pt; line-height: 0.85; color: var(--ch); }
+.wk-banner-text { flex: 1; min-width: 0; }
+.wk-banner h2 { font-size: 21pt; }
+.wk-banner + .wk-part { margin-top: 0; break-before: auto; }
+
+/* ── Corrigés : deux colonnes serrées, comme en fin de manuel ── */
+.wk-ink-card { background: var(--ink); color: var(--paper); border-radius: 16px; padding: 6mm; }
+.wk-ink-card .wk-eyebrow { color: rgba(253, 250, 244, 0.6); }
+.wk-ink-card .wk-eyebrow::before { border-color: rgba(253, 250, 244, 0.35); }
+.wk-ink-card .wk-lead { color: rgba(253, 250, 244, 0.7); }
+.wk-answers { columns: 2; column-gap: 6mm; margin-top: 7mm; font-size: 8.6pt; }
+.wk-answers-chapter { margin-bottom: 5mm; }
+.wk-answers-chapter h3 { font-size: 12pt; padding: 1.5mm 3mm; border-radius: 10px; background: color-mix(in srgb, var(--ch) 18%, #fff); margin-bottom: 2.5mm; break-after: avoid; }
+.wk-answers-chapter h3 span { color: var(--ink); font-weight: 600; }
+.wk-answer { display: flex; gap: 2.5mm; padding: 1.5mm 0 2.5mm; }
+.wk-answer.short { break-inside: avoid; }
+.wk-answer .wk-exercise-n { width: 6mm; height: 6mm; font-size: 9pt; border-radius: 6px; }
+.wk-answer-body { flex: 1; min-width: 0; }
+.wk-answer-body .prose { font-size: 8.6pt; line-height: 1.5; }
+.wk-answer-body .prose :where(p) { margin: 0.3em 0; }
+.wk-answer-body .prose :where(p:first-child) { margin-top: 0; }
+
+/* ── Lexique ── */
+.wk-lexicon { list-style: none; padding: 0; margin: 7mm 0 0; columns: 2; column-gap: 8mm; }
+.wk-lexicon li { display: flex; justify-content: space-between; gap: 3mm; padding: 1.6mm 0; border-bottom: 1px dotted var(--line-2); break-inside: avoid; font-size: 9pt; }
+.wk-lexicon span { color: var(--soft); white-space: nowrap; }
+
+/* Sans les corrigés (choix dans la barre d'outils) */
+.wk-print.no-answers .wk-print-answers { display: none; }

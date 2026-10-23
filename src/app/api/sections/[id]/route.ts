@@ -6,6 +6,7 @@ import Section from '@/models/Section';
 import Course from '@/models/Course';
 import connectDB from '@/lib/mongodb';
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 // GET - Récupérer une section spécifique
 export async function GET(
     request: NextRequest,
@@ -88,6 +89,7 @@ export async function PUT(
             return NextResponse.json({ error: 'Section non trouvée' }, { status: 404 });
         }
 
+        revalidateCoursePages();
         return NextResponse.json(updatedSection);
 
     } catch (error) {
@@ -124,6 +126,7 @@ export async function DELETE(
             return NextResponse.json({ error: 'Section non trouvée' }, { status: 404 });
         }
 
+        revalidateCoursePages();
         return NextResponse.json({ message: 'Section supprimée avec succès' });
 
     } catch (error) {

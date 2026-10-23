@@ -11,8 +11,21 @@ import PointTransaction from "@/models/PointTransaction";
 import authMiddleware from "@/middlewares/authMiddleware";
 import dbConnect from "@/lib/mongodb";
 import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
+import { isValidObjectId } from "mongoose";
 
 export const runtime = "nodejs";
+
+/** Prix d'une question posée depuis un cours (reversé à la réponse validée) */
+const QUESTION_COST = 3;
+const QUESTION_MIN = 10;
+const QUESTION_MAX = 2000;
+
+/** Titre de la question : sa première phrase, raccourcie */
+function titleFrom(text: string) {
+    const firstLine = text.split(/\n/)[0].trim();
+    const sentence = firstLine.match(/^.*?[?!.](\s|$)/)?.[0].trim() || firstLine;
+    return sentence.length > 120 ? `${sentence.slice(0, 117).trimEnd()}…` : sentence;
+}
 
 const s3Client = new S3Client({
     region: process.env.S3_REGION,
@@ -51,24 +64,53 @@ export async function POST(req: NextRequest) {
         if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         const formData = await req.formData();
-        const title = formData.get("title") as string;
-        const whatIDid = formData.get("whatIDid") as string;
-        const whatINeed = formData.get("whatINeed") as string;
-        const points = parseInt(formData.get("points") as string, 10);
         const contextType = formData.get("contextType") as string;
         const contextId = formData.get("contextId") as string;
 
-        if (!title || !whatIDid || !whatINeed || isNaN(points) || !contextType || !contextId) {
+        // Formulaire simplifié (un seul champ « question ») ; les anciens champs
+        // title / whatIDid / whatINeed restent acceptés (application mobile).
+        const questionText = ((formData.get("question") as string) || "").trim();
+        const whatINeed = questionText || ((formData.get("whatINeed") as string) || "").trim();
+        const whatIDid = ((formData.get("whatIDid") as string) || "").trim();
+        const title = ((formData.get("title") as string) || "").trim() || titleFrom(whatINeed);
+
+        if (!whatINeed || !contextType || !contextId || !isValidObjectId(contextId)) {
             return NextResponse.json({ error: "Champs obligatoires manquants." }, { status: 400 });
         }
-        if (points < 1 || points > 15) {
-            return NextResponse.json({ error: "Les points doivent être entre 1 et 15." }, { status: 400 });
-        }
-        if (user.points < points) {
-            return NextResponse.json({ error: "Points insuffisants." }, { status: 400 });
+        if (whatINeed.length < QUESTION_MIN || whatINeed.length > QUESTION_MAX) {
+            return NextResponse.json(
+                { error: `Ta question doit faire entre ${QUESTION_MIN} et ${QUESTION_MAX} caractères.` },
+                { status: 400 }
+            );
         }
         if (!["lesson", "exercise"].includes(contextType)) {
             return NextResponse.json({ error: "Type de contexte invalide." }, { status: 400 });
+        }
+
+        // Passage de la leçon (facultatif)
+        let anchor: { exact: string; prefix: string; suffix: string } | undefined;
+        const rawAnchor = formData.get("anchor");
+        if (rawAnchor && contextType === "lesson") {
+            try {
+                const parsed = JSON.parse(String(rawAnchor));
+                const exact = typeof parsed?.exact === "string" ? parsed.exact.trim() : "";
+                if (exact.length >= 3 && exact.length <= 600) {
+                    anchor = {
+                        exact,
+                        prefix: typeof parsed.prefix === "string" ? parsed.prefix.slice(-64) : "",
+                        suffix: typeof parsed.suffix === "string" ? parsed.suffix.slice(0, 64) : "",
+                    };
+                }
+            } catch {
+                // Ancre illisible : la question vaut pour toute la leçon
+            }
+        }
+
+        if (user.points < QUESTION_COST) {
+            return NextResponse.json(
+                { error: `Il te faut ${QUESTION_COST} points pour poser une question.` },
+                { status: 400 }
+            );
         }
 
         // Résoudre les métadonnées depuis la ressource
@@ -140,30 +182,48 @@ export async function POST(req: NextRequest) {
             }
         }
 
-        const question = await Question.create({
-            user: user._id,
-            title,
-            classLevel: classLevel || "Non spécifié",
-            subject: subject || "Non spécifié",
-            description: { whatIDid, whatINeed },
-            attachments: fileKeys,
-            points,
-            status: "Non validée",
-            contextType,
-            contextId,
-            contextTitle,
-            courseId: courseId || undefined,
-            sectionId: sectionId || undefined,
-            createdAt: new Date(),
-        });
+        // Débit atomique : deux envois simultanés ne peuvent pas passer sous zéro
+        const debited = await User.findOneAndUpdate(
+            { _id: user._id, points: { $gte: QUESTION_COST } },
+            { $inc: { points: -QUESTION_COST } }
+        );
+        if (!debited) {
+            return NextResponse.json(
+                { error: `Il te faut ${QUESTION_COST} points pour poser une question.` },
+                { status: 400 }
+            );
+        }
 
-        await User.findByIdAndUpdate(user._id, { $inc: { points: -points } });
+        let question;
+        try {
+            question = await Question.create({
+                user: user._id,
+                title,
+                classLevel: classLevel || "Non spécifié",
+                subject: subject || "Non spécifié",
+                description: { whatIDid, whatINeed },
+                attachments: fileKeys,
+                points: QUESTION_COST,
+                status: "Non validée",
+                contextType,
+                contextId,
+                contextTitle,
+                anchor,
+                courseId: courseId || undefined,
+                sectionId: sectionId || undefined,
+                createdAt: new Date(),
+            });
+        } catch (err) {
+            await User.findByIdAndUpdate(user._id, { $inc: { points: QUESTION_COST } });
+            throw err;
+        }
+
         await PointTransaction.create({
             user: user._id,
             question: question._id,
             action: "createQuestion",
             type: "perte",
-            points,
+            points: QUESTION_COST,
             createdAt: new Date(),
         });
 
@@ -183,8 +243,9 @@ export async function POST(req: NextRequest) {
                         fields: [
                             { name: "Titre", value: title, inline: true },
                             { name: "Contexte", value: `${contextType === "lesson" ? "Leçon" : "Exercice"} : ${contextTitle}`, inline: true },
+                            ...(anchor ? [{ name: "Passage", value: `« ${anchor.exact.slice(0, 200)} »` }] : []),
                             { name: "Sujet", value: subject || "N/A", inline: true },
-                            { name: "Points misés", value: points.toString(), inline: true },
+                            { name: "Points misés", value: String(QUESTION_COST), inline: true },
                         ],
                         timestamp: question.createdAt.toISOString(),
                         color: 0x8b5cf6,

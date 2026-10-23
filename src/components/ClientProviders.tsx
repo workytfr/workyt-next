@@ -15,18 +15,18 @@ export default function ClientProviders({ children }: { children: React.ReactNod
   
   // Cacher la navbar et le footer sur le dashboard
   const isDashboard = pathname?.startsWith("/dashboard");
-  // Pages cours détail : pas de footer (layout plein écran avec sidebar)
-  const isCourseDetail = pathname?.match(/^\/cours\/[^/]+$/) !== null;
+  // Versions imprimables d'un cours (PDF) : la page seule, sans navigation
+  const isPrint = /^\/cours\/[^/]+\/imprimer(\/|$)/.test(pathname ?? "");
 
   return (
     <SessionProvider>
       <ThemeProvider>
-        {!isDashboard && <Navbar />}
+        {!isDashboard && !isPrint && <Navbar />}
         <TooltipProvider>
           <main id="main-content">{children}</main>
         </TooltipProvider>
-        {!isDashboard && !isCourseDetail && <Footer />}
-        <YoutubeLivePill />
+        {!isDashboard && !isPrint && <Footer />}
+        {!isPrint && <YoutubeLivePill />}
         <Toaster position="bottom-right" richColors />
       </ThemeProvider>
     </SessionProvider>

@@ -37,7 +37,8 @@ export async function GET(
 
         // Compter le total de lecons dans le cours
         const sections = await Section.find({ courseId })
-            .populate({ path: "lessons", select: "_id" })
+            // Seules les leçons validées sont visibles des élèves
+            .populate({ path: "lessons", select: "_id", match: { status: "Validée" } })
             .lean({ virtuals: true });
 
         let totalLessons = 0;
@@ -110,7 +111,8 @@ export async function POST(
         // Verifier si la section est completee
         if (sectionId && isValidObjectId(sectionId)) {
             const section = await Section.findById(sectionId)
-                .populate({ path: "lessons", select: "_id" })
+                // Seules les leçons validées sont visibles des élèves
+            .populate({ path: "lessons", select: "_id", match: { status: "Validée" } })
                 .lean({ virtuals: true });
 
             if (section) {

@@ -12,6 +12,7 @@ import { awardPointsOnce, revokePointsOnce } from "@/lib/pointsService";
 import { revalidatePath } from "next/cache";
 import { buildIdSlug } from "@/utils/slugify";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 const COURSE_AUTHOR_POINTS = 20; // Points gagnés par chaque auteur (cohérent avec /api/courses PATCH)
 
 /**
@@ -154,6 +155,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
             console.error("Revalidation du cours échouée :", (e as any)?.message);
         }
 
+        revalidateCoursePages();
         return NextResponse.json(updatedCourse, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la mise à jour du cours :", error.message);
@@ -199,6 +201,7 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
             await Section.deleteMany({ courseId: id });
         }
 
+        revalidateCoursePages();
         return NextResponse.json({ message: "Cours et tout son contenu supprimés avec succès." }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la suppression du cours :", error.message);

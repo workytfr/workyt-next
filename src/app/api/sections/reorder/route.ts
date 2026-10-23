@@ -4,6 +4,7 @@ import Section from "@/models/Section";
 import authMiddleware from "@/middlewares/authMiddleware";
 import { hasPermission } from "@/lib/roles";
 
+import { revalidateCoursePages } from "@/lib/revalidateCourse";
 /**
  * 🚀 PUT - Réorganiser l'ordre des sections (Drag & Drop)
  */
@@ -32,6 +33,7 @@ export async function PUT(req: NextRequest) {
         );
         await Promise.all(updatePromises);
 
+        revalidateCoursePages();
         return NextResponse.json({ message: "Sections réorganisées avec succès." }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors du réarrangement des sections :", error.message);

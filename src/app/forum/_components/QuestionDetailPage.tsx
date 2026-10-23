@@ -7,7 +7,7 @@ import { useParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { ChevronRight, MessageCircle, PenLine, RefreshCw, AlertTriangle, ArrowUpRight, HeartHandshake } from "lucide-react";
 import AnswerForm from "@/app/forum/_components/AnswerForm";
-import QuestionDetail from "@/app/forum/_components/QuestionView";
+import QuestionDetail, { type CourseContext } from "@/app/forum/_components/QuestionView";
 import AnswerList from "@/app/forum/_components/AnswerList";
 import { QuestionSkeleton, AnswerSkeleton } from "@/app/forum/_components/QuestionSkeleton";
 import ForumPresenceBar from "@/app/forum/_components/ForumPresenceBar";
@@ -25,12 +25,15 @@ interface QuestionDetailPageProps {
     id?: string;
     initialQuestion?: any;
     initialAnswers?: any[];
+    /** Cours / chapitre / leçon d'origine d'une question posée depuis un cours */
+    courseContext?: CourseContext | null;
 }
 
 export default function QuestionDetailPage({
     id: propId,
     initialQuestion,
     initialAnswers,
+    courseContext,
 }: QuestionDetailPageProps) {
     const { data: session } = useSession();
     const params = useParams();
@@ -211,6 +214,7 @@ export default function QuestionDetailPage({
                                     revisions={revisions}
                                     onAnswerClick={scrollToAnswerForm}
                                     onQuote={handleQuote}
+                                    courseContext={courseContext}
                                 />
                             )
                         )}
