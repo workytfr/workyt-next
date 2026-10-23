@@ -167,17 +167,11 @@
 .wk-essentials, .wk-exercises { break-before: page; margin-top: 0; }
 
 /* ── Cours ── */
-.wk-lesson { margin-top: 7mm; counter-reset: h2 h3; }
+.wk-lesson { margin-top: 7mm; }
 .wk-lesson:first-of-type { margin-top: 0; }
 .wk-lesson-head { display: flex; flex-direction: column; gap: 1.5mm; padding-bottom: 2.5mm; margin-bottom: 3mm; border-bottom: 1px solid var(--line-2); break-after: avoid; }
 .wk-lesson-head h3 { font-size: 17pt; }
 .wk-lesson-tag { align-self: flex-start; font-size: 7.4pt; font-weight: 700; letter-spacing: 0.04em; padding: 2px 10px; border-radius: 99px; background: var(--ch); color: var(--ink); }
-/* Titres internes numérotés comme dans un manuel : A, B… puis 1, 2… */
-.wk-lesson-body h2 { counter-increment: h2; counter-reset: h3; }
-.wk-lesson-body h2::before { content: counter(h2, upper-alpha) ". "; color: var(--ch); }
-.wk-lesson-body h3 { counter-increment: h3; }
-.wk-lesson-body h3::before { content: counter(h3) ". "; color: var(--ch); }
-
 .wk-print .prose { font-size: 10pt; max-width: none; color: var(--ink); line-height: 1.6; }
 .wk-print .prose :where(p) { margin: 0.55em 0; }
 .wk-print .prose :where(h2) { font-size: 15pt; margin: 1.1em 0 0.35em; }
@@ -248,6 +242,68 @@
 .wk-lexicon { list-style: none; padding: 0; margin: 7mm 0 0; columns: 2; column-gap: 8mm; }
 .wk-lexicon li { display: flex; justify-content: space-between; gap: 3mm; padding: 1.6mm 0; border-bottom: 1px dotted var(--line-2); break-inside: avoid; font-size: 9pt; }
 .wk-lexicon span { color: var(--soft); white-space: nowrap; }
+
+/* ── Tableaux ──
+   À l'écran, un tableau de leçon défile horizontalement (display:block +
+   overflow-x:auto, colonnes égales). Sur papier il n'y a pas de défilement :
+   les colonnes de droite étaient coupées et les cellules écrasées. On rétablit
+   une vraie mise en page de tableau, qui tient toujours dans la largeur. */
+.wk-print table,
+.wk-print .notion-lesson-content table {
+  display: table !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100%;
+  overflow: visible !important;
+  table-layout: auto;
+  border-collapse: collapse;
+  border: 1px solid var(--line-2);
+  border-radius: 0;
+  margin: 3mm 0;
+  font-size: 8.8pt;
+  line-height: 1.35;
+  background: #fff;
+}
+.wk-print thead { display: table-header-group !important; }
+.wk-print tbody { display: table-row-group !important; }
+.wk-print tr { display: table-row !important; width: auto !important; break-inside: avoid; }
+.wk-print col { min-width: 0 !important; width: auto !important; }
+.wk-print th,
+.wk-print td {
+  padding: 1.6mm 2.2mm !important;
+  border: 1px solid var(--line-2) !important;
+  vertical-align: top;
+  text-align: left;
+  /* On ne coupe un mot que s'il ne tient vraiment pas */
+  word-break: normal !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto;
+}
+.wk-print th { background: var(--paper-2); font-weight: 600; }
+.wk-print table:not(:has(th)) tr:first-child td { background: var(--paper-2); font-weight: 600; }
+.wk-print td p, .wk-print th p { margin: 0 !important; }
+.wk-print td span[style*="color"], .wk-print th span[style*="color"] { color: inherit !important; }
+
+/* Tableaux larges : texte plus petit, cellules plus serrées */
+.wk-print table:has(tr > :nth-child(5)) { font-size: 7.8pt; }
+.wk-print table:has(tr > :nth-child(5)) :is(th, td) { padding: 1.2mm 1.6mm !important; }
+.wk-print table:has(tr > :nth-child(7)) { font-size: 7pt; }
+.wk-print table:has(tr > :nth-child(7)) :is(th, td) { padding: 1mm 1.2mm !important; }
+/* Un tableau trop long passe d'une page à l'autre, en-tête répété */
+.wk-print table { break-inside: auto; }
+
+/* Dans « Je retiens l'essentiel » (deux colonnes), un bloc avec tableau
+   prend toute la largeur au lieu d'être écrasé dans une colonne */
+.wk-essential:has(table) { column-span: all; }
+
+/* Code en ligne : pastille, sans les accents graves ajoutés par la typo */
+.wk-print .prose :not(pre) > code { background: var(--paper-2); padding: 0.5px 4px; border-radius: 4px; font-size: 0.88em; font-weight: 500; }
+.wk-print .prose :not(pre) > code::before,
+.wk-print .prose :not(pre) > code::after { content: none; }
+
+/* ── Blocs de code : pas de bouton « Copier » sur papier ── */
+.wk-print .wk-code__copy { display: none !important; }
+.wk-print .wk-code .wk-code__pre { overflow: visible !important; white-space: pre-wrap; word-break: break-word; }
 
 /* Sans les corrigés (choix dans la barre d'outils) */
 .wk-print.no-answers .wk-print-answers { display: none; }
