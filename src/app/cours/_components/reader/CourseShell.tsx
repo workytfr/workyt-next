@@ -167,10 +167,10 @@ export default function CourseShell({
                     </div>
                 )}
 
-                <div className="mx-auto flex max-w-[1440px] gap-6 px-3 sm:px-5 lg:gap-10 lg:px-8">
+                <div className="mx-auto flex min-h-[calc(100dvh-80px)] max-w-[1440px] gap-6 px-3 sm:px-5 lg:gap-10 lg:px-8">
                     {/* Sommaire (bureau) */}
-                    <aside className="sticky top-[84px] hidden h-[calc(100dvh-100px)] w-72 shrink-0 py-4 md:block print:hidden">
-                        <CourseSidebar />
+                    <aside className="sticky top-[92px] hidden w-72 shrink-0 self-start pt-6 md:block md:pt-8 print:hidden">
+                        <CourseSidebar className="max-h-[calc(100dvh-124px)]" />
                     </aside>
 
                     <div className="min-w-0 flex-1 pb-28 pt-6 md:pb-16 md:pt-8">{children}</div>
@@ -190,7 +190,7 @@ export default function CourseShell({
                         <DrawerContent className="h-[85vh] rounded-t-3xl bg-[var(--wk-paper)] p-0">
                             <DrawerTitle className="sr-only">Sommaire du cours</DrawerTitle>
                             <div className="h-full overflow-hidden p-3">
-                                <CourseSidebar />
+                                <CourseSidebar className="h-full" />
                             </div>
                         </DrawerContent>
                     </Drawer>

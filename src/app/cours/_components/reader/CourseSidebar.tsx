@@ -11,7 +11,7 @@ import { courseHref, exercisesHref, lessonHref, quizzesHref } from "../courseLin
  * Sommaire du cours : les chapitres et leurs leçons, une coche par leçon lue.
  * Seul le chapitre en cours est déplié par défaut.
  */
-export default function CourseSidebar() {
+export default function CourseSidebar({ className = "" }: { className?: string }) {
     const { curriculum, readLessons, percentage } = useCourse();
     const pathname = usePathname();
     const activeRef = useRef<HTMLAnchorElement>(null);
@@ -53,7 +53,7 @@ export default function CourseSidebar() {
         }`;
 
     return (
-        <nav aria-label="Sommaire du cours" className="flex h-full flex-col overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white">
+        <nav aria-label="Sommaire du cours" className={`flex flex-col overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white ${className}`}>
             <div className="border-b border-[rgba(26,21,18,0.06)] p-4">
                 <p className="font-mono-ui text-[10px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.5)]">Sommaire</p>
                 <Link href={courseHref(curriculum)} className="font-serif-display mt-1 line-clamp-2 block text-lg leading-tight hover:text-[var(--wk-accent)]">
@@ -67,7 +67,7 @@ export default function CourseSidebar() {
                 </div>
             </div>
 
-            <ol className="flex-1 space-y-1 overflow-y-auto p-2 notion-scrollbar">
+            <ol className="min-h-0 flex-1 space-y-1 overflow-y-auto p-2 notion-scrollbar">
                 {curriculum.sections.map((section, index) => {
                     const expanded = open.has(section._id);
                     const read = section.lessons.filter((l) => readLessons.has(l._id)).length;

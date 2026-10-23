@@ -47,10 +47,14 @@ export function LessonPage({ courseId, lessonId, initial }: { courseId: string; 
     if (!data) return <Loading />;
 
     return (
-        <div className="mx-auto max-w-3xl">
+        <div className="max-w-[68rem]">
             <ReadingBreadcrumb kind="lesson" id={data.lesson._id} label={data.lesson.title} />
-            <LessonReader key={data.lesson._id} lesson={data.lesson} rendered={data.rendered} />
-            <ReadingFooter kind="lesson" id={data.lesson._id} />
+            <LessonReader
+                key={data.lesson._id}
+                lesson={data.lesson}
+                rendered={data.rendered}
+                after={<ReadingFooter kind="lesson" id={data.lesson._id} />}
+            />
         </div>
     );
 }
@@ -69,7 +73,7 @@ export function ExercisesPage({ courseId, sectionId, initial }: { courseId: stri
     const { sectionTitle, exercises } = data.exercises;
 
     return (
-        <div className="mx-auto max-w-3xl">
+        <div className="max-w-[56rem]">
             <ReadingBreadcrumb kind="exercises" id={sectionId} label="Exercices" />
             <header className="mb-8 border-b border-[rgba(26,21,18,0.1)] pb-6">
                 <p className="font-mono-ui text-[11px] uppercase tracking-[0.18em] text-[var(--wk-accent)]">Exercices</p>
@@ -138,7 +142,7 @@ export function QuizzesPage({ courseId, sectionId, initial }: { courseId: string
     }
 
     return (
-        <div className="mx-auto max-w-3xl">
+        <div className="max-w-[56rem]">
             <ReadingBreadcrumb kind="quizzes" id={sectionId} label="Quiz" />
             <header className="mb-8 border-b border-[rgba(26,21,18,0.1)] pb-6">
                 <p className="font-mono-ui text-[11px] uppercase tracking-[0.18em] text-[var(--wk-accent)]">Quiz</p>

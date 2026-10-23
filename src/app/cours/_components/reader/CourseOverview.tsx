@@ -37,7 +37,7 @@ export default function CourseOverview() {
     const base = courseHref(curriculum);
 
     return (
-        <div className="mx-auto max-w-5xl">
+        <div className="max-w-[68rem]">
             {/* En-tête */}
             <header>
                 <div className="flex flex-wrap items-center gap-2.5">
