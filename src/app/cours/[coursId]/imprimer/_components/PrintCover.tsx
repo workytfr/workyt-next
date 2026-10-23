@@ -58,7 +58,6 @@ export default function PrintCover({
                 {/* Le titre rétrécit s'il est long, pour laisser la place aux pastilles */}
                 <h1 style={{ fontSize: curriculum.title.length > 70 ? "30pt" : curriculum.title.length > 38 ? "40pt" : undefined }}>
                     {curriculum.title}
-                    <span className="wk-dot">.</span>
                 </h1>
                 {lead && <p className="wk-lead">{lead}</p>}
                 {allStickers.map((label, i) => (

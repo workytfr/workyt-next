@@ -176,25 +176,16 @@ export const getSectionQuizzes = cache(async (courseId: string, sectionId: strin
     return plain<SectionQuizzes>({ sectionId: section._id, sectionTitle: section.title, quizzes });
 });
 
-export interface PrintableQuestion {
-    question: string;
-    questionType: string;
-    answers: string[];
-}
-
 export interface PrintableSection {
     _id: string;
     title: string;
     lessons: { _id: string; title: string; content: string }[];
     exercises: any[];
-    /** Questions de quiz imprimables (QCM, Vrai/Faux, réponse courte), sans corrigé */
-    questions: PrintableQuestion[];
+    /** Nombre de quiz du chapitre : le manuel renvoie vers eux sans rien en imprimer */
+    quizCount: number;
     /** Compétences du programme travaillées dans le chapitre */
     skills: string[];
 }
-
-/** Types de questions qui ont un sens sur papier */
-const PRINTABLE_QUESTION_TYPES = ["QCM", "Vrai/Faux", "Réponse courte"];
 
 /** Tout le contenu publié d'un cours, pour le manuel imprimable */
 export const getPrintableCourse = cache(async (courseId: string, preview = false) => {
@@ -211,11 +202,9 @@ export const getPrintableCourse = cache(async (courseId: string, preview = false
             .select("title content image correction difficulty sectionId createdAt")
             .sort({ order: 1, createdAt: 1 })
             .lean(),
-        // Énoncés seulement : les réponses restent en ligne (le quiz rapporte des points)
-        Quiz.find({ sectionId: { $in: sectionIds } })
-            .select("sectionId competencies questions.question questions.questionType questions.answers")
-            .sort({ order: 1, createdAt: 1 })
-            .lean(),
+        // Jamais le contenu des quiz (ils rapportent des points) : seulement
+        // leurs compétences, pour « Je vais apprendre à »
+        Quiz.find({ sectionId: { $in: sectionIds } }).select("sectionId competencies").lean(),
     ]);
 
     // Libellés des compétences (référentiel du programme)
@@ -237,10 +226,7 @@ export const getPrintableCourse = cache(async (courseId: string, preview = false
             title: s.title,
             lessons: plain(lessons.filter((l: any) => String(l.sectionId) === s._id).map((l: any) => ({ _id: l._id, title: l.title, content: l.content || "" }))),
             exercises: plain(exercises.filter((e: any) => String(e.sectionId) === s._id)),
-            questions: sectionQuizzes
-                .flatMap((q: any) => q.questions || [])
-                .filter((q: any) => PRINTABLE_QUESTION_TYPES.includes(q.questionType) && q.question)
-                .map((q: any) => ({ question: q.question, questionType: q.questionType, answers: (q.answers || []).map(String) })),
+            quizCount: sectionQuizzes.length,
             skills: [...new Set(sectionQuizzes.flatMap((q: any) => q.competencies || []))]
                 .map((id) => skillLabels.get(id as string))
                 .filter(Boolean) as string[],

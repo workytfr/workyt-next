@@ -5,7 +5,7 @@ import { extractKeyBlocks, renderLessonHtml } from "@/lib/lessonHtml";
 import { courseHref, exercisesHref, quizzesHref } from "@/app/cours/_components/courseLinks";
 import PrintToolbar from "../_components/PrintToolbar";
 import PrintCover from "../_components/PrintCover";
-import { AnswersPart, ChapterBanner, Essentials, ExercisesPart, HowToUse, QuizPart, chapterColor, numberExercises, qrSvg } from "../_components/Manual";
+import { AnswersPart, ChapterBanner, Essentials, ExercisesPart, HowToUse, QuizInvite, chapterColor, numberExercises, qrSvg } from "../_components/Manual";
 import "katex/dist/katex.min.css";
 import "@/app/cours/_components/styles/notion-theme.css";
 import "@/app/cours/_components/styles/lesson-blocks.css";
@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 /**
  * Cahier d'exercices : pour chaque chapitre un rappel « Je retiens
- * l'essentiel », les questions pour se tester, puis les exercices par niveau ;
+ * l'essentiel », un renvoi vers les quiz en ligne, puis les exercices par niveau ;
  * tous les corrigés en fin de cahier.
  */
 export default async function PrintExercisesPage({ params }: PageProps) {
@@ -61,15 +61,15 @@ export default async function PrintExercisesPage({ params }: PageProps) {
                     blocks,
                     numbered: numberExercises(s.exercises),
                     qrChapter: await qrSvg(SITE + exercisesHref(curriculum, s)),
-                    qrQuiz: s.questions.length > 0 ? await qrSvg(SITE + quizzesHref(curriculum, s)) : "",
+                    qrQuiz: s.quizCount > 0 ? await qrSvg(SITE + quizzesHref(curriculum, s)) : "",
                 };
             })
         )
-    ).filter((c) => c.numbered.length > 0 || c.questions.length > 0);
+    ).filter((c) => c.numbered.length > 0);
     if (chapters.length === 0) notFound();
 
     const total = chapters.reduce((n, c) => n + c.numbered.length, 0);
-    const questionCount = chapters.reduce((n, c) => n + c.questions.length, 0);
+    const quizCount = chapters.reduce((n, c) => n + c.quizCount, 0);
 
     return (
         <div className="wk-print">
@@ -82,14 +82,14 @@ export default async function PrintExercisesPage({ params }: PageProps) {
             />
 
             <section className="wk-sheet">
-                <HowToUse withExercises={total > 0} withQuiz={questionCount > 0} />
+                <HowToUse withExercises={total > 0} withQuiz={quizCount > 0} />
             </section>
 
             {chapters.map((c) => (
                 <section key={c._id} className="wk-sheet wk-chapter" style={{ ["--ch" as string]: c.color }}>
                     <ChapterBanner number={c.number} title={c.title} qr={c.qrChapter} />
                     <Essentials blocks={c.blocks} />
-                    <QuizPart questions={c.questions} qr={c.qrQuiz} />
+                    <QuizInvite count={c.quizCount} qr={c.qrQuiz} />
                     <ExercisesPart numbered={c.numbered} />
                 </section>
             ))}

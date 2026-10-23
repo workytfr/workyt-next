@@ -12,7 +12,7 @@ import {
     ExercisesPart,
     HowToUse,
     Lexicon,
-    QuizPart,
+    QuizInvite,
     RubricTitle,
     chapterColor,
     numberExercises,
@@ -54,7 +54,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /**
  * Le cours en manuel scolaire : couverture, sommaire, mode d'emploi, puis pour
  * chaque chapitre une page d'ouverture, le cours, « Je retiens l'essentiel »,
- * « Je teste mes connaissances » et les exercices par niveau ; corrigés et
+ * un renvoi vers les quiz en ligne et les exercices par niveau ; corrigés et
  * lexique en fin d'ouvrage.
  */
 export default async function PrintCoursePage({ params }: PageProps) {
@@ -78,14 +78,14 @@ export default async function PrintCoursePage({ params }: PageProps) {
                 lessons,
                 numbered: numberExercises(s.exercises),
                 qrChapter: await qrSvg(onlineUrl),
-                qrQuiz: s.questions.length > 0 ? await qrSvg(SITE + quizzesHref(curriculum, s)) : "",
+                qrQuiz: s.quizCount > 0 ? await qrSvg(SITE + quizzesHref(curriculum, s)) : "",
             };
         })
     );
 
     const lessonCount = chapters.reduce((n, c) => n + c.lessons.length, 0);
     const exerciseCount = chapters.reduce((n, c) => n + c.numbered.length, 0);
-    const questionCount = chapters.reduce((n, c) => n + c.questions.length, 0);
+    const quizCount = chapters.reduce((n, c) => n + c.quizCount, 0);
     const lexicon = chapters.flatMap((c) =>
         c.lessons.flatMap((l) =>
             l.blocks.filter((b) => b.type === "definition" && b.title).map((b) => ({ term: b.title, chapter: c.number, lesson: l.ref }))
@@ -109,7 +109,7 @@ export default async function PrintCoursePage({ params }: PageProps) {
             <section className="wk-sheet">
                 <div className="wk-eyebrow">Sommaire</div>
                 <h2>
-                    Au programme<span className="wk-dot">.</span>
+                    Au programme
                 </h2>
                 <ol className="wk-toc">
                     {chapters.map((c) => (
@@ -128,7 +128,7 @@ export default async function PrintCoursePage({ params }: PageProps) {
                                 )}
                                 <div className="wk-toc-tags">
                                     {c.lessons.some((l) => l.blocks.length > 0) && <span>Je retiens l&apos;essentiel</span>}
-                                    {c.questions.length > 0 && <span>{c.questions.length} questions</span>}
+                                    {c.quizCount > 0 && <span>{c.quizCount} quiz en ligne</span>}
                                     {c.numbered.length > 0 && <span>{c.numbered.length} exercices</span>}
                                 </div>
                             </div>
@@ -140,7 +140,7 @@ export default async function PrintCoursePage({ params }: PageProps) {
 
             {/* Mode d'emploi */}
             <section className="wk-sheet">
-                <HowToUse withExercises={exerciseCount > 0} withQuiz={questionCount > 0} />
+                <HowToUse withExercises={exerciseCount > 0} withQuiz={quizCount > 0} />
             </section>
 
             {/* Chapitres */}
@@ -154,7 +154,7 @@ export default async function PrintCoursePage({ params }: PageProps) {
                             lessons={c.lessons}
                             skills={c.skills}
                             exerciseCount={c.numbered.length}
-                            questionCount={c.questions.length}
+                            quizCount={c.quizCount}
                             qr={c.qrChapter}
                         />
 
@@ -174,7 +174,7 @@ export default async function PrintCoursePage({ params }: PageProps) {
                         )}
 
                         <Essentials blocks={blocks} />
-                        <QuizPart questions={c.questions} qr={c.qrQuiz} />
+                        <QuizInvite count={c.quizCount} qr={c.qrQuiz} />
                         <ExercisesPart numbered={c.numbered} />
                     </section>
                 );

@@ -1,6 +1,6 @@
 /**
  * Briques du manuel imprimable (composants serveur) : ouverture de chapitre,
- * cours, « Je retiens l'essentiel », « Je teste mes connaissances »,
+ * cours, « Je retiens l'essentiel », renvoi vers les quiz en ligne,
  * exercices par niveau, corrigés et lexique. Mise en page : print.css.
  */
 import QRCode from "qrcode";
@@ -10,7 +10,6 @@ import remarkGfm from "remark-gfm";
 import rehypeKatex from "rehype-katex";
 import { BookOpen, CheckSquare, Dumbbell, Key, Lightbulb, MessageCircle, Rocket, Target } from "lucide-react";
 import type { KeyBlock } from "@/lib/lessonHtml";
-import type { PrintableQuestion } from "@/lib/courseReader";
 
 /* ─────────────── Couleurs et rubriques ─────────────── */
 
@@ -23,7 +22,7 @@ export const pad = (n: number) => String(n).padStart(2, "0");
 export const RUBRICS = {
     cours: { label: "Cours", Icon: BookOpen, hint: "Les leçons du chapitre, avec définitions, propriétés et exemples." },
     essentiel: { label: "Je retiens l'essentiel", Icon: Lightbulb, hint: "Les définitions et propriétés à connaître par cœur, sur une page." },
-    teste: { label: "Je teste mes connaissances", Icon: CheckSquare, hint: "Des questions rapides pour vérifier que tu as compris. Réponses en ligne." },
+    teste: { label: "Je teste mes connaissances", Icon: CheckSquare, hint: "Les quiz du chapitre se font en ligne : scanne le QR code, ta correction est immédiate et tu gagnes des points." },
     entraine: { label: "Je m'entraîne", Icon: Dumbbell, hint: "Des exercices d'application directe du cours." },
     approfondis: { label: "J'approfondis", Icon: Target, hint: "Des exercices qui mélangent plusieurs notions." },
     loin: { label: "Je vais plus loin", Icon: Rocket, hint: "Des défis pour les plus motivés." },
@@ -97,7 +96,7 @@ export function HowToUse({ withExercises, withQuiz }: { withExercises: boolean; 
         <div className="wk-howto">
             <div className="wk-eyebrow">Mode d&apos;emploi</div>
             <h2>
-                Comment utiliser ton manuel<span className="wk-dot">.</span>
+                Comment utiliser ton manuel
             </h2>
             <p className="wk-lead">Chaque chapitre suit le même chemin : tu découvres, tu retiens, tu vérifies, puis tu t&apos;entraînes.</p>
             <div className="wk-howto-grid">
@@ -137,7 +136,7 @@ export function ChapterOpener({
     lessons,
     skills,
     exerciseCount,
-    questionCount,
+    quizCount,
     qr,
 }: {
     number: number;
@@ -145,7 +144,7 @@ export function ChapterOpener({
     lessons: { _id: string; title: string }[];
     skills: string[];
     exerciseCount: number;
-    questionCount: number;
+    quizCount: number;
     qr: string;
 }) {
     return (
@@ -155,7 +154,6 @@ export function ChapterOpener({
                 <div className="wk-opener-num">{pad(number)}</div>
                 <h1>
                     {title}
-                    <span className="wk-dot">.</span>
                 </h1>
             </div>
 
@@ -172,9 +170,9 @@ export function ChapterOpener({
                             </li>
                         ))}
                     </ol>
-                    {(exerciseCount > 0 || questionCount > 0) && (
+                    {(exerciseCount > 0 || quizCount > 0) && (
                         <div className="wk-opener-chips">
-                            {questionCount > 0 && <span className="wk-chip white">{questionCount} questions pour te tester</span>}
+                            {quizCount > 0 && <span className="wk-chip white">{quizCount} quiz en ligne</span>}
                             {exerciseCount > 0 && <span className="wk-chip white">{exerciseCount} exercice{exerciseCount > 1 ? "s" : ""} corrigé{exerciseCount > 1 ? "s" : ""}</span>}
                         </div>
                     )}
@@ -222,39 +220,22 @@ export function Essentials({ blocks }: { blocks: (KeyBlock & { lesson: string })
 
 /* ─────────────── Je teste mes connaissances ─────────────── */
 
-const LETTERS = "ABCDEFGH";
-
-export function QuizPart({ questions, qr }: { questions: PrintableQuestion[]; qr: string }) {
-    if (questions.length === 0) return null;
+/**
+ * Renvoi vers les quiz en ligne. Aucune question n'est imprimée : les quiz
+ * rapportent des points, leur contenu ne doit pas circuler hors du site.
+ */
+export function QuizInvite({ count, qr }: { count: number; qr: string }) {
+    if (count === 0) return null;
     return (
         <div className="wk-part wk-quiz">
-            <RubricTitle rubric="teste" extra={`${questions.length} question${questions.length > 1 ? "s" : ""}`} />
-            <ol className="wk-quiz-list">
-                {questions.map((q, i) => (
-                    <li key={i} className="wk-quiz-item">
-                        <span className="wk-quiz-n">{i + 1}</span>
-                        <div className="wk-quiz-body">
-                            <Markdown inline>{q.question}</Markdown>
-                            {q.questionType === "Réponse courte" ? (
-                                <div className="wk-writing short" />
-                            ) : (
-                                <ul className={`wk-choices${q.answers.length > 2 ? " two" : ""}`}>
-                                    {(q.questionType === "Vrai/Faux" && q.answers.length === 0 ? ["Vrai", "Faux"] : q.answers).map((a, j) => (
-                                        <li key={j}>
-                                            <span className="wk-box" />
-                                            <b>{LETTERS[j]}.</b> <Markdown inline>{a}</Markdown>
-                                        </li>
-                                    ))}
-                                </ul>
-                            )}
-                        </div>
-                    </li>
-                ))}
-            </ol>
+            <RubricTitle rubric="teste" />
             <div className="wk-quiz-foot">
                 <div className="wk-qr small" dangerouslySetInnerHTML={{ __html: qr }} />
                 <p>
-                    <b>Vérifie tes réponses en ligne :</b> fais le quiz sur workyt.fr, ta correction s&apos;affiche tout de suite et tu gagnes des points.
+                    <b>
+                        {count} quiz t&apos;attend{count > 1 ? "ent" : ""} sur workyt.fr.
+                    </b>{" "}
+                    Scanne le QR code : tu réponds en ligne, ta correction s&apos;affiche tout de suite et tu gagnes des points.
                 </p>
             </div>
         </div>
@@ -313,7 +294,7 @@ export function AnswersPart({ chapters }: { chapters: { number: number; title: s
             <div className="wk-ink-card">
                 <div className="wk-eyebrow">Fin du manuel</div>
                 <h2 style={{ color: "var(--paper)" }}>
-                    Corrigés<span className="wk-dot">.</span>
+                    Corrigés
                 </h2>
                 <p className="wk-lead">Compare avec ta réponse, puis refais l&apos;exercice sans regarder. Une erreur ? Relis la partie « Je retiens l&apos;essentiel » du chapitre.</p>
             </div>
@@ -353,7 +334,7 @@ export function Lexicon({ entries }: { entries: { term: string; chapter: number;
         <section className="wk-sheet">
             <div className="wk-eyebrow">Index</div>
             <h2>
-                Lexique<span className="wk-dot">.</span>
+                Lexique
             </h2>
             <p className="wk-lead">Les mots définis dans le manuel, et où les retrouver.</p>
             <ul className="wk-lexicon">
@@ -380,7 +361,6 @@ export function ChapterBanner({ number, title, qr }: { number: number; title: st
                 <div className="wk-eyebrow">Chapitre {pad(number)}</div>
                 <h2>
                     {title}
-                    <span className="wk-dot">.</span>
                 </h2>
             </div>
             <div className="wk-qr small" dangerouslySetInnerHTML={{ __html: qr }} />
