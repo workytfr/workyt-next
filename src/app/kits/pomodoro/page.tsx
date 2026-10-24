@@ -28,7 +28,7 @@ export default function PomodoroPage() {
                         <Eyebrow>Pomodoro</Eyebrow>
                     </div>
                     <h1 className="font-serif-display mt-4 text-[clamp(2.4rem,6vw,4.2rem)] leading-[0.95]">
-                        Garde ton fromage<span className="text-[var(--wk-accent)]">.</span>
+                        Garde ton fromage
                     </h1>
                     <p className="mt-5 max-w-[60ch] text-lg leading-relaxed text-[rgba(26,21,18,0.68)]">
                         « Tout flatteur vit aux dépens de celui qui l&apos;écoute. » Pendant chaque focus, Foxy essaie

@@ -24,7 +24,7 @@ export default function MoyenneBrevetPage() {
                         <Eyebrow>Calculateur · brevet</Eyebrow>
                     </div>
                     <h1 className="font-serif-display mt-4 text-[clamp(2.4rem,6vw,4.2rem)] leading-[0.95]">
-                        Ma moyenne au brevet<span className="text-[var(--wk-accent)]">.</span>
+                        Ma moyenne au brevet
                     </h1>
                     <p className="mt-5 max-w-[62ch] text-lg leading-relaxed text-[rgba(26,21,18,0.68)]">
                         Depuis 2026, le brevet est noté sur 20 : 40 % pour tes moyennes de 3e, 60 % pour les épreuves

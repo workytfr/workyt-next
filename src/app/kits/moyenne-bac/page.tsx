@@ -24,7 +24,7 @@ export default function MoyenneBacPage() {
                         <Eyebrow>Calculateur · session 2027</Eyebrow>
                     </div>
                     <h1 className="font-serif-display mt-4 text-[clamp(2.4rem,6vw,4.2rem)] leading-[0.95]">
-                        Ma moyenne au bac<span className="text-[var(--wk-accent)]">.</span>
+                        Ma moyenne au bac
                     </h1>
                     <p className="mt-5 max-w-[62ch] text-lg leading-relaxed text-[rgba(26,21,18,0.68)]">
                         Avec les coefficients du bac 2027 : nouvelle épreuve anticipée de mathématiques en fin de
