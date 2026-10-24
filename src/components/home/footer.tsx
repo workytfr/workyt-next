@@ -129,6 +129,7 @@ const Footer: React.FC = () => {
                                     { href: "/suivi", label: "Suivi personnalisé" },
                                     { href: "/amis", label: "Mes amis" },
                                     { href: "/clan", label: "Guerre des Clans" },
+                                    { href: "/kits", label: "Kits de l'élève" },
                                     { href: "https://blog.workyt.fr/", label: "Blog" },
                                     { href: "https://blog.workyt.fr/category/conseils-methodes/", label: "Nos conseils" },
                                 ].map((link) => (

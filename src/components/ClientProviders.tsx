@@ -9,6 +9,8 @@ import Navbar from "@/components/navbar/Navbar";
 import Footer from "@/components/home/footer";
 import { Toaster } from "sonner";
 import YoutubeLivePill from "@/components/ui/YoutubeLivePill";
+import { PomodoroProvider } from "@/components/pomodoro/PomodoroProvider";
+import PomodoroWidget from "@/components/pomodoro/PomodoroWidget";
 
 export default function ClientProviders({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,13 +23,16 @@ export default function ClientProviders({ children }: { children: React.ReactNod
   return (
     <SessionProvider>
       <ThemeProvider>
-        {!isDashboard && !isPrint && <Navbar />}
-        <TooltipProvider>
-          <main id="main-content">{children}</main>
-        </TooltipProvider>
-        {!isDashboard && !isPrint && <Footer />}
-        {!isPrint && <YoutubeLivePill />}
-        <Toaster position="bottom-right" richColors />
+        <PomodoroProvider>
+          {!isDashboard && !isPrint && <Navbar />}
+          <TooltipProvider>
+            <main id="main-content">{children}</main>
+          </TooltipProvider>
+          {!isDashboard && !isPrint && <Footer />}
+          {!isPrint && <YoutubeLivePill />}
+          {!isDashboard && !isPrint && <PomodoroWidget />}
+          <Toaster position="bottom-right" richColors />
+        </PomodoroProvider>
       </ThemeProvider>
     </SessionProvider>
   );
