@@ -1,222 +1,157 @@
 import { NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Revision from "@/models/Revision";
-import User from "@/models/User";
 import authMiddleware from "@/middlewares/authMiddleware";
-import PointTransaction from '@/models/PointTransaction';
 import mongoose from "mongoose";
+import { rateLimit, rateLimitResponse } from "@/lib/rateLimit";
 
 // Connexion à la base de données
 connectDB();
-
-// Cache pour le rate limiting en mémoire (en production, utilisez Redis)
-const rateLimitCache = new Map();
-
-// Configuration du rate limiting
-const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
-const MAX_LIKES_PER_WINDOW = 1; // Max 10 likes par minute par utilisateur
 
 // Utilitaire pour centraliser les erreurs
 function handleError(message: string, status: number = 500) {
     return NextResponse.json({ success: false, message }, { status });
 }
 
-// Fonction de rate limiting
-function checkRateLimit(userId: string): boolean {
-    const now = Date.now();
-    const userKey = `like_${userId}`;
+type LikeContext =
+    | { error: Response }
+    | { userId: mongoose.Types.ObjectId; revisionId: string };
 
-    if (!rateLimitCache.has(userKey)) {
-        rateLimitCache.set(userKey, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-        return true;
+async function readContext(req: NextRequest, revisionId: unknown): Promise<LikeContext> {
+    const user = await authMiddleware(req).catch(() => null);
+    if (!user || !user._id) {
+        return { error: handleError("Connecte-toi pour aimer une fiche.", 401) };
     }
+    // Large pour une lecture normale, bloque les rafales de clics automatisées
+    const rl = rateLimit(`fiche-like:${user._id}`, 20, 60_000);
+    if (!rl.success) return { error: rateLimitResponse(rl.retryAfterMs) };
 
-    const userLimit = rateLimitCache.get(userKey);
-
-    // Reset si la fenêtre est expirée
-    if (now > userLimit.resetTime) {
-        rateLimitCache.set(userKey, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
-        return true;
+    if (typeof revisionId !== "string" || !mongoose.Types.ObjectId.isValid(revisionId)) {
+        return { error: handleError("ID de la fiche invalide.", 400) };
     }
-
-    // Vérifier si la limite est atteinte
-    if (userLimit.count >= MAX_LIKES_PER_WINDOW) {
-        return false;
-    }
-
-    // Incrémenter le compteur
-    userLimit.count++;
-    return true;
+    return { userId: user._id as mongoose.Types.ObjectId, revisionId };
 }
 
-// Fonction pour nettoyer le cache (optionnel, pour éviter la fuite mémoire)
-function cleanExpiredCache() {
-    const now = Date.now();
-    for (const [key, value] of rateLimitCache.entries()) {
-        if (now > value.resetTime) {
-            rateLimitCache.delete(key);
-        }
-    }
+/**
+ * Récompenses de l'auteur (points, quête, badges, notification) : uniquement au
+ * PREMIER like de chaque élève sur cette fiche. Retirer puis remettre son like
+ * ne rapporte plus rien, il n'y a donc rien à gagner à faire des allers-retours.
+ */
+async function rewardAuthor(authorId: string, revisionId: string, likerId: string) {
+    const { addPointsWithBoost } = await import("@/lib/pointsService");
+    await addPointsWithBoost(authorId, 5, "likeRevision", { revision: revisionId });
+
+    const { QuestService } = await import("@/lib/questService");
+    await QuestService.updateQuestProgress(authorId, "fiche_like_received");
+
+    const { BadgeService } = await import("@/lib/badgeService");
+    await BadgeService.triggerBadgeCheck(authorId);
+
+    const { NotificationService } = await import("@/lib/notificationService");
+    await NotificationService.notifyFicheLiked(revisionId, likerId);
 }
 
-// Fonction pour ajouter un like avec opérations atomiques
-async function likeRevision(revision: any, userId: mongoose.Types.ObjectId) {
-    try {
-        // Vérifier à nouveau que l'utilisateur n'a pas déjà liké (double-check)
-        const updatedRevision = await Revision.findById(revision._id);
-
-        if (!updatedRevision) {
-            throw new Error("Révision introuvable");
-        }
-
-        const alreadyLiked = updatedRevision.likedBy.some((like: any) =>
-            like.userId.toString() === userId.toString()
-        );
-
-        if (alreadyLiked) {
-            throw new Error("Déjà liké");
-        }
-
-        // Mettre à jour la révision de manière atomique
-        const revisionResult = await Revision.findByIdAndUpdate(
-            revision._id,
-            {
-                $inc: { likes: 1 },
-                $push: { likedBy: { userId: userId.toString(), likedAt: new Date() } }
-            },
-            { new: true }
-        );
-
-        if (!revisionResult) {
-            throw new Error("Erreur lors de la mise à jour de la révision");
-        }
-
-        // Mettre à jour les points de l'auteur (avec boost)
-        const { addPointsWithBoost } = await import('@/lib/pointsService');
-        await addPointsWithBoost(revision.author.toString(), 5, 'likeRevision', { revision: revision._id.toString() });
-
-        // Mettre à jour la progression des quêtes pour l'auteur de la fiche
-        const { QuestService } = await import('@/lib/questService');
-        await QuestService.updateQuestProgress(revision.author.toString(), 'fiche_like_received');
-
-        // Verifier les badges de l'auteur (likes recus)
-        const { BadgeService } = await import('@/lib/badgeService');
-        await BadgeService.triggerBadgeCheck(revision.author.toString());
-
-        // Mettre à jour l'objet local pour la réponse
-        revision.likes += 1;
-        revision.likedBy.push({ userId: userId.toString(), likedAt: new Date() });
-
-    } catch (error) {
-        console.error("Erreur lors de l'ajout du like :", error);
-        throw error;
-    }
-}
-
-
+/** POST /api/likes { revisionId } : aimer une fiche */
 export async function POST(req: NextRequest) {
     try {
-        // Authentification via authMiddleware
-        const user = await authMiddleware(req);
-        if (!user || !user._id) {
-            return handleError("Non autorisé. Veuillez vous connecter.", 401);
+        const body = await req.json().catch(() => ({}));
+        const ctx = await readContext(req, body?.revisionId);
+        if ("error" in ctx) return ctx.error;
+        const { userId, revisionId } = ctx;
+
+        const revision = await Revision.findById(revisionId).select("author likes");
+        if (!revision) return handleError("Fiche non trouvée.", 404);
+        if (revision.author.toString() === userId.toString()) {
+            return handleError("Tu ne peux pas aimer ta propre fiche.", 403);
         }
 
-        const userId = user._id.toString();
+        // Atomique : le filtre empêche un double like (double clic, deux onglets)
+        const before = await Revision.findOneAndUpdate(
+            { _id: revisionId, "likedBy.userId": { $ne: userId } },
+            {
+                $inc: { likes: 1 },
+                $push: { likedBy: { userId, likedAt: new Date() } },
+                $addToSet: { likeHistory: userId },
+            },
+            { new: false, projection: { likes: 1, likeHistory: 1 } },
+        ).lean<{ likes: number; likeHistory?: mongoose.Types.ObjectId[] }>();
 
-        // Vérification du rate limiting
-        if (!checkRateLimit(userId)) {
-            return handleError("Trop de tentatives. Veuillez patienter avant de réessayer.", 429);
+        if (!before) {
+            return NextResponse.json({ success: true, likes: revision.likes, hasLiked: true });
         }
 
-        const body = await req.json();
-        const { revisionId } = body;
-
-        // Validation de l'ID de la fiche
-        if (!revisionId || !mongoose.Types.ObjectId.isValid(revisionId)) {
-            return handleError("ID de la fiche invalide.", 400);
-        }
-
-        // Vérification si la fiche existe et récupération des données nécessaires
-        const revision = await Revision.findById(revisionId).select("likes likedBy author");
-        if (!revision) {
-            return handleError("Fiche non trouvée.", 404);
-        }
-
-        // Empêcher l'auto-like (optionnel)
-        if (revision.author.toString() === userId) {
-            return handleError("Vous ne pouvez pas liker votre propre fiche.", 403);
-        }
-
-        // Vérification si l'utilisateur a déjà liké
-        const existingLike = revision.likedBy.find((like: any) =>
-            like.userId.toString() === userId
-        );
-
-        if (existingLike) {
-            return handleError("Vous avez déjà liké cette fiche.", 409);
-        }
-
-        // Ajouter le like
-        await likeRevision(revision, new mongoose.Types.ObjectId(userId));
-
-        // Nettoyer le cache périodiquement
-        if (Math.random() < 0.1) { // 10% de chance
-            cleanExpiredCache();
+        const firstTime = !(before.likeHistory ?? []).some((id) => id.toString() === userId.toString());
+        if (firstTime) {
+            await rewardAuthor(revision.author.toString(), revisionId, userId.toString());
         }
 
         return NextResponse.json(
-            {
-                success: true,
-                message: "Fiche likée avec succès !",
-                likes: revision.likes,
-                hasLiked: true
-            },
-            { status: 200 }
+            { success: true, message: "Fiche aimée !", likes: before.likes + 1, hasLiked: true },
+            { status: 200 },
         );
     } catch (error: any) {
-        console.error("Erreur lors du traitement des likes :", error.message);
-
-        // Gestion spécifique des erreurs de transaction
-        if (error.message === "Déjà liké" || error.message === "Révision introuvable") {
-            return handleError("Vous avez déjà liké cette fiche.", 409);
-        }
-
+        console.error("Erreur lors du like de fiche :", error.message);
         return handleError("Erreur interne du serveur.");
     }
 }
 
+/** DELETE /api/likes?revisionId=… : retirer son like (clic par erreur) */
+export async function DELETE(req: NextRequest) {
+    try {
+        const { searchParams } = new URL(req.url);
+        const ctx = await readContext(req, searchParams.get("revisionId"));
+        if ("error" in ctx) return ctx.error;
+        const { userId, revisionId } = ctx;
+
+        // L'élève reste dans likeHistory : un nouveau like ne redonnera pas de points
+        const updated = await Revision.findOneAndUpdate(
+            { _id: revisionId, "likedBy.userId": userId },
+            {
+                $inc: { likes: -1 },
+                $pull: { likedBy: { userId } },
+                $addToSet: { likeHistory: userId },
+            },
+            { new: true, projection: { likes: 1 } },
+        ).lean<{ likes: number }>();
+
+        const likes = updated?.likes
+            ?? (await Revision.findById(revisionId).select("likes").lean<{ likes: number }>())?.likes
+            ?? 0;
+        return NextResponse.json({ success: true, likes: Math.max(0, likes), hasLiked: false });
+    } catch (error: any) {
+        console.error("Erreur lors du retrait du like :", error.message);
+        return handleError("Erreur interne du serveur.");
+    }
+}
+
+/** GET /api/likes?revisionId=… : le visiteur a-t-il aimé la fiche ? */
 export async function GET(req: NextRequest) {
     try {
-        // Authentification via authMiddleware
-        const user = await authMiddleware(req);
+        const user = await authMiddleware(req).catch(() => null);
         if (!user || !user._id) {
             return handleError("Non autorisé. Veuillez vous connecter.", 401);
         }
 
-        const { searchParams } = new URL(req.url!);
-        const revisionId = searchParams.get("revisionId");
-
-        // Validation de l'ID de la fiche
+        const revisionId = new URL(req.url).searchParams.get("revisionId");
         if (!revisionId || !mongoose.Types.ObjectId.isValid(revisionId)) {
             return handleError("ID de la fiche invalide.", 400);
         }
 
-        // Vérification si la fiche existe
-        const revision = await Revision.findById(revisionId).select("likedBy likes");
+        const revision = await Revision.findById(revisionId).select("likedBy likes author").lean<{
+            likes: number;
+            author: mongoose.Types.ObjectId;
+            likedBy: { userId: mongoose.Types.ObjectId }[];
+        }>();
         if (!revision) {
             return handleError("Fiche non trouvée.", 404);
         }
 
         const userId = user._id.toString();
-        const hasLiked = revision.likedBy.some((like: any) =>
-            like.userId.toString() === userId
-        );
-
         return NextResponse.json({
             success: true,
-            hasLiked,
-            totalLikes: revision.likes
+            hasLiked: revision.likedBy.some((like) => like.userId?.toString() === userId),
+            isAuthor: revision.author?.toString() === userId,
+            totalLikes: revision.likes,
         }, { status: 200 });
     } catch (error: any) {
         console.error("Erreur lors de la vérification du like :", error.message);

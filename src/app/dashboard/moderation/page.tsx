@@ -32,7 +32,7 @@ interface Report {
         email: string;
     };
     reportedContent: {
-        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo';
+        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo' | 'fiche_comment';
         id: string;
     };
     reason: string;
@@ -48,6 +48,7 @@ interface Report {
     updatedAt: string;
     resolvedAt?: string;
     questionId?: string;
+    parentId?: string;
 }
 
 interface ModerationStats {
@@ -90,7 +91,8 @@ const CONTENT_TYPE_LABELS: Record<string, string> = {
     forum_answer: 'Réponse forum',
     forum_question: 'Question forum',
     mentorship: 'Suivi personnalisé',
-    profile_photo: 'Photo de profil'
+    profile_photo: 'Photo de profil',
+    fiche_comment: 'Commentaire de fiche'
 };
 
 const CONTENT_TYPE_ICONS: Record<string, React.ReactNode> = {
@@ -99,7 +101,8 @@ const CONTENT_TYPE_ICONS: Record<string, React.ReactNode> = {
     forum_answer: <MessageSquare className="w-4 h-4" />,
     forum_question: <MessageSquare className="w-4 h-4" />,
     mentorship: <HeartHandshake className="w-4 h-4" />,
-    profile_photo: <Camera className="w-4 h-4" />
+    profile_photo: <Camera className="w-4 h-4" />,
+    fiche_comment: <MessageSquare className="w-4 h-4" />
 };
 
 export default function ModerationPage() {
@@ -265,6 +268,9 @@ export default function ModerationPage() {
                     // Ici, « supprimer » retire la photo du membre, pas le compte
                     endpoint = `/api/users/${id}/photo`;
                     break;
+                case 'fiche_comment':
+                    endpoint = `/api/comment/${id}`;
+                    break;
                 default:
                     toast.error('Type de contenu non supporté pour la suppression');
                     return;
@@ -315,6 +321,8 @@ export default function ModerationPage() {
                 return `/suivi/${id}`;
             case 'profile_photo':
                 return `/compte/${id}`;
+            case 'fiche_comment':
+                return questionId ? `/fiches/${questionId}#comment-${id}` : '#';
             default:
                 return '#';
         }
@@ -452,6 +460,7 @@ export default function ModerationPage() {
                                 <SelectItem value="forum_answer">Réponse forum</SelectItem>
                                 <SelectItem value="mentorship">Suivi personnalisé</SelectItem>
                                 <SelectItem value="profile_photo">Photo de profil</SelectItem>
+                                <SelectItem value="fiche_comment">Commentaire de fiche</SelectItem>
                             </SelectContent>
                         </Select>
                         
@@ -565,7 +574,7 @@ export default function ModerationPage() {
                                                         href={getContentLink(
                                                             report.reportedContent.type, 
                                                             report.reportedContent.id, 
-                                                            report.questionId
+                                                            report.questionId ?? report.parentId
                                                         )}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
@@ -622,7 +631,7 @@ export default function ModerationPage() {
                                                                         href={getContentLink(
                                                                             report.reportedContent.type, 
                                                                             report.reportedContent.id, 
-                                                                            report.questionId
+                                                                            report.questionId ?? report.parentId
                                                                         )}
                                                                         target="_blank"
                                                                         rel="noopener noreferrer"

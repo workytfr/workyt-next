@@ -87,11 +87,63 @@ export class NotificationService {
     }
 
     /**
+     * Notifie l'auteur d'une fiche qu'elle a été aimée. Les likes sont regroupés
+     * dans une seule notification non lue par fiche (« Léa et 3 autres… »)
+     * pour ne pas noyer l'auteur.
+     */
+    static async notifyFicheLiked(revisionId: string, likerId: string): Promise<void> {
+        try {
+            const [revision, liker] = await Promise.all([
+                Revision.findById(revisionId, 'title author'),
+                User.findById(likerId, 'username'),
+            ]);
+            if (!revision || !liker) return;
+            const authorId = revision.author.toString();
+            if (authorId === likerId) return;
+
+            const existing = await Notification.findOne({
+                recipient: authorId,
+                type: 'fiche_liked',
+                'relatedEntity.id': revisionId,
+                isRead: false,
+                isArchived: false,
+            });
+            const count = (existing?.groupCount ?? (existing ? 1 : 0)) + 1;
+            const others = count - 1;
+            const message = others > 0
+                ? `${liker.username} et ${others} autre${others > 1 ? 's' : ''} ont aimé votre fiche "${revision.title}"`
+                : `${liker.username} a aimé votre fiche "${revision.title}"`;
+
+            if (existing) {
+                existing.sender = new mongoose.Types.ObjectId(likerId);
+                existing.message = message;
+                existing.groupCount = count;
+                existing.createdAt = new Date();
+                await existing.save();
+                return;
+            }
+
+            await this.createNotification({
+                type: 'fiche_liked',
+                recipientId: authorId,
+                senderId: likerId,
+                relatedEntityType: 'fiche',
+                relatedEntityId: revisionId,
+                title: 'Votre fiche a été aimée',
+                message,
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification de like de fiche:', error);
+        }
+    }
+
+    /**
      * Notifie l'auteur d'une fiche qu'un nouveau commentaire a été ajouté
      */
     static async notifyNewFicheComment(
         revisionId: string, 
-        commentAuthorId: string
+        commentAuthorId: string,
+        kind: 'avis' | 'question' | 'erreur' | 'merci' = 'avis'
     ): Promise<void> {
         try {
             // Récupérer la fiche avec l'auteur
@@ -113,11 +165,51 @@ export class NotificationService {
                 senderId: commentAuthorId,
                 relatedEntityType: 'fiche',
                 relatedEntityId: revisionId,
-                title: 'Nouveau commentaire sur votre fiche',
-                message: `${commentAuthor.username} a commenté votre fiche "${revision.title}"`
+                title: {
+                    avis: 'Nouveau commentaire sur votre fiche',
+                    question: 'Une question sur votre fiche',
+                    erreur: 'Erreur signalée dans votre fiche',
+                    merci: 'Un merci pour votre fiche',
+                }[kind],
+                message: {
+                    avis: `${commentAuthor.username} a commenté votre fiche "${revision.title}"`,
+                    question: `${commentAuthor.username} a posé une question sur votre fiche "${revision.title}"`,
+                    erreur: `${commentAuthor.username} pense avoir trouvé une erreur dans votre fiche "${revision.title}"`,
+                    merci: `${commentAuthor.username} vous remercie pour votre fiche "${revision.title}"`,
+                }[kind]
             });
         } catch (error) {
             console.error('Erreur lors de la notification de nouveau commentaire:', error);
+        }
+    }
+
+    /**
+     * Notifie l'auteur d'un commentaire de fiche qu'on lui a répondu
+     */
+    static async notifyFicheCommentReply(
+        revisionId: string,
+        parentAuthorId: string,
+        replyAuthorId: string
+    ): Promise<void> {
+        try {
+            if (parentAuthorId === replyAuthorId) return;
+            const [revision, replyAuthor] = await Promise.all([
+                Revision.findById(revisionId, 'title'),
+                User.findById(replyAuthorId, 'username'),
+            ]);
+            if (!revision || !replyAuthor) return;
+
+            await this.createNotification({
+                type: 'fiche_comment',
+                recipientId: parentAuthorId,
+                senderId: replyAuthorId,
+                relatedEntityType: 'fiche',
+                relatedEntityId: revisionId,
+                title: 'Nouvelle réponse à votre commentaire',
+                message: `${replyAuthor.username} a répondu à votre commentaire sur la fiche "${revision.title}"`
+            });
+        } catch (error) {
+            console.error('Erreur lors de la notification de réponse à un commentaire:', error);
         }
     }
 

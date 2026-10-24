@@ -112,6 +112,12 @@ const STYLES: Record<string, NotificationStyle> = {
     className: 'bg-indigo-100 text-indigo-600',
     category: 'fiche'
   },
+  fiche_liked: {
+    icon: Heart,
+    label: 'Fiche',
+    className: 'bg-rose-100 text-rose-600',
+    category: 'fiche'
+  },
   comment_liked: {
     icon: Heart,
     label: 'Fiche',

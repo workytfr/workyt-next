@@ -11,9 +11,12 @@ import { toast } from 'sonner';
 
 interface ReportModalProps {
     contentId: string;
-    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo';
+    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo' | 'fiche_comment';
     questionId?: string; // ID de la question parente (pour les réponses forum)
     trigger?: React.ReactNode;
+    /** Mode contrôlé : ouverture pilotée par le parent (ex. depuis un menu) */
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
 const REPORT_REASONS = {
@@ -28,9 +31,15 @@ const REPORT_REASONS = {
     autre: 'Autre'
 };
 
-export default function ReportModal({ contentId, contentType, questionId, trigger }: ReportModalProps) {
+export default function ReportModal({ contentId, contentType, questionId, trigger, open: openProp, onOpenChange }: ReportModalProps) {
     const { data: session } = useSession();
-    const [open, setOpen] = useState(false);
+    const [openState, setOpenState] = useState(false);
+    const controlled = openProp !== undefined;
+    const open = controlled ? openProp : openState;
+    const setOpen = (v: boolean) => {
+        if (!controlled) setOpenState(v);
+        onOpenChange?.(v);
+    };
     const [reason, setReason] = useState<string>('');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,9 +108,11 @@ export default function ReportModal({ contentId, contentType, questionId, trigge
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {trigger || defaultTrigger}
-            </DialogTrigger>
+            {!controlled && (
+                <DialogTrigger asChild>
+                    {trigger || defaultTrigger}
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">

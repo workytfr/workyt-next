@@ -14,7 +14,7 @@ import ReportModal from './ReportModal';
 
 interface ReportButtonProps {
     contentId: string;
-    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo';
+    contentType: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo' | 'fiche_comment';
     questionId?: string; // ID de la question parente (pour les réponses forum)
     variant?: 'button' | 'dropdown';
     size?: 'sm' | 'default' | 'lg';
@@ -57,14 +57,13 @@ export default function ReportButton({
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {showReportModal && (
-                    <ReportModal
-                        contentId={contentId}
-                        contentType={contentType}
-                        questionId={questionId}
-                        trigger={null}
-                    />
-                )}
+                <ReportModal
+                    contentId={contentId}
+                    contentType={contentType}
+                    questionId={questionId}
+                    open={showReportModal}
+                    onOpenChange={setShowReportModal}
+                />
             </>
         );
     }

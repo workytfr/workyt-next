@@ -17,6 +17,9 @@ export interface IRevision extends Document {
     content: string; // Contenu textuel de la fiche
     likes: number; // Nombre total de likes
     likedBy: ILikedBy[]; // Tableau des utilisateurs ayant liké la fiche
+    /** Tous ceux qui ont aimé la fiche au moins une fois (même s'ils ont retiré leur like) :
+     *  les points, quêtes et notifications ne sont donnés qu'au premier like. */
+    likeHistory?: mongoose.Types.ObjectId[];
     status: 'Non Certifiée' | 'Certifiée' | 'Vérifiée'; // Statut de la fiche
     author: mongoose.Types.ObjectId; // Référence à l'auteur (User)
     comments: mongoose.Types.ObjectId[]; // Références aux commentaires (Comment)
@@ -64,6 +67,7 @@ const RevisionSchema: Schema<IRevision> = new Schema({
             },
         },
     ],
+    likeHistory: { type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }], default: [], select: false },
     status: {
         type: String,
         enum: ['Non Certifiée', 'Certifiée', 'Vérifiée'], // Statuts autorisés

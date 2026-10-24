@@ -6,6 +6,7 @@ import Report from '@/models/Report';
 import User from '@/models/User';
 import { connectDB } from '@/lib/mongodb';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import mongoose from 'mongoose';
 
 /**
  * POST /api/reports - Créer un nouveau signalement
@@ -78,6 +79,18 @@ export async function POST(request: NextRequest) {
         // Ajouter questionId pour les réponses forum
         if (reportedContent.type === 'forum_answer' && questionId) {
             reportData.questionId = questionId;
+        }
+
+        // Commentaire de fiche : retrouver la fiche pour que la modération puisse le relire
+        if (reportedContent.type === 'fiche_comment') {
+            const { default: Comment } = await import('@/models/Comment');
+            const comment = mongoose.isValidObjectId(reportedContent.id)
+                ? await Comment.findById(reportedContent.id).select('revision').lean()
+                : null;
+            if (!comment) {
+                return NextResponse.json({ error: 'Commentaire introuvable' }, { status: 404 });
+            }
+            reportData.parentId = comment.revision;
         }
         
         const report = new Report(reportData);

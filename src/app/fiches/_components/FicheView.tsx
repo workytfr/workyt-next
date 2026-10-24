@@ -24,7 +24,8 @@ import {
     CalendarDays,
 } from "lucide-react";
 import FileViewer from "@/app/fiches/_components/FileViewer";
-import LikedByList from "@/app/fiches/_components/LikedByList";
+import LikedByList, { LikeButton, LikersPreview } from "@/app/fiches/_components/LikedByList";
+import { useFicheLike } from "@/app/fiches/_components/useFicheLike";
 import CommentsList from "@/app/fiches/_components/CommentsList";
 import StatusChanger from "@/app/fiches/_components/StatusChanger";
 import DeleteFicheButton from "@/app/fiches/_components/DeleteFicheButton";
@@ -40,8 +41,6 @@ interface FicheViewProps {
     initialFiche?: any;
 }
 
-/** Ouvre la fenêtre de connexion de la navbar (il n'existe pas de page /connexion) */
-const openAuth = () => window.dispatchEvent(new Event("workyt:open-auth"));
 
 export default function FicheView({ id, initialFiche }: FicheViewProps) {
     const { data: session } = useSession();
@@ -52,6 +51,9 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
     const [error, setError] = useState<string | null>(null);
     const [retryCount, setRetryCount] = useState(0);
     const [isRetrying, setIsRetrying] = useState(false);
+    /** Nombre de commentaires tenu à jour par la discussion (temps réel, ajouts, suppressions) */
+    const [liveCommentsCount, setLiveCommentsCount] = useState<number | null>(null);
+    const like = useFicheLike(fiche?._id, fiche?.likes || 0, fiche?.likedBy, fiche?.author?._id?.toString());
 
     // `silent` : rafraîchissement en arrière-plan (pas de skeleton ni d'erreur visible).
     // Utilisé quand la fiche est déjà pré-rendue côté serveur : la page peut être
@@ -185,7 +187,7 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
         (firstFileBase.endsWith(".jpg") || firstFileBase.endsWith(".jpeg") || firstFileBase.endsWith(".png") || firstFileBase.endsWith(".webp"));
 
     const card = "rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white";
-    const commentsCount = fiche.comments?.length || 0;
+    const commentsCount = liveCommentsCount ?? (fiche.comments?.length || 0);
 
     return (
         <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
@@ -294,19 +296,33 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
                             </section>
                         )}
 
-                        {/* Commentaires */}
-                        <section className={`${card} overflow-hidden p-5 sm:p-6`} aria-label="Commentaires">
-                            {!currentUser && (
-                                <div className="mb-5 flex flex-col items-center gap-3 rounded-2xl bg-[var(--wk-paper)] p-5 text-center sm:flex-row sm:text-left">
-                                    <MessageCircle className="h-5 w-5 shrink-0 text-[rgba(26,21,18,0.45)]" />
-                                    <p className="flex-1 text-sm text-[rgba(26,21,18,0.65)]">Connecte-toi pour commenter cette fiche.</p>
-                                    <button type="button" onClick={openAuth} className="wk-btn-ink !py-2 text-sm">Se connecter</button>
+                        {/* Remerciement de fin de fiche : c'est après la lecture qu'on a envie de dire merci */}
+                        {!like.isAuthor && (
+                            <section className={`${card} flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:p-7 sm:text-left`} aria-label="Remercier l'auteur">
+                                <div className="flex-1">
+                                    <p className="font-serif-display text-2xl">
+                                        {like.hasLiked ? "Merci pour l'auteur ! 🧡" : "Cette fiche t'a aidé ?"}
+                                    </p>
+                                    <p className="mt-1 text-sm text-[rgba(26,21,18,0.6)]">
+                                        {like.hasLiked
+                                            ? `Ton j'aime encourage ${fiche.author?.username ?? "l'auteur"} à publier d'autres fiches.`
+                                            : `Dis merci à ${fiche.author?.username ?? "l'auteur"} d'un j'aime : ça l'encourage à en publier d'autres.`}
+                                    </p>
+                                    <div className="mt-3 flex justify-center sm:justify-start">
+                                        <LikersPreview like={like} />
+                                    </div>
                                 </div>
-                            )}
+                                <LikeButton like={like} size="lg" />
+                            </section>
+                        )}
+
+                        {/* Commentaires */}
+                        <section id="commentaires" className={`${card} scroll-mt-24 p-5 sm:p-7`} aria-label="Commentaires">
                             <CommentsList
                                 revisionId={fiche._id}
                                 ficheAuthorId={fiche.author?._id}
                                 currentUser={currentUser ? { username: (currentUser as any).username, id: (currentUser as any).id } : null}
+                                onCountChange={setLiveCommentsCount}
                             />
                         </section>
                     </main>
@@ -315,17 +331,17 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
                     <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
                         <div className={`${card} p-5`}>
                             <div className="flex items-center justify-between gap-2">
-                                <span className="inline-flex items-center gap-1.5 text-sm font-semibold">
+                                <a href="#commentaires" className="inline-flex items-center gap-1.5 text-sm font-semibold hover:text-[var(--wk-accent)]">
                                     <MessageCircle className="h-4 w-4" />
                                     {commentsCount} commentaire{commentsCount > 1 ? "s" : ""}
-                                </span>
+                                </a>
                                 <div className="flex items-center gap-1">
                                     <BookmarkButton revisionId={fiche._id} size="sm" />
                                     <ReportButton contentId={fiche._id} contentType="revision" variant="dropdown" />
                                 </div>
                             </div>
                             <div className="mt-4 border-t border-[rgba(26,21,18,0.06)] pt-4">
-                                <LikedByList revisionId={fiche._id} likedBy={fiche.likedBy || []} initialLikes={fiche.likes || 0} />
+                                <LikedByList like={like} />
                             </div>
                         </div>
 

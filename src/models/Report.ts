@@ -6,7 +6,7 @@ import mongoose, { Schema, Document, Model, Types } from 'mongoose';
 export interface IReport extends Document {
     reporter: Types.ObjectId; // Utilisateur qui fait le signalement
     reportedContent: {
-        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo';
+        type: 'revision' | 'course' | 'forum_answer' | 'forum_question' | 'mentorship' | 'profile_photo' | 'fiche_comment';
         id: Types.ObjectId; // ID du contenu signalé
     };
     reason: 'erreur_contenu' | 'langage_inapproprie' | 'contenu_incomprehensible' | 'contenu_illisible' | 'spam' | 'harcelement' | 'contenu_offensant' | 'violation_droits' | 'autre';
@@ -15,6 +15,7 @@ export interface IReport extends Document {
     moderator?: Types.ObjectId; // Modérateur qui traite le signalement
     moderatorNotes?: string; // Notes du modérateur
     questionId?: Types.ObjectId; // ID de la question parente (pour les réponses forum)
+    parentId?: Types.ObjectId; // Fiche du commentaire signalé (pour les commentaires de fiche)
     createdAt: Date;
     updatedAt: Date;
     resolvedAt?: Date;
@@ -32,7 +33,7 @@ const ReportSchema = new Schema<IReport>({
     reportedContent: {
         type: {
             type: String,
-            enum: ['revision', 'course', 'forum_answer', 'forum_question', 'mentorship', 'profile_photo'],
+            enum: ['revision', 'course', 'forum_answer', 'forum_question', 'mentorship', 'profile_photo', 'fiche_comment'],
             required: true
         },
         id: {
@@ -88,6 +89,10 @@ const ReportSchema = new Schema<IReport>({
         type: Schema.Types.ObjectId,
         ref: 'Question',
         required: false // Uniquement pour les réponses forum
+    },
+    parentId: {
+        type: Schema.Types.ObjectId,
+        required: false // Uniquement pour les commentaires de fiche
     }
 });
 
