@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { currentUserId } from "@/lib/bearerUser";
 import dbConnect from "@/lib/mongodb";
 import CurriculumNode from "@/models/CurriculumNode";
 import CompetencyProgress from "@/models/CompetencyProgress";
@@ -13,8 +12,8 @@ import CompetencyProgress from "@/models/CompetencyProgress";
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const userId = await currentUserId();
+    if (!userId) {
       return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
     }
 
@@ -57,7 +56,7 @@ export async function GET(req: NextRequest) {
 
     // Get user's progress for these skills
     const userProgress = await CompetencyProgress.find({
-      userId: session.user.id,
+      userId,
       skillId: { $in: skillIds },
     }).lean();
 

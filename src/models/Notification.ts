@@ -94,6 +94,29 @@ NotificationSchema.index({ recipient: 1, type: 1 });
 NotificationSchema.index({ isArchived: 1, archivedAt: -1 });
 
 /**
+ * Push mobile : chaque nouvelle notification part aussi sur les téléphones
+ * du destinataire (application Workyt). Seulement à la création — les mises
+ * à jour (likes regroupés « Léa et 3 autres… ») ne renvoient pas de push.
+ * Envoi en arrière-plan : la requête qui crée la notification n'attend pas.
+ */
+NotificationSchema.pre('save', function (next) {
+    (this as any).$locals.wasNew = this.isNew;
+    next();
+});
+NotificationSchema.post('save', function (doc: INotification) {
+    if (!(doc as any).$locals?.wasNew) return;
+    import('@/lib/expoPush')
+        .then(({ sendPushToUser, appUrlForNotification }) =>
+            sendPushToUser(doc.recipient.toString(), {
+                title: doc.title,
+                body: doc.message,
+                url: appUrlForNotification(doc),
+            })
+        )
+        .catch(() => { /* jamais bloquant */ });
+});
+
+/**
  * Création du modèle Notification
  */
 const Notification = mongoose.models.Notification || 

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { getHeroState } from '@/lib/heroService';
@@ -14,14 +13,14 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const email = await currentUserEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
     await dbConnect();
 
-    const user = await User.findOne({ email: session.user.email }).select('_id').lean<{ _id: any }>();
+    const user = await User.findOne({ email }).select('_id').lean<{ _id: any }>();
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }

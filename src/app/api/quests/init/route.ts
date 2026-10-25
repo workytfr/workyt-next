@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import User from '@/models/User';
 import Quest from '@/models/Quest';
 import connectDB from '@/lib/mongodb';
@@ -12,9 +11,9 @@ import { QuestService } from '@/lib/questService';
  */
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const email = await currentUserEmail();
     
-    if (!session?.user?.email) {
+    if (!email) {
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
     
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },

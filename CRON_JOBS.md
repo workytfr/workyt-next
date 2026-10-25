@@ -11,7 +11,7 @@ le cron de la plateforme ne voit pas les variables du site.
 de toute requête dont l'identifiant (User-Agent) est « curl ». Et ne jamais
 lancer ces commandes depuis un poste personnel.
 
-## Les 7 tâches à créer
+## Les 10 tâches à créer
 
 Horaires pour une plateforme en **UTC+2** (heure de Paris l'été). Ils restent
 justes l'hiver (Paris = UTC+1) : ils tombent alors une heure plus tôt en heure
@@ -26,6 +26,14 @@ de Paris, toujours du bon côté de minuit. Ne pas les changer au changement d'h
 | Clans : semaine (dimanche soir) | `50 23 * * 0` | `curl -fsS -A "workyt-cron" -H "x-cron-secret: <CRON_SECRET>" https://workyt.fr/api/cron/clans-semaine` |
 | Suivi : quotidien | `0 9 * * *` | `curl -fsS -A "workyt-cron" -H "x-cron-secret: <CRON_SECRET>" https://workyt.fr/api/cron/suivi-jour` |
 | Suivi : semaine (lundi) | `20 1 * * 1` | `curl -fsS -A "workyt-cron" -H "x-cron-secret: <CRON_SECRET>" https://workyt.fr/api/cron/suivi-semaine` |
+| Relances app : soir (quiz, clan) | `0 18 * * *` | `curl -fsS -A "workyt-cron" -H "x-cron-secret: <CRON_SECRET>" https://workyt.fr/api/cron/relances-soir` |
+| Relances app : dernière chance | `30 20 * * *` | `curl -fsS -A "workyt-cron" -H "x-cron-secret: <CRON_SECRET>" https://workyt.fr/api/cron/relances-derniere-chance` |
+| Relances app : absents | `0 17 * * *` | `curl -fsS -A "workyt-cron" -H "x-cron-secret: <CRON_SECRET>" https://workyt.fr/api/cron/relances-inactifs` |
+
+Les relances de l'app (notifications avec un son par type) ne partent jamais
+entre 21 h 30 et 8 h, au plus 2 par élève et par jour, et seulement pour les
+types qu'il a laissés activés dans l'app. L'hiver elles arrivent une heure
+plus tôt (17 h, 19 h 30, 16 h), ce qui reste dans la plage autorisée.
 
 Format de l'horaire : `minute heure jour-du-mois mois jour-de-semaine`
 (0 = dimanche, 1 = lundi, 3 = mercredi).

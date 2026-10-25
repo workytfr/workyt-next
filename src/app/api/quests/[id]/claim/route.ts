@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import User from '@/models/User';
 import connectDB from '@/lib/mongodb';
 import { QuestService } from '@/lib/questService';
@@ -15,9 +14,9 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions);
+    const email = await currentUserEmail();
 
-    if (!session?.user?.email) {
+    if (!email) {
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
@@ -25,12 +24,12 @@ export async function POST(
     }
 
     // Rate limit: 5 claims par minute par compte
-    const rl = rateLimit(`quest-claim:${session.user.email}`, 5, 60_000);
+    const rl = rateLimit(`quest-claim:${email}`, 5, 60_000);
     if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     await connectDB();
     
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json(
         { error: 'Utilisateur non trouvé' },

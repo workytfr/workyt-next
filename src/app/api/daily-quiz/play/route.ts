@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import User from '@/models/User';
 import DailyQuizAttempt from '@/models/DailyQuizAttempt';
 import connectDB from '@/lib/mongodb';
@@ -19,14 +18,14 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET() {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        const email = await currentUserEmail();
+        if (!email) {
             return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
         }
 
         await connectDB();
 
-        const user = await User.findOne({ email: session.user.email });
+        const user = await User.findOne({ email });
         if (!user) {
             return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
         }
@@ -75,18 +74,18 @@ export async function GET() {
  */
 export async function POST(req: NextRequest) {
     try {
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        const email = await currentUserEmail();
+        if (!email) {
             return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
         }
 
         // 10 essais par minute : large pour un QCM à 4 choix, mais coupe le bruteforce scripté.
-        const rl = rateLimit(`daily-quiz-play:${session.user.email}`, 10, 60_000);
+        const rl = rateLimit(`daily-quiz-play:${email}`, 10, 60_000);
         if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
         await connectDB();
 
-        const user = await User.findOne({ email: session.user.email });
+        const user = await User.findOne({ email });
         if (!user) {
             return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
         }

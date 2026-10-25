@@ -1,13 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import { getCalendarData, initializeCalendarPeriod } from '@/lib/calendarService';
 import User from '@/models/User';
 
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const email = await currentUserEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
@@ -22,7 +21,7 @@ export async function GET(req: NextRequest) {
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }

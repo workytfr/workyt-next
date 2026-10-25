@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { currentUserId } from "@/lib/bearerUser";
 import dbConnect from "@/lib/mongodb";
 import Quiz from "@/models/Quiz";
 import Section from "@/models/Section";
@@ -71,12 +70,12 @@ export async function GET(req: NextRequest) {
         }
 
         // 5. Récupérer la progression de l'utilisateur (si connecté)
-        const session = await getServerSession(authOptions);
+        const userId = await currentUserId();
         const progressMap = new Map<string, any>();
 
-        if (session?.user?.id) {
+        if (userId) {
             const userProgress = await CompetencyProgress.find({
-                userId: session.user.id,
+                userId,
                 skillId: { $in: skillIds },
             }).lean();
 

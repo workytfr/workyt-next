@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import connectDB from '@/lib/mongodb';
 import Chest from '@/models/Chest';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
@@ -11,9 +10,9 @@ import { withOdds } from '@/lib/chestOdds';
  */
 export async function GET(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const email = await currentUserEmail();
 
-    if (!session?.user?.email) {
+    if (!email) {
       return NextResponse.json(
         { error: 'Non authentifié' },
         { status: 401 }
@@ -21,7 +20,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Rate limit: 5 requêtes par minute par compte
-    const rl = rateLimit(`chests:${session.user.email}`, 5, 60_000);
+    const rl = rateLimit(`chests:${email}`, 5, 60_000);
     if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     await connectDB();

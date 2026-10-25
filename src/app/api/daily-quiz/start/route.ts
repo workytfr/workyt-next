@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import User from '@/models/User';
 import connectDB from '@/lib/mongodb';
 import { normalizeDate, startDailyQuizTimer } from '@/lib/dailyQuizService';
@@ -24,16 +23,16 @@ export const dynamic = 'force-dynamic';
  */
 export async function POST() {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const email = await currentUserEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    const rl = rateLimit(`daily-quiz-start:${session.user.email}`, 20, 60_000);
+    const rl = rateLimit(`daily-quiz-start:${email}`, 20, 60_000);
     if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     await connectDB();
-    const user = await User.findOne({ email: session.user.email }).select('_id').lean<{ _id: any }>();
+    const user = await User.findOne({ email }).select('_id').lean<{ _id: any }>();
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }

@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import OwnedCosmetic from '@/models/OwnedCosmetic';
@@ -13,12 +12,12 @@ import { borderFilename } from '@/lib/profileFrames';
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const email = await currentUserEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
@@ -49,16 +48,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     await dbConnect();
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const email = await currentUserEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Non autorisé' }, { status: 401 });
     }
 
     // Rate limit: 10 équipements par minute par compte
-    const rl = rateLimit(`inventory-equip:${session.user.email}`, 10, 60_000);
+    const rl = rateLimit(`inventory-equip:${email}`, 10, 60_000);
     if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }

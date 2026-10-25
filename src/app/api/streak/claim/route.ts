@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { currentUserEmail } from '@/lib/bearerUser';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 import { StreakService } from '@/lib/streakService';
@@ -8,18 +7,18 @@ import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
+    const email = await currentUserEmail();
+    if (!email) {
       return NextResponse.json({ error: 'Non autorise' }, { status: 401 });
     }
 
     // Rate limit: 5 claims par minute
-    const rl = rateLimit(`streak-claim:${session.user.email}`, 5, 60_000);
+    const rl = rateLimit(`streak-claim:${email}`, 5, 60_000);
     if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
 
     await dbConnect();
 
-    const user = await User.findOne({ email: session.user.email });
+    const user = await User.findOne({ email });
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouve' }, { status: 404 });
     }

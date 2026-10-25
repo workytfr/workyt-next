@@ -1,6 +1,5 @@
-import { getServerSession } from "next-auth";
+import { currentUserEmail } from "@/lib/bearerUser";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/authOptions";
 import connectDB from "@/lib/mongodb";
 import User from "@/models/User";
 
@@ -9,15 +8,15 @@ export async function GET() {
     try {
         await connectDB();
 
-        const session = await getServerSession(authOptions);
-        if (!session?.user?.email) {
+        const email = await currentUserEmail();
+        if (!email) {
             return NextResponse.json(
                 { error: "Non autorisé" },
                 { status: 401 }
             );
         }
 
-        const user = await User.findOne({ email: session.user.email }).select("points");
+        const user = await User.findOne({ email }).select("points");
         if (!user) {
             return NextResponse.json(
                 { error: "Utilisateur non trouvé" },

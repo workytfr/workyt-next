@@ -60,6 +60,21 @@ const JOBS: Record<string, Job> = {
     const { runMentorshipDaily } = await import('@/lib/cron/mentorship');
     return runMentorshipDaily();
   },
+  // Chaque jour 18h : quiz du jour pas fait, ordres de clan (app mobile, sons dédiés)
+  'relances-soir': async () => {
+    const { runEveningNudges } = await import('@/lib/cron/nudges');
+    return runEveningNudges('soir');
+  },
+  // Chaque jour 20h30 : dernière chance quiz du jour / série en danger
+  'relances-derniere-chance': async () => {
+    const { runEveningNudges } = await import('@/lib/cron/nudges');
+    return runEveningNudges('derniere');
+  },
+  // Chaque jour 17h : « ça fait longtemps » après 2, 5 et 10 jours d'absence
+  'relances-inactifs': async () => {
+    const { runInactiveNudges } = await import('@/lib/cron/nudges');
+    return runInactiveNudges();
+  },
   // Lundi 00h20 : série du binôme pour la semaine écoulée
   'suivi-semaine': async () => {
     const { runMentorshipWeekly } = await import('@/lib/cron/mentorship');
