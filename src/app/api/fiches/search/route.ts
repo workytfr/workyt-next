@@ -29,7 +29,7 @@ export const GET = async (req: NextRequest) => {
     const level = searchParams.get("level");
     const subject = searchParams.get("subject");
     // « popular » : les plus aimées d'abord (carrousel de l'app mobile)
-    const sort = searchParams.get("sort") === "popular" ? { likes: -1 as const, createdAt: -1 as const } : { createdAt: -1 as const };
+    const sort: Record<string, 1 | -1> = searchParams.get("sort") === "popular" ? { likes: -1, createdAt: -1 } : { createdAt: -1 };
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const page = parseInt(searchParams.get("page") || "1", 10);
