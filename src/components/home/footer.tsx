@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import WorkytLogo from '@/components/ui/WorkytLogo';
+import { openConsentPanel } from '@/lib/consent';
 import {
     InstagramLogoIcon,
     TwitterLogoIcon,
@@ -168,6 +169,15 @@ const Footer: React.FC = () => {
                                         </Link>
                                     </li>
                                 ))}
+                                <li>
+                                    <button
+                                        type="button"
+                                        onClick={openConsentPanel}
+                                        className="text-sm text-[#78716c] hover:text-[#f97316] transition-colors duration-200"
+                                    >
+                                        Gérer les cookies
+                                    </button>
+                                </li>
                             </ul>
                         </div>
                     </div>

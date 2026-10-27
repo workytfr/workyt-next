@@ -1,6 +1,8 @@
 import { jsonLd } from "@/lib/jsonLd";
 import "./globals.css";
 import Script from "next/script";
+import CookieConsent from "@/components/consent/CookieConsent";
+import { CONSENT_BOOTSTRAP_SCRIPT } from "@/lib/consent";
 import ClientProviders from "@/components/ClientProviders";
 import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
 import { extractRouterConfig } from "uploadthing/server";
@@ -144,74 +146,32 @@ export default function RootLayout({ children }: RootLayoutProps) {
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: jsonLd(organizationSchema) }}
         />
+        {/* Avant tout le reste : Google reçoit « refusé » par défaut */}
+        <Script id="consent-default" strategy="beforeInteractive">
+            {CONSENT_BOOTSTRAP_SCRIPT}
+        </Script>
         <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <ClientProviders>
             {children}
         </ClientProviders>
         {/* Analytics Umami — afterInteractive pour compter la pageview sans
-            bloquer le LCP ; le recorder est lazyOnload (non critique).
+            bloquer le LCP. Sans cookie, donc sans consentement ; l'enregistrement
+            de session (recorder) attend l'accord, voir CookieConsent.
             Piloté par NEXT_PUBLIC_UMAMI_URL / NEXT_PUBLIC_UMAMI_WEBSITE_ID :
             variables absentes (dev, préproduction) = aucun script chargé, donc
             pas de pageviews parasites dans les statistiques de production. */}
         {umamiUrl && umamiWebsiteId && (
-            <>
-                <Script
-                    id="umami-analytics"
-                    src={`${umamiUrl}/script.js`}
-                    data-website-id={umamiWebsiteId}
-                    data-performance="true"
-                    strategy="afterInteractive"
-                />
-                <Script
-                    id="umami-recorder"
-                    src={`${umamiUrl}/recorder.js`}
-                    data-website-id={umamiWebsiteId}
-                    strategy="lazyOnload"
-                />
-            </>
+            <Script
+                id="umami-analytics"
+                src={`${umamiUrl}/script.js`}
+                data-website-id={umamiWebsiteId}
+                data-performance="true"
+                strategy="afterInteractive"
+            />
         )}
-        {/* Cookie Consent Scripts — chargés via next/script (lazyOnload pour pas bloquer le LCP) */}
-        <Script
-            id="consent-stub"
-            src="https://cache.consentframework.com/js/pa/28806/c/pjmlS/stub"
-            strategy="lazyOnload"
-            referrerPolicy="unsafe-url"
-        />
-        <Script
-            id="consent-cmp"
-            src="https://choices.consentframework.com/js/pa/28806/c/pjmlS/cmp"
-            strategy="lazyOnload"
-            referrerPolicy="unsafe-url"
-        />
-        {/* Google Ads / GTM — lazyOnload : en afterInteractive, Next ajoutait un
-            preload dans le <head> qui concurrençait le CSS et les polices. Les
-            appels gtag() ci-dessous s'empilent dans dataLayer en attendant. */}
-        <Script
-            id="gtag-src"
-            src="https://www.googletagmanager.com/gtag/js?id=AW-10979332706"
-            strategy="lazyOnload"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-            {`
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('js', new Date());
-                gtag('config', 'AW-10979332706');
-                gtag('event', 'conversion', {'send_to': 'AW-10979332706/HSH7CP-6g9sDEOKkrfMo'});
-            `}
-        </Script>
-        {/* Mailchimp — lazyOnload car non critique */}
-        <Script id="mcjs" strategy="lazyOnload">
-            {`
-                (function(c,h,i,m,p){
-                    m = c.createElement(h),
-                    p = c.getElementsByTagName(h)[0],
-                    m.async = 1;
-                    m.src = i;
-                    p.parentNode.insertBefore(m,p);
-                })(document,"script","https://chimpstatic.com/mcjs-connected/js/users/7e5e31a95d8d924397deba535/7bee0dc79cb596b3ac1a6081a.js");
-            `}
-        </Script>
+        {/* Consentement (Consent Mode v2) : bandeau maison, puis Google Ads,
+            Mailchimp et l'enregistrement de session Umami selon le choix. */}
+        <CookieConsent umamiUrl={umamiUrl} umamiWebsiteId={umamiWebsiteId} />
         </body>
         </html>
     );

@@ -4,7 +4,7 @@ import Link from "next/link";
 export const metadata: Metadata = {
     title: { absolute: "Politique de confidentialité | Workyt" },
     description:
-        "Politique de confidentialité de Workyt : quelles données nous collectons, pourquoi, et comment exercer tes droits RGPD. Asso loi 1901, sans tracking commercial.",
+        "Politique de confidentialité de Workyt : quelles données nous collectons, pourquoi, et comment exercer tes droits RGPD. Asso loi 1901, sans publicité.",
     alternates: { canonical: "https://workyt.fr/politique-confidentialite" },
     openGraph: {
         title: "Politique de confidentialité | Workyt",
@@ -30,7 +30,7 @@ export default function PolitiqueConfidentialitePage() {
                 Politique de confidentialité
             </h1>
             <p className="text-sm text-gray-500 mb-8">
-                Dernière mise à jour : août 2026
+                Dernière mise à jour : octobre 2026
             </p>
 
             <section className="prose prose-gray max-w-none">
@@ -39,8 +39,8 @@ export default function PolitiqueConfidentialitePage() {
                     Workyt est une association loi 1901 à but non lucratif. Nous traitons
                     tes données personnelles dans le strict respect du{" "}
                     <strong>Règlement Général sur la Protection des Données (RGPD)</strong>.
-                    Nous ne vendons jamais tes données, nous ne les transmettons pas à des
-                    annonceurs, nous n'utilisons aucun cookie publicitaire.
+                    Nous ne vendons jamais tes données, nous n&apos;affichons aucune publicité et
+                    aucun traceur non essentiel n&apos;est déposé sans ton accord.
                 </p>
 
                 <h2>Responsable du traitement</h2>
@@ -100,8 +100,9 @@ export default function PolitiqueConfidentialitePage() {
                     </li>
                     <li>
                         <strong>Cookies de session</strong> — strictement nécessaires au
-                        fonctionnement du site, donc dispensés de consentement. Nous
-                        n&apos;en posons aucun autre.
+                        fonctionnement du site, donc dispensés de consentement. Les autres
+                        traceurs (mesure d&apos;audience détaillée, Google Ads, Mailchimp)
+                        reposent sur ton consentement (article 6.1.a).
                     </li>
                     <li>
                         <strong>Logs techniques</strong> — intérêt légitime : diagnostic
@@ -188,14 +189,21 @@ export default function PolitiqueConfidentialitePage() {
                 </p>
 
                 <h2>Cookies utilisés</h2>
+                <p>
+                    À ta première visite, un bandeau te laisse accepter, refuser ou choisir
+                    catégorie par catégorie. Rien n&apos;est déposé tant que tu n&apos;as pas
+                    accepté, et fermer le bandeau vaut refus. Ton choix est conservé 6 mois,
+                    et tu peux le modifier à tout moment via le lien « Gérer les cookies »
+                    en bas de chaque page.
+                </p>
                 <ul>
-                    <li><strong>Cookies de session :</strong> nécessaires à l'authentification (durée : session).</li>
-                    <li><strong>Préférences :</strong> mémorisation de tes choix d'affichage (durée : 1 an).</li>
+                    <li><strong>Essentiels (toujours actifs) :</strong> session de connexion, sécurité et préférences d&apos;affichage. La mesure d&apos;audience Umami, hébergée par l&apos;association, fonctionne sans cookie et ne sert qu&apos;à des statistiques anonymes.</li>
+                    <li><strong>Mesure d&apos;audience (avec ton accord) :</strong> enregistrement anonymisé de sessions Umami, pour repérer ce qui gêne la navigation.</li>
+                    <li><strong>Publicité et newsletter (avec ton accord) :</strong> Google Ads, pour mesurer l&apos;efficacité des annonces qui font connaître Workyt, et Mailchimp, pour les emails de l&apos;association. Workyt n&apos;affiche aucune publicité.</li>
                 </ul>
                 <p>
-                    Workyt n&apos;utilise <strong>aucun cookie publicitaire</strong>, aucun
-                    pixel de tracking commercial, et <strong>aucun outil de mesure
-                    d&apos;audience</strong>.
+                    Nous utilisons le mode de consentement de Google (Consent Mode v2) : sans
+                    ton accord, le script Google n&apos;est pas chargé.
                 </p>
 
                 <h2>Conservation des données</h2>
@@ -214,6 +222,7 @@ export default function PolitiqueConfidentialitePage() {
                     <li><strong>Cloudflare R2</strong> (stockage des fichiers déposés)</li>
                     <li><strong>UploadThing</strong> (téléversement de fichiers depuis l&apos;éditeur)</li>
                     <li><strong>Mailchimp</strong> (envoi d&apos;emails — uniquement si tu t&apos;es inscrit)</li>
+                    <li><strong>Google Ads</strong> (mesure des campagnes — uniquement avec ton accord)</li>
                 </ul>
 
                 <h2>Où sont hébergées tes données</h2>
@@ -234,8 +243,8 @@ export default function PolitiqueConfidentialitePage() {
                 <p>
                     En revanche, certains prestataires listés ci-dessus sont établis aux
                     États-Unis ou y disposent d&apos;infrastructures — notamment{" "}
-                    <strong>Cloudflare</strong>, <strong>UploadThing</strong> et{" "}
-                    <strong>Mailchimp</strong>. Les données qui transitent par eux
+                    <strong>Cloudflare</strong>, <strong>UploadThing</strong>,{" "}
+                    <strong>Mailchimp</strong> et <strong>Google</strong>. Les données qui transitent par eux
                     peuvent être traitées hors de l&apos;Union européenne, dans le cadre
                     des garanties prévues par le RGPD (clauses contractuelles types ou
                     certification au Data Privacy Framework selon le prestataire).

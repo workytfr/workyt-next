@@ -137,7 +137,7 @@ const nextConfig = {
                     },
                     {
                         key: "Content-Security-Policy",
-                        value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${umamiOrigin} https://*.consentframework.com https://www.googletagmanager.com https://www.google-analytics.com https://cdn.cookie-script.com https://chimpstatic.com https://*.list-manage.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; connect-src 'self' blob: https: wss:; frame-src 'self' blob: https://www.google.com https://td.doubleclick.net https://www.youtube-nocookie.com; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:; base-uri 'self'; form-action 'self';`,
+                        value: `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' ${umamiOrigin} https://www.googletagmanager.com https://www.google-analytics.com https://chimpstatic.com https://*.list-manage.com https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https: http:; connect-src 'self' blob: https: wss:; frame-src 'self' blob: https://www.google.com https://td.doubleclick.net https://www.youtube-nocookie.com; media-src 'self' https:; object-src 'none'; worker-src 'self' blob:; base-uri 'self'; form-action 'self';`,
                     },
                     {
                         key: "Permissions-Policy",
