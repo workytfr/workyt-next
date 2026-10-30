@@ -100,7 +100,7 @@ function extractKey(value: string | null | undefined): string | null {
 
 /**
  * Extrait toutes les clés référencées dans une string markdown
- * (cherche ![](url), [](url), <img src="...">, <!--tldraw:url-->).
+ * (cherche ![](url), [](url), <img src="...">, <!--board:url--> et l'ancien <!--tldraw:url-->).
  */
 function extractKeysFromMarkdown(md: string | null | undefined): string[] {
     if (!md) return [];
@@ -109,7 +109,7 @@ function extractKeysFromMarkdown(md: string | null | undefined): string[] {
         /!\[[^\]]*\]\(([^)\s]+)/g,                // markdown image
         /\[[^\]]*\]\(([^)\s]+)/g,                 // markdown link
         /<img[^>]+src=["']([^"']+)["']/gi,        // html img
-        /<!--\s*tldraw\s*:\s*([^>\s]+)\s*-->/g,   // tldraw snapshot comment
+        /<!--\s*(?:tldraw|board)\s*:\s*([^>\s]+)\s*-->/g, // tableau blanc (JSON)
         /<a[^>]+href=["']([^"']+)["']/gi,         // html link
     ];
     for (const re of patterns) {

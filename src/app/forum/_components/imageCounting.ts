@@ -1,4 +1,4 @@
-// Helper partagé : compter les dessins (tldraw) embarqués dans le markdown.
+// Helper partagé : compter les dessins (tableau blanc) embarqués dans le markdown.
 // Utilisé uniquement sur le forum pour appliquer le quota et le malus.
 
 // L'éditeur insère les dessins comme `![dessin](url)` avec alt="dessin".

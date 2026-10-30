@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowUpRight, Calculator, GraduationCap, Timer } from "lucide-react";
+import { ArrowUpRight, Calculator, GraduationCap, PenTool, Timer } from "lucide-react";
 import { Eyebrow } from "@/components/wk/primitives";
 
 export const metadata: Metadata = {
-    title: "Kits de l'élève : Pomodoro et calculateurs de moyenne",
+    title: "Kits de l'élève : Pomodoro, tableau blanc et calculateurs de moyenne",
     description:
-        "Outils gratuits pour réviser : minuteur Pomodoro, calculateur de moyenne du bac 2027 et du brevet avec les nouveaux coefficients.",
+        "Outils gratuits pour réviser : minuteur Pomodoro, tableau blanc par matière, calculateur de moyenne du bac 2027 et du brevet avec les nouveaux coefficients.",
     alternates: { canonical: "https://workyt.fr/kits" },
 };
 
@@ -18,6 +18,14 @@ const KITS = [
         title: "Pomodoro : Corvy et Foxy",
         text: "Des sessions de travail entrecoupées de pauses, avec sons d'ambiance et radio lofi. Foxy tente de te distraire : garde ton fromage !",
         emoji: "🧀",
+    },
+    {
+        href: "/kits/tableau-blanc",
+        icon: PenTool,
+        tag: "Toutes matières",
+        title: "Tableau blanc",
+        text: "Repère et courbes, cercle trigo, circuits électriques, verrerie de chimie, formules, frise chronologique, cahier Seyès… Gardé sur ton appareil.",
+        emoji: "✏️",
     },
     {
         href: "/kits/moyenne-bac",

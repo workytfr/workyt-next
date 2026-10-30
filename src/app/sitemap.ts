@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/progression`, lastModified: STATIC_LASTMOD, changeFrequency: 'weekly', priority: 0.6 },
     { url: `${baseUrl}/kits`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${baseUrl}/kits/pomodoro`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${baseUrl}/kits/tableau-blanc`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${baseUrl}/kits/moyenne-bac`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/kits/moyenne-brevet`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${baseUrl}/award`, lastModified: STATIC_LASTMOD, changeFrequency: 'monthly', priority: 0.5 },

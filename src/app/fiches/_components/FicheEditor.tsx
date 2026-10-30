@@ -341,7 +341,8 @@ export default function FicheEditor({ value, onChange, placeholder }: FicheEdito
     const insertDrawing = (pngUrl: string, snapshotUrl: string) => {
         if (!editor) return;
         editor.chain().focus().setImage({ src: pngUrl, alt: "dessin" }).run();
-        editor.chain().focus().insertContent(`<!--tldraw:${snapshotUrl}-->`).run();
+        // Référence du tableau (JSON) : le nettoyage R2 ne doit pas le supprimer
+        editor.chain().focus().insertContent(`<!--board:${snapshotUrl}-->`).run();
         setDrawOpen(false);
     };
 
