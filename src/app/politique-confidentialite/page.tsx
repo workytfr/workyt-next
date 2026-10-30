@@ -177,7 +177,11 @@ export default function PolitiqueConfidentialitePage() {
                 <ul>
                     <li><strong>Accès :</strong> obtenir une copie de tes données.</li>
                     <li><strong>Rectification :</strong> corriger des données inexactes.</li>
-                    <li><strong>Suppression :</strong> demander la suppression de ton compte et de tes données.</li>
+                    <li>
+                        <strong>Suppression :</strong> supprimer ton compte et tes données, toi-même et immédiatement, depuis la page{" "}
+                        <Link href="/supprimer-mon-compte" className="text-orange-500 hover:underline">Supprimer mon compte</Link>{" "}
+                        (ou depuis l&apos;application mobile).
+                    </li>
                     <li><strong>Portabilité :</strong> recevoir tes données dans un format réutilisable.</li>
                     <li><strong>Opposition :</strong> t'opposer au traitement.</li>
                     <li><strong>Limitation :</strong> demander la limitation du traitement.</li>

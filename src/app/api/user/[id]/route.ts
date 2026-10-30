@@ -9,6 +9,7 @@ import User from "@/models/User";
 import Question from "@/models/Question";
 import Answer from "@/models/Answer";
 import Revision from "@/models/Revision";
+import { isDeletedUserPlaceholder } from "@/lib/deletedUser";
 
 // ✅ Récupère un utilisateur, ses fiches de révision, ses questions et ses réponses
 export const GET = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
@@ -55,7 +56,9 @@ export const GET = async (req: Request, { params }: { params: Promise<{ id: stri
                 .select("content question createdAt likes status")
                 .lean(),
         ]);
-        if (!user) {
+        // Le compte « Utilisateur supprimé » n'a pas de profil : il regroupe les
+        // contributions de tous les comptes supprimés.
+        if (!user || isDeletedUserPlaceholder(user)) {
             return NextResponse.json({ error: "User not found" }, { status: 404 });
         }
 
