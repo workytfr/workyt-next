@@ -12,7 +12,7 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { useSession, signIn } from "next-auth/react";
 import SectionManager from "./SectionManager";
-import { UploadButton } from "@/utils/uploadthing";
+import { UploadButton } from "@/components/ui/ImageUploadButton";
 
 interface CourseFormProps {
     course?: any;

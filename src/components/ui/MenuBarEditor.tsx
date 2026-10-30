@@ -18,7 +18,7 @@ import {
 import { BLOCK_TYPES } from "./editor/blockTypes";
 import { Toggle } from "./Toggle";
 import { Editor } from "@tiptap/react";
-import { UploadButton } from "@/utils/uploadthing";
+import { UploadButton } from "@/components/ui/ImageUploadButton";
 
 export default function MenuBarEditor({ editor, hideImage = false }: { editor: Editor | null; hideImage?: boolean }) {
     if (!editor) return null;
@@ -148,7 +148,7 @@ export default function MenuBarEditor({ editor, hideImage = false }: { editor: E
                     onClientUploadComplete={(res) => {
                         if (res && res.length > 0) {
                             const imageUrl = res[0].url;
-                            editor.chain().focus().setImage({ src: imageUrl, alt: "Image uploadée via UploadThing" }).run();
+                            editor.chain().focus().setImage({ src: imageUrl, alt: "" }).run();
                         }
                     }}
                     onUploadError={(error: Error) => {

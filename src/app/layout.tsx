@@ -4,9 +4,6 @@ import Script from "next/script";
 import CookieConsent from "@/components/consent/CookieConsent";
 import { CONSENT_BOOTSTRAP_SCRIPT } from "@/lib/consent";
 import ClientProviders from "@/components/ClientProviders";
-import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
-import { extractRouterConfig } from "uploadthing/server";
-import { ourFileRouter } from "@/app/api/uploadthing/core";
 import { ReactNode } from "react";
 import { Metadata, Viewport } from "next";
 import { Funnel_Display, Montserrat } from "next/font/google";
@@ -150,7 +147,6 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <Script id="consent-default" strategy="beforeInteractive">
             {CONSENT_BOOTSTRAP_SCRIPT}
         </Script>
-        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
         <ClientProviders>
             {children}
         </ClientProviders>

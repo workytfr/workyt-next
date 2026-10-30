@@ -20,6 +20,7 @@ const s3 = new S3Client({
     // vrai fichier envoyé par le navigateur. On ne calcule la somme que si l'API l'exige.
     requestChecksumCalculation: "WHEN_REQUIRED",
     responseChecksumValidation: "WHEN_REQUIRED",
+    forcePathStyle: true,
 });
 
 const BUCKET = process.env.S3_BUCKET_NAME!;

@@ -51,7 +51,7 @@ import {
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { UploadButton } from "@/utils/uploadthing";
+import { UploadButton } from "@/components/ui/ImageUploadButton";
 import {
   Dialog,
   DialogContent,

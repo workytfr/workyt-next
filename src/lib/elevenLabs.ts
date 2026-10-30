@@ -1,5 +1,5 @@
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
-import { PutObjectCommand, HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { PutObjectCommand, ListObjectsV2Command, S3Client } from "@aws-sdk/client-s3";
 
 const MAX_CHARACTERS = 5000;
 
@@ -264,15 +264,15 @@ export function stripHtmlToText(html: string): string {
 }
 
 /**
- * Vérifie si un audio existe déjà sur R2 pour cette leçon
+ * Vérifie si un audio existe déjà dans le stockage pour cette leçon.
+ * Par listing et non par HEAD : le MinIO de Youss, derrière Cloudflare, refuse
+ * HEAD (403) — on régénérerait alors l'audio (payant) à chaque appel.
  */
 export async function audioExistsOnR2(lessonId: string): Promise<boolean> {
+    const key = `audio-tts/${lessonId}.mp3`;
     try {
-        await s3.send(new HeadObjectCommand({
-            Bucket: bucketName,
-            Key: `audio-tts/${lessonId}.mp3`,
-        }));
-        return true;
+        const res = await s3.send(new ListObjectsV2Command({ Bucket: bucketName, Prefix: key, MaxKeys: 1 }));
+        return (res.Contents || []).some((o) => o.Key === key);
     } catch {
         return false;
     }

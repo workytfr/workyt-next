@@ -33,6 +33,12 @@ const nextConfig = {
                 pathname: "/**",
             },
             {
+                // Stockage public : MinIO de Youss (bucket workyt-learn)
+                protocol: "https",
+                hostname: "s3.youss.dev",
+                pathname: "/**",
+            },
+            {
                 protocol: "https",
                 hostname: "utfs.io",
                 pathname: "/**",

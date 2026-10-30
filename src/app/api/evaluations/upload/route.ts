@@ -3,6 +3,7 @@ import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuidv4 } from 'uuid';
 import authMiddleware from '@/middlewares/authMiddleware';
 import { rateLimit, rateLimitResponse } from '@/lib/rateLimit';
+import { publicUrl } from '@/lib/publicStorage';
 
 const s3 = new S3Client({
     region: process.env.S3_REGION || 'auto',
@@ -11,6 +12,7 @@ const s3 = new S3Client({
         accessKeyId: process.env.S3_ACCESS_KEY!,
         secretAccessKey: process.env.S3_SECRET_KEY!,
     },
+    forcePathStyle: true,
 });
 
 const bucketName = process.env.S3_BUCKET_NAME!;
@@ -84,11 +86,11 @@ export async function POST(req: NextRequest) {
                 Key: fileKey,
                 Body: buffer,
                 ContentType: file.type,
-                ACL: 'public-read',
             }));
 
-            const baseUrl = process.env.R2_PUBLIC_URL || process.env.S3_ENDPOINT;
-            uploadedUrls.push(`${baseUrl}/${fileKey}`);
+            // Adresse du stockage public ; l'affichage passe par /api/file-proxy?file=,
+            // qui en extrait la clé et exige une session pour les copies d'évaluation
+            uploadedUrls.push(publicUrl(fileKey));
         }
 
         return NextResponse.json({ urls: uploadedUrls }, { status: 201 });

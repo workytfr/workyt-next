@@ -98,11 +98,15 @@ export function extractFileKeyFromUrl(fileUrl: string): string {
     }
 }
 
-/** Retire le préfixe bucket du chemin si présent (ex: workyt/fiches/ -> fiches/) */
+/**
+ * Retire le préfixe bucket du chemin si présent (ex: workyt-learn/fiches/ -> fiches/).
+ * `workyt` est l'ancien bucket R2 : des adresses en base pointent encore dessus.
+ */
+const LEGACY_BUCKETS = ['workyt'];
 function stripBucketPrefix(key: string): string {
-    const bucket = process.env.S3_BUCKET_NAME || 'workyt';
-    if (key.startsWith(`${bucket}/`)) {
-        return key.slice(bucket.length + 1);
+    const buckets = [process.env.S3_BUCKET_NAME, ...LEGACY_BUCKETS].filter(Boolean) as string[];
+    for (const bucket of buckets) {
+        if (key.startsWith(`${bucket}/`)) return key.slice(bucket.length + 1);
     }
     return key;
 }

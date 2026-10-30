@@ -17,7 +17,7 @@ import rehypeKatex from "rehype-katex";
 import remarkMath from "remark-math";
 import { useSession, signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
-import { UploadButton } from "@/utils/uploadthing";
+import { UploadButton } from "@/components/ui/ImageUploadButton";
 
 interface ICourse {
     _id: string;

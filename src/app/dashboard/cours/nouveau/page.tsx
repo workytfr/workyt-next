@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import CreationGuide from "./_components/CreationGuide";
 import { educationData } from "@/data/educationData";
-import { UploadButton } from "@/utils/uploadthing";
+import { UploadButton } from "@/components/ui/ImageUploadButton";
 import Image from "next/image";
 import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "@uiw/react-md-editor/markdown-editor.css";
