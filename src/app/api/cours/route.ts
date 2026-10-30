@@ -34,7 +34,10 @@ export async function GET(req: NextRequest) {
 
         // Pour un accès public aux cours, on affiche uniquement ceux qui sont publiés
         // Les utilisateurs avec des rôles spécifiques peuvent voir tous les cours
-        if (!user || !(await hasPermission(user, 'course.edit'))) {
+        // `public=1` (catalogue de l'app mobile) : publiés seulement, même pour
+        // l'équipe, comme la page /cours du site
+        const publicOnly = searchParams.get("public") === "1";
+        if (publicOnly || !user || !(await hasPermission(user, 'course.edit'))) {
             filters.status = "publie";
         }
 
