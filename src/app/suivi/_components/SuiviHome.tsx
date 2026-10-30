@@ -20,6 +20,7 @@ import {
     Sparkles,
     ChevronRight,
     LifeBuoy,
+    MessageCircle,
 } from "lucide-react";
 import { educationData } from "@/data/educationData";
 import {
@@ -397,7 +398,8 @@ function MySuiviCard({ m }: { m: MentorshipSummary }) {
                 {m.checkinPending && <span className="wk-chip !border-emerald-200 !bg-emerald-50 text-emerald-700">Point d&apos;étape</span>}
                 {m.unread > 0 && (
                     <span className="wk-chip !border-[var(--wk-accent)] !bg-[var(--wk-accent)] text-white">
-                        {m.unread} nouveau{m.unread > 1 ? "x" : ""}
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        {m.unread > 1 ? `${m.unread} nouvelles réponses` : "Nouvelle réponse"}
                     </span>
                 )}
                 <ChevronRight className="ml-auto h-4 w-4 text-[rgba(26,21,18,0.35)] transition group-hover:translate-x-0.5" />

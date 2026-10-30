@@ -18,8 +18,12 @@ import {
     CircleHelp,
     Blocks,
     ChevronDown,
+    Paperclip,
+    FileText,
+    Download,
 } from "lucide-react";
-import { MAX_CONFUSED_LENGTH, MAX_MESSAGE_LENGTH, MOOD_LABELS } from "@/lib/mentorship/config";
+import { ALLOWED_ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES, MAX_CONFUSED_LENGTH, MAX_MESSAGE_LENGTH, MOOD_LABELS } from "@/lib/mentorship/config";
+import { checkForContactDetails } from "@/lib/mentorship/contactFilter";
 import { previewText } from "@/lib/mentorship/plainText";
 import {
     api,
@@ -433,12 +437,15 @@ function MessageItem({
                     </span>
                 )}
 
-                {m.attachment && (
-                    <a href={m.attachment.url} target="_blank" rel="noopener noreferrer" className="mb-1 block overflow-hidden rounded-2xl border border-[rgba(26,21,18,0.1)]">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img src={m.attachment.url} alt={m.attachment.name} className="max-h-72 max-w-full object-contain" loading="lazy" />
-                    </a>
-                )}
+                {m.attachment &&
+                    (m.attachment.mime === "application/pdf" ? (
+                        <PdfCard attachment={m.attachment} />
+                    ) : (
+                        <a href={m.attachment.url} target="_blank" rel="noopener noreferrer" className="mb-1 block overflow-hidden rounded-2xl border border-[rgba(26,21,18,0.1)]">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={m.attachment.url} alt={m.attachment.name} className="max-h-72 max-w-full object-contain" loading="lazy" />
+                        </a>
+                    ))}
 
                 {isBlock ? (
                     <BlockCard
@@ -580,6 +587,34 @@ function ConfusedAction({
     );
 }
 
+function formatSize(bytes: number): string {
+    if (!bytes) return "";
+    if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
+    return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} Mo`;
+}
+
+function PdfCard({ attachment }: { attachment: NonNullable<Message["attachment"]> }) {
+    return (
+        <div className="mb-1 flex w-72 max-w-full items-center gap-3 rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white px-3 py-2.5">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-50 text-red-600">
+                <FileText className="h-5 w-5" />
+            </span>
+            <a href={attachment.url} target="_blank" rel="noopener noreferrer" className="min-w-0 flex-1 hover:underline" title="Ouvrir le PDF">
+                <span className="block truncate text-sm font-semibold text-[var(--wk-ink)]">{attachment.name}</span>
+                <span className="text-[11px] text-[rgba(26,21,18,0.5)]">PDF{attachment.size ? ` · ${formatSize(attachment.size)}` : ""}</span>
+            </a>
+            <a
+                href={`${attachment.url}?download=1`}
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[rgba(26,21,18,0.55)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
+                aria-label={`Télécharger ${attachment.name}`}
+                title="Télécharger"
+            >
+                <Download className="h-4 w-4" />
+            </a>
+        </div>
+    );
+}
+
 function ResourceCard({ a }: { a: Assignment }) {
     const meta = KIND_META[a.kind];
     return (
@@ -703,6 +738,23 @@ function Composer({
         }
     };
     const field = useMarkdownField(text, onChange, MAX_MESSAGE_LENGTH);
+    // Même filtre que le serveur, vérifié pendant la frappe : on prévient AVANT
+    // l'envoi plutôt que de bloquer le message et d'alerter la modération.
+    const contact = useMemo(() => checkForContactDetails(text), [text]);
+
+    const pickFile = (f: File | null) => {
+        setError(null);
+        if (!f) return setFile(null);
+        if (!ALLOWED_ATTACHMENT_TYPES.includes(f.type)) {
+            setFile(null);
+            return setError("Seuls les images (JPEG, PNG, WebP, GIF) et les PDF peuvent être joints.");
+        }
+        if (f.size > MAX_ATTACHMENT_BYTES) {
+            setFile(null);
+            return setError(`Ce fichier pèse ${formatSize(f.size)} : la limite est de 20 Mo. Tu peux l'envoyer en plusieurs parties (un PDF par chapitre, par exemple).`);
+        }
+        setFile(f);
+    };
 
     const closed = detail.status === "closed" || detail.status === "cancelled";
     const waiting = detail.status === "pending";
@@ -723,7 +775,7 @@ function Composer({
 
     const send = async () => {
         const clean = text.trim();
-        if ((!clean && !file) || sending) return;
+        if ((!clean && !file) || sending || contact.blocked) return;
         setSending(true);
         setError(null);
         stopTyping();
@@ -754,11 +806,21 @@ function Composer({
                     <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {error}
                 </p>
             )}
+            {contact.blocked && (
+                <p role="status" className="mb-2 flex gap-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                        Ce message ne pourra pas être envoyé : il contient {contact.reasons.join(", ")}. Pour la sécurité de tous, les échanges restent sur
+                        Workyt. Reformule sans ces informations. Pour un document, utilise le trombone (images et PDF jusqu&apos;à 20 Mo).
+                    </span>
+                </p>
+            )}
             {file && (
                 <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--wk-paper-2)] px-3 py-1 text-xs">
-                    <ImagePlus className="h-3.5 w-3.5" />
+                    {file.type === "application/pdf" ? <FileText className="h-3.5 w-3.5" /> : <ImagePlus className="h-3.5 w-3.5" />}
                     <span className="max-w-[200px] truncate">{file.name}</span>
-                    <button type="button" onClick={() => setFile(null)} aria-label="Retirer l'image">
+                    <span className="text-[rgba(26,21,18,0.5)]">{formatSize(file.size)}</span>
+                    <button type="button" onClick={() => setFile(null)} aria-label="Retirer le fichier">
                         <X className="h-3.5 w-3.5" />
                     </button>
                 </div>
@@ -784,18 +846,18 @@ function Composer({
                     type="button"
                     onClick={() => fileRef.current?.click()}
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[rgba(26,21,18,0.55)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
-                    aria-label="Joindre une image"
-                    title="Joindre une photo de ton exercice"
+                    aria-label="Joindre une image ou un PDF"
+                    title="Joindre une photo ou un PDF (20 Mo max.)"
                 >
-                    <ImagePlus className="h-5 w-5" />
+                    <Paperclip className="h-5 w-5" />
                 </button>
                 <input
                     ref={fileRef}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    accept={ALLOWED_ATTACHMENT_TYPES.join(",")}
                     className="hidden"
                     onChange={(e) => {
-                        setFile(e.target.files?.[0] || null);
+                        pickFile(e.target.files?.[0] || null);
                         e.target.value = "";
                     }}
                 />
@@ -825,7 +887,7 @@ function Composer({
                 <button
                     type="button"
                     onClick={send}
-                    disabled={sending || (!text.trim() && !file)}
+                    disabled={sending || contact.blocked || (!text.trim() && !file)}
                     className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--wk-accent)] text-white shadow-[0_3px_0_#c24a0a] transition hover:-translate-y-px disabled:opacity-40 disabled:shadow-none"
                     aria-label="Envoyer"
                 >

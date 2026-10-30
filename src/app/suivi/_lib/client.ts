@@ -102,7 +102,7 @@ export interface Message {
     author: PublicUser | null;
     kind: "text" | "resource" | "goal" | "checkin" | "checkin_reply" | "event" | "block" | "confused";
     text: string;
-    attachment: { name: string; mime: string; url: string } | null;
+    attachment: { name: string; mime: string; size: number; url: string } | null;
     meta: {
         assignmentId: string | null;
         goalId: string | null;

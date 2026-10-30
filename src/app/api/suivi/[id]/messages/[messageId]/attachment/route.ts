@@ -10,11 +10,12 @@ export const dynamic = 'force-dynamic';
 type Params = { params: Promise<{ id: string; messageId: string }> };
 
 /**
- * GET /api/suivi/[id]/messages/[messageId]/attachment — une image d'un suivi.
+ * GET /api/suivi/[id]/messages/[messageId]/attachment — une image ou un PDF d'un suivi.
  * Servie seulement aux participants et à la modération ; jamais mise en cache
- * par un intermédiaire (`private, no-store`).
+ * par un intermédiaire (`private, no-store`). `?download=1` force le
+ * téléchargement au lieu de l'ouverture dans le navigateur.
  */
-export async function GET(_req: NextRequest, { params }: Params) {
+export async function GET(req: NextRequest, { params }: Params) {
   try {
     const me = await currentSuiviUser();
     if (!me) return unauthorized();
@@ -26,24 +27,24 @@ export async function GET(_req: NextRequest, { params }: Params) {
 
     const msg = await MentorshipMessage.findOne({ _id: messageId, mentorship: access.mentorship._id })
       .select('attachment status author')
-      .lean<{ attachment?: { key: string; mime: string; name: string }; status: string; author?: mongoose.Types.ObjectId }>();
+      .lean<{ attachment?: { key: string; mime: string; name: string; size?: number }; status: string; author?: mongoose.Types.ObjectId }>();
     if (!msg?.attachment?.key) return notFound();
     // Une pièce jointe d'un message bloqué n'est visible que de son auteur et de la modération
     if (msg.status === 'blocked' && access.viewer !== 'moderator' && String(msg.author) !== me.id) return notFound();
 
     const file = await fetchAttachment(msg.attachment.key);
     if (!file.Body) return notFound();
-    const bytes = await file.Body.transformToByteArray();
+    const disposition = req.nextUrl.searchParams.get('download') === '1' ? 'attachment' : 'inline';
+    const headers: Record<string, string> = {
+      'Content-Type': msg.attachment.mime,
+      'Content-Disposition': `${disposition}; filename*=UTF-8''${encodeURIComponent(msg.attachment.name)}`,
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff'
+    };
+    if (file.ContentLength) headers['Content-Length'] = String(file.ContentLength);
 
-    return new NextResponse(Buffer.from(bytes), {
-      status: 200,
-      headers: {
-        'Content-Type': msg.attachment.mime,
-        'Content-Disposition': `inline; filename="${encodeURIComponent(msg.attachment.name)}"`,
-        'Cache-Control': 'private, no-store',
-        'X-Content-Type-Options': 'nosniff'
-      }
-    });
+    // Un PDF peut peser 20 Mo : on le transmet au fil de l'eau plutôt que de le charger en mémoire
+    return new NextResponse(file.Body.transformToWebStream(), { status: 200, headers });
   } catch (error) {
     return serverError('GET pièce jointe suivi', error);
   }

@@ -399,21 +399,33 @@ export async function postMessage(
       status: 'blocked',
       blockedReasons: contact.reasons
     });
-    // Une alerte au plus toutes les 6 h par suivi : assez pour réagir, sans noyer la modération
+    // Un message bloqué isolé est le plus souvent une maladresse (« le Discord
+    // Workyt », une adresse recopiée) : la personne est prévenue et reformule.
+    // La modération n'est alertée qu'à partir de la 2e tentative en 24 h, et
+    // au plus une fois toutes les 6 h par suivi.
     const now = new Date();
-    if (!m.lastBlockedAlertAt || now.getTime() - m.lastBlockedAlertAt.getTime() > 6 * 60 * 60 * 1000) {
+    const recentBlocked = await MentorshipMessage.countDocuments({
+      mentorship: m._id,
+      author: user.id,
+      status: 'blocked',
+      createdAt: { $gte: new Date(now.getTime() - 24 * 60 * 60 * 1000) }
+    });
+    if (
+      recentBlocked >= 2 &&
+      (!m.lastBlockedAlertAt || now.getTime() - m.lastBlockedAlertAt.getTime() > 6 * 60 * 60 * 1000)
+    ) {
       m.lastBlockedAlertAt = now;
       await m.save();
       void notifyModerators(
         user.id,
         id(m._id),
-        'Message bloqué dans un suivi',
-        `${user.username} a tenté d’envoyer des coordonnées (${contact.reasons.join(', ')}) dans un suivi en ${m.subject}.`
+        'Messages bloqués dans un suivi',
+        `${user.username} a tenté ${recentBlocked} fois en 24 h d’envoyer des coordonnées (dernière : ${contact.reasons.join(', ')}) dans un suivi en ${m.subject}.`
       );
     }
     return fail(
       422,
-      `Ton message n’a pas été envoyé : il contient des coordonnées (${contact.reasons.join(', ')}). Pour la sécurité de tous, les échanges se font uniquement ici, sur Workyt. Reformule sans ces informations.`
+      `Ton message n’a pas été envoyé : il contient des coordonnées (${contact.reasons.join(', ')}). Pour la sécurité de tous, les échanges se font uniquement ici, sur Workyt. Reformule sans ces informations ; pour un document, joins-le directement (images et PDF jusqu’à 20 Mo).`
     );
   }
 
@@ -486,7 +498,9 @@ export async function postMessage(
         ? `N’a pas compris : ${confusedAbout}${text ? ` — ${previewText(text, 60)}` : ''}`
         : text
           ? previewText(text)
-          : 'Image envoyée';
+          : attachment?.mime === 'application/pdf'
+            ? `PDF envoyé : ${attachment.name}`
+            : 'Image envoyée';
   await Promise.all(
     recipients.map((r) =>
       notify(
@@ -498,9 +512,11 @@ export async function postMessage(
           ? 'Message de la modération'
           : kind === 'confused'
             ? `${user.username} a besoin d’une autre explication`
-            : `Nouveau message de ${user.username}`,
+            : `Nouveau message de ${user.username} · suivi en ${m.subject}`,
         kind === 'checkin_reply' ? `Point d’étape : ${input.mood}` : preview,
-        { dedupeUnread: viewer !== 'moderator' }
+        viewer === 'moderator'
+          ? {}
+          : { group: { title: (n) => `${n} nouveaux messages de ${user.username} · suivi en ${m.subject}` } }
       )
     )
   );

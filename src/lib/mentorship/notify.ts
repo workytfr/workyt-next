@@ -21,19 +21,38 @@ export async function notify(
   mentorshipId: string,
   title: string,
   message: string,
-  opts: { dedupeUnread?: boolean } = {}
+  opts: {
+    dedupeUnread?: boolean;
+    /**
+     * Regroupe dans la notification non lue du suivi au lieu d'en créer une
+     * autre : elle reprend le dernier extrait, compte les messages et remonte
+     * en haut de la cloche. Pas de nouveau push (seule la création en envoie).
+     */
+    group?: { title: (count: number) => string };
+  } = {}
 ): Promise<void> {
   try {
-    // Un seul « nouveau message » non lu par suivi : dix messages d'affilée
-    // ne doivent pas produire dix notifications.
-    if (opts.dedupeUnread) {
-      const already = await Notification.exists({
+    if (opts.dedupeUnread || opts.group) {
+      const existing = await Notification.findOne({
         recipient: recipientId,
         type,
         isRead: false,
+        isArchived: { $ne: true },
         'relatedEntity.id': new mongoose.Types.ObjectId(mentorshipId)
       });
-      if (already) return;
+      if (existing && opts.group) {
+        const count = (existing.groupCount ?? 1) + 1;
+        existing.sender = new mongoose.Types.ObjectId(senderId);
+        existing.title = opts.group.title(count);
+        existing.message = message;
+        existing.groupCount = count;
+        existing.createdAt = new Date();
+        await existing.save();
+        return;
+      }
+      // Un seul « nouveau message » non lu par suivi : dix messages d'affilée
+      // ne doivent pas produire dix notifications.
+      if (existing) return;
     }
     await NotificationService.createNotification({
       type,

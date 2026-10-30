@@ -145,6 +145,7 @@ export async function listMessages(m: IMentorship, viewer: SuiviViewerRole, user
       ? {
           name: x.attachment.name,
           mime: x.attachment.mime,
+          size: x.attachment.size || 0,
           url: `/api/suivi/${m._id.toString()}/messages/${x._id.toString()}/attachment`
         }
       : null,

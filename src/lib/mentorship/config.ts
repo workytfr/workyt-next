@@ -59,8 +59,9 @@ export const MAX_CONFUSED_LENGTH = 500;
 export const MAX_PINNED_MESSAGES = 5;
 export const MAX_QUICK_REPLIES = 20;
 export const MAX_QUICK_REPLY_LENGTH = 500;
-export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
-export const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+/** Images et PDF (cours du CNED, sujets scannés…) : 20 Mo couvrent un PDF de cours complet */
+export const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+export const ALLOWED_ATTACHMENT_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'application/pdf'];
 
 /**
  * Gamification — barème.

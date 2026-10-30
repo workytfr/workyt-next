@@ -167,6 +167,13 @@ export default function MySuivisTab({ goToQueue }: { goToQueue: () => void }) {
     );
 }
 
+/** L'élève a parlé en dernier : c'est au bénévole de répondre, même depuis quelques minutes */
+function studentWaiting(m: MentorshipSummary) {
+    if (m.status !== "active" || !m.lastStudentActivityAt) return false;
+    const mt = m.lastMentorActivityAt ? new Date(m.lastMentorActivityAt).getTime() : 0;
+    return new Date(m.lastStudentActivityAt).getTime() > mt;
+}
+
 /** Jours depuis lesquels l'élève attend une réponse (0 s'il n'attend pas) */
 function waitingDays(m: MentorshipSummary) {
     if (!m.lastStudentActivityAt) return 0;
@@ -176,7 +183,7 @@ function waitingDays(m: MentorshipSummary) {
 }
 
 function urgency(m: MentorshipSummary) {
-    return (m.unread > 0 ? 100 : 0) + waitingDays(m) * 10 + (m.checkinPending ? 5 : 0) - (m.status === "paused" ? 1000 : 0);
+    return (m.unread > 0 ? 100 : 0) + (studentWaiting(m) ? 50 : 0) + waitingDays(m) * 10 + (m.checkinPending ? 5 : 0) - (m.status === "paused" ? 1000 : 0);
 }
 
 function messagesTitle(m: MentorshipSummary) {
@@ -198,7 +205,7 @@ function Messages({ m }: { m: MentorshipSummary }) {
 function Overview({ current, past }: { current: MentorshipSummary[]; past: MentorshipSummary[] }) {
     const all = [...current, ...past];
     const messages = current.reduce((n, m) => n + (m.activity?.messages || 0), 0);
-    const waiting = current.filter((m) => m.status === "active" && waitingDays(m) >= 1).length;
+    const waiting = current.filter(studentWaiting).length;
     const avg = all.length ? Math.round(all.reduce((n, m) => n + (m.activity?.durationDays || 0), 0) / all.length) : 0;
     const stats = [
         { label: "Suivis en cours", value: String(current.length) },
@@ -255,9 +262,9 @@ function CurrentTable({ list }: { list: MentorshipSummary[] }) {
                                                 {m.unread} non lu{m.unread > 1 ? "s" : ""}
                                             </span>
                                         )}
-                                        {waiting >= 1 && m.status === "active" && (
+                                        {studentWaiting(m) && (
                                             <span className={`dash-badge ${waiting >= MENTOR_REMINDER_DAYS ? "dash-badge-danger" : "dash-badge-warning"}`}>
-                                                Attend depuis {waiting} j
+                                                {waiting >= 1 ? `À toi de répondre · ${waiting} j` : "À toi de répondre"}
                                             </span>
                                         )}
                                     </div>
@@ -289,13 +296,13 @@ function SuiviCard({ m }: { m: MentorshipSummary }) {
                 ) : null}
             </div>
 
-            {waiting >= 1 && m.status === "active" && (
+            {studentWaiting(m) && (
                 <p className={`mt-3 flex items-center gap-1.5 text-xs font-semibold ${waiting >= MENTOR_REMINDER_DAYS ? "text-red-600" : "text-amber-600"}`}>
                     <AlertTriangle className="h-3.5 w-3.5" />
-                    Attend ta réponse depuis {waiting} jour{waiting > 1 ? "s" : ""}
+                    {waiting >= 1 ? `À toi de répondre · l'élève attend depuis ${waiting} jour${waiting > 1 ? "s" : ""}` : "À toi de répondre"}
                 </p>
             )}
-            {waiting === 0 && quiet !== null && quiet >= 7 && m.status === "active" && (
+            {!studentWaiting(m) && quiet !== null && quiet >= 7 && m.status === "active" && (
                 <p className="mt-3 text-xs text-[var(--dash-text-tertiary)]">Pas de nouvelles de l&apos;élève depuis {quiet} jours</p>
             )}
 
