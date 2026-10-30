@@ -4,7 +4,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * Digital Asset Links (Android App Links) : prouve à Android que l'application
- * Workyt (fr.workyt.app) a le droit d'ouvrir directement les liens workyt.fr,
+ * Workyt (fr.workyt.asso) a le droit d'ouvrir directement les liens workyt.fr,
  * sans demander « ouvrir avec… ».
  *
  * L'empreinte SHA-256 du certificat de signature vient de l'environnement :
@@ -23,7 +23,7 @@ export function GET() {
             relation: ["delegate_permission/common.handle_all_urls"],
             target: {
                 namespace: "android_app",
-                package_name: process.env.ANDROID_PACKAGE ?? "fr.workyt.app",
+                package_name: process.env.ANDROID_PACKAGE ?? "fr.workyt.asso",
                 sha256_cert_fingerprints: fingerprints,
             },
         }]
