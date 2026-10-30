@@ -43,7 +43,7 @@ export default function ImageViewer({ src, name, onClose }: { src: string; name:
     const zoomed = zoom > 1.01;
 
     return (
-        <div className="fixed inset-0 z-[100] flex flex-col bg-black/90" role="dialog" aria-modal="true" aria-label={`Photo : ${name}`}>
+        <div className="fixed inset-0 z-[100] flex flex-col bg-[#111]" role="dialog" aria-modal="true" aria-label={`Photo : ${name}`}>
             <div className="flex items-center justify-between gap-3 px-4 py-2 text-white">
                 <span className="min-w-0 truncate text-sm">{name}</span>
                 <div className="flex shrink-0 items-center gap-1">

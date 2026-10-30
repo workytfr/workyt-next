@@ -109,6 +109,20 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
         if (stickToBottom.current) setUnseen(0);
     };
 
+    const contentRef = useRef<HTMLDivElement>(null);
+    useEffect(() => {
+        const el = scrollRef.current;
+        const content = contentRef.current;
+        if (!el || !content) return;
+        const ro = new ResizeObserver(() => {
+            if (stickToBottom.current) el.scrollTop = el.scrollHeight;
+        });
+        ro.observe(content);
+        // La zone elle-même change de taille (plein écran, clavier du téléphone)
+        ro.observe(el);
+        return () => ro.disconnect();
+    }, []);
+
     const toBottom = () => {
         const el = scrollRef.current;
         if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
@@ -170,7 +184,7 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
 
             <div className="relative flex min-h-0 flex-1 flex-col">
             <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5 sm:px-6">
-                <div className="mx-auto w-full max-w-4xl space-y-3">
+                <div ref={contentRef} className="mx-auto w-full max-w-4xl space-y-3">
                 <RequestRecap detail={detail} />
 
                 {messages.map((m, i) => {
@@ -848,144 +862,147 @@ function Composer({
 
     return (
         <div className="border-t border-[rgba(26,21,18,0.08)] bg-white px-3 pb-3 pt-2 sm:px-4">
-            {error && (
-                <p role="alert" className="mb-2 flex gap-2 rounded-2xl bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-700">
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {error}
-                </p>
-            )}
-            {contact.blocked && (
-                <p role="status" className="mb-2 flex gap-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
-                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                    <span>
-                        Ce message ne pourra pas être envoyé : il contient {contact.reasons.join(", ")}. Pour la sécurité de tous, les échanges restent sur
-                        Workyt. Reformule sans ces informations. Pour un document, utilise le trombone (images et PDF jusqu&apos;à 20 Mo).
-                    </span>
-                </p>
-            )}
-            {file && (
-                <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--wk-paper-2)] px-3 py-1 text-xs">
-                    {file.type === "application/pdf" ? <FileText className="h-3.5 w-3.5" /> : <ImagePlus className="h-3.5 w-3.5" />}
-                    <span className="max-w-[200px] truncate">{file.name}</span>
-                    <span className="text-[rgba(26,21,18,0.5)]">{formatSize(file.size)}</span>
-                    <button type="button" onClick={() => setFile(null)} aria-label="Retirer le fichier">
-                        <X className="h-3.5 w-3.5" />
-                    </button>
-                </div>
-            )}
-            {mathOpen && (
-                <MathPanel
-                    onClose={() => setMathOpen(false)}
-                    onInsert={(latex) => {
-                        field.insert(`$${latex}$`);
-                        setMathOpen(false);
-                    }}
-                />
-            )}
-            {/* Aperçu dès que le message contient une formule, du gras ou une liste */}
-            {hasFormatting(text) && (
-                <div className="mb-2 max-h-48 overflow-y-auto rounded-2xl border border-dashed border-[rgba(26,21,18,0.15)] bg-[var(--wk-paper)] px-4 py-2.5 text-sm leading-relaxed">
-                    <span className="font-mono-ui mb-1 block text-[10px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.45)]">Aperçu</span>
-                    <MessageText text={text} />
-                </div>
-            )}
-            <div className="flex items-end gap-2">
-                <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[rgba(26,21,18,0.55)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
-                    aria-label="Joindre une image ou un PDF"
-                    title="Joindre une photo ou un PDF (20 Mo max.)"
-                >
-                    <Paperclip className="h-5 w-5" />
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setBoardOpen(true)}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[rgba(26,21,18,0.55)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
-                    aria-label="Dessiner au tableau blanc"
-                    title="Tableau blanc : dessine un schéma, une courbe, une formule… et envoie-le en image"
-                >
-                    <PenTool className="h-5 w-5" />
-                </button>
-                {boardOpen && (
-                    <BoardComposerModal
-                        initialDoc={boardDoc}
-                        onClose={(doc) => {
-                            setBoardDoc(doc);
-                            setBoardOpen(false);
-                        }}
-                        onAttach={(f, doc) => {
-                            setBoardDoc(doc);
-                            pickFile(f);
-                            setBoardOpen(false);
+            {/* Aligné sur le fil de messages, même en plein écran */}
+            <div className="mx-auto w-full max-w-4xl">
+                {error && (
+                    <p role="alert" className="mb-2 flex gap-2 rounded-2xl bg-red-50 px-3 py-2 text-xs leading-relaxed text-red-700">
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" /> {error}
+                    </p>
+                )}
+                {contact.blocked && (
+                    <p role="status" className="mb-2 flex gap-2 rounded-2xl bg-amber-50 px-3 py-2 text-xs leading-relaxed text-amber-900">
+                        <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                        <span>
+                            Ce message ne pourra pas être envoyé : il contient {contact.reasons.join(", ")}. Pour la sécurité de tous, les échanges restent sur
+                            Workyt. Reformule sans ces informations. Pour un document, utilise le trombone (images et PDF jusqu&apos;à 20 Mo).
+                        </span>
+                    </p>
+                )}
+                {file && (
+                    <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[var(--wk-paper-2)] px-3 py-1 text-xs">
+                        {file.type === "application/pdf" ? <FileText className="h-3.5 w-3.5" /> : <ImagePlus className="h-3.5 w-3.5" />}
+                        <span className="max-w-[200px] truncate">{file.name}</span>
+                        <span className="text-[rgba(26,21,18,0.5)]">{formatSize(file.size)}</span>
+                        <button type="button" onClick={() => setFile(null)} aria-label="Retirer le fichier">
+                            <X className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+                )}
+                {mathOpen && (
+                    <MathPanel
+                        onClose={() => setMathOpen(false)}
+                        onInsert={(latex) => {
+                            field.insert(`$${latex}$`);
+                            setMathOpen(false);
                         }}
                     />
                 )}
-                <input
-                    ref={fileRef}
-                    type="file"
-                    accept={ALLOWED_ATTACHMENT_TYPES.join(",")}
-                    className="hidden"
-                    onChange={(e) => {
-                        pickFile(e.target.files?.[0] || null);
-                        e.target.value = "";
-                    }}
-                />
-                <textarea
-                    ref={field.ref}
-                    value={text}
-                    onChange={(e) => onChange(e.target.value)}
-                    onBlur={stopTyping}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault();
-                            send();
-                        }
-                    }}
-                    rows={1}
-                    placeholder={
-                        waiting
-                            ? "Ajoute des précisions pour le bénévole qui prendra ta demande…"
-                            : detail.viewer === "moderator"
-                              ? "Écrire en tant que modération…"
-                              : "Écris ton message…"
-                    }
-                    className="max-h-40 min-h-[44px] flex-1 resize-none rounded-3xl border border-[rgba(26,21,18,0.12)] bg-[var(--wk-paper)] px-4 py-2.5 text-sm leading-relaxed outline-none transition focus:border-[var(--wk-accent)] focus:bg-white"
-                    style={{ fieldSizing: "content" } as React.CSSProperties}
-                    aria-label="Message"
-                />
-                <button
-                    type="button"
-                    onClick={send}
-                    disabled={sending || contact.blocked || (!text.trim() && !file)}
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--wk-accent)] text-white shadow-[0_3px_0_#c24a0a] transition hover:-translate-y-px disabled:opacity-40 disabled:shadow-none"
-                    aria-label="Envoyer"
-                >
-                    {sending ? <Spinner className="h-4 w-4 !border-white/40 !border-t-white" /> : <Send className="h-4 w-4" />}
-                </button>
-            </div>
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-2">
-                <FormatToolbar field={field} mathOpen={mathOpen} onToggleMath={() => setMathOpen((v) => !v)}>
-                    {staff && !waiting && (
-                        <>
-                            <span className="mx-1 h-4 w-px bg-[rgba(26,21,18,0.12)]" aria-hidden />
-                            <button
-                                type="button"
-                                onClick={() => setMode("block")}
-                                className={toolbarButton}
-                                title="Envoyer une définition, une méthode, un indice…"
-                            >
-                                <Blocks className="h-3.5 w-3.5" />
-                                <span className="text-[11px] font-semibold">Bloc</span>
-                            </button>
-                            <QuickReplies current={text} onInsert={(r) => field.insert(r)} />
-                        </>
+                {/* Aperçu dès que le message contient une formule, du gras ou une liste */}
+                {hasFormatting(text) && (
+                    <div className="mb-2 max-h-48 overflow-y-auto rounded-2xl border border-dashed border-[rgba(26,21,18,0.15)] bg-[var(--wk-paper)] px-4 py-2.5 text-sm leading-relaxed">
+                        <span className="font-mono-ui mb-1 block text-[10px] uppercase tracking-[0.18em] text-[rgba(26,21,18,0.45)]">Aperçu</span>
+                        <MessageText text={text} />
+                    </div>
+                )}
+                <div className="flex items-end gap-2">
+                    <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[rgba(26,21,18,0.55)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
+                        aria-label="Joindre une image ou un PDF"
+                        title="Joindre une photo ou un PDF (20 Mo max.)"
+                    >
+                        <Paperclip className="h-5 w-5" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setBoardOpen(true)}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[rgba(26,21,18,0.55)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
+                        aria-label="Dessiner au tableau blanc"
+                        title="Tableau blanc : dessine un schéma, une courbe, une formule… et envoie-le en image"
+                    >
+                        <PenTool className="h-5 w-5" />
+                    </button>
+                    {boardOpen && (
+                        <BoardComposerModal
+                            initialDoc={boardDoc}
+                            onClose={(doc) => {
+                                setBoardDoc(doc);
+                                setBoardOpen(false);
+                            }}
+                            onAttach={(f, doc) => {
+                                setBoardDoc(doc);
+                                pickFile(f);
+                                setBoardOpen(false);
+                            }}
+                        />
                     )}
-                </FormatToolbar>
-                <p className="flex items-center gap-1.5 text-[11px] text-[rgba(26,21,18,0.45)]">
-                    <Info className="h-3 w-3 shrink-0" />
-                    Échanges conservés · pas de numéro ni de réseau social · Entrée pour envoyer, Maj+Entrée pour aller à la ligne
-                </p>
+                    <input
+                        ref={fileRef}
+                        type="file"
+                        accept={ALLOWED_ATTACHMENT_TYPES.join(",")}
+                        className="hidden"
+                        onChange={(e) => {
+                            pickFile(e.target.files?.[0] || null);
+                            e.target.value = "";
+                        }}
+                    />
+                    <textarea
+                        ref={field.ref}
+                        value={text}
+                        onChange={(e) => onChange(e.target.value)}
+                        onBlur={stopTyping}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                send();
+                            }
+                        }}
+                        rows={1}
+                        placeholder={
+                            waiting
+                                ? "Ajoute des précisions pour le bénévole qui prendra ta demande…"
+                                : detail.viewer === "moderator"
+                                  ? "Écrire en tant que modération…"
+                                  : "Écris ton message…"
+                        }
+                        className="max-h-40 min-h-[44px] flex-1 resize-none rounded-3xl border border-[rgba(26,21,18,0.12)] bg-[var(--wk-paper)] px-4 py-2.5 text-sm leading-relaxed outline-none transition focus:border-[var(--wk-accent)] focus:bg-white"
+                        style={{ fieldSizing: "content" } as React.CSSProperties}
+                        aria-label="Message"
+                    />
+                    <button
+                        type="button"
+                        onClick={send}
+                        disabled={sending || contact.blocked || (!text.trim() && !file)}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[var(--wk-accent)] text-white shadow-[0_3px_0_#c24a0a] transition hover:-translate-y-px disabled:opacity-40 disabled:shadow-none"
+                        aria-label="Envoyer"
+                    >
+                        {sending ? <Spinner className="h-4 w-4 !border-white/40 !border-t-white" /> : <Send className="h-4 w-4" />}
+                    </button>
+                </div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 px-2">
+                    <FormatToolbar field={field} mathOpen={mathOpen} onToggleMath={() => setMathOpen((v) => !v)}>
+                        {staff && !waiting && (
+                            <>
+                                <span className="mx-1 h-4 w-px bg-[rgba(26,21,18,0.12)]" aria-hidden />
+                                <button
+                                    type="button"
+                                    onClick={() => setMode("block")}
+                                    className={toolbarButton}
+                                    title="Envoyer une définition, une méthode, un indice…"
+                                >
+                                    <Blocks className="h-3.5 w-3.5" />
+                                    <span className="text-[11px] font-semibold">Bloc</span>
+                                </button>
+                                <QuickReplies current={text} onInsert={(r) => field.insert(r)} />
+                            </>
+                        )}
+                    </FormatToolbar>
+                    <p className="hidden items-center gap-1.5 text-[11px] text-[rgba(26,21,18,0.45)] sm:flex">
+                        <Info className="h-3 w-3 shrink-0" />
+                        Échanges conservés · pas de numéro ni de réseau social · Entrée pour envoyer, Maj+Entrée pour aller à la ligne
+                    </p>
+                </div>
             </div>
         </div>
     );

@@ -540,6 +540,9 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
     );
 
     const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
+        // Sans ça, le clic de souris retire aussitôt le focus de la zone de
+        // saisie qu'il vient d'ouvrir (texte, formule, point) : elle se refermait
+        e.preventDefault();
         if (editing) commitEditing(editing);
         const { sx, sy } = local(e);
         try {
