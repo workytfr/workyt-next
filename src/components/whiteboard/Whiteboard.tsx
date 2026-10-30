@@ -30,10 +30,14 @@ import { STAMP_GROUPS, getStamp } from "./stamps";
 import { bounds, drawElement, hitTest, moved, union } from "./render";
 import { compileExpression } from "./mathExpr";
 import { formulaToText } from "./mathText";
-import { emptyBoard, uid, type Background, type BackgroundKind, type BoardDoc, type BoardElement, type Rect, type Tool } from "./types";
+import { emptyBoard, uid, type Background, type BackgroundKind, type BoardDoc, type BoardElement, type BoardOps, type Rect, type Tool } from "./types";
 
 export interface WhiteboardHandle {
     getDoc: () => BoardDoc;
+    /** Modifications venues d'un autre participant : appliquées sans entrer dans l'historique */
+    applyRemote: (ops: BoardOps) => void;
+    /** Resynchronise tout le tableau (après une erreur d'envoi, par exemple) */
+    replaceDoc: (doc: BoardDoc) => void;
     /** PNG du contenu (fond compris), ou null si le tableau est vide */
     exportPng: () => Promise<Blob | null>;
     isEmpty: () => boolean;
@@ -42,8 +46,41 @@ export interface WhiteboardHandle {
 interface Props {
     initialDoc?: BoardDoc | null;
     onChange?: (doc: BoardDoc) => void;
+    /** Chaque modification locale, pour la partager en direct */
+    onOps?: (ops: BoardOps) => void;
+    /** Consultation seule (suivi terminé, modération) : déplacement et zoom uniquement */
+    readOnly?: boolean;
+    /** Refuse un texte (coordonnées dans un suivi…) : renvoie le message à afficher */
+    validateText?: (text: string) => string | null;
+    /** Taille maximale d'une image importée (data URL, en octets) */
+    maxImageBytes?: number;
     className?: string;
 }
+
+/** Une modification locale : l'état avant/après de chaque élément touché (null = absent) */
+type Change = { before: Map<string, BoardElement | null>; after: Map<string, BoardElement | null> };
+
+const byZ = (a: BoardElement, b: BoardElement) => (a.z ?? 0) - (b.z ?? 0);
+
+/** Applique des remplacements/suppressions par id, en gardant l'ordre d'empilement */
+function applyMap(els: BoardElement[], map: Map<string, BoardElement | null>): BoardElement[] {
+    const out: BoardElement[] = [];
+    for (const el of els) {
+        if (!map.has(el.id)) out.push(el);
+        else {
+            const next = map.get(el.id);
+            if (next) out.push(next);
+        }
+    }
+    const present = new Set(els.map((e) => e.id));
+    for (const [id, el] of map) if (el && !present.has(id)) out.push(el);
+    return out.sort(byZ);
+}
+
+const opsOf = (map: Map<string, BoardElement | null>): BoardOps => ({
+    upsert: [...map.values()].filter((e): e is BoardElement => !!e),
+    remove: [...map.entries()].filter(([, e]) => !e).map(([id]) => id),
+});
 
 const SUBJECTS: { name: string; background: BackgroundKind }[] = [
     { name: "Toutes", background: "grid" },
@@ -97,13 +134,15 @@ const nextLetter = (els: BoardElement[]) => {
     return "";
 };
 
-const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ initialDoc, onChange, className = "" }, ref) {
+const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ initialDoc, onChange, onOps, readOnly = false, validateText, maxImageBytes, className = "" }, ref) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const fontRef = useRef("Montserrat, sans-serif");
 
-    const elementsRef = useRef<BoardElement[]>(initialDoc?.elements ?? []);
-    const historyRef = useRef<{ past: BoardElement[][]; future: BoardElement[][] }>({ past: [], future: [] });
+    const elementsRef = useRef<BoardElement[]>([...(initialDoc?.elements ?? [])].sort(byZ));
+    // Historique par modification (et non par instantané) : annuler ne défait
+    // que ses propres gestes, jamais ceux de l'autre participant
+    const historyRef = useRef<{ past: Change[]; future: Change[] }>({ past: [], future: [] });
     const viewRef = useRef({ scale: 1, tx: 0, ty: 0 });
     const sizeRef = useRef({ w: 0, h: 0, dpr: 1 });
     const draftRef = useRef<Draft>(null);
@@ -128,6 +167,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
     const [plotError, setPlotError] = useState<string | null>(null);
     const [zoom, setZoom] = useState(100);
     const [hasSelection, setHasSelection] = useState(false);
+    const [notice, setNotice] = useState<string | null>(null);
     const [, setVersion] = useState(0);
     const backgroundRef = useRef(background);
 
@@ -207,40 +247,83 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
     // ───────────── Document ─────────────
     const docOf = useCallback((): BoardDoc => ({ kind: "workyt-board", version: 1, background: backgroundRef.current, elements: elementsRef.current }), []);
 
-    const commit = useCallback(
-        (next: BoardElement[]) => {
-            historyRef.current.past.push(elementsRef.current);
-            if (historyRef.current.past.length > 200) historyRef.current.past.shift();
-            historyRef.current.future = [];
-            elementsRef.current = next;
+    const applyLocal = useCallback(
+        (map: Map<string, BoardElement | null>) => {
+            if (!map.size) return;
+            elementsRef.current = applyMap(elementsRef.current, map);
+            if (selectedRef.current && map.has(selectedRef.current) && !map.get(selectedRef.current)) {
+                selectedRef.current = null;
+                setHasSelection(false);
+            }
             setVersion((v) => v + 1);
+            onOps?.(opsOf(map));
             onChange?.(docOf());
             schedule();
         },
-        [docOf, onChange, schedule]
+        [docOf, onChange, onOps, schedule]
+    );
+
+    /** Remplace la liste des éléments : on en déduit ce qui a changé */
+    const commit = useCallback(
+        (next: BoardElement[]) => {
+            const prev = new Map(elementsRef.current.map((e) => [e.id, e]));
+            const nextIds = new Set<string>();
+            const before = new Map<string, BoardElement | null>();
+            const after = new Map<string, BoardElement | null>();
+            let z = Date.now();
+            for (let el of next) {
+                nextIds.add(el.id);
+                const old = prev.get(el.id);
+                if (old === el) continue;
+                // Nouvel élément : il prend place au-dessus de tout
+                if (!old && el.z === undefined) el = { ...el, z: z++ + Math.random() / 10 };
+                before.set(el.id, old ?? null);
+                after.set(el.id, el);
+            }
+            for (const [id, old] of prev) {
+                if (nextIds.has(id)) continue;
+                before.set(id, old);
+                after.set(id, null);
+            }
+            if (!after.size) return;
+            historyRef.current.past.push({ before, after });
+            if (historyRef.current.past.length > 200) historyRef.current.past.shift();
+            historyRef.current.future = [];
+            applyLocal(after);
+        },
+        [applyLocal]
     );
 
     const undo = useCallback(() => {
-        const prev = historyRef.current.past.pop();
-        if (!prev) return;
-        historyRef.current.future.push(elementsRef.current);
-        elementsRef.current = prev;
-        selectedRef.current = null;
-        setHasSelection(false);
-        setVersion((v) => v + 1);
-        onChange?.(docOf());
-        schedule();
-    }, [docOf, onChange, schedule]);
+        const change = historyRef.current.past.pop();
+        if (!change) return;
+        historyRef.current.future.push(change);
+        applyLocal(change.before);
+    }, [applyLocal]);
 
     const redo = useCallback(() => {
-        const next = historyRef.current.future.pop();
-        if (!next) return;
-        historyRef.current.past.push(elementsRef.current);
-        elementsRef.current = next;
-        setVersion((v) => v + 1);
-        onChange?.(docOf());
-        schedule();
-    }, [docOf, onChange, schedule]);
+        const change = historyRef.current.future.pop();
+        if (!change) return;
+        historyRef.current.past.push(change);
+        applyLocal(change.after);
+    }, [applyLocal]);
+
+    const changeBackground = useCallback(
+        (bg: Background) => {
+            backgroundRef.current = bg;
+            setBackground(bg);
+            onOps?.({ upsert: [], remove: [], background: bg });
+            onChange?.(docOf());
+        },
+        [docOf, onChange, onOps]
+    );
+
+    // Message passager (texte refusé, image trop lourde…)
+    useEffect(() => {
+        if (!notice) return;
+        const t = setTimeout(() => setNotice(null), 5000);
+        return () => clearTimeout(t);
+    }, [notice]);
 
     const deleteSelected = useCallback(() => {
         const id = selectedRef.current;
@@ -275,6 +358,25 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
         const centered = ["axes", "trigo", "timeline"].includes(backgroundRef.current.kind);
         setView(1, centered ? Math.round(w / 2) : 40, centered ? Math.round(h / 2) : 40);
     }, [setView]);
+
+    /** Cadre tout ce qui est dessiné (tableau vide : retour à l'origine) */
+    const fitAll = useCallback(() => {
+        let box: Rect | null = null;
+        for (const el of elementsRef.current) box = union(box, bounds(el, fontRef.current));
+        const { w, h } = sizeRef.current;
+        if (!box || !w || !h) return recenter();
+        const pad = 32;
+        const bw = Math.max(box.x1 - box.x0, 1), bh = Math.max(box.y1 - box.y0, 1);
+        const scale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, Math.min((w - pad * 2) / bw, (h - pad * 2) / bh, 2)));
+        setView(scale, (w - bw * scale) / 2 - box.x0 * scale, (h - bh * scale) / 2 - box.y0 * scale);
+    }, [recenter, setView]);
+
+    // Rappel des gestes pour se déplacer, quelques secondes à l'ouverture
+    const [showHint, setShowHint] = useState(true);
+    useEffect(() => {
+        const t = setTimeout(() => setShowHint(false), 7000);
+        return () => clearTimeout(t);
+    }, []);
 
     // Taille du canvas = taille du conteneur (écrans haute densité compris)
     useEffect(() => {
@@ -312,6 +414,34 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
         () => ({
             getDoc: docOf,
             isEmpty: () => elementsRef.current.length === 0,
+            applyRemote: (ops: BoardOps) => {
+                const map = new Map<string, BoardElement | null>();
+                for (const el of ops.upsert) map.set(el.id, el);
+                for (const id of ops.remove) map.set(id, null);
+                if (map.size) {
+                    elementsRef.current = applyMap(elementsRef.current, map);
+                    if (selectedRef.current && map.has(selectedRef.current)) {
+                        selectedRef.current = null;
+                        setHasSelection(false);
+                    }
+                }
+                if (ops.background) {
+                    backgroundRef.current = ops.background;
+                    setBackground(ops.background);
+                }
+                setVersion((v) => v + 1);
+                schedule();
+            },
+            replaceDoc: (doc: BoardDoc) => {
+                elementsRef.current = [...doc.elements].sort(byZ);
+                historyRef.current = { past: [], future: [] };
+                backgroundRef.current = doc.background;
+                setBackground(doc.background);
+                selectedRef.current = null;
+                setHasSelection(false);
+                setVersion((v) => v + 1);
+                schedule();
+            },
             exportPng: async () => {
                 const els = elementsRef.current;
                 if (!els.length) return null;
@@ -353,7 +483,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                 return new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
             },
         }),
-        [docOf]
+        [docOf, schedule]
     );
 
     // ───────────── Saisie (stylo, souris, doigt) ─────────────
@@ -379,6 +509,12 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
             if (!ed || committedEditRef.current === ed) return;
             committedEditRef.current = ed;
             const value = ed.value.trim();
+            const finalText = ed.kind === "formula" ? value.split("\n").map(formulaToText).join("\n") : value;
+            const refused = finalText ? validateText?.(finalText) : null;
+            if (refused) {
+                setNotice(refused);
+                return;
+            }
             if (ed.kind === "point") {
                 commit([...elementsRef.current, { id: uid(), type: "point", color, width, x: ed.wx, y: ed.wy, label: value }]);
                 return;
@@ -395,12 +531,12 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                     x: ed.wx,
                     y: ed.wy,
                     size,
-                    text: ed.kind === "formula" ? value.split("\n").map(formulaToText).join("\n") : value,
+                    text: finalText,
                     math: ed.kind === "formula",
                 },
             ]);
         },
-        [color, commit, width]
+        [color, commit, validateText, width]
     );
 
     const onPointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -421,7 +557,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
             schedule();
             return;
         }
-        if (tool === "hand" || e.button === 1 || spaceRef.current) {
+        if (readOnly || tool === "hand" || e.button === 1 || spaceRef.current) {
             gestureRef.current = { kind: "pan", lastX: sx, lastY: sy };
             return;
         }
@@ -498,7 +634,10 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
         if (!draft) return;
         const { x, y } = toWorld(sx, sy);
         if (draft.kind === "stroke" && draft.el.type === "stroke") {
-            const events = (e.nativeEvent as PointerEvent).getCoalescedEvents?.() ?? [e.nativeEvent];
+            // Points intermédiaires du mouvement ; la liste peut être vide (navigateurs, stylets) :
+            // on garde alors au moins l'événement lui-même, sinon le trait se réduit à un point
+            const coalesced = (e.nativeEvent as PointerEvent).getCoalescedEvents?.() ?? [];
+            const events = coalesced.length ? coalesced : [e.nativeEvent];
             const pts = draft.el.points;
             const minDist = 1.2 / viewRef.current.scale;
             for (const ev of events) {
@@ -582,7 +721,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
         const onKey = (e: KeyboardEvent) => {
             const target = e.target as HTMLElement;
             if (target.closest("input, textarea, select, [contenteditable=true]")) return;
-            if (!containerRef.current?.isConnected) return;
+            if (!containerRef.current?.isConnected || readOnly) return;
             const mod = e.ctrlKey || e.metaKey;
             if (mod && e.key.toLowerCase() === "z") {
                 e.preventDefault();
@@ -624,22 +763,20 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
             window.removeEventListener("keydown", onKey);
             window.removeEventListener("keyup", onKeyUp);
         };
-    }, [deleteSelected, redo, schedule, undo]);
+    }, [deleteSelected, readOnly, redo, schedule, undo]);
 
     // ───────────── Actions de la barre ─────────────
     const chooseSubject = (name: string) => {
         setSubject(name);
         const s = SUBJECTS.find((x) => x.name === name);
         if (s && s.background !== backgroundRef.current.kind) {
-            setBackground({ ...backgroundRef.current, kind: s.background });
-            backgroundRef.current = { ...backgroundRef.current, kind: s.background };
+            changeBackground({ ...backgroundRef.current, kind: s.background });
             recenter();
         }
     };
 
     const chooseBackground = (kind: BackgroundKind) => {
-        setBackground({ ...backgroundRef.current, kind });
-        backgroundRef.current = { ...backgroundRef.current, kind };
+        changeBackground({ ...backgroundRef.current, kind });
         recenter();
     };
 
@@ -661,16 +798,34 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
         reader.onload = () => {
             const img = new Image();
             img.onload = () => {
-                // Redimensionnée pour garder le tableau léger
-                const max = 1400;
-                const k = Math.min(1, max / Math.max(img.width, img.height));
+                // Une photo d'exercice doit rester lisible : on garde jusqu'à 2000 px et
+                // on ne compresse que ce qu'il faut pour tenir dans la limite
                 const c = document.createElement("canvas");
-                c.width = Math.round(img.width * k);
-                c.height = Math.round(img.height * k);
-                c.getContext("2d")?.drawImage(img, 0, 0, c.width, c.height);
-                const src = c.toDataURL(file.type === "image/png" ? "image/png" : "image/jpeg", 0.85);
+                const draw = (max: number) => {
+                    const k = Math.min(1, max / Math.max(img.width, img.height));
+                    c.width = Math.round(img.width * k);
+                    c.height = Math.round(img.height * k);
+                    const ctx = c.getContext("2d");
+                    if (!ctx) return;
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, c.width, c.height);
+                    ctx.drawImage(img, 0, 0, c.width, c.height);
+                };
+                let src = "";
+                found: for (const max of [2000, 1600, 1280, 1024]) {
+                    draw(max);
+                    for (const q of [0.88, 0.8, 0.72, 0.64]) {
+                        src = c.toDataURL("image/jpeg", q);
+                        if (!maxImageBytes || src.length <= maxImageBytes) break found;
+                    }
+                }
+                if (maxImageBytes && src.length > maxImageBytes) {
+                    setNotice("Image trop lourde pour le tableau. Envoie-la plutôt dans la conversation.");
+                    return;
+                }
+                // Posée en grand (90 % de la vue) puis cadrée : on la lit tout de suite
                 const v = visibleRect();
-                const w = Math.min(c.width, (v.x1 - v.x0) * 0.6);
+                const w = Math.min(c.width, (v.x1 - v.x0) * 0.9, ((v.y1 - v.y0) * 0.9 * c.width) / c.height);
                 const h = (w / c.width) * c.height;
                 commit([...elementsRef.current, { id: uid(), type: "image", color, width: 0, x: (v.x0 + v.x1) / 2 - w / 2, y: (v.y0 + v.y1) / 2 - h / 2, w, h, src }]);
                 setTool("select");
@@ -694,12 +849,16 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
     );
     const backgrounds = useMemo(() => BACKGROUNDS, []);
 
-    const cursor = tool === "hand" ? "grab" : tool === "select" ? "default" : tool === "text" || tool === "formula" ? "text" : "crosshair";
+    const cursor = readOnly || tool === "hand" ? "grab" : tool === "select" ? "default" : tool === "text" || tool === "formula" ? "text" : "crosshair";
 
     return (
         <div className={`flex h-full min-h-0 w-full flex-col bg-[var(--wk-paper,#fdfaf4)] ${className}`}>
             {/* Barre du haut : matière, fond, couleurs, épaisseur, historique, zoom */}
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-[rgba(26,21,18,0.08)] bg-white px-3 py-2 text-sm">
+            <div className="flex shrink-0 items-center gap-x-3 overflow-x-auto whitespace-nowrap border-b border-[rgba(26,21,18,0.08)] bg-white px-3 py-1.5 text-sm [scrollbar-width:thin]">
+                {readOnly ? (
+                    <span className="text-xs text-[rgba(26,21,18,0.6)]">Consultation seule : déplace-toi et zoome pour relire le tableau.</span>
+                ) : (
+                <>
                 <label className="flex items-center gap-1.5">
                     <span className="text-xs font-semibold text-[rgba(26,21,18,0.55)]">Matière</span>
                     <select value={subject} onChange={(e) => chooseSubject(e.target.value)} className="rounded-lg border border-[rgba(26,21,18,0.15)] bg-white px-2 py-1">
@@ -723,7 +882,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                         <span className="text-xs font-semibold text-[rgba(26,21,18,0.55)]">Unité</span>
                         <select
                             value={background.unit || DEFAULT_UNIT}
-                            onChange={(e) => setBackground((b) => ({ ...b, unit: Number(e.target.value) }))}
+                            onChange={(e) => changeBackground({ ...backgroundRef.current, unit: Number(e.target.value) })}
                             className="rounded-lg border border-[rgba(26,21,18,0.15)] bg-white px-2 py-1"
                         >
                             <option value={20}>Petite</option>
@@ -738,7 +897,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                         <input
                             type="number"
                             value={background.timelineStart ?? 1900}
-                            onChange={(e) => setBackground((b) => ({ ...b, timelineStart: Number(e.target.value) }))}
+                            onChange={(e) => changeBackground({ ...backgroundRef.current, timelineStart: Number(e.target.value) })}
                             className="w-20 rounded-lg border border-[rgba(26,21,18,0.15)] px-2 py-1"
                             aria-label="Année de départ"
                         />
@@ -747,7 +906,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                             type="number"
                             min={1}
                             value={background.timelineStep ?? 10}
-                            onChange={(e) => setBackground((b) => ({ ...b, timelineStep: Math.max(1, Number(e.target.value)) }))}
+                            onChange={(e) => changeBackground({ ...backgroundRef.current, timelineStep: Math.max(1, Number(e.target.value)) })}
                             className="w-16 rounded-lg border border-[rgba(26,21,18,0.15)] px-2 py-1"
                             aria-label="Années entre deux graduations"
                         />
@@ -792,19 +951,24 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                     <IconButton label="Rétablir (Ctrl+Y)" onClick={redo} icon={Redo2} />
                     {hasSelection && <IconButton label="Supprimer la sélection (Suppr)" onClick={deleteSelected} icon={Trash2} />}
                 </div>
+                </>
+                )}
                 <div className="ml-auto flex items-center gap-0.5">
                     <IconButton label="Dézoomer" onClick={() => zoomAt(1 / 1.25, sizeRef.current.w / 2, sizeRef.current.h / 2)} icon={ZoomOut} />
                     <span className="w-11 text-center text-xs tabular-nums text-[rgba(26,21,18,0.6)]">{zoom} %</span>
                     <IconButton label="Zoomer" onClick={() => zoomAt(1.25, sizeRef.current.w / 2, sizeRef.current.h / 2)} icon={ZoomIn} />
-                    <IconButton label="Recentrer" onClick={recenter} icon={Maximize} />
-                    <button type="button" onClick={clearAll} className="ml-1 rounded-lg px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
-                        Tout effacer
-                    </button>
+                    <IconButton label="Tout voir (cadrer le contenu)" onClick={fitAll} icon={Maximize} />
+                    {!readOnly && (
+                        <button type="button" onClick={clearAll} className="ml-1 rounded-lg px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50">
+                            Tout effacer
+                        </button>
+                    )}
                 </div>
             </div>
 
             <div className="relative flex min-h-0 flex-1">
                 {/* Outils */}
+                {!readOnly && (
                 <div className="z-10 flex w-12 shrink-0 flex-col items-center gap-0.5 overflow-y-auto border-r border-[rgba(26,21,18,0.08)] bg-white py-2">
                     {TOOLS.map((t) => (
                         <ToolButton
@@ -832,6 +996,7 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                         }}
                     />
                 </div>
+                )}
 
                 <div ref={containerRef} className="relative min-h-0 flex-1 overflow-hidden">
                     <canvas
@@ -844,6 +1009,18 @@ const Whiteboard = forwardRef<WhiteboardHandle, Props>(function Whiteboard({ ini
                         onPointerCancel={onPointerUp}
                         onContextMenu={(e) => e.preventDefault()}
                     />
+
+                    {showHint && (
+                        <p className="pointer-events-none absolute bottom-3 right-3 z-10 rounded-full bg-[#1a1512]/80 px-3 py-1.5 text-[11px] text-white">
+                            Molette ou 2 doigts : se déplacer · Ctrl + molette ou pincer : zoomer
+                        </p>
+                    )}
+
+                    {notice && (
+                        <p role="alert" className="absolute left-1/2 top-3 z-30 max-w-[90%] -translate-x-1/2 rounded-2xl bg-red-50 px-4 py-2 text-sm text-red-700 shadow">
+                            {notice}
+                        </p>
+                    )}
 
                     {editing && (
                         <EditingField

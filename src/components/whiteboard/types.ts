@@ -45,6 +45,8 @@ export interface Background {
 
 interface Base {
     id: string;
+    /** Ordre d'empilement (date de création) : identique chez tous les participants */
+    z?: number;
     color: string;
     /** Épaisseur du trait (px monde) */
     width: number;
@@ -121,6 +123,16 @@ export interface BoardDoc {
     version: 1;
     background: Background;
     elements: BoardElement[];
+}
+
+/**
+ * Modification d'un tableau, telle qu'elle circule entre participants :
+ * éléments ajoutés ou modifiés (remplacés en entier) et éléments retirés.
+ */
+export interface BoardOps {
+    upsert: BoardElement[];
+    remove: string[];
+    background?: Background;
 }
 
 export interface Rect {

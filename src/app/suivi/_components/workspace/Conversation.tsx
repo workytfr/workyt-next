@@ -21,6 +21,8 @@ import {
     Paperclip,
     FileText,
     Download,
+    PenTool,
+    ArrowDown,
 } from "lucide-react";
 import { ALLOWED_ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES, MAX_CONFUSED_LENGTH, MAX_MESSAGE_LENGTH, MOOD_LABELS } from "@/lib/mentorship/config";
 import { checkForContactDetails } from "@/lib/mentorship/contactFilter";
@@ -42,6 +44,9 @@ import MessageText from "../MessageText";
 import { BlockCard, blockDef } from "../blocks";
 import FormatToolbar, { toolbarButton } from "../editor/FormatToolbar";
 import MathPanel from "../editor/MathPanel";
+import ImageViewer from "../ImageViewer";
+import BoardComposerModal from "./BoardComposerModal";
+import type { BoardDoc } from "@/components/whiteboard/types";
 import BlockComposer from "../editor/BlockComposer";
 import QuickReplies from "../editor/QuickReplies";
 import { hasFormatting, useMarkdownField } from "../editor/useMarkdownField";
@@ -82,17 +87,32 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
     const scrollRef = useRef<HTMLDivElement>(null);
     const stickToBottom = useRef(true);
     const [pinError, setPinError] = useState<string | null>(null);
+    // On relit plus haut : bouton pour revenir aux derniers messages
+    const [awayFromBottom, setAwayFromBottom] = useState(false);
+    const [unseen, setUnseen] = useState(0);
+    const lastCount = useRef(messages.length);
 
     // Reste collé en bas quand un message arrive, sauf si on est en train de relire plus haut
     useEffect(() => {
         const el = scrollRef.current;
+        const added = messages.length - lastCount.current;
+        lastCount.current = messages.length;
         if (el && stickToBottom.current) el.scrollTop = el.scrollHeight;
+        else if (added > 0) setUnseen((n) => n + added);
     }, [messages.length, typingUsers.length]);
 
     const onScroll = () => {
         const el = scrollRef.current;
         if (!el) return;
         stickToBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+        setAwayFromBottom(!stickToBottom.current);
+        if (stickToBottom.current) setUnseen(0);
+    };
+
+    const toBottom = () => {
+        const el = scrollRef.current;
+        if (el) el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
+        setUnseen(0);
     };
 
     const assignments = new Map((detail.assignments || []).map((a) => [a.id, a]));
@@ -148,7 +168,9 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
                 <PinnedBar pinned={pinned} error={pinError} onJump={jumpTo} onUnpin={togglePin} onDismissError={() => setPinError(null)} />
             )}
 
-            <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-5 sm:px-6">
+            <div className="relative flex min-h-0 flex-1 flex-col">
+            <div ref={scrollRef} onScroll={onScroll} className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5 sm:px-6">
+                <div className="mx-auto w-full max-w-4xl space-y-3">
                 <RequestRecap detail={detail} />
 
                 {messages.map((m, i) => {
@@ -202,6 +224,18 @@ export default function Conversation({ detail, messages, myId, typingUsers, star
                         {typingUsers[0].username} écrit…
                     </div>
                 )}
+                </div>
+            </div>
+            {awayFromBottom && (
+                <button
+                    type="button"
+                    onClick={toBottom}
+                    className="absolute bottom-3 left-1/2 inline-flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-[var(--wk-ink)] px-3.5 py-2 text-xs font-semibold text-white shadow-lg"
+                >
+                    <ArrowDown className="h-3.5 w-3.5" />
+                    {unseen > 0 ? `${unseen} nouveau${unseen > 1 ? "x" : ""} message${unseen > 1 ? "s" : ""}` : "Derniers messages"}
+                </button>
+            )}
             </div>
 
             <Composer detail={detail} startTyping={startTyping} stopTyping={stopTyping} onSent={onSent} />
@@ -318,6 +352,8 @@ function MessageItem({
     /** kind 'block', côté élève : peut-il encore dire qu'il n'a pas compris ? */
     confusion: "available" | "sent" | "none";
 }) {
+    // Photo ouverte dans la visionneuse
+    const [viewing, setViewing] = useState(false);
     // Événements du suivi : une ligne centrée, discrète
     if (m.kind === "event") {
         const done = m.meta?.event === "assignment_done";
@@ -441,11 +477,18 @@ function MessageItem({
                     (m.attachment.mime === "application/pdf" ? (
                         <PdfCard attachment={m.attachment} />
                     ) : (
-                        <a href={m.attachment.url} target="_blank" rel="noopener noreferrer" className="mb-1 block overflow-hidden rounded-2xl border border-[rgba(26,21,18,0.1)]">
+                        <button
+                            type="button"
+                            onClick={() => setViewing(true)}
+                            className="mb-1 block cursor-zoom-in overflow-hidden rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white"
+                            title="Agrandir la photo"
+                        >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img src={m.attachment.url} alt={m.attachment.name} className="max-h-72 max-w-full object-contain" loading="lazy" />
-                        </a>
+                            <img src={m.attachment.url} alt={m.attachment.name} className="max-h-[26rem] max-w-full object-contain" loading="lazy" />
+                        </button>
                     ))}
+
+                {viewing && m.attachment && <ImageViewer src={m.attachment.url} name={m.attachment.name} onClose={() => setViewing(false)} />}
 
                 {isBlock ? (
                     <BlockCard
@@ -727,6 +770,9 @@ function Composer({
     const [mode, setMode] = useState<"message" | "block">("message");
     const [mathOpen, setMathOpen] = useState(false);
     const fileRef = useRef<HTMLInputElement>(null);
+    const [boardOpen, setBoardOpen] = useState(false);
+    // Dessin en cours : gardé tant que le message n'est pas parti, pour le reprendre
+    const [boardDoc, setBoardDoc] = useState<BoardDoc | null>(null);
     const lastTyping = useRef(0);
 
     const onChange = (v: string) => {
@@ -786,6 +832,7 @@ function Composer({
             await api(`/api/suivi/${detail.id}/messages`, { method: "POST", body: form });
             setText("");
             setFile(null);
+            setBoardDoc(null);
             onSent();
         } catch (err) {
             setError(err instanceof ApiError ? err.message : "Envoi impossible.");
@@ -851,6 +898,29 @@ function Composer({
                 >
                     <Paperclip className="h-5 w-5" />
                 </button>
+                <button
+                    type="button"
+                    onClick={() => setBoardOpen(true)}
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[rgba(26,21,18,0.55)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
+                    aria-label="Dessiner au tableau blanc"
+                    title="Tableau blanc : dessine un schéma, une courbe, une formule… et envoie-le en image"
+                >
+                    <PenTool className="h-5 w-5" />
+                </button>
+                {boardOpen && (
+                    <BoardComposerModal
+                        initialDoc={boardDoc}
+                        onClose={(doc) => {
+                            setBoardDoc(doc);
+                            setBoardOpen(false);
+                        }}
+                        onAttach={(f, doc) => {
+                            setBoardDoc(doc);
+                            pickFile(f);
+                            setBoardOpen(false);
+                        }}
+                    />
+                )}
                 <input
                     ref={fileRef}
                     type="file"

@@ -26,6 +26,8 @@ import {
     Mail,
     MailX,
     BookMarked,
+    Maximize2,
+    Minimize2,
 } from "lucide-react";
 import {
     DropdownMenu,
@@ -60,6 +62,23 @@ export default function SuiviWorkspace({ id }: { id: string }) {
     const [tab, setTab] = useState<Tab>("plan");
     const [mobileTab, setMobileTab] = useState<Tab>("chat");
     const [dialog, setDialog] = useState<ActionKind>(null);
+    // Conversation en plein écran (plus de place pour lire et écrire)
+    const [focus, setFocus] = useState(false);
+
+    // Échap quitte le plein écran (sauf si une fenêtre, visionneuse ou tableau, est ouverte par-dessus)
+    useEffect(() => {
+        if (!focus) return;
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape" && !document.querySelector('[role="dialog"][aria-modal="true"]')) setFocus(false);
+        };
+        window.addEventListener("keydown", onKey);
+        const prev = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+        return () => {
+            window.removeEventListener("keydown", onKey);
+            document.body.style.overflow = prev;
+        };
+    }, [focus]);
     const lastAt = useRef<string | null>(null);
 
     const loadDetail = useCallback(async () => {
@@ -378,11 +397,41 @@ export default function SuiviWorkspace({ id }: { id: string }) {
             </div>
 
             {/* ─── Espace de travail ─── */}
-            <div className="mt-4 grid grid-cols-1 gap-5 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_400px]">
+            <div className="mt-4 grid grid-cols-1 gap-5 lg:mt-6 lg:grid-cols-[minmax(0,1fr)_360px]">
                 <section
-                    className={`${mobileTab === "chat" ? "flex" : "hidden"} h-[72vh] min-h-[480px] flex-col overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white lg:flex lg:h-[calc(100vh-15rem)] lg:min-h-[560px]`}
+                    className={
+                        focus
+                            ? "fixed inset-0 z-[80] flex flex-col overflow-hidden bg-white"
+                            : `${mobileTab === "chat" ? "flex" : "hidden"} h-[calc(100dvh-9rem)] min-h-[480px] flex-col overflow-hidden rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white lg:flex lg:h-[calc(100dvh-8rem)] lg:min-h-[560px]`
+                    }
                     aria-label="Conversation"
                 >
+                    {/* Bandeau de la conversation : avec qui, et le plein écran */}
+                    <div className="flex shrink-0 items-center gap-2.5 border-b border-[rgba(26,21,18,0.08)] px-4 py-2">
+                        {other ? (
+                            <span className="relative">
+                                <AvatarDisplay name={other.username} userId={other.id} size="xs" />
+                                {otherOnline && <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-white bg-emerald-500" />}
+                            </span>
+                        ) : (
+                            <MessagesSquare className="h-4 w-4 text-[rgba(26,21,18,0.5)]" />
+                        )}
+                        <div className="min-w-0 flex-1 leading-tight">
+                            <p className="truncate text-sm font-semibold">{other ? other.username : "Conversation"}</p>
+                            <p className="truncate text-[11px] text-[rgba(26,21,18,0.5)]">
+                                {detail.subject} · {otherOnline ? "en ligne" : "messages conservés sur Workyt"}
+                            </p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => setFocus((f) => !f)}
+                            className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-[rgba(26,21,18,0.65)] transition hover:bg-[var(--wk-paper-2)] hover:text-[var(--wk-ink)]"
+                            title={focus ? "Réduire (Échap)" : "Agrandir la conversation"}
+                        >
+                            {focus ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                            <span className="hidden sm:inline">{focus ? "Réduire" : "Agrandir"}</span>
+                        </button>
+                    </div>
                     <Conversation
                         detail={detail}
                         messages={messages}
