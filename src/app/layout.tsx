@@ -137,7 +137,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
 
     return (
         <html lang="fr" suppressHydrationWarning>
-        <body className={`${funnelDisplay.variable} ${montserrat.variable} font-sans overflow-x-hidden`}>
+        <body className={`${funnelDisplay.variable} ${montserrat.variable} font-sans overflow-x-clip`}>
         <script
             type="application/ld+json"
             dangerouslySetInnerHTML={{ __html: jsonLd(websiteSchema) }}
