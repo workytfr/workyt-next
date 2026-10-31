@@ -33,7 +33,7 @@ export default function SupprimerMonComptePage() {
             </nav>
 
             <h1 className="text-4xl font-bold tracking-tight text-gray-900 mb-4">
-                Supprimer mon compte
+                Supprimer mon compte Workyt
             </h1>
             <p className="text-gray-600 mb-8">
                 Tu peux supprimer ton compte Workyt à tout moment, depuis cette page ou
@@ -41,6 +41,27 @@ export default function SupprimerMonComptePage() {
                 suppression est <strong>immédiate et définitive</strong> : il n&apos;y a
                 pas de délai de rétractation et le compte ne peut pas être restauré.
             </p>
+
+            <section aria-labelledby="etapes" className="mb-8 rounded-3xl bg-[#fdfaf4] p-6 sm:p-7">
+                <h2 id="etapes" className="text-xl font-bold text-gray-900">Comment supprimer ton compte</h2>
+                <ol className="mt-4 space-y-3 text-sm text-gray-700">
+                    <li>
+                        <strong>Sur le site :</strong> clique sur « Se connecter pour supprimer mon compte »
+                        ci-dessous, connecte-toi, puis tape <span className="font-mono">SUPPRIMER</span> et
+                        valide. Tu restes sur cette page pendant toute la démarche.
+                    </li>
+                    <li>
+                        <strong>Dans l&apos;application Workyt :</strong> ouvre l&apos;onglet{" "}
+                        <strong>Profil</strong>, puis touche <strong>« Supprimer mon compte »</strong> en bas
+                        de l&apos;écran et confirme.
+                    </li>
+                    <li>
+                        <strong>Tu ne peux plus te connecter ?</strong> Écris à{" "}
+                        <a href="mailto:admin@workyt.fr" className="text-orange-500 hover:underline">admin@workyt.fr</a>{" "}
+                        en indiquant le pseudo du compte : nous le supprimons pour toi.
+                    </li>
+                </ol>
+            </section>
 
             <DeleteAccountPanel />
 

@@ -37,15 +37,9 @@ export default function DeleteAccountPanel() {
         );
     }
 
-    if (status === "loading") {
-        return (
-            <div className={`${card} flex items-center gap-2 text-sm text-gray-500`}>
-                <Loader2 className="h-4 w-4 animate-spin" /> Chargement…
-            </div>
-        );
-    }
-
-    if (!session?.user) {
+    // Visiteur non connecté, ou session pas encore chargée (et rendu serveur) :
+    // la démarche publique s'affiche toujours, jamais un écran vide
+    if (status === "loading" || !session?.user) {
         return (
             <div className={card}>
                 <h2 className="text-xl font-bold text-gray-900">Connecte-toi pour continuer</h2>
@@ -53,8 +47,8 @@ export default function DeleteAccountPanel() {
                     Pour vérifier que le compte est bien le tien, connecte-toi d&apos;abord.
                     Tu reviendras ensuite sur cette page pour confirmer la suppression.
                 </p>
-                <button type="button" onClick={openAuth} className="wk-btn-ink mt-5 !py-2.5 text-sm">
-                    Se connecter
+                <button type="button" onClick={openAuth} disabled={status === "loading"} className="wk-btn-ink mt-5 !py-2.5 text-sm disabled:opacity-60">
+                    Se connecter pour supprimer mon compte
                 </button>
             </div>
         );
