@@ -802,10 +802,13 @@ function Composer({
     // l'envoi plutôt que de bloquer le message et d'alerter la modération.
     const contact = useMemo(() => checkForContactDetails(text), [text]);
 
-    const pickFile = (f: File | null) => {
+    const pickFile = async (f: File | null) => {
         setError(null);
         if (!f) return setFile(null);
-        if (!ALLOWED_ATTACHMENT_TYPES.includes(f.type)) {
+        // Certains sélecteurs Android (Drive, gestionnaire de fichiers) ne donnent
+        // aucun type : on se fie alors à l'extension, le serveur vérifie le contenu.
+        const type = f.type || (/\.pdf$/i.test(f.name) ? "application/pdf" : "");
+        if (!ALLOWED_ATTACHMENT_TYPES.includes(type)) {
             setFile(null);
             return setError("Seuls les images (JPEG, PNG, WebP, GIF) et les PDF peuvent être joints.");
         }
@@ -813,7 +816,17 @@ function Composer({
             setFile(null);
             return setError(`Ce fichier pèse ${formatSize(f.size)} : la limite est de 20 Mo. Tu peux l'envoyer en plusieurs parties (un PDF par chapitre, par exemple).`);
         }
-        setFile(f);
+        // Sur téléphone, un fichier choisi depuis Drive, Photos ou Fichiers n'est
+        // qu'une référence lue au moment de l'envoi : une lecture qui échoue
+        // (permission expirée, fichier encore dans le cloud) fait échouer la
+        // requête en « erreur réseau ». On le copie en mémoire dès maintenant.
+        try {
+            const bytes = await f.arrayBuffer();
+            setFile(new File([bytes], f.name || (type === "application/pdf" ? "document.pdf" : "image"), { type }));
+        } catch {
+            setFile(null);
+            setError("Ce fichier n'a pas pu être lu. S'il est sur Drive ou iCloud, télécharge-le d'abord sur ton téléphone, puis réessaie.");
+        }
     };
 
     const closed = detail.status === "closed" || detail.status === "cancelled";
@@ -849,7 +862,15 @@ function Composer({
             setBoardDoc(null);
             onSent();
         } catch (err) {
-            setError(err instanceof ApiError ? err.message : "Envoi impossible.");
+            setError(
+                err instanceof ApiError
+                    ? err.status === 413
+                        ? "Fichier trop lourd pour être envoyé (20 Mo maximum)."
+                        : err.message
+                    : file
+                      ? "La connexion a été coupée pendant l'envoi du fichier. Vérifie ton réseau (le Wi-Fi est plus sûr pour un gros PDF) et réessaie : ton message est conservé."
+                      : "Envoi impossible : vérifie ta connexion et réessaie."
+            );
             // Un message bloqué est conservé côté serveur : on l'affiche au rechargement
             if (err instanceof ApiError && err.status === 422) {
                 setText("");
