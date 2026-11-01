@@ -43,6 +43,8 @@ export async function GET(req: NextRequest, { params }: Params) {
 /**
  * POST /api/suivi/[id]/messages — envoyer un message.
  * multipart/form-data (text, file?) ou JSON :
+ *  - { text?, upload: { key, name } } : fichier déjà déposé sur R2 via
+ *    POST /api/suivi/[id]/attachments (passage obligé au-delà de ~15 Mo) ;
  *  - { kind: 'checkin_reply', mood, text? } : répondre à un point d'étape ;
  *  - { kind: 'block', blockType, blockTitle?, text } : un bloc pédagogique ;
  *  - { kind: 'confused', replyTo, text? } : « je n'ai pas compris » ce bloc.
@@ -62,6 +64,7 @@ export async function POST(req: NextRequest, { params }: Params) {
 
     let text = '';
     let file: File | null = null;
+    let upload: { key: string; name: string } | null = null;
     let kind: 'text' | 'checkin_reply' | 'block' | 'confused' = 'text';
     let mood: 'bien' | 'moyen' | 'bloque' | undefined;
     let blockType: string | undefined;
@@ -82,11 +85,15 @@ export async function POST(req: NextRequest, { params }: Params) {
       if (typeof body?.blockType === 'string') blockType = body.blockType;
       if (typeof body?.blockTitle === 'string') blockTitle = body.blockTitle;
       if (typeof body?.replyTo === 'string') replyTo = body.replyTo;
+      if (typeof body?.upload?.key === 'string') {
+        upload = { key: body.upload.key, name: String(body.upload.name ?? '') };
+      }
     }
 
     const result = await postMessage(access.mentorship, access.viewer, me, {
       text,
       file,
+      upload,
       kind,
       mood,
       blockType,

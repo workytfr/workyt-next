@@ -19,6 +19,7 @@ import { BadgeService } from '@/lib/badgeService';
 import { emitMentorshipChanged } from '@/lib/realtime/emit';
 import { checkForContactDetails } from './contactFilter';
 import { readAttachment, uploadAttachment } from './storage';
+import { claimAttachment } from './upload';
 import { resolveResource, checkCompletion } from './resources';
 import { notify, notifyModerators, notifyAvailableMentors, activeLoadByMentor } from './notify';
 import { sendStudentReminderEmail } from './email';
@@ -312,6 +313,8 @@ export async function takeRequest(
 export interface MessageInput {
   text?: string;
   file?: File | null;
+  /** Fichier déjà déposé sur R2 par le navigateur (voir upload.ts) */
+  upload?: { key: string; name: string } | null;
   kind?: 'text' | 'checkin_reply' | 'block' | 'confused';
   mood?: CheckinMood;
   /** kind 'block' */
@@ -349,7 +352,7 @@ export async function postMessage(
     blockTitle = String(input.blockTitle || '').trim();
     if (blockTitle.length > MAX_BLOCK_TITLE_LENGTH) return fail(400, `Titre trop long (${MAX_BLOCK_TITLE_LENGTH} caractères maximum).`);
     if (!text) return fail(400, 'Le bloc est vide.');
-    if (input.file) return fail(400, 'Un bloc ne contient pas d’image : envoie-la dans un message à part.');
+    if (input.file || input.upload) return fail(400, 'Un bloc ne contient pas d’image : envoie-la dans un message à part.');
   }
 
   // ── « Je n'ai pas compris » : l'élève, sur un bloc du fil, une seule fois ──
@@ -358,7 +361,7 @@ export async function postMessage(
   if (kind === 'confused') {
     if (viewer !== 'student') return fail(403, 'Seul l’élève peut signaler qu’il n’a pas compris.');
     if (text.length > MAX_CONFUSED_LENGTH) return fail(400, `Précision trop longue (${MAX_CONFUSED_LENGTH} caractères maximum).`);
-    if (input.file) return fail(400, 'Envoie l’image dans un message à part.');
+    if (input.file || input.upload) return fail(400, 'Envoie l’image dans un message à part.');
     if (!input.replyTo || !mongoose.isValidObjectId(input.replyTo)) return fail(400, 'Bloc introuvable.');
     const target = await MentorshipMessage.findOne({
       _id: input.replyTo,
@@ -375,7 +378,7 @@ export async function postMessage(
   }
 
   // L'humeur d'un point d'étape et le signalement d'un bloc se suffisent à eux-mêmes
-  if (!text && !input.file && kind !== 'confused' && kind !== 'checkin_reply') return fail(400, 'Message vide.');
+  if (!text && !input.file && !input.upload && kind !== 'confused' && kind !== 'checkin_reply') return fail(400, 'Message vide.');
 
   const meta =
     kind === 'checkin_reply'
@@ -441,6 +444,14 @@ export async function postMessage(
       console.error('Erreur upload pièce jointe suivi:', error);
       return fail(502, 'L’image n’a pas pu être envoyée. Réessaie.');
     }
+  } else if (input.upload) {
+    // Un dépôt ne s'attache qu'à un seul message
+    if (await MentorshipMessage.exists({ mentorship: m._id, 'attachment.key': input.upload.key })) {
+      return fail(400, 'Pièce jointe déjà envoyée.');
+    }
+    const claim = await claimAttachment(id(m._id), input.upload.key, input.upload.name);
+    if (!claim.ok) return fail(claim.status, claim.error);
+    attachment = { key: claim.key, name: claim.name, mime: claim.mime, size: claim.size };
   }
 
   // ── Réponse à un point d'étape ──

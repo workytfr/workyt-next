@@ -650,6 +650,34 @@ function formatSize(bytes: number): string {
     return `${(bytes / (1024 * 1024)).toFixed(1).replace(".", ",")} Mo`;
 }
 
+/**
+ * Envoie une pièce jointe en morceaux de 6 Mo et renvoie sa clé de stockage.
+ * L'hébergement coupe les requêtes de plus de ~15 Mo (page 502 de
+ * Cloudflare) : un PDF de 20 Mo ne peut pas partir d'un seul bloc.
+ */
+async function uploadInParts(mentorshipId: string, file: File): Promise<string> {
+    const url = `/api/suivi/${mentorshipId}/attachments`;
+    const { key, uploadId, partSize } = await api<{ key: string; uploadId: string; partSize: number }>(url, {
+        method: "POST",
+        json: { action: "start", type: file.type, size: file.size },
+    });
+    try {
+        for (let part = 1, start = 0; start < file.size; part++, start += partSize) {
+            const q = new URLSearchParams({ key, uploadId, part: String(part) });
+            await api(`${url}?${q}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/octet-stream" },
+                body: file.slice(start, start + partSize),
+            });
+        }
+        await api(url, { method: "POST", json: { action: "complete", key, uploadId } });
+        return key;
+    } catch (err) {
+        void api(url, { method: "POST", json: { action: "abort", key, uploadId } }).catch(() => {});
+        throw err;
+    }
+}
+
 function PdfCard({ attachment }: { attachment: NonNullable<Message["attachment"]> }) {
     return (
         <div className="mb-1 flex w-72 max-w-full items-center gap-3 rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white px-3 py-2.5">
@@ -853,10 +881,8 @@ function Composer({
         setError(null);
         stopTyping();
         try {
-            const form = new FormData();
-            form.append("text", clean);
-            if (file) form.append("file", file);
-            await api(`/api/suivi/${detail.id}/messages`, { method: "POST", body: form });
+            const upload = file ? { key: await uploadInParts(detail.id, file), name: file.name } : null;
+            await api(`/api/suivi/${detail.id}/messages`, { method: "POST", json: { text: clean, upload } });
             setText("");
             setFile(null);
             setBoardDoc(null);
