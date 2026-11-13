@@ -19,6 +19,7 @@ import {
     ChevronRight,
     Pencil,
     ThumbsUp,
+    Info,
 } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import UserRank from "@/components/ui/UserRank";
@@ -39,6 +40,7 @@ import { PAGE_CONTAINER, Eyebrow, SubjectLabel, LevelChip } from "@/components/w
 import { StatusChip, plainExcerpt, relativeTime } from "@/app/forum/_components/forumUi";
 import { FicheTile } from "@/app/fiches/_components/ficheUi";
 import RankIcon from "@/components/ui/RankIcon";
+import { FicheIcon, ForumIcon } from "@/components/ui/WkIcons";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
     const { data: session, update: updateSession } = useSession();
@@ -309,8 +311,8 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
         : null;
 
     const stats = [
-        { icon: FileText, value: pagination.totalRevisions, label: "fiches créées", color: "text-[var(--wk-accent)]" },
-        { icon: HelpCircle, value: pagination.totalQuestions, label: "questions posées", color: "text-[#2f86b3]" },
+        { icon: FicheIcon, value: pagination.totalRevisions, label: "fiches créées", color: "text-[var(--wk-accent)]" },
+        { icon: ForumIcon, value: pagination.totalQuestions, label: "questions posées", color: "text-[#2f86b3]" },
         { icon: MessageCircle, value: pagination.totalAnswers, label: "réponses données", color: "text-emerald-600" },
         { icon: Gift, value: formData.badges?.length || 0, label: "badges gagnés", color: "text-[#9b6ef3]" },
     ];
@@ -342,7 +344,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                                         className="inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-semibold"
                                         style={{ backgroundColor: `${userRank.color}18`, color: userRank.color, border: `1px solid ${userRank.color}30` }}
                                     >
-                                        <RankIcon level={userRank.level} color={userRank.color} size={15} />
+                                        <RankIcon level={userRank.level} color={userRank.color} size={20} />
                                         {userRank.name} · Niv. {userRank.level}
                                     </span>
                                     {memberSince && (
@@ -360,15 +362,23 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                         {/* Chiffres clés */}
                         <div className="flex flex-wrap items-center gap-2 lg:justify-end">
                             <span className="wk-chip !px-3.5 !py-2 text-sm" title="Points">
-                                <Image src="/badge/points.png" alt="" width={16} height={16} className="object-contain" />
+                                <Image src="/badge/coin.svg" alt="" width={16} height={16} className="object-contain" />
                                 {formatPoints(formData.points)} pts
                             </span>
                             {isOwner && (
                                 <span className="wk-chip !px-3.5 !py-2 text-sm" title="Gemmes">
-                                    <Image src="/badge/diamond.png" alt="" width={16} height={16} className="object-contain" />
+                                    <Image src="/badge/braise.svg" alt="" width={16} height={16} className="object-contain" />
                                     {gems}
                                 </span>
                             )}
+                            <Link
+                                href="/legende"
+                                title="La Légende de Workyt : à quoi servent les pièces et les pierres"
+                                aria-label="La Légende de Workyt : à quoi servent les pièces et les pierres"
+                                className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[rgba(26,21,18,0.12)] bg-white text-[rgba(26,21,18,0.55)] transition hover:border-[var(--wk-accent)] hover:text-[var(--wk-accent)]"
+                            >
+                                <Info className="h-4 w-4" />
+                            </Link>
                             <span className="wk-chip !px-3.5 !py-2 text-sm" title="Série de jours d'activité">
                                 <FlameIcon level={flameLevel} size={16} />
                                 {currentStreak} j
@@ -420,7 +430,7 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
                         {/* Fiches */}
                         <section>
                             <h2 className={`${cardTitle} mb-4`}>
-                                <FileText className="h-5 w-5 text-[var(--wk-accent)]" /> Fiches de révision
+                                <FicheIcon className="h-6 w-6 text-[var(--wk-accent)]" /> Fiches de révision
                                 <span className="text-base text-[rgba(26,21,18,0.45)]">({pagination.totalRevisions})</span>
                             </h2>
                             {revisions.length > 0 ? (

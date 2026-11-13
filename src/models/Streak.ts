@@ -41,7 +41,7 @@ const StreakSchema = new Schema<IStreak>({
   updatedAt: { type: Date, default: Date.now }
 });
 
-StreakSchema.index({ user: 1 });
+// user est déjà indexé par `unique: true`
 
 StreakSchema.pre('save', function(next) {
   this.updatedAt = new Date();

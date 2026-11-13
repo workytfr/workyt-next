@@ -22,13 +22,18 @@ import "@/models/EvaluationSubmission";
 import "@/models/EvaluationGrade";
 import "@/models/Role";
 
-// Les écouteurs ne sont posés qu'une fois : chaque reconnexion en ajoutait
-// une nouvelle série (fuite + logs en double).
-let listenersAttached = false;
+// État partagé sur globalThis : en dev, Next charge ce module une fois par route
+// compilée, mais mongoose est unique. Un drapeau local laissait chaque copie
+// reposer ses écouteurs (MaxListenersExceededWarning, fuite mémoire) et ouvrir
+// sa propre connexion.
+const shared = globalThis as typeof globalThis & {
+    __wkMongoListeners?: boolean;
+    __wkMongoConnection?: Promise<void> | null;
+};
 
 function attachListeners() {
-    if (listenersAttached) return;
-    listenersAttached = true;
+    if (shared.__wkMongoListeners) return;
+    shared.__wkMongoListeners = true;
 
     mongoose.connection.on('error', (err) => {
         console.error('MongoDB connection error:', err);
@@ -41,9 +46,8 @@ function attachListeners() {
     });
 }
 
-// Connexion en cours ou établie, partagée par toutes les requêtes de cette copie
-// du site : jamais deux mongoose.connect() en parallèle.
-let connectionPromise: Promise<void> | null = null;
+// Connexion en cours ou établie, partagée par toutes les requêtes (et toutes les
+// copies du module) : jamais deux mongoose.connect() en parallèle.
 
 async function openConnection(uri: string): Promise<void> {
     attachListeners();
@@ -89,14 +93,14 @@ const connectDB = async (): Promise<void> => {
 
     // Déjà connecté (ou en cours) : même si le lien tombe ensuite, le driver
     // reconnecte et mongoose met les requêtes en attente d'ici là.
-    if (!connectionPromise) {
-        connectionPromise = openConnection(MONGODB_URI).catch((error) => {
+    if (!shared.__wkMongoConnection) {
+        shared.__wkMongoConnection = openConnection(MONGODB_URI).catch((error) => {
             // Un échec ne doit pas rester en cache : la requête suivante retente.
-            connectionPromise = null;
+            shared.__wkMongoConnection = null;
             throw error;
         });
     }
-    return connectionPromise;
+    return shared.__wkMongoConnection;
 };
 
 export { connectDB };

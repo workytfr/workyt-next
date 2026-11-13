@@ -8,21 +8,21 @@ import {
   Cross2Icon,
 } from "@radix-ui/react-icons";
 import {
-  Gift,
-  MessageSquare,
-  CheckCircle2,
-  Brain,
-  Trophy,
-  BookOpen,
-  FileText,
-  Heart,
-  Bookmark,
-  Flame,
-  Calendar,
-  Star,
-  Loader2,
-  Package,
+    Gift,
+    MessageSquare,
+    CheckCircle2,
+    Brain,
+    Trophy,
+    BookOpen,
+    FileText,
+    Heart,
+    Bookmark,
+    Calendar,
+    Star,
+    Loader2,
+    Package,
 } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -102,7 +102,7 @@ function getQuestIcon(slug: string) {
   if (slug.includes("fiche_bookmark") || slug.includes("bookmark"))
     return <Bookmark className="w-5 h-5" />;
   if (slug.includes("streak") || slug.includes("login"))
-    return <Flame className="w-5 h-5" />;
+    return <FlammeIcon className="w-5 h-5" />;
   return <Star className="w-5 h-5" />;
 }
 
@@ -352,7 +352,7 @@ export default function QuestsPanel({ externalOpen, onOpenChange }: { externalOp
                       <section key={type} aria-label={`Quetes ${config.label}`}>
                         <div className={`flex items-center gap-2 mb-3 px-3 py-2 rounded-lg ${config.bg}`}>
                           {type === "daily" && <Calendar className={`w-4 h-4 ${config.icon}`} />}
-                          {type === "weekly" && <Flame className={`w-4 h-4 ${config.icon}`} />}
+                          {type === "weekly" && <FlammeIcon className={`w-4 h-4 ${config.icon}`} />}
                           {type === "monthly" && <Trophy className={`w-4 h-4 ${config.icon}`} />}
                           <h3 className={`text-sm font-semibold ${config.text}`}>
                             {config.label}
@@ -518,7 +518,7 @@ function QuestCard({
                 {reward.type === "points" && (
                   <>
                     <Image
-                      src="/badge/points.png"
+                      src="/badge/coin.svg"
                       alt=""
                       width={14}
                       height={14}
@@ -530,7 +530,7 @@ function QuestCard({
                 {reward.type === "gems" && (
                   <>
                     <Image
-                      src="/badge/diamond.png"
+                      src="/badge/braise.svg"
                       alt=""
                       width={14}
                       height={14}
@@ -542,7 +542,7 @@ function QuestCard({
                 {reward.type === "mushrooms" && (
                   <>
                     <Image
-                      src="/badge/champiworkyt.webp"
+                      src="/badge/champignon.svg"
                       alt=""
                       width={14}
                       height={14}

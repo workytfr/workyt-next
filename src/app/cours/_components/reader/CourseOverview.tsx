@@ -3,11 +3,13 @@
 import { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
-import { BadgeCheck, BookOpen, ChevronRight, Download, Dumbbell, Layers, PartyPopper, Play, Trophy, Users } from "lucide-react";
+import { BadgeCheck, ChevronRight, Download, Layers, PartyPopper, Play, Users } from "lucide-react";
 import { SubjectLabel, LevelChip } from "@/components/wk/primitives";
 import CourseDescription from "../CourseDescription";
 import { useCourse } from "./CourseShell";
 import { countLessons, courseHref, exercisesHref, flattenCurriculum, lessonHref, quizzesHref } from "../courseLinks";
+import Foxy from "@/components/foxy/Foxy";
+import { CoursIcon, ExerciceIcon, QuizIcon } from "@/components/ui/WkIcons";
 
 // Chargé seulement à l'ouverture de l'onglet : évaluation, compétences et fiches
 // font chacune leur propre appel réseau.
@@ -60,7 +62,7 @@ export default function CourseOverview() {
                         <Layers className="h-4 w-4" /> {curriculum.sections.length} chapitre{curriculum.sections.length > 1 ? "s" : ""}
                     </span>
                     <span className="inline-flex items-center gap-1.5">
-                        <BookOpen className="h-4 w-4" /> {totalLessons} leçon{totalLessons > 1 ? "s" : ""}
+                        <CoursIcon className="h-5 w-5" /> {totalLessons} leçon{totalLessons > 1 ? "s" : ""}
                     </span>
                     {curriculum.authors.length > 0 && (
                         <span className="inline-flex items-center gap-1.5">
@@ -73,7 +75,8 @@ export default function CourseOverview() {
             {/* Commencer / reprendre + PDF */}
             <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
                 <div className="flex flex-col justify-between gap-5 rounded-3xl bg-[var(--wk-ink)] p-6 text-[var(--wk-paper)]">
-                    <div>
+                    <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
                         <p className="font-mono-ui text-[11px] uppercase tracking-[0.18em] text-white/55">
                             {done ? "Cours terminé" : started ? "Ta progression" : "Prêt à commencer ?"}
                         </p>
@@ -92,6 +95,9 @@ export default function CourseOverview() {
                                 {curriculum.sections.length} chapitre{curriculum.sections.length > 1 ? "s" : ""} à ton rythme.
                             </p>
                         )}
+                    </div>
+                    {/* Foxy suit l'avancée : coucou, en lecture, puis diplômé */}
+                    <Foxy pose={done ? "diplome" : started ? "lecture" : "bonjour"} size={96} className="hidden shrink-0 sm:block" />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         {resume && started ? (
@@ -120,7 +126,7 @@ export default function CourseOverview() {
                         </a>
                         {totalExercises > 0 && (
                             <a href={`${base}/imprimer/exercices?pdf=1`} target="_blank" rel="noopener" className="wk-btn-ghost !justify-center !py-2.5 text-sm">
-                                <Dumbbell className="h-4 w-4" /> Le cahier d&apos;exercices
+                                <ExerciceIcon className="h-5 w-5" /> Le cahier d&apos;exercices
                             </a>
                         )}
                     </div>
@@ -163,7 +169,7 @@ export default function CourseOverview() {
                                                     href={lessonHref(curriculum, lesson)}
                                                     className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm transition hover:bg-[var(--wk-paper-2)]"
                                                 >
-                                                    <BookOpen className={`h-4 w-4 shrink-0 ${readLessons.has(lesson._id) ? "text-emerald-600" : "text-[rgba(26,21,18,0.4)]"}`} />
+                                                    <CoursIcon className={`h-5 w-5 shrink-0 ${readLessons.has(lesson._id) ? "text-emerald-600" : "text-[rgba(26,21,18,0.4)]"}`} />
                                                     <span className="flex-1">{lesson.title}</span>
                                                     <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)] transition group-hover:translate-x-0.5" />
                                                 </Link>
@@ -172,7 +178,7 @@ export default function CourseOverview() {
                                         {section.exercisesCount > 0 && (
                                             <li>
                                                 <Link href={exercisesHref(curriculum, section)} className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-[var(--wk-paper-2)]">
-                                                    <Dumbbell className="h-4 w-4 shrink-0 text-emerald-600" />
+                                                    <ExerciceIcon className="h-5 w-5 shrink-0 text-emerald-600" />
                                                     <span className="flex-1">{section.exercisesCount} exercice{section.exercisesCount > 1 ? "s" : ""}</span>
                                                     <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)]" />
                                                 </Link>
@@ -181,7 +187,7 @@ export default function CourseOverview() {
                                         {section.quizzesCount > 0 && (
                                             <li>
                                                 <Link href={quizzesHref(curriculum, section)} className="group flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold transition hover:bg-[var(--wk-paper-2)]">
-                                                    <Trophy className="h-4 w-4 shrink-0 text-amber-500" />
+                                                    <QuizIcon className="h-5 w-5 shrink-0 text-amber-500" />
                                                     <span className="flex-1">{section.quizzesCount} quiz</span>
                                                     <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)]" />
                                                 </Link>

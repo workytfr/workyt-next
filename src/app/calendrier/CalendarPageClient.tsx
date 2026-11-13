@@ -40,7 +40,7 @@ export default function CalendarPageClient() {
                 </div>
               </div>
               <div className="flex items-start gap-2.5">
-                <Image src="/badge/diamond.png" alt="" width={16} height={16} className="object-contain mt-0.5 shrink-0" />
+                <Image src="/badge/braise.svg" alt="" width={16} height={16} className="object-contain mt-0.5 shrink-0" />
                 <div>
                   <p className="font-semibold text-gray-900">Diamants</p>
                   <p className="text-xs text-gray-500">Rares, surtout les jours speciaux</p>

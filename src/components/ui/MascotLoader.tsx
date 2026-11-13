@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import Mascot from "@/components/ui/Mascot";
-import type { MascotName, Emotion } from "@/data/mascots";
+import Foxy, { type FoxyPose } from "@/components/foxy/Foxy";
 
 interface MascotLoaderProps {
     /** Message affiché sous les mascottes. */
@@ -15,19 +14,13 @@ interface MascotLoaderProps {
     className?: string;
 }
 
-// On fait défiler les différentes mascottes ASCII de Workyt pendant le chargement.
-const CYCLE: { name: MascotName; emotion: Emotion }[] = [
-    { name: "foxy", emotion: "joyeux" },
-    { name: "pando", emotion: "surpris" },
-    { name: "corvy", emotion: "joyeux" },
-    { name: "foxy", emotion: "clin" },
-    { name: "pando", emotion: "joyeux" },
-    { name: "corvy", emotion: "surpris" },
-];
+// Pendant le chargement, Foxy passe d'une pose « au travail » à l'autre.
+const FOXY_SIZE = { sm: 72, md: 104, lg: 140 } as const;
+const CYCLE: FoxyPose[] = ["reflechit", "lecture", "cherche"];
 
 export default function MascotLoader({
     message = "Chargement…",
-    interval = 900,
+    interval = 1400,
     size = "lg",
     className = "",
 }: MascotLoaderProps) {
@@ -44,16 +37,16 @@ export default function MascotLoader({
 
     return (
         <div className={`flex flex-col items-center justify-center gap-4 py-8 ${className}`}>
-            <div className="relative h-24 flex items-center justify-center">
+            <div className="relative flex items-center justify-center" style={{ height: FOXY_SIZE[size] * 1.03 }}>
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={index}
-                        initial={{ opacity: 0, scale: 0.8, y: 8 }}
+                        initial={{ opacity: 0, scale: 0.96, y: 6 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.8, y: -8 }}
-                        transition={{ duration: 0.3, ease: "easeOut" }}
+                        exit={{ opacity: 0, scale: 0.96, y: -6 }}
+                        transition={{ duration: 0.25, ease: [0.23, 1, 0.32, 1] }}
                     >
-                        <Mascot name={current.name} emotion={current.emotion} size={size} />
+                        <Foxy pose={current} size={FOXY_SIZE[size]} />
                     </motion.div>
                 </AnimatePresence>
             </div>

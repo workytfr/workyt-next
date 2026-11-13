@@ -159,7 +159,7 @@ export default function AvatarAccessoryShop({ userId, look, hasProfileImage, get
                                         {bp.label}
                                         {bp.showGemIcon && (
                                             <>
-                                                <Image src="/badge/diamond.png" alt="" width={14} height={14} className="mx-0.5 inline object-contain" />)
+                                                <Image src="/badge/braise.svg" alt="" width={14} height={14} className="mx-0.5 inline object-contain" />)
                                             </>
                                         )}
                                     </Button>

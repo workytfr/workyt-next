@@ -233,7 +233,7 @@ export default function ChestAnimation({
                       {reward.rewardType === "points" && (
                         <>
                           <Image
-                            src="/badge/points.png"
+                            src="/badge/coin-stack.svg"
                             alt="Points"
                             width={36}
                             height={36}
@@ -245,7 +245,7 @@ export default function ChestAnimation({
                       {reward.rewardType === "gems" && (
                         <>
                           <Image
-                            src="/badge/diamond.png"
+                            src="/badge/braise.svg"
                             alt="Diamants"
                             width={36}
                             height={36}
@@ -257,7 +257,7 @@ export default function ChestAnimation({
                       {reward.rewardType === "mushrooms" && (
                         <>
                           <Image
-                            src="/badge/champiworkyt.webp"
+                            src="/badge/champignon.svg"
                             alt="Champignons"
                             width={36}
                             height={36}

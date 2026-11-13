@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, FileText } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { educationData } from "@/data/educationData";
 import { subjectToSlug, levelToSlug } from "@/utils/subjectSlug";
 import { PAGE_CONTAINER, Eyebrow } from "@/components/wk/primitives";
 import { FicheActions, FicheTile, type FicheTileData } from "./ficheUi";
+import Foxy from "@/components/foxy/Foxy";
 
 /**
  * Page « hub » des fiches, par matière ou par niveau (composant serveur, ISR).
@@ -59,7 +60,7 @@ export default function FicheHub({ kind, label, fiches }: { kind: "matiere" | "n
                         </p>
                         {fiches.length === 0 ? (
                             <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-16 text-center">
-                                <FileText className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                                <Foxy pose="pause" size={120} className="mx-auto" />
                                 <p className="font-serif-display mt-4 text-2xl">Aucune fiche {isSubject ? `de ${label}` : label} pour le moment</p>
                                 <Link href="/fiches/creer" className="mt-4 inline-block text-sm font-semibold text-[var(--wk-accent)] hover:underline">
                                     Déposer la première

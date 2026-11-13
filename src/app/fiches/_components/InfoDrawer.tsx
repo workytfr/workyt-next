@@ -43,15 +43,15 @@ const InfoDrawer = () => {
                         <strong>Statuts des fiches :</strong>
                     </p>
                     <div className="flex items-center gap-4">
-                        <Image src="/badge/Certifiée.svg" alt="Certifiée" width={30} height={30} />
+                        <Image src="/badge/Certifiée.svg" alt="Certifiée" width={40} height={40} />
                         <span>Certifiée : Contenu rédigé par un bénévole de l&apos;association Workyt.</span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <Image src="/badge/Vérifiée.svg" alt="Vérifiée" width={30} height={30} />
+                        <Image src="/badge/Vérifiée.svg" alt="Vérifiée" width={40} height={40} />
                         <span>Vérifiée : Contenu rédigé par un utilisateur de la communauté Workyt, et vérifié par un bénévole. </span>
                     </div>
                     <div className="flex items-center gap-4">
-                        <Image src="/badge/Non Certifiée.svg" alt="Non Certifiée" width={30} height={30} />
+                        <Image src="/badge/Non Certifiée.svg" alt="Non Certifiée" width={40} height={40} />
                         <span>Non Certifiée : Contenu rédigé par un utilisateur de la communauté Workyt.</span>
                     </div>
                 </div>

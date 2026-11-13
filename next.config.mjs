@@ -21,7 +21,20 @@ const nextConfig = {
     outputFileTracingRoot: import.meta.dirname,
     images: {
         formats: ["image/avif", "image/webp"],
+        // Par défaut, le S3 de Youss redimensionne les images au lieu du serveur Next
+        // (l'optimiseur intégré est alors coupé). Les images affichées avec <Image> ne
+        // sont plus dans public/ : elles ne vivent que sur le S3 (voir
+        // docs/stockage-public-s3.md). IMAGE_LOADER=next revient à l'optimiseur de Next,
+        // mais ces images-là casseraient. Nouvelle image : scripts/upload-public-to-s3.mjs.
+        ...(process.env.IMAGE_LOADER !== "next"
+            ? { loader: "custom", loaderFile: "./src/lib/imageLoader.ts" }
+            : {}),
         remotePatterns: [
+            {
+                protocol: "https",
+                hostname: "s3.youss.dev",
+                pathname: "/**",
+            },
             {
                 protocol: "https",
                 hostname: "8002d4938b63d45290e9963164b4e90f.r2.cloudflarestorage.com",

@@ -29,8 +29,6 @@ import {
     StarFilledIcon
 } from "@radix-ui/react-icons";
 import {
-    MessageSquare,
-    FileText,
     BookOpen,
     Newspaper,
     Heart,
@@ -46,6 +44,7 @@ import {
 const STAFF_ROLES = ["Admin", "Rédacteur", "Correcteur", "Modérateur", "Helpeur"];
 import WorkytLogo from "@/components/ui/WorkytLogo";
 import ProfileCard from "@/components/ui/ProfileCard";
+import { CoursIcon, FicheIcon, ForumIcon } from "@/components/ui/WkIcons";
 
 // Chargés à la demande : modales (à l'ouverture) et outils de l'espace connecté
 // (seulement si session). Sinon tout finit dans le chunk du layout, payé par
@@ -58,9 +57,9 @@ const NotificationBell = dynamic(() => import("@/components/NotificationBell"), 
 const BookmarkBell = dynamic(() => import("@/components/BookmarkBell"), { ssr: false });
 
 const navLinks = [
-    { href: "/cours", label: "Cours", icon: BookOpen },
-    { href: "/fiches", label: "Fiches", icon: FileText },
-    { href: "/forum", label: "Forum", icon: MessageSquare },
+    { href: "/cours", label: "Cours", icon: CoursIcon },
+    { href: "/fiches", label: "Fiches", icon: FicheIcon },
+    { href: "/forum", label: "Forum", icon: ForumIcon },
 ];
 
 const blogLinks = [
@@ -484,7 +483,7 @@ export default function Navbar() {
                                     onClick={closeMobileMenu}
                                 >
                                     <span className="flex items-center gap-3">
-                                        <Icon className="h-5 w-5 shrink-0" />
+                                        <Icon className="h-6 w-6 shrink-0" />
                                         {link.label}
                                     </span>
                                     <ChevronRight className="h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)]" />

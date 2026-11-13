@@ -2,12 +2,13 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, BookOpen, Sparkles, HeartHandshake } from "lucide-react";
+import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Sparkles, HeartHandshake } from "lucide-react";
 import { educationData, getSubjectIconComponent } from "@/data/educationData";
 import { PAGE_CONTAINER } from "@/components/wk/primitives";
 import { subjectToSlug } from "@/utils/subjectSlug";
 import CourseCard from "./CourseCard";
 import { CourseListing } from "./types";
+import Foxy from "@/components/foxy/Foxy";
 
 const PAGE_SIZE = 12;
 
@@ -181,7 +182,7 @@ export default function CoursesPageClient() {
                         </div>
                     ) : (
                         <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-16 text-center">
-                            <BookOpen className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                            <Foxy pose="cherche" size={120} className="mx-auto" />
                             <h3 className="font-serif-display mt-4 text-2xl">Aucun cours ne correspond</h3>
                             <p className="mx-auto mt-2 max-w-md text-sm text-[rgba(26,21,18,0.6)]">
                                 Essaie d&apos;autres mots ou d&apos;autres filtres. Et si tu cherches de l&apos;aide sur un point précis, le forum est là.

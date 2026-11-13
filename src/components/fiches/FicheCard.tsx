@@ -35,18 +35,18 @@ const FicheCard = ({ fiche, username }: { fiche: Fiche; username: string }) => {
             {/* En-tête coloré par matière */}
             <div className={`relative bg-gradient-to-r ${gradient} p-4 pb-6`}>
                 {/* Icône matière */}
-                <SubjectIcon subject={fiche.subject} size={24} className="text-white/90" />
+                <SubjectIcon subject={fiche.subject} size={32} className="text-white/90" />
 
                 {/* Badge de statut */}
-                {fiche.status !== "Non Certifiée" && (
+                {fiche.status && (
                     <div className="absolute top-3 right-3">
                         <Tooltip>
                             <TooltipTrigger>
                                 <Image
                                     src={`/badge/${fiche.status}.svg`}
                                     alt={`Statut: ${fiche.status}`}
-                                    width={28}
-                                    height={28}
+                                    width={34}
+                                    height={34}
                                     className="drop-shadow-md cursor-pointer"
                                 />
                             </TooltipTrigger>

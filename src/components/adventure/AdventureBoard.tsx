@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Loader2, Flame, Map } from 'lucide-react';
+import { Loader2, Map } from 'lucide-react';
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { getBoardTheme } from './boardThemes';
@@ -231,7 +232,7 @@ export default function AdventureBoard() {
 
         {/* Indicateur de streak */}
         <div className={cn('flex items-center gap-2 px-3 py-1.5 rounded-full shadow-sm', streak.current > 0 ? 'bg-gradient-to-r from-orange-500 to-red-500 text-white' : 'bg-white/70 text-gray-500')}>
-          <Flame className={cn('w-4 h-4', streak.current > 0 && 'adventure-flame')} />
+          <FlammeIcon className={cn('w-4 h-4', streak.current > 0 && 'adventure-flame')} />
           <span className="text-sm font-bold">{streak.current} jour{streak.current > 1 ? 's' : ''}</span>
           {streak.milestoneName && streak.current > 0 && (
             <span className="hidden sm:inline text-[10px] font-medium opacity-90">Â· {streak.milestoneName}</span>
@@ -299,7 +300,7 @@ export default function AdventureBoard() {
       <div className="relative mt-4 flex flex-wrap gap-3 text-[11px] text-gray-500">
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-amber-400" /> Aujourd&apos;hui</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-emerald-400" /> Réclamé</span>
-        <span className="flex items-center gap-1"><Flame className="w-3 h-3 text-orange-500" /> Traînée de flamme</span>
+        <span className="flex items-center gap-1"><FlammeIcon className="w-3 h-3 text-orange-500" /> Traînée de flamme</span>
         <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-slate-600" /> Brouillard</span>
         {/* Une entrée par icône réellement présente sur le chemin */}
         {wars

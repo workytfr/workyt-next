@@ -175,7 +175,7 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
             </svg>
           )}
           <Image
-            src="/badge/champiworkyt.webp"
+            src="/badge/champignon.svg"
             alt="Champignon"
             width={20}
             height={20}
@@ -200,7 +200,7 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
           {/* Header */}
           <div className="flex items-center gap-3 mb-4">
             <Image
-              src="/badge/champiworkyt.webp"
+              src="/badge/champignon.svg"
               alt="ChampiWorkyt"
               width={32}
               height={32}
@@ -257,7 +257,7 @@ const MushroomIndicator: React.FC<MushroomIndicatorProps> = ({ userId, className
                     className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed shrink-0 ml-2"
                   >
                     <Image
-                      src="/badge/champiworkyt.webp"
+                      src="/badge/champignon.svg"
                       alt=""
                       width={12}
                       height={12}

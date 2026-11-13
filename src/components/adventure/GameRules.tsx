@@ -2,8 +2,18 @@
 
 import React, { useState } from 'react';
 import {
-  Scroll, Target, Play, Sword, Heart, Timer, Flame, Layers, Moon, Users, Crown
+    Scroll,
+    Target,
+    Play,
+    Sword,
+    Heart,
+    Timer,
+    Layers,
+    Moon,
+    Users,
+    Crown,
 } from 'lucide-react';
+import { FlammeIcon } from "@/components/ui/WkIcons";
 
 /**
  * Règles complètes de « Workyt Quest ».
@@ -233,7 +243,7 @@ function ParametresPanel() {
 
       <Table
         title="Bonus d'XP cumulables"
-        icon={<Flame className="h-4 w-4 text-orange-500" />}
+        icon={<FlammeIcon className="h-4 w-4 text-orange-500" />}
         rows={[
           ['Quiz du jour', '10 XP · 50 au boss'],
           ['Premier coup', '×1,5'],

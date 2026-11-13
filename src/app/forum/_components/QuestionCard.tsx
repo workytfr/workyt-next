@@ -65,7 +65,7 @@ export default function QuestionCard({ q }: { q: ForumQuestion }) {
                         </span>
                     )}
                     <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 font-semibold text-amber-800" title="Points misés sur la question">
-                        <Image src="/badge/points.png" alt="" width={13} height={13} className="object-contain" /> {q.points}
+                        <Image src="/badge/coin.svg" alt="" width={13} height={13} className="object-contain" /> {q.points}
                     </span>
                 </>
             }

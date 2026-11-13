@@ -534,7 +534,7 @@ export default function EvaluationPage() {
                                     </div>
                                     <div className="flex items-center gap-2 bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-sm">
                                         {/* eslint-disable-next-line @next/next/no-img-element */}
-                                        <img src={difficultyBadge(diff)} alt={diff} className="h-5 w-5" />
+                                        <img src={difficultyBadge(diff)} alt={diff} className="h-6 w-6" />
                                         <span className="text-sm font-medium" style={{ color: cfg.color }}>{diff}</span>
                                         {ex.points > 0 && <span className="text-xs font-medium" style={{ color: cfg.color }}>· {ex.points} pts</span>}
                                     </div>

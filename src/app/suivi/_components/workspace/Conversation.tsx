@@ -11,7 +11,6 @@ import {
     ShieldCheck,
     ExternalLink,
     CalendarDays,
-    Flame,
     Info,
     Pin,
     PinOff,
@@ -24,6 +23,7 @@ import {
     PenTool,
     ArrowDown,
 } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import { ALLOWED_ATTACHMENT_TYPES, MAX_ATTACHMENT_BYTES, MAX_CONFUSED_LENGTH, MAX_MESSAGE_LENGTH, MOOD_LABELS } from "@/lib/mentorship/config";
 import { checkForContactDetails } from "@/lib/mentorship/contactFilter";
 import { previewText } from "@/lib/mentorship/plainText";
@@ -384,7 +384,7 @@ function MessageItem({
                     }`}
                 >
                     {done && <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />}
-                    {streak && <Flame className="h-3.5 w-3.5 shrink-0" />}
+                    {streak && <FlammeIcon className="h-3.5 w-3.5 shrink-0" />}
                     {m.text}
                 </span>
             </div>

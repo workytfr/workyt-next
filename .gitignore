@@ -75,3 +75,6 @@ backups/
 
 # Documents internes (chartes, guides, PDF) : non versionnés
 /docs/
+
+# Empreintes des images de public/ déjà envoyées sur le S3 de Youss
+scripts/.public-s3-manifest.json

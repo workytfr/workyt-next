@@ -77,7 +77,7 @@ export default function UserRank({ points, className = '', showProgress = true }
                 Encore <strong className="text-[var(--wk-ink)]">{pointsNeeded.toLocaleString('fr-FR')} pts</strong>
               </p>
               <p className="flex min-w-0 items-center gap-1 text-sm font-semibold" style={{ color: nextRank.color }}>
-                <RankIcon level={nextRank.level} color={nextRank.color} size={14} />
+                <RankIcon level={nextRank.level} color={nextRank.color} size={16} />
                 <span className="truncate">{nextRank.name}</span>
               </p>
             </div>

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
     Loader2,
-    Flame,
     Target,
     BookOpen,
     MessageCircle,
@@ -17,6 +16,7 @@ import {
     LayoutGrid,
     List,
 } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import { MOOD_LABELS, OUTCOME_LABELS, MENTOR_REMINDER_DAYS } from "@/lib/mentorship/config";
 import { api, daysSince, formatDate, formatDuration, type MentorshipSummary } from "@/app/suivi/_lib/client";
 
@@ -309,7 +309,7 @@ function SuiviCard({ m }: { m: MentorshipSummary }) {
             <div className="mt-4 flex flex-wrap gap-2 text-xs">
                 <span className="dash-badge"><Target className="mr-1 h-3 w-3" /> {m.goals.done}/{m.goals.total}</span>
                 <span className="dash-badge"><BookOpen className="mr-1 h-3 w-3" /> {m.assignments.done}/{m.assignments.total}</span>
-                {m.duoStreak > 0 && <span className="dash-badge dash-badge-warning"><Flame className="mr-1 h-3 w-3" /> {m.duoStreak} sem.</span>}
+                {m.duoStreak > 0 && <span className="dash-badge dash-badge-warning"><FlammeIcon className="mr-1 h-3 w-3" /> {m.duoStreak} sem.</span>}
                 {m.checkinMood && (
                     <span className={`dash-badge ${m.checkinMood === "bloque" ? "dash-badge-danger" : m.checkinMood === "bien" ? "dash-badge-success" : "dash-badge-warning"}`}>
                         <CheckCircle2 className="mr-1 h-3 w-3" /> {MOOD_LABELS[m.checkinMood]}

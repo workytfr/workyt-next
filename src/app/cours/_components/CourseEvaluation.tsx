@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
-    FileCheck,
     Clock,
     CheckCircle2,
     XCircle,
@@ -13,6 +12,7 @@ import {
     Shuffle,
     AlertTriangle,
 } from "lucide-react";
+import { EvaluationIcon } from "@/components/ui/WkIcons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import Mascot from "@/components/ui/Mascot";
 
@@ -46,7 +46,7 @@ export default function CourseEvaluation({ courseId }: CourseEvaluationProps) {
             <Card className="border border-gray-200 rounded-2xl shadow-sm">
                 <CardHeader className="bg-white border-b border-gray-100">
                     <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <FileCheck className="w-5 h-5 text-gray-400" />
+                        <EvaluationIcon className="w-5 h-5 text-gray-400" />
                         Évaluation
                     </CardTitle>
                 </CardHeader>
@@ -70,7 +70,7 @@ export default function CourseEvaluation({ courseId }: CourseEvaluationProps) {
             <Card className="border border-gray-200 rounded-2xl shadow-sm">
                 <CardHeader className="bg-white border-b border-gray-100">
                     <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <FileCheck className="w-5 h-5 text-gray-400" />
+                        <EvaluationIcon className="w-5 h-5 text-gray-400" />
                         Évaluation du Trimestre
                     </CardTitle>
                 </CardHeader>
@@ -92,7 +92,7 @@ export default function CourseEvaluation({ courseId }: CourseEvaluationProps) {
             <Card className="border border-gray-200 rounded-2xl shadow-sm">
                 <CardHeader className="bg-white border-b border-gray-100">
                     <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <FileCheck className="w-5 h-5 text-gray-400" />
+                        <EvaluationIcon className="w-5 h-5 text-gray-400" />
                         Évaluation
                     </CardTitle>
                 </CardHeader>
@@ -210,7 +210,7 @@ export default function CourseEvaluation({ courseId }: CourseEvaluationProps) {
             <Card className="border border-orange-200 rounded-2xl shadow-sm bg-orange-50/30">
                 <CardHeader className="bg-white border-b border-orange-100">
                     <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
-                        <FileCheck className="w-5 h-5 text-orange-500" />
+                        <EvaluationIcon className="w-5 h-5 text-orange-500" />
                         Évaluation du Trimestre
                     </CardTitle>
                 </CardHeader>

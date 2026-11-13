@@ -10,7 +10,6 @@ import {
     MessagesSquare,
     Target,
     BookOpen,
-    Flame,
     ShieldCheck,
     Lock,
     Flag,
@@ -22,6 +21,7 @@ import {
     LifeBuoy,
     MessageCircle,
 } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import { educationData } from "@/data/educationData";
 import {
     ANNOUNCED_DELAY_HOURS,
@@ -217,7 +217,7 @@ export default function SuiviHome() {
                                     Réponse en général sous {ANNOUNCED_DELAY_HOURS} h.
                                 </li>
                                 <li className="flex gap-2.5">
-                                    <Flame className="mt-0.5 h-4 w-4 shrink-0 text-[var(--wk-accent)]" />
+                                    <FlammeIcon className="mt-0.5 h-4 w-4 shrink-0 text-[var(--wk-accent)]" />
                                     Des points et des badges quand tu avances.
                                 </li>
                             </ul>
@@ -318,7 +318,7 @@ function SuiviPreview() {
                         <div className="text-xs text-[rgba(26,21,18,0.55)]">Mathématiques · 3ème</div>
                     </div>
                     <span className="wk-chip">
-                        <Flame className="h-3.5 w-3.5 text-[var(--wk-accent)]" /> 4 sem.
+                        <FlammeIcon className="h-3.5 w-3.5 text-[var(--wk-accent)]" /> 4 sem.
                     </span>
                 </div>
                 <div className="space-y-3 py-4 text-sm">
@@ -392,7 +392,7 @@ function MySuiviCard({ m }: { m: MentorshipSummary }) {
                 )}
                 {m.duoStreak > 0 && (
                     <span className="wk-chip">
-                        <Flame className="h-3.5 w-3.5 text-[var(--wk-accent)]" /> {m.duoStreak} sem.
+                        <FlammeIcon className="h-3.5 w-3.5 text-[var(--wk-accent)]" /> {m.duoStreak} sem.
                     </span>
                 )}
                 {m.checkinPending && <span className="wk-chip !border-emerald-200 !bg-emerald-50 text-emerald-700">Point d&apos;étape</span>}

@@ -44,7 +44,7 @@ export const PRESTIGE_TIERS: PrestigeTier[] = [
   { name: 'Étoile',     badge: '⭐', color: '#FFD700', gradient: 'from-yellow-300 via-amber-400 to-orange-400', from: 96, to: 100 },
 ];
 
-const PRESTIGE_START = 28000;
+const PRESTIGE_START = 82000; // après l'Éternel (dernier rang des mondes)
 const PRESTIGE_PTS_PER_LEVEL = 5000;
 const MAX_PRESTIGE = 100;
 export const PRESTIGE_ROMAN = ['I', 'II', 'III', 'IV', 'V'] as const;
@@ -448,14 +448,128 @@ export const RANKS: Rank[] = [
     worldLevel: 3
   },
 
-  // Monde 10 : Monde des Anciens
+  // Monde 10 : Monde des Pirates
+  {
+    name: "Moussaillon",
+    level: 28,
+    color: "#0E7490",
+    gradient: "from-cyan-600 to-teal-700",
+    badge: "⚓",
+    minPoints: 22000,
+    description: "Premier pas sur le pont",
+    world: "Monde des Pirates",
+    worldDescription: "Pars à l'abordage du savoir sur les mers inconnues",
+    worldLevel: 1
+  },
+  {
+    name: "Corsaire",
+    level: 29,
+    color: "#B45309",
+    gradient: "from-amber-600 to-orange-700",
+    badge: "🏴‍☠️",
+    minPoints: 25500,
+    description: "Écumeur des savoirs",
+    world: "Monde des Pirates",
+    worldDescription: "Pars à l'abordage du savoir sur les mers inconnues",
+    worldLevel: 2
+  },
+  {
+    name: "Capitaine",
+    level: 30,
+    color: "#1D4ED8",
+    gradient: "from-blue-600 to-indigo-700",
+    badge: "🧭",
+    minPoints: 29000,
+    description: "Maître à bord",
+    world: "Monde des Pirates",
+    worldDescription: "Pars à l'abordage du savoir sur les mers inconnues",
+    worldLevel: 3
+  },
+
+  // Monde 11 : Monde du Cosmos
+  {
+    name: "Cadet de l'espace",
+    level: 31,
+    color: "#4F46E5",
+    gradient: "from-indigo-500 to-violet-600",
+    badge: "🚀",
+    minPoints: 33000,
+    description: "Prêt pour le décollage",
+    world: "Monde du Cosmos",
+    worldDescription: "Décolle vers les étoiles et explore l'univers",
+    worldLevel: 1
+  },
+  {
+    name: "Astronaute",
+    level: 32,
+    color: "#0284C7",
+    gradient: "from-sky-500 to-blue-600",
+    badge: "👩‍🚀",
+    minPoints: 37500,
+    description: "En orbite autour du savoir",
+    world: "Monde du Cosmos",
+    worldDescription: "Décolle vers les étoiles et explore l'univers",
+    worldLevel: 2
+  },
+  {
+    name: "Commandant stellaire",
+    level: 33,
+    color: "#7C3AED",
+    gradient: "from-violet-500 to-fuchsia-600",
+    badge: "🌌",
+    minPoints: 42000,
+    description: "Guide des constellations",
+    world: "Monde du Cosmos",
+    worldDescription: "Décolle vers les étoiles et explore l'univers",
+    worldLevel: 3
+  },
+
+  // Monde 12 : Monde des Vikings
+  {
+    name: "Skalde",
+    level: 34,
+    color: "#475569",
+    gradient: "from-slate-500 to-slate-700",
+    badge: "📯",
+    minPoints: 47000,
+    description: "Conteur des sagas",
+    world: "Monde des Vikings",
+    worldDescription: "Prends la mer avec les guerriers du Nord",
+    worldLevel: 1
+  },
+  {
+    name: "Berserker",
+    level: 35,
+    color: "#B91C1C",
+    gradient: "from-red-600 to-red-800",
+    badge: "🪓",
+    minPoints: 52500,
+    description: "Rien ne l'arrête",
+    world: "Monde des Vikings",
+    worldDescription: "Prends la mer avec les guerriers du Nord",
+    worldLevel: 2
+  },
+  {
+    name: "Jarl",
+    level: 36,
+    color: "#CA8A04",
+    gradient: "from-yellow-500 to-amber-700",
+    badge: "⛵",
+    minPoints: 58000,
+    description: "Chef de la flotte",
+    world: "Monde des Vikings",
+    worldDescription: "Prends la mer avec les guerriers du Nord",
+    worldLevel: 3
+  },
+
+  // Monde 13 : Monde des Anciens (le dernier, repoussé loin)
   {
     name: "Titan",
-    level: 28,
+    level: 37,
     color: "#DC2626",
     gradient: "from-red-600 to-rose-700",
     badge: "🏛️",
-    minPoints: 22000,
+    minPoints: 65000,
     description: "Force des anciens",
     world: "Monde des Anciens",
     worldDescription: "Atteins la sagesse des civilisations disparues",
@@ -463,11 +577,11 @@ export const RANKS: Rank[] = [
   },
   {
     name: "Archimage",
-    level: 29,
+    level: 38,
     color: "#7C3AED",
     gradient: "from-violet-600 to-purple-700",
     badge: "🌠",
-    minPoints: 25000,
+    minPoints: 73000,
     description: "Maîtrise absolue des arcanes",
     world: "Monde des Anciens",
     worldDescription: "Atteins la sagesse des civilisations disparues",
@@ -475,11 +589,11 @@ export const RANKS: Rank[] = [
   },
   {
     name: "Éternel",
-    level: 30,
+    level: 39,
     color: "#F59E0B",
     gradient: "from-yellow-400 via-amber-500 to-orange-500",
     badge: "✨",
-    minPoints: 28000,
+    minPoints: 82000,
     description: "Au-delà du temps et des mondes",
     world: "Monde des Anciens",
     worldDescription: "Atteins la sagesse des civilisations disparues",

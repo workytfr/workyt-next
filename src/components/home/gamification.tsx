@@ -3,12 +3,12 @@ import {
     ArrowRight,
     CheckCircle,
     FileText,
-    Flame,
     Gem,
     Heart,
     MessageCircle,
     Target,
 } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 
 /* Section volontairement resserrée.
    L'ancienne version empilait des WobbleCard en dégradés émeraude, teal et
@@ -116,7 +116,7 @@ export function GamificationSection() {
                                     La série quotidienne
                                 </h3>
                             </div>
-                            <Flame className="h-7 w-7 shrink-0 text-[var(--wk-accent)]" />
+                            <FlammeIcon className="h-7 w-7 shrink-0 text-[var(--wk-accent)]" />
                         </div>
 
                         {/* Ligne de paliers — une seule rangée, pas six cartes */}

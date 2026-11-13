@@ -267,7 +267,7 @@ const PartnerCard = ({ partner, userCodes, onClaim, claiming }: {
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-sm font-semibold">Offre premium</span>
                                     <span className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-0.5 text-[11px] font-semibold text-[#c24a0a]">
-                                        <Image src="/badge/diamond.png" alt="" width={12} height={12} className="object-contain" />
+                                        <Image src="/badge/braise.svg" alt="" width={12} height={12} className="object-contain" />
                                         {partner.offers.premium.gemsCost} gemmes
                                     </span>
                                 </div>
@@ -512,7 +512,7 @@ export default function AwardPageClient() {
                                 )}
                                 {gemBalance !== null && (
                                     <span className="wk-chip !px-3.5 !py-2 text-sm">
-                                        <Image src="/badge/diamond.png" alt="" width={16} height={16} className="object-contain" />
+                                        <Image src="/badge/braise.svg" alt="" width={16} height={16} className="object-contain" />
                                         {gemBalance} gemme{gemBalance > 1 ? 's' : ''}
                                     </span>
                                 )}

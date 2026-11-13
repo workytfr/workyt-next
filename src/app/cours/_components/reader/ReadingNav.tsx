@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, ChevronLeft, ChevronRight, Dumbbell, Home, Trophy } from "lucide-react";
+import { ChevronLeft, ChevronRight, Home } from "lucide-react";
 import CourseEvaluation from "../CourseEvaluation";
 import { useCourse } from "./CourseShell";
 import { courseHref, findNeighbours, type NavItem, type NavKind } from "../courseLinks";
+import { CoursIcon, ExerciceIcon, QuizIcon } from "@/components/ui/WkIcons";
 
-const KIND_ICON = { lesson: BookOpen, exercises: Dumbbell, quizzes: Trophy } as const;
+const KIND_ICON = { lesson: CoursIcon, exercises: ExerciceIcon, quizzes: QuizIcon } as const;
 
 /** Fil d'Ariane : Cours › Chapitre › élément courant */
 export function ReadingBreadcrumb({ kind, id, label }: { kind: NavKind; id: string; label: string }) {

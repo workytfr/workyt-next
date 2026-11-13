@@ -224,6 +224,10 @@ export default function FicheEditor({ value, onChange, placeholder }: FicheEdito
         extensions: [
             StarterKit.configure({
                 heading: { levels: [1, 2, 3] },
+                // TipTap 3 inclut Link et Underline : on les coupe ici pour garder
+                // les versions configurées plus bas (sinon extensions en double).
+                link: false,
+                underline: false,
             }),
             Underline,
             Highlight,

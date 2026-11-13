@@ -1,0 +1,99 @@
+/* Légende de Workyt : nuit chaude, papiers clairs, accent orange. */
+
+.legende-prose strong { color: #fff3e2; font-weight: 700; }
+.legende-prose em { color: #f6dcbf; }
+.legende-line { color: #f6eadb; }
+.legende-foxy { color: #ffb27a; font-style: italic; }
+.legende-glow {
+  color: #fff3e2;
+  font-weight: 600;
+  background: linear-gradient(transparent 60%, rgba(255, 106, 26, 0.45) 60%, rgba(255, 106, 26, 0.45) 92%, transparent 92%);
+}
+
+/* Aperçus du site en version nuit */
+.legende-window { background: #1f1915; border-color: rgba(233, 220, 203, 0.12); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4); }
+.legende-window .wk-window-bar { background: rgba(255, 255, 255, 0.03); border-bottom-color: rgba(233, 220, 203, 0.08); }
+.legende-window .wk-window-dot { background: rgba(233, 220, 203, 0.2); }
+
+/* ---------- Journaux : des papiers posés sur la page ---------- */
+.legende-journal {
+  color: var(--wk-ink);
+  border: 1px solid rgba(26, 21, 18, 0.1);
+  border-radius: 14px;
+  padding: 22px 22px 24px;
+  background: #f7efdf;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+
+/* Carnet de Foxy : gros carreaux Seyès, marge orange */
+.legende-carnet {
+  background-color: #f7efdf;
+  background-image:
+    linear-gradient(to right, transparent 36px, rgba(255, 106, 26, 0.45) 36px, rgba(255, 106, 26, 0.45) 37px, transparent 37px),
+    repeating-linear-gradient(to bottom, transparent 0 27px, rgba(110, 193, 228, 0.28) 27px 28px);
+  padding-left: 52px;
+}
+.legende-carnet p { font-style: italic; }
+
+/* Ordre de guerre : papier épais, double filet, sceau */
+.legende-ordre {
+  background: #f8eedb;
+  border: 3px double rgba(26, 21, 18, 0.3);
+}
+.legende-seal {
+  position: absolute;
+  right: -12px;
+  bottom: -12px;
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  background: var(--wk-accent);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+}
+
+/* Parchemin cloué : punaise */
+.legende-parchemin { background: #fbf4e6; }
+.legende-pin {
+  position: absolute;
+  top: -8px;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  margin-left: -8px;
+  border-radius: 999px;
+  background: var(--wk-accent);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Registre : grand livre, double filet */
+.legende-registre {
+  background-color: #f7efdf;
+  background-image: linear-gradient(to right, transparent 26px, rgba(255, 106, 26, 0.4) 26px, rgba(255, 106, 26, 0.4) 27px, transparent 27px, transparent 30px, rgba(255, 106, 26, 0.4) 30px, rgba(255, 106, 26, 0.4) 31px, transparent 31px);
+  padding-left: 46px;
+}
+
+/* Gazette : papier journal */
+.legende-gazette { background: #f6f3ec; border-radius: 4px; }
+
+/* Registre de la forge : bandeau d'encre */
+.legende-forgebook { border-top: 8px solid var(--wk-ink); }
+
+/* ---------- Planches : illustrations à l'encre sur papier ---------- */
+.legende-plate {
+  color: var(--wk-ink);
+  background: #f7efdf;
+  border: 1px solid rgba(26, 21, 18, 0.1);
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.25);
+}
+@media (min-width: 640px) {
+  .legende-plate { padding: 26px 28px; }
+}
+/* La carte : le grand papier final, bordé d'un double filet */
+.legende-map {
+  border: 3px double rgba(26, 21, 18, 0.28);
+  border-radius: 22px;
+}

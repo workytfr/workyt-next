@@ -1,10 +1,4 @@
-import {
-    BookOpen, Calculator, Globe, Leaf, FlaskConical, Cpu, Languages,
-    Lightbulb, BarChart3, Code, Music, Palette, Dumbbell, Scale,
-    GraduationCap, Heart, Microscope, Building2, Landmark, BookText,
-    PenTool, Drama, Clapperboard, Atom, Brain, Users, Briefcase,
-    Hammer, Wrench, Compass, type LucideIcon
-} from "lucide-react";
+import { subjectGlyph, type SubjectGlyphComponent, type SubjectGlyphKind } from "@/components/ui/SubjectGlyph";
 
 // Définition du type pour les données d'éducation
 export interface EducationData {
@@ -74,39 +68,50 @@ export const educationData: EducationData = {
 };
 
 // Icônes Lucide par matière
-export const subjectIconComponents: { [key: string]: LucideIcon } = {
-    "Français": BookOpen,
-    "Mathématiques": Calculator,
-    "Histoire-Géographie": Globe,
-    "Sciences de la Vie et de la Terre (SVT)": Leaf,
-    "Physique-Chimie": FlaskConical,
-    "Technologie": Cpu,
-    "Anglais": Languages,
-    "Espagnol": Languages,
-    "Allemand": Languages,
-    "Italien": Languages,
-    "Linguistique": Languages,
-    "Philosophie": Lightbulb,
-    "Économie": BarChart3,
-    "Informatique": Code,
-    "Arts Plastiques": Palette,
-    "Éducation Musicale": Music,
-    "EPS": Dumbbell,
-    "Sciences Économiques et Sociales (SES)": BarChart3,
-    "Numérique et Sciences Informatiques (NSI)": Code,
-    "Humanités, Littérature et Philosophie (HLP)": BookText,
-    "Sciences de l'Ingénieur (SI)": Wrench,
-    "Géopolitique (HGGSP)": Landmark,
-    "Littérature et Langues (LLCE)": PenTool,
-    "Droit": Scale,
-    "Management": Briefcase,
-    "Biologie": Microscope,
-    "Géologie": Compass,
-    "Latin / Grec": GraduationCap,
-    "Portugais": Languages,
-    "Chinois": Languages,
-    "Arabe": Languages,
-    "Enseignement Moral et Civique (EMC)": Users,
+// Icônes de matière, dans le style des badges Workyt (voir components/ui/SubjectGlyph)
+const glyphs = new Map<SubjectGlyphKind, SubjectGlyphComponent>();
+const g = (kind: SubjectGlyphKind): SubjectGlyphComponent => {
+    let glyph = glyphs.get(kind);
+    if (!glyph) {
+        glyph = subjectGlyph(kind);
+        glyphs.set(kind, glyph);
+    }
+    return glyph;
+};
+
+export const subjectIconComponents: { [key: string]: SubjectGlyphComponent } = {
+    "Français": g("livre"),
+    "Mathématiques": g("maths"),
+    "Histoire-Géographie": g("globe"),
+    "Sciences de la Vie et de la Terre (SVT)": g("feuille"),
+    "Physique-Chimie": g("fiole"),
+    "Technologie": g("puce"),
+    "Anglais": g("langues"),
+    "Espagnol": g("langues"),
+    "Allemand": g("langues"),
+    "Italien": g("langues"),
+    "Linguistique": g("langues"),
+    "Philosophie": g("ampoule"),
+    "Économie": g("barres"),
+    "Informatique": g("code"),
+    "Arts Plastiques": g("palette"),
+    "Éducation Musicale": g("musique"),
+    "EPS": g("halteres"),
+    "Sciences Économiques et Sociales (SES)": g("barres"),
+    "Numérique et Sciences Informatiques (NSI)": g("code"),
+    "Humanités, Littérature et Philosophie (HLP)": g("ampoule"),
+    "Sciences de l'Ingénieur (SI)": g("rouage"),
+    "Géopolitique (HGGSP)": g("temple"),
+    "Littérature et Langues (LLCE)": g("langues"),
+    "Droit": g("balance"),
+    "Management": g("barres"),
+    "Biologie": g("cellule"),
+    "Géologie": g("montagne"),
+    "Latin / Grec": g("colonne"),
+    "Portugais": g("langues"),
+    "Chinois": g("langues"),
+    "Arabe": g("langues"),
+    "Enseignement Moral et Civique (EMC)": g("citoyens"),
 };
 
 // Définition des couleurs pour les matières
@@ -252,8 +257,8 @@ export function getSubjectGradient(subject: string): string {
 }
 
 // Fonction pour obtenir le composant icône d'un sujet
-export function getSubjectIconComponent(subject: string): LucideIcon {
-    return subjectIconComponents[subject] || BookOpen;
+export function getSubjectIconComponent(subject: string): SubjectGlyphComponent {
+    return subjectIconComponents[subject] || g("livre");
 }
 
 /**

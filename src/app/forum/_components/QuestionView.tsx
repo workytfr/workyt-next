@@ -2,7 +2,9 @@
 
 import React from "react";
 import Link from "next/link";
-import { Paperclip, Download, BookOpen, CheckCircle2, PenLine, Quote, FileText, ArrowUpRight, Target, ChevronRight } from "lucide-react";
+import { Paperclip, Download, BookOpen, PenLine, Quote, FileText, ArrowUpRight, Target, ChevronRight } from "lucide-react";
+import { ForumStatusIcon } from "@/components/ui/ForumStatusIcon";
+import { FicheIcon } from "@/components/ui/WkIcons";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import MentionMarkdown from "./MentionMarkdown";
@@ -179,7 +181,7 @@ const QuestionDetail = ({
                 {revisions && revisions.length > 0 && (
                     <section>
                         <h2 className="font-mono-ui mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-emerald-700">
-                            <BookOpen className="h-3.5 w-3.5" /> Fiches de révision ({revisions.length})
+                            <FicheIcon className="h-4 w-4" /> Fiches de révision ({revisions.length})
                         </h2>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
                             {revisions.map((revision) => (
@@ -229,7 +231,7 @@ const QuestionDetail = ({
                     </div>
                 ) : (
                     <p className={`flex items-center gap-2 text-sm font-semibold ${question.status === "Résolue" ? "text-emerald-700" : "text-[#2f86b3]"}`}>
-                        <CheckCircle2 className="h-4 w-4" />
+                        <ForumStatusIcon kind={question.status === "Résolue" ? "resolue" : "validee"} className="h-5 w-5" />
                         {question.status === "Résolue"
                             ? "Question résolue par l'auteur — on ne peut plus y répondre."
                             : "Question validée par l'équipe — on ne peut plus y répondre."}

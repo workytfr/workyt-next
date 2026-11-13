@@ -72,19 +72,19 @@ export function ChestRewardRow({ reward }: { reward: ChestWithOdds["possibleRewa
       <div className="flex items-center gap-2">
         {reward.type === "points" && (
           <>
-            <Image src="/badge/points.png" alt="" width={18} height={18} className="object-contain" />
+            <Image src="/badge/coin.svg" alt="" width={18} height={18} className="object-contain" />
             <span className="text-gray-700 text-xs font-medium">{reward.amount} points</span>
           </>
         )}
         {reward.type === "gems" && (
           <>
-            <Image src="/badge/diamond.png" alt="" width={18} height={18} className="object-contain" />
+            <Image src="/badge/braise.svg" alt="" width={18} height={18} className="object-contain" />
             <span className="text-gray-700 text-xs font-medium">{reward.amount} diamants</span>
           </>
         )}
         {reward.type === "mushrooms" && (
           <>
-            <Image src="/badge/champiworkyt.webp" alt="" width={18} height={18} className="object-contain" />
+            <Image src="/badge/champignon.svg" alt="" width={18} height={18} className="object-contain" />
             <span className="text-gray-700 text-xs font-medium">
               {reward.amount} champignon{(reward.amount ?? 0) > 1 ? "s" : ""}
             </span>

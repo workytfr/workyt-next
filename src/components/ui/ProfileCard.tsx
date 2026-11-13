@@ -111,7 +111,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                     <span className="text-orange-500">•</span>
                     <div className="flex items-center gap-0.5">
                         <Image 
-                            src="/badge/points.png" 
+                            src="/badge/coin.svg" 
                             alt="Points" 
                             width={12} 
                             height={12} 
@@ -122,7 +122,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
                     <span className="text-orange-500">•</span>
                     <div className="flex items-center gap-0.5">
                         <Image 
-                            src="/badge/diamond.png" 
+                            src="/badge/braise.svg" 
                             alt="Diamants" 
                             width={12} 
                             height={12} 

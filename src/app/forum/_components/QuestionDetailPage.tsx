@@ -162,7 +162,7 @@ export default function QuestionDetailPage({
                                 </span>
                                 <StatusChip status={question.status} />
                                 <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-                                    <Image src="/badge/points.png" alt="" width={13} height={13} className="object-contain" />
+                                    <Image src="/badge/coin.svg" alt="" width={13} height={13} className="object-contain" />
                                     {question.points} pts misés
                                 </span>
                             </div>

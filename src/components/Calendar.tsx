@@ -400,7 +400,7 @@ function RewardBadge({ reward, small }: { reward: CalendarDay['reward']; small?:
   if (reward.type === 'gems') {
     return (
       <div className="flex items-center gap-1">
-        <Image src="/badge/diamond.png" alt="" width={imgSize} height={imgSize} className="object-contain" />
+        <Image src="/badge/braise.svg" alt="" width={imgSize} height={imgSize} className="object-contain" />
         <span className={cn(textClass, 'font-semibold text-blue-600')}>{reward.amount}</span>
       </div>
     );
@@ -408,7 +408,7 @@ function RewardBadge({ reward, small }: { reward: CalendarDay['reward']; small?:
 
   return (
     <div className="flex items-center gap-1">
-      <Image src="/badge/points.png" alt="" width={imgSize} height={imgSize} className="object-contain" />
+      <Image src="/badge/coin.svg" alt="" width={imgSize} height={imgSize} className="object-contain" />
       <span className={cn(textClass, 'font-semibold text-gray-600')}>{reward.amount}</span>
     </div>
   );

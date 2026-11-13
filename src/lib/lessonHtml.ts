@@ -12,6 +12,7 @@ import { visit } from "unist-util-visit";
 import katex from "katex";
 import { highlightCodeBlocks } from "@/lib/codeHighlight";
 import { sanitizeHastTree } from "@/lib/sanitizeHtml";
+import { getIconSVG } from "@/lib/lessonBlockIcons";
 
 export interface TocItem {
     id: string;
@@ -37,27 +38,7 @@ const blockTypeConfig = {
 
 type BlockType = keyof typeof blockTypeConfig;
 
-// Icônes (trait `currentColor` : la couleur vient de la variante CSS du bloc)
-function getIconSVG(type: string) {
-    const svg = (paths: string) =>
-        `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
-    switch (type) {
-        case "definition":
-            return svg(`<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>`);
-        case "propriete":
-            return svg(`<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="11" x2="16" y2="11"/><line x1="8" y1="16" x2="12" y2="16"/>`);
-        case "theoreme":
-            return svg(`<path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>`);
-        case "remarque":
-            return svg(`<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>`);
-        case "attention":
-            return svg(`<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>`);
-        case "exemple":
-            return svg(`<path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2z"/>`);
-        default:
-            return svg(`<circle cx="12" cy="12" r="10"/>`);
-    }
-}
+// Icônes des blocs : voir lib/lessonBlockIcons (partagées avec la charte graphique)
 
 function escapeHtml(s: string) {
     return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");

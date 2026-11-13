@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
 import { Award, Clock, CheckCircle2, HelpCircle, Trophy, ChevronDown, ChevronUp } from "lucide-react";
+import { QuizIcon } from "@/components/ui/WkIcons";
 import { cn } from "@/lib/utils";
 
 interface QuizCardProps {
@@ -92,7 +93,7 @@ export default function QuizCard({ quiz, onStartQuiz }: QuizCardProps) {
                             "p-2.5 rounded-xl shrink-0 transition-colors",
                             quiz.completed ? "bg-green-100 text-green-600" : "bg-orange-100 text-orange-600"
                         )}>
-                            {quiz.completed ? <Trophy className="w-5 h-5" /> : <Award className="w-5 h-5" />}
+                            {quiz.completed ? <Trophy className="w-5 h-5" /> : <QuizIcon className="w-5 h-5" />}
                         </div>
                         <div className="min-w-0 flex-1">
                             <CardTitle className="text-base font-semibold text-gray-900 truncate">

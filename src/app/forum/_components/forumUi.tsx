@@ -2,6 +2,7 @@ import React from "react";
 import Link from "next/link";
 import { ArrowUpRight, HeartHandshake, MessagesSquare } from "lucide-react";
 import { PAGE_CONTAINER, Eyebrow, SubjectLabel } from "@/components/wk/primitives";
+import { ForumStatusIcon, QUESTION_STATUS_ICON } from "@/components/ui/ForumStatusIcon";
 
 /**
  * Kit visuel propre au forum (statuts, portes d'entrée, encart suivi). Les
@@ -22,10 +23,11 @@ export const STATUS_META: Record<string, { label: string; dot: string; chip: str
 };
 
 export function StatusChip({ status, className = "" }: { status?: string; className?: string }) {
-    const s = STATUS_META[status || "Non validée"] || STATUS_META["Non validée"];
+    const key = status && STATUS_META[status] ? status : "Non validée";
+    const s = STATUS_META[key];
     return (
         <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold ${s.chip} ${className}`}>
-            <span className={`h-1.5 w-1.5 rounded-full ${s.dot}`} />
+            <ForumStatusIcon kind={QUESTION_STATUS_ICON[key]} className="h-4 w-4" />
             {s.label}
         </span>
     );

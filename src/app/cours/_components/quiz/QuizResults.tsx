@@ -16,6 +16,7 @@ import {
     XCircle,
 } from "lucide-react";
 import CodeBlock from "@/components/ui/CodeBlock";
+import Foxy from "@/components/foxy/Foxy";
 import LatexText from "./LatexText";
 import QuizCompetencies from "./QuizCompetencies";
 import { formatCorrectAnswer, formatTime, formatUserAnswer } from "./utils";
@@ -107,13 +108,14 @@ export default function QuizResults({
 
             {/* --- Score --- */}
             <div className={`${scoreBg} rounded-2xl p-6 sm:p-8 mb-8 text-center`}>
+                {/* Foxy réagit au score : fête, réfléchit ou est embêté */}
                 <motion.div
-                    initial={{ scale: 0.6, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 200, damping: 16 }}
-                    className="w-16 h-16 mx-auto mb-4 rounded-full bg-white shadow-sm flex items-center justify-center"
+                    initial={{ scale: 0.92, opacity: 0, y: 8 }}
+                    animate={{ scale: 1, opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                    className="mx-auto mb-2 w-fit"
                 >
-                    <Trophy className={`w-8 h-8 ${scoreColor}`} />
+                    <Foxy pose={percent >= 80 ? "bravo" : percent >= 50 ? "reflechit" : "oups"} size={132} eager />
                 </motion.div>
 
                 <div className={`text-4xl sm:text-5xl font-bold ${scoreColor} mb-2`}>

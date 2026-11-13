@@ -470,7 +470,7 @@ export default function RewardsListPage() {
                                     <div className="flex items-start gap-3 p-3 bg-white/50 rounded-lg">
                                         <div className="mt-0.5 flex-shrink-0">
                                             <Image 
-                                                src="/badge/points.png" 
+                                                src="/badge/coin.svg" 
                                                 alt="Points" 
                                                 width={20} 
                                                 height={20} 
@@ -487,7 +487,7 @@ export default function RewardsListPage() {
                                     <div className="flex items-start gap-3 p-3 bg-white/50 rounded-lg">
                                         <div className="mt-0.5 flex-shrink-0">
                                             <Image 
-                                                src="/badge/diamond.png" 
+                                                src="/badge/braise.svg" 
                                                 alt="Diamants" 
                                                 width={20} 
                                                 height={20} 
@@ -663,7 +663,7 @@ function CalendarFloatingBubble() {
                     {todayReward.type === 'gems' ? (
                         <>
                             <Image 
-                                src="/badge/diamond.png" 
+                                src="/badge/braise.svg" 
                                 alt="Diamants" 
                                 width={12} 
                                 height={12} 
@@ -674,7 +674,7 @@ function CalendarFloatingBubble() {
                     ) : (
                         <>
                             <Image 
-                                src="/badge/points.png" 
+                                src="/badge/coin.svg" 
                                 alt="Points" 
                                 width={12} 
                                 height={12} 

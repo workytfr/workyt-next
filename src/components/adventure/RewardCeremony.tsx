@@ -159,7 +159,7 @@ function RewardFace({ result }: { result: ClaimResult }) {
   if (result.rewardType === 'gems') {
     return (
       <>
-        <Image src="/badge/diamond.png" alt="Diamants" width={80} height={80} className="object-contain drop-shadow-lg" />
+        <Image src="/badge/braise.svg" alt="Diamants" width={80} height={80} className="object-contain drop-shadow-lg" />
         <p className="text-3xl font-extrabold text-blue-600">+{result.amount}</p>
         <p className="text-sm font-semibold text-gray-600">diamant{(result.amount || 0) > 1 ? 's' : ''} 💎</p>
       </>
@@ -167,7 +167,7 @@ function RewardFace({ result }: { result: ClaimResult }) {
   }
   return (
     <>
-      <Image src="/badge/points.png" alt="Points" width={80} height={80} className="object-contain drop-shadow-lg" />
+      <Image src="/badge/coin-stack.svg" alt="Points" width={80} height={80} className="object-contain drop-shadow-lg" />
       <p className="text-3xl font-extrabold text-amber-600">+{result.amount}</p>
       <p className="text-sm font-semibold text-gray-600">point{(result.amount || 0) > 1 ? 's' : ''} ⭐</p>
     </>

@@ -101,7 +101,7 @@ export default function ExerciseCard({ exercise, index, onAskQuestion }: Exercis
                         <img
                             src={getDifficultyBadge(exercise.difficulty)}
                             alt={exercise.difficulty}
-                            className="h-5 w-5"
+                            className="h-6 w-6"
                         />
                         <span className="text-sm font-medium" style={{ color: config.color }}>
                             {exercise.difficulty}

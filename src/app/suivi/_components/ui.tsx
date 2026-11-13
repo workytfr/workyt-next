@@ -2,15 +2,11 @@
 
 import React from "react";
 import {
-    BookOpen,
-    FileText,
-    Dumbbell,
-    CircleHelp,
-    ClipboardCheck,
     GraduationCap,
     type LucideIcon,
 } from "lucide-react";
 import type { Kind, Status } from "../_lib/client";
+import { CoursIcon, EvaluationIcon, ExerciceIcon, FicheIcon, QuizIcon, type WkIconComponent } from "@/components/ui/WkIcons";
 
 /** Surtitre à la manière de la page d'accueil : trait + libellé en capitales */
 export function Eyebrow({ children, className = "" }: { children: React.ReactNode; className?: string }) {
@@ -42,13 +38,13 @@ export function StatusPill({ status }: { status: Status }) {
     );
 }
 
-export const KIND_META: Record<Kind, { label: string; icon: LucideIcon; color: string }> = {
-    course: { label: "Cours", icon: BookOpen, color: "#ff6a1a" },
+export const KIND_META: Record<Kind, { label: string; icon: LucideIcon | WkIconComponent; color: string }> = {
+    course: { label: "Cours", icon: CoursIcon, color: "#ff6a1a" },
     lesson: { label: "Leçon", icon: GraduationCap, color: "#e8590c" },
-    exercise: { label: "Exercice", icon: Dumbbell, color: "#6ec1e4" },
-    quiz: { label: "Quiz", icon: CircleHelp, color: "#9b6ef3" },
-    fiche: { label: "Fiche", icon: FileText, color: "#5fb83c" },
-    evaluation: { label: "Évaluation", icon: ClipboardCheck, color: "#e0a526" },
+    exercise: { label: "Exercice", icon: ExerciceIcon, color: "#6ec1e4" },
+    quiz: { label: "Quiz", icon: QuizIcon, color: "#9b6ef3" },
+    fiche: { label: "Fiche", icon: FicheIcon, color: "#5fb83c" },
+    evaluation: { label: "Évaluation", icon: EvaluationIcon, color: "#e0a526" },
 };
 
 export function KindBadge({ kind, className = "" }: { kind: Kind; className?: string }) {
@@ -60,7 +56,7 @@ export function KindBadge({ kind, className = "" }: { kind: Kind; className?: st
             style={{ background: `${meta.color}1a`, color: meta.color }}
             aria-hidden="true"
         >
-            <Icon className="h-4 w-4" />
+            <Icon className="h-5 w-5" />
         </span>
     );
 }

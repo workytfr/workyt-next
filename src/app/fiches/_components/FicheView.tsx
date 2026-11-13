@@ -10,7 +10,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import {
-    FileText,
     ArrowLeft,
     BookOpen,
     ChevronRight,
@@ -35,6 +34,7 @@ import { PAGE_CONTAINER, SubjectLabel, LevelChip } from "@/components/wk/primiti
 import { subjectToSlug, levelToSlug } from "@/utils/subjectSlug";
 import { FicheStatusChip, ficheStatusTint } from "./ficheUi";
 import AuthorLevel from "@/components/ui/AuthorLevel";
+import { FicheIcon } from "@/components/ui/WkIcons";
 
 interface FicheViewProps {
     id: string;
@@ -288,7 +288,7 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
                         {fiche.files?.length > 0 && (
                             <section className={`${card} overflow-hidden p-5 sm:p-6`}>
                                 <h2 className="font-serif-display mb-4 flex items-center gap-2 text-2xl">
-                                    <FileText className="h-5 w-5 text-[var(--wk-accent)]" />
+                                    <FicheIcon className="h-6 w-6 text-[var(--wk-accent)]" />
                                     {hasPdfFile ? "Document" : "Fichiers attachés"}
                                     <span className="text-base text-[rgba(26,21,18,0.45)]">({fiche.files.length})</span>
                                 </h2>
@@ -388,7 +388,7 @@ export default function FicheView({ id, initialFiche }: FicheViewProps) {
                                 <p className="font-semibold">Continuer en {fiche.subject}</p>
                                 <div className="mt-3 flex flex-col gap-2">
                                     <Link href={`/fiches/matiere/${subjectToSlug(fiche.subject)}`} className="inline-flex items-center gap-2 font-medium text-[rgba(26,21,18,0.75)] hover:text-[var(--wk-accent)]">
-                                        <FileText className="h-4 w-4" /> Toutes les fiches de {fiche.subject}
+                                        <FicheIcon className="h-[18px] w-[18px]" /> Toutes les fiches de {fiche.subject}
                                     </Link>
                                     <Link href="/fiches/creer" className="inline-flex items-center gap-2 font-medium text-[rgba(26,21,18,0.75)] hover:text-[var(--wk-accent)]">
                                         <PenLine className="h-4 w-4" /> Déposer ma propre fiche

@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/Pagination";
 import { FiBookmark, FiArrowLeft } from "react-icons/fi";
 import { FaBookmark } from "react-icons/fa";
-import { Pencil, Trash2, X, Check, FolderCog, Dumbbell, Flame, MessageCircle } from "lucide-react";
+import { Pencil, Trash2, X, Check, FolderCog, Dumbbell, MessageCircle } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import { SubjectLabel, LevelChip } from "@/components/wk/primitives";
 import { FicheStatusChip, ficheExcerpt, ficheStatusTint } from "@/app/fiches/_components/ficheUi";
 import ProfileAvatar from "@/components/ui/profile";
+import Foxy from "@/components/foxy/Foxy";
 
 type BookmarkContentType = "fiche" | "forum" | "cours" | "exercise";
 
@@ -418,7 +420,7 @@ export default function FavorisPage() {
                     </div>
                 ) : items.length === 0 ? (
                     <div className="text-center py-20">
-                        <FiBookmark size={56} className="mx-auto text-gray-300 mb-4" />
+                        <Foxy pose="pause" size={130} className="mx-auto" />
                         <h3 className="text-xl font-medium text-gray-700 mb-2">Aucun favori</h3>
                         <p className="text-gray-500 mb-6">Sauvegardez des fiches, questions, cours ou exercices pour les retrouver ici.</p>
                         <div className="flex flex-wrap gap-3 justify-center">
@@ -502,7 +504,7 @@ export default function FavorisPage() {
                                                 </Link>
                                                 {isFiche && (
                                                     <div className="flex shrink-0 items-center gap-3 text-xs text-[rgba(26,21,18,0.6)]">
-                                                        <span className="inline-flex items-center gap-1"><Flame className="h-4 w-4 text-[var(--wk-accent)]" /> {item.likes ?? 0}</span>
+                                                        <span className="inline-flex items-center gap-1"><FlammeIcon className="h-4 w-4 text-[var(--wk-accent)]" /> {item.likes ?? 0}</span>
                                                         <span className="inline-flex items-center gap-1"><MessageCircle className="h-4 w-4" /> {item.comments ?? 0}</span>
                                                     </div>
                                                 )}

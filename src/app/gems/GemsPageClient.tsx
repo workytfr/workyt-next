@@ -28,11 +28,11 @@ export default function GemsPageClient() {
                         <div className="lg:col-span-4">
                             <div className="flex flex-wrap gap-2 lg:justify-end">
                                 <span className="wk-chip !px-3.5 !py-2 text-sm">
-                                    <Image src="/badge/points.png" alt="" width={16} height={16} className="object-contain" />
+                                    <Image src="/badge/coin.svg" alt="" width={16} height={16} className="object-contain" />
                                     100 points = 1 gemme
                                 </span>
                                 <span className="wk-chip !px-3.5 !py-2 text-sm">
-                                    <Image src="/badge/diamond.png" alt="" width={16} height={16} className="object-contain" />
+                                    <Image src="/badge/braise.svg" alt="" width={16} height={16} className="object-contain" />
                                     Achat définitif
                                 </span>
                             </div>

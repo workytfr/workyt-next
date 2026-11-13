@@ -391,6 +391,33 @@ const badges: Partial<IBadge>[] = [
     condition: { type: 'points', value: 7000 },
     rarity: 'légendaire',
   },
+  {
+    slug: 'points_22000',
+    name: 'Pirate des savoirs',
+    description: 'A atteint le Monde des Pirates (22 000 pts).',
+    icon: '/badge/points_22000.svg',
+    category: 'progression',
+    condition: { type: 'points', value: 22000 },
+    rarity: 'légendaire',
+  },
+  {
+    slug: 'points_33000',
+    name: 'Explorateur du cosmos',
+    description: 'A atteint le Monde du Cosmos (33 000 pts).',
+    icon: '/badge/points_33000.svg',
+    category: 'progression',
+    condition: { type: 'points', value: 33000 },
+    rarity: 'légendaire',
+  },
+  {
+    slug: 'points_47000',
+    name: 'Héros viking',
+    description: 'A atteint le Monde des Vikings (47 000 pts).',
+    icon: '/badge/points_47000.svg',
+    category: 'progression',
+    condition: { type: 'points', value: 47000 },
+    rarity: 'légendaire',
+  },
 
   // ═══════════════════════════════════════
   // CHAMPIGNONS – Boosts
@@ -474,6 +501,33 @@ const badges: Partial<IBadge>[] = [
     category: 'special',
     condition: { type: 'seniority', value: 2 },
     rarity: 'épique',
+  },
+  {
+    slug: 'seniority_3',
+    name: 'Pilier',
+    description: 'Inscrit depuis 3 ans.',
+    icon: '/badge/seniority_3.svg',
+    category: 'special',
+    condition: { type: 'seniority', value: 3 },
+    rarity: 'épique',
+  },
+  {
+    slug: 'seniority_4',
+    name: 'Vétéran',
+    description: 'Inscrit depuis 4 ans.',
+    icon: '/badge/seniority_4.svg',
+    category: 'special',
+    condition: { type: 'seniority', value: 4 },
+    rarity: 'légendaire',
+  },
+  {
+    slug: 'seniority_5',
+    name: 'Racine de Workyt',
+    description: 'Inscrit depuis 5 ans.',
+    icon: '/badge/seniority_5.svg',
+    category: 'special',
+    condition: { type: 'seniority', value: 5 },
+    rarity: 'légendaire',
   },
 
   // ═══════════════════════════════════════

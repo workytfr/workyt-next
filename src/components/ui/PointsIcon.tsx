@@ -6,13 +6,13 @@ interface PointsIconProps {
 }
 
 /**
- * Icône points officielle du site Workyt (badge/points.png).
+ * Icône points officielle du site Workyt (badge/coin.svg, pièce carrée).
  * À utiliser pour toute représentation visuelle des points.
  */
 export default function PointsIcon({ size = 16, className = "" }: PointsIconProps) {
     return (
         <Image
-            src="/badge/points.png"
+            src="/badge/coin.svg"
             alt="points"
             width={size}
             height={size}

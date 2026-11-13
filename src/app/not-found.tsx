@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Metadata } from "next";
+import Foxy from "@/components/foxy/Foxy";
 
 export const metadata: Metadata = {
     title: { absolute: "Page non trouvée | Workyt" },
@@ -9,46 +10,37 @@ export const metadata: Metadata = {
 
 export default function NotFound() {
     return (
-        <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
-            <h1 className="text-6xl font-bold text-gray-300 mb-4">404</h1>
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-                Page non trouvée
-            </h2>
-            <p className="text-gray-500 mb-8 max-w-md">
-                La page que vous recherchez n&apos;existe pas ou a été déplacée.
+        <div className="flex min-h-[60vh] flex-col items-center justify-center px-4 py-12 text-center">
+            <Foxy pose="oups" size={170} eager />
+            <p className="font-mono-ui mt-4 text-xs uppercase tracking-[0.2em] text-[rgba(26,21,18,0.45)]">Erreur 404</p>
+            <h1 className="font-serif-display mt-2 text-3xl text-[var(--wk-ink)] sm:text-4xl">Foxy ne trouve pas cette page</h1>
+            <p className="mt-3 max-w-md text-[rgba(26,21,18,0.6)]">
+                Elle n&apos;existe pas, ou elle a changé d&apos;adresse. Reprends depuis l&apos;un de ces endroits :
             </p>
-            <div className="flex flex-wrap justify-center gap-3">
-                <Link
-                    href="/"
-                    className="px-5 py-2.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors font-medium"
-                >
+            <div className="mt-8 flex flex-wrap justify-center gap-3">
+                <Link href="/" className="wk-btn-orange !py-2.5 text-sm">
                     Accueil
                 </Link>
-                <Link
-                    href="/cours"
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                    Cours
-                </Link>
-                <Link
-                    href="/forum"
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                    Forum
-                </Link>
-                <Link
-                    href="/fiches"
-                    className="px-5 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
-                >
-                    Fiches
-                </Link>
+                {[
+                    { href: "/cours", label: "Cours" },
+                    { href: "/forum", label: "Forum" },
+                    { href: "/fiches", label: "Fiches" },
+                ].map((l) => (
+                    <Link
+                        key={l.href}
+                        href={l.href}
+                        className="rounded-full border border-[rgba(26,21,18,0.14)] bg-white px-5 py-2.5 text-sm font-semibold text-[var(--wk-ink)] transition-colors hover:border-[var(--wk-accent)] hover:text-[var(--wk-accent)]"
+                    >
+                        {l.label}
+                    </Link>
+                ))}
             </div>
-            <p className="text-xs text-gray-400 mt-8">
-                <Link href="/sitemap.xml" className="hover:text-orange-500">
+            <p className="mt-8 text-xs text-[rgba(26,21,18,0.45)]">
+                <Link href="/sitemap.xml" className="hover:text-[var(--wk-accent)]">
                     Sitemap
                 </Link>{" "}
                 ·{" "}
-                <Link href="/a-propos" className="hover:text-orange-500">
+                <Link href="/a-propos" className="hover:text-[var(--wk-accent)]">
                     À propos
                 </Link>
             </p>

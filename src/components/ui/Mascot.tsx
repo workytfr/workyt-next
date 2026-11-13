@@ -2,6 +2,19 @@
 
 import { motion } from "framer-motion";
 import { getMascot, type MascotName, type Emotion } from "@/data/mascots";
+import Foxy, { type FoxyPose } from "@/components/foxy/Foxy";
+
+/** Foxy est dessiné : chaque émotion correspond à une pose illustrée */
+const FOXY_POSE: Record<Emotion, FoxyPose> = {
+    joyeux: "bonjour",
+    triste: "oups",
+    surpris: "reflechit",
+    amoureux: "bravo",
+    fache: "oups",
+    endormi: "pause",
+    clin: "bonjour",
+};
+const FOXY_SIZE: Record<NonNullable<MascotProps["size"]>, number> = { sm: 72, md: 104, lg: 140 };
 
 interface MascotProps {
     name?: MascotName;
@@ -33,9 +46,17 @@ export default function Mascot({
     className = "",
 }: MascotProps) {
     const art = getMascot(name, emotion);
+    const floatProps = float
+        ? { animate: { y: [0, -4, 0] }, transition: { duration: 3, repeat: Infinity, ease: "easeInOut" as const } }
+        : {};
 
     return (
         <div className={`flex items-center gap-3 ${className}`}>
+            {name === "foxy" ? (
+                <motion.div aria-hidden className="shrink-0" {...floatProps}>
+                    <Foxy pose={FOXY_POSE[emotion]} size={FOXY_SIZE[size]} />
+                </motion.div>
+            ) : (
             <motion.pre
                 aria-hidden
                 className={`shrink-0 select-none font-mono leading-none whitespace-pre ${SIZE_CLASS[size]}`}
@@ -46,6 +67,7 @@ export default function Mascot({
             >
                 {art}
             </motion.pre>
+            )}
 
             {message && (
                 <motion.div

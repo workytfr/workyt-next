@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Flame, MessagesSquare } from "lucide-react";
+import { ArrowRight, MessagesSquare } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import HeroForumCards from "./hero-forum-cards";
 import CourseFinder from "./course-finder";
 
@@ -114,7 +115,7 @@ export default function Hero2026() {
                             {/* Micro-carte flottante — la profondeur vient de la
                                 superposition, pas d'un effet décoratif. */}
                             <div className="absolute -left-3 -top-5 z-20 flex items-center gap-2.5 rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white px-3.5 py-2.5 shadow-[0_12px_32px_rgba(26,21,18,0.12)] lg:-left-10">
-                                <Flame className="h-5 w-5 text-[var(--wk-accent)]" />
+                                <FlammeIcon className="h-5 w-5 text-[var(--wk-accent)]" />
                                 <div>
                                     <div className="font-mono-ui text-[9px] uppercase tracking-[0.16em] text-[rgba(26,21,18,0.5)]">
                                         série

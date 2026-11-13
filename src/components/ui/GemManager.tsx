@@ -406,7 +406,7 @@ const GemManager: React.FC = () => {
       {/* En-tête avec solde */}
       <div className="rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white p-5 sm:p-6 md:p-7">
         <div className="flex items-center gap-2 mb-1">
-          <Image src="/badge/diamond.png" alt="" width={20} height={20} className="object-contain" />
+          <Image src="/badge/braise.svg" alt="" width={20} height={20} className="object-contain" />
           <h2 className="font-serif-display text-2xl leading-none" style={{ marginBottom: 0 }}>Solde de gemmes</h2>
         </div>
         <p className="text-[rgba(26,21,18,0.62)] mb-6">Votre portefeuille de gemmes</p>
@@ -602,7 +602,7 @@ const GemManager: React.FC = () => {
                   />
                   
                   <div className="text-sm font-medium mb-1">{option.label}</div>
-                  <div className="text-xs text-[rgba(26,21,18,0.62)] mb-2 flex items-center justify-center gap-1">{option.price} <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></div>
+                  <div className="text-xs text-[rgba(26,21,18,0.62)] mb-2 flex items-center justify-center gap-1">{option.price} <Image src="/badge/braise.svg" alt="" width={14} height={14} className="object-contain" /></div>
                   
                   {/* Aperçu animé du nom */}
                   {option.animated && (
@@ -681,7 +681,7 @@ const GemManager: React.FC = () => {
                           'bg-gray-600 hover:bg-gray-700'
                         )}`}
                       >
-                        {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                        {bp.label}{bp.showGemIcon && <><Image src="/badge/braise.svg" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
                       </Button>
                     );
                   })()}
@@ -699,7 +699,7 @@ const GemManager: React.FC = () => {
                 onChange={(e) => setCustomColor(e.target.value)}
                 className="w-20 h-10"
               />
-              <span className="text-sm text-[rgba(26,21,18,0.62)] flex items-center gap-1">15 <Image src="/badge/diamond.png" alt="" width={14} height={14} className="object-contain" /></span>
+              <span className="text-sm text-[rgba(26,21,18,0.62)] flex items-center gap-1">15 <Image src="/badge/braise.svg" alt="" width={14} height={14} className="object-contain" /></span>
             </div>
           </div>
 
@@ -752,7 +752,7 @@ const GemManager: React.FC = () => {
                       disabled={bp.disabled}
                       className={`w-full ${bp.className}`}
                     >
-                      {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                      {bp.label}{bp.showGemIcon && <><Image src="/badge/braise.svg" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
                     </Button>
                   </div>
                 );
@@ -807,7 +807,7 @@ const GemManager: React.FC = () => {
                       disabled={bp.disabled}
                       className={`w-full ${bp.className || border.btnColor || ''}`}
                     >
-                      {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                      {bp.label}{bp.showGemIcon && <><Image src="/badge/braise.svg" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
                     </Button>
                   </div>
                 );
@@ -860,7 +860,7 @@ const GemManager: React.FC = () => {
                   disabled={bp.disabled}
                   className={`mt-3 w-full ${bp.className || 'wk-btn-orange'}`}
                 >
-                  {bp.label}{bp.showGemIcon && <><Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
+                  {bp.label}{bp.showGemIcon && <><Image src="/badge/braise.svg" alt="" width={14} height={14} className="inline object-contain mx-0.5" />)</>}
                 </Button>
               </div>
             );
@@ -888,7 +888,7 @@ const GemManager: React.FC = () => {
         <p className="text-[rgba(26,21,18,0.62)] mb-4">
           Affichez un badge a cote de votre pseudo.
           {!badgeFeatureUnlocked && (
-            <> Deblocage : 5 <Image src="/badge/diamond.png" alt="" width={14} height={14} className="inline object-contain" /> (une seule fois). </>
+            <> Deblocage : 5 <Image src="/badge/braise.svg" alt="" width={14} height={14} className="inline object-contain" /> (une seule fois). </>
           )}
           Limite : 1 changement par jour.
         </p>

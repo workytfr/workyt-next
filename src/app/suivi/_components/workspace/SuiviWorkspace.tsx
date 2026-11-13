@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import {
     ArrowLeft,
-    Flame,
     MoreHorizontal,
     Pause,
     Play,
@@ -29,6 +28,7 @@ import {
     Maximize2,
     Minimize2,
 } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -247,7 +247,7 @@ export default function SuiviWorkspace({ id }: { id: string }) {
                     )}
                     {(detail.duoStreak?.current || 0) > 0 && (
                         <span className="wk-chip !py-1.5" title={`Record : ${detail.duoStreak?.best} semaines`}>
-                            <Flame className="h-4 w-4 text-[var(--wk-accent)]" />
+                            <FlammeIcon className="h-4 w-4 text-[var(--wk-accent)]" />
                             Série du binôme : {detail.duoStreak?.current} sem.
                         </span>
                     )}

@@ -361,7 +361,7 @@ export default function ClanPage() {
               {me && (
                 <>
                   <span className="wk-chip !px-3.5 !py-2 text-sm" title="Points gagnés aujourd'hui">
-                    <Image src="/badge/points.png" alt="" width={16} height={16} className="object-contain" />
+                    <Image src="/badge/coin.svg" alt="" width={16} height={16} className="object-contain" />
                     {me.dailyPoints} aujourd&apos;hui
                   </span>
                   <span className="wk-chip !px-3.5 !py-2 text-sm" title="Multiplicateur de puissance">
@@ -1049,7 +1049,7 @@ function RewardsPanel({
         className="flex w-full flex-wrap items-center gap-3 p-5 text-left sm:p-6"
       >
         <h2 className={SECTION_TITLE}>
-          <Image src="/badge/diamond.png" alt="" width={20} height={20} className="object-contain" />
+          <Image src="/badge/braise.svg" alt="" width={20} height={20} className="object-contain" />
           L&apos;enjeu de cette guerre
         </h2>
         <span className="text-sm text-[rgba(26,21,18,0.55)]">
@@ -1077,7 +1077,7 @@ function RewardsPanel({
             <div className="border-t border-[rgba(26,21,18,0.06)] pt-4">
               <p className="mb-2 font-semibold">🤝 Clan perdant — chaque membre</p>
               <div className="flex items-center gap-2 rounded-2xl bg-[var(--wk-paper)] p-3">
-                <Image src="/badge/points.png" alt="" width={18} height={18} className="object-contain" />
+                <Image src="/badge/coin.svg" alt="" width={18} height={18} className="object-contain" />
                 <span className="text-xs font-medium">{rewards.loserPoints} points de compensation</span>
               </div>
             </div>

@@ -1,9 +1,10 @@
 import Link from "next/link";
-import { ChevronRight, CalendarDays, MessageCircleQuestion } from "lucide-react";
+import { ChevronRight, CalendarDays } from "lucide-react";
 import { educationData } from "@/data/educationData";
 import { buildIdSlug } from "@/utils/slugify";
 import { subjectToSlug, levelToSlug } from "@/utils/subjectSlug";
 import { FORUM_CONTAINER, Eyebrow, EntryChoice, SuiviPromoCard, StatusChip, SubjectLabel, plainExcerpt } from "./forumUi";
+import Foxy from "@/components/foxy/Foxy";
 
 export interface HubQuestion {
     _id: { toString(): string } | string;
@@ -85,7 +86,7 @@ export default function ForumHub({
                         </p>
                         {questions.length === 0 ? (
                             <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-16 text-center">
-                                <MessageCircleQuestion className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                                <Foxy pose="pause" size={120} className="mx-auto" />
                                 <p className="font-serif-display mt-4 text-2xl">Aucune question {isSubject ? `de ${label}` : label} pour le moment</p>
                                 <p className="mt-2 text-sm text-[rgba(26,21,18,0.6)]">Sois le premier à en poser une !</p>
                             </div>

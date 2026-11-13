@@ -60,7 +60,7 @@ PromoCodeSchema.index({ partnerId: 1, offerType: 1, assignedTo: 1 });
 // Index pour vérifier si un user a déjà un code (global)
 PromoCodeSchema.index({ assignedTo: 1 });
 // Index unique sur le code
-PromoCodeSchema.index({ code: 1 }, { unique: true });
+// code est déjà indexé (unique) par sa définition
 
 const PromoCode = mongoose.models.PromoCode || mongoose.model<IPromoCode>('PromoCode', PromoCodeSchema);
 

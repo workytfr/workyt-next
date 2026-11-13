@@ -142,7 +142,7 @@ const QuestSchema = new Schema<IQuest>({
 
 // Index pour optimiser les requêtes
 QuestSchema.index({ type: 1, isActive: 1 });
-QuestSchema.index({ slug: 1 });
+// slug est déjà indexé (unique) par sa définition
 
 // Middleware pour mettre à jour updatedAt
 QuestSchema.pre('save', function(next) {

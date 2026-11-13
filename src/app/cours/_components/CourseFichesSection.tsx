@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FileCheck, Plus, ChevronRight, Heart, X, Upload, Loader2, Lock } from "lucide-react";
+import { Plus, ChevronRight, Heart, X, Upload, Loader2, Lock } from "lucide-react";
+import { FicheIcon } from "@/components/ui/WkIcons";
 import { motion } from "framer-motion";
 import MDEditor from "@uiw/react-md-editor/nohighlight";
 import TimeAgo from "@/components/ui/TimeAgo";
@@ -85,7 +86,7 @@ export default function CourseFichesSection({
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 bg-orange-100 rounded-xl flex items-center justify-center">
-                            <FileCheck className="w-5 h-5 text-orange-600" />
+                            <FicheIcon className="w-5 h-5 text-orange-600" />
                         </div>
                         <div>
                             <h3 className="font-serif-display text-2xl text-[#1a1512]">
@@ -176,7 +177,7 @@ export default function CourseFichesSection({
                 ) : (
                     <div className="text-center py-8 bg-[#f5efe3] rounded-xl">
                         <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center mx-auto mb-3">
-                            <FileCheck className="w-6 h-6 text-[#8f857b]" />
+                            <FicheIcon className="w-6 h-6 text-[#8f857b]" />
                         </div>
                         <p className="text-sm text-[#6b625a] mb-1">
                             Aucune fiche de révision pour ce cours

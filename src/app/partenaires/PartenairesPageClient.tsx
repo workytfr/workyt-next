@@ -206,7 +206,7 @@ export default function PartenairesPageClient() {
                             <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                                 <div className="flex items-start gap-4">
                                     <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shrink-0">
-                                        <img src="/badge/diamond.png" alt="" width={32} height={32} className="object-contain" />
+                                        <img src="/badge/braise.svg" alt="" width={32} height={32} className="object-contain" />
                                     </div>
                                     <div>
                                         <h2 className="text-xl md:text-2xl font-bold mb-1">Workyt Award</h2>
@@ -526,7 +526,7 @@ export default function PartenairesPageClient() {
                 <section className="mt-16 pt-12 border-t border-[#e3e2e0]">
                     <div className="bg-orange-50 rounded-2xl p-8 md:p-10 text-center">
                         <img
-                            src="/badge/diamond.png"
+                            src="/badge/braise.svg"
                             alt=""
                             width={48}
                             height={48}

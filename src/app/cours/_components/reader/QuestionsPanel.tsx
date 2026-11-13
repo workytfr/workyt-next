@@ -8,6 +8,7 @@ import MentionMarkdown from "@/app/forum/_components/MentionMarkdown";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { buildIdSlug } from "@/utils/slugify";
 import type { LessonQuestion } from "./useLessonQuestions";
+import Foxy from "@/components/foxy/Foxy";
 
 interface QuestionsPanelProps {
     open: boolean;
@@ -87,7 +88,7 @@ export default function QuestionsPanel({ open, onClose, lessonId, questions, tot
                             <Thread key={active._id} question={active} orphan={orphans.has(active._id)} />
                         ) : questions.length === 0 ? (
                             <div className="px-3 py-10 text-center">
-                                <HelpCircle className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                                <Foxy pose="reflechit" size={96} className="mx-auto" />
                                 <p className="mt-3 font-semibold">Aucune question pour l&apos;instant</p>
                                 <p className="mt-1 text-sm text-[rgba(26,21,18,0.6)]">
                                     Sélectionne un passage de la leçon pour poser la première.

@@ -11,11 +11,11 @@ import {
     Award,
     CheckCircle2,
     AlertCircle,
-    Flame,
     Target,
     Lightbulb,
     Calendar,
 } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 
 /* ==========================================================================
  *  DATA — reflète fidèlement les modèles Workyt (Exercise, Quiz, CompetencyProgress)
@@ -217,7 +217,7 @@ function ExerciseSimulation() {
             {/* Footer — exercice = pas de points, juste correction + entraînement */}
             <div className="mt-auto flex items-center justify-between border-t border-dashed border-[rgba(26,21,18,0.1)] pt-4">
                 <div className="flex items-center gap-1 text-xs text-[rgba(26,21,18,0.6)]">
-                    <Flame className="h-3.5 w-3.5 text-[var(--wk-accent)]" />
+                    <FlammeIcon className="h-3.5 w-3.5 text-[var(--wk-accent)]" />
                     Série +7
                 </div>
                 <div className="flex items-center gap-1 rounded-full bg-[rgba(126,217,87,0.15)] px-3 py-1 text-xs font-bold text-[#1a5a1a]">

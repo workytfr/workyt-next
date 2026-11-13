@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronDown, Dumbbell, Trophy } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import { useCourse } from "./CourseShell";
 import { courseHref, exercisesHref, lessonHref, quizzesHref } from "../courseLinks";
+import { ExerciceIcon, QuizIcon } from "@/components/ui/WkIcons";
 
 /**
  * Sommaire du cours : les chapitres et leurs leçons, une coche par leçon lue.
@@ -114,7 +115,7 @@ export default function CourseSidebar({ className = "" }: { className?: string }
                                     {section.exercisesCount > 0 && (
                                         <li>
                                             <Link href={exercisesHref(curriculum, section)} className={itemCls(isActive(exercisesHref(curriculum, section)))}>
-                                                <Dumbbell className="h-4 w-4 shrink-0" />
+                                                <ExerciceIcon className="h-5 w-5 shrink-0" />
                                                 <span className="flex-1">Exercices</span>
                                                 <span className="text-xs opacity-60">{section.exercisesCount}</span>
                                             </Link>
@@ -123,7 +124,7 @@ export default function CourseSidebar({ className = "" }: { className?: string }
                                     {section.quizzesCount > 0 && (
                                         <li>
                                             <Link href={quizzesHref(curriculum, section)} className={itemCls(isActive(quizzesHref(curriculum, section)))}>
-                                                <Trophy className="h-4 w-4 shrink-0" />
+                                                <QuizIcon className="h-5 w-5 shrink-0" />
                                                 <span className="flex-1">Quiz</span>
                                                 <span className="text-xs opacity-60">{section.quizzesCount}</span>
                                             </Link>

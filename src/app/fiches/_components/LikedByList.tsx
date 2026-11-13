@@ -3,7 +3,6 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { Heart } from "lucide-react";
 import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/Tooltip";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import ProfileAvatar from "@/components/ui/profile";
@@ -11,53 +10,62 @@ import TimeAgo from "@/components/ui/TimeAgo";
 import type { FicheLikeState } from "./useFicheLike";
 
 const MAX_VISIBLE = 5;
-const BURST_COLORS = ["#ffc93c", "#ff4d8d", "#ffffff", "#ffd6e7", "#ff3d6e", "#ffe08a"];
-const BURST_COUNT = 12;
+const BURST_COLORS = ["#ff6a1a", "#ffb547", "#ffd27a", "#ff8a3d"];
+const BURST_COUNT = 8;
+const EASE_OUT = [0.23, 1, 0.32, 1] as const;
 
-/** Éclats autour du cœur au moment du like : onde, petits cœurs, confettis et « +1 » */
+/** Cœur Workyt : plein avec une étincelle évidée quand on aime, en contour sinon */
+export function WorkytHeart({ size, filled }: { size: number; filled: boolean }) {
+    const heart = "M12 21C6.6 17.2 3 13.9 3 9.6 3 6.6 5.2 4.5 7.9 4.5c1.8 0 3.2.9 4.1 2.4.9-1.5 2.3-2.4 4.1-2.4C18.8 4.5 21 6.6 21 9.6c0 4.3-3.6 7.6-9 11.4Z";
+    const spark = "M15.6 7.6q.25 1.3 1.6 1.6-1.35.3-1.6 1.6-.25-1.3-1.6-1.6 1.35-.3 1.6-1.6Z";
+    return (
+        <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden className="shrink-0">
+            {filled ? (
+                <path d={`${heart}${spark}`} fill="currentColor" fillRule="evenodd" />
+            ) : (
+                <path d={heart} fill="none" stroke="currentColor" strokeWidth={2.1} strokeLinejoin="round" />
+            )}
+        </svg>
+    );
+}
+
+/** Petite étoile à quatre branches des éclats */
+function Spark({ size, color }: { size: number; color: string }) {
+    return (
+        <svg width={size} height={size} viewBox="0 0 10 10" aria-hidden>
+            <path d="M5 0Q5.8 4.2 10 5 5.8 5.8 5 10 4.2 5.8 0 5 4.2 4.2 5 0Z" fill={color} />
+        </svg>
+    );
+}
+
+/** Éclats au moment du like : quelques étincelles orange et un « +1 » */
 function LikeBurst({ big }: { big: boolean }) {
-    const radius = big ? 62 : 48;
+    const radius = big ? 40 : 32;
     return (
         <span aria-hidden className="pointer-events-none absolute left-1/2 top-1/2 z-10 h-0 w-0">
-            {/* Onde de choc */}
-            <motion.span
-                className="absolute -left-5 -top-5 h-10 w-10 rounded-full border-2 border-[#ffc93c]"
-                initial={{ scale: 0.3, opacity: 0.9 }}
-                animate={{ scale: big ? 2.6 : 2.2, opacity: 0 }}
-                transition={{ duration: 0.55, ease: "easeOut" }}
-            />
             {Array.from({ length: BURST_COUNT }).map((_, i) => {
-                const angle = (i / BURST_COUNT) * Math.PI * 2;
-                const dist = radius * (i % 2 ? 0.72 : 1);
-                const color = BURST_COLORS[i % BURST_COLORS.length];
+                const angle = (i / BURST_COUNT) * Math.PI * 2 - Math.PI / 2;
+                const dist = radius * (i % 2 ? 0.7 : 1);
+                const s = (i % 2 ? 7 : 10) * (big ? 1.2 : 1);
                 return (
                     <motion.span
                         key={i}
-                        className="absolute -left-1.5 -top-1.5"
-                        initial={{ x: 0, y: 0, scale: 0.2, opacity: 1, rotate: 0 }}
-                        animate={{
-                            x: Math.cos(angle) * dist,
-                            y: Math.sin(angle) * dist,
-                            scale: [0.2, 1.15, 0.5],
-                            opacity: [1, 1, 0],
-                            rotate: (i % 2 ? 1 : -1) * 45,
-                        }}
-                        transition={{ duration: 0.75, ease: [0.2, 0.8, 0.3, 1], delay: 0.05 }}
+                        className="absolute"
+                        style={{ left: -s / 2, top: -s / 2 }}
+                        initial={{ x: 0, y: 0, scale: 0.6, opacity: 0 }}
+                        animate={{ x: Math.cos(angle) * dist, y: Math.sin(angle) * dist, scale: [0.6, 1, 0.4], opacity: [0, 1, 0] }}
+                        transition={{ duration: 0.6, ease: EASE_OUT }}
                     >
-                        {i % 3 === 0 ? (
-                            <Heart size={big ? 13 : 11} className="fill-current" style={{ color, filter: "drop-shadow(0 1px 1.5px rgba(26,21,18,0.35))" }} />
-                        ) : (
-                            <span className="block h-2 w-2 rounded-full" style={{ background: color, boxShadow: "0 1px 2px rgba(26,21,18,0.3)" }} />
-                        )}
+                        <Spark size={s} color={BURST_COLORS[i % BURST_COLORS.length]} />
                     </motion.span>
                 );
             })}
-            {/* +1 qui s'envole */}
+            {/* +1 qui monte */}
             <motion.span
                 className="absolute -left-2.5 -top-3 text-xs font-bold text-[var(--wk-accent)]"
-                initial={{ y: 0, opacity: 0, scale: 0.6 }}
-                animate={{ y: big ? -46 : -38, opacity: [0, 1, 1, 0], scale: 1 }}
-                transition={{ duration: 0.9, ease: "easeOut" }}
+                initial={{ y: 0, opacity: 0 }}
+                animate={{ y: big ? -34 : -28, opacity: [0, 1, 0] }}
+                transition={{ duration: 0.7, ease: EASE_OUT }}
             >
                 +1
             </motion.span>
@@ -95,7 +103,7 @@ export function LikeButton({ like, size = "md" }: { like: FicheLikeState; size?:
             aria-pressed={like.hasLiked}
             aria-label={label}
             title={label}
-            whileTap={{ scale: 0.92 }}
+            whileTap={{ scale: 0.96 }}
             className={`relative inline-flex items-center gap-2 rounded-full border font-semibold transition-colors duration-300 ${
                 big ? "px-5 py-2.5 text-[15px]" : "px-3.5 py-2 text-sm"
             } ${
@@ -110,10 +118,10 @@ export function LikeButton({ like, size = "md" }: { like: FicheLikeState; size?:
                 <motion.span
                     key={celebrate ? `heart-${like.pop}` : "heart"}
                     className="inline-flex"
-                    animate={celebrate ? { scale: [0.4, 1.5, 0.88, 1.1, 1], rotate: [-15, 12, -6, 0, 0] } : { scale: 1, rotate: 0 }}
-                    transition={{ duration: 0.6, ease: "easeOut" }}
+                    animate={celebrate ? { scale: [0.8, 1.18, 1] } : { scale: 1 }}
+                    transition={{ duration: 0.35, ease: EASE_OUT }}
                 >
-                    <Heart size={big ? 18 : 16} strokeWidth={2.2} className={like.hasLiked ? "fill-current" : ""} />
+                    <WorkytHeart size={big ? 22 : 19} filled={like.hasLiked} />
                 </motion.span>
                 {celebrate && <LikeBurstOnce key={`burst-${like.pop}`} big={big} />}
             </span>

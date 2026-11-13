@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, FileText, Sparkles, Bookmark, ArrowUpDown } from "lucide-react";
+import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Sparkles, Bookmark, ArrowUpDown } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import AuthorLevel from "@/components/ui/AuthorLevel";
@@ -11,6 +11,7 @@ import { PAGE_CONTAINER } from "@/components/wk/primitives";
 import { subjectToSlug } from "@/utils/subjectSlug";
 import InfoDrawer from "@/app/fiches/_components/InfoDrawer";
 import { FicheTile } from "./ficheUi";
+import Foxy from "@/components/foxy/Foxy";
 
 interface Fiche {
     id: string;
@@ -260,7 +261,7 @@ export default function FichesPageClient() {
                         </div>
                     ) : (
                         <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-16 text-center">
-                            <FileText className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                            <Foxy pose="cherche" size={120} className="mx-auto" />
                             <h3 className="font-serif-display mt-4 text-2xl">Aucune fiche ne correspond</h3>
                             <p className="mx-auto mt-2 max-w-md text-sm text-[rgba(26,21,18,0.6)]">
                                 Essaie d&apos;autres mots ou d&apos;autres filtres — ou dépose la première fiche sur le sujet.

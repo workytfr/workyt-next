@@ -1,21 +1,24 @@
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Flame, MessageCircle, FileText, ArrowUpRight, HeartHandshake } from "lucide-react";
+import { MessageCircle, ArrowUpRight, HeartHandshake } from "lucide-react";
 import ContentCard from "@/components/wk/ContentCard";
 import BookmarkButton from "@/components/BookmarkButton";
 import { relativeTime } from "@/app/forum/_components/forumUi";
 import { buildIdSlug } from "@/utils/slugify";
+import { FicheIcon, FlammeIcon } from "@/components/ui/WkIcons";
 
 /**
  * Briques des fiches de révision, sans hook : utilisables dans la liste
  * (client) comme dans les pages matière / niveau (serveur, ISR).
  */
 
-/** Statuts de relecture d'une fiche. « Non Certifiée » n'affiche rien. */
+/** Statuts de relecture d'une fiche : pastille avec badge et couleur (gris, vert, bleu). */
 const STATUS_STYLE: Record<string, string> = {
     "Certifiée": "bg-[#eaf6fb] text-[#2f86b3] border-[#bfe3f2]",
     "Vérifiée": "bg-emerald-50 text-emerald-800 border-emerald-200",
+    // Gris neutre, comme son badge : la fiche est visible, en attente de relecture
+    "Non Certifiée": "bg-[#f4f2ef] text-[#6b625c] border-[rgba(26,21,18,0.12)]",
 };
 
 /**
@@ -45,8 +48,8 @@ export function ficheStatusTint(status?: string, soft = false): React.CSSPropert
 export function FicheStatusChip({ status, className = "" }: { status?: string; className?: string }) {
     if (!status || !STATUS_STYLE[status]) return null;
     return (
-        <span className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border py-0.5 pl-1 pr-2.5 text-[11px] font-semibold ${STATUS_STYLE[status]} ${className}`}>
-            <Image src={`/badge/${status}.svg`} alt="" width={16} height={16} className="h-4 w-4" />
+        <span className={`inline-flex h-6 shrink-0 items-center gap-1 rounded-full border pl-0.5 pr-2.5 text-xs font-semibold ${STATUS_STYLE[status]} ${className}`}>
+            <Image src={`/badge/${status}.svg`} alt="" width={20} height={20} className="h-5 w-5" />
             {status}
         </span>
     );
@@ -112,7 +115,7 @@ export function FicheTile({
             subject={showSubject ? f.subject : undefined}
             kindLabel={
                 <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--wk-accent)]">
-                    <FileText className="h-3.5 w-3.5" /> Fiche
+                    <FicheIcon className="h-5 w-5" /> Fiche
                 </span>
             }
             level={f.level}
@@ -125,7 +128,7 @@ export function FicheTile({
                 <>
                     {typeof f.likes === "number" && (
                         <span className="inline-flex items-center gap-1" title={`${f.likes} j'aime`}>
-                            <Flame className="h-4 w-4 text-[var(--wk-accent)]" /> {f.likes}
+                            <FlammeIcon className="h-4 w-4 text-[var(--wk-accent)]" /> {f.likes}
                         </span>
                     )}
                     {typeof f.comments === "number" && (
@@ -155,7 +158,7 @@ export function FicheActions({ subject, level }: { subject?: string; level?: str
                 className="group flex items-center gap-4 rounded-3xl bg-[var(--wk-ink)] p-4 text-[var(--wk-paper)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(26,21,18,0.2)] sm:p-5"
             >
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/10">
-                    <FileText className="h-5 w-5 text-[var(--wk-accent-2)]" />
+                    <FicheIcon className="h-6 w-6 text-[var(--wk-accent-2)]" />
                 </span>
                 <span className="min-w-0 flex-1">
                     <span className="block font-semibold">Déposer une fiche</span>

@@ -6,13 +6,15 @@ import Link from "next/link";
 import ProfileAvatar from "@/components/ui/profile";
 import UsernameDisplay from "@/components/ui/UsernameDisplay";
 import { relativeTime } from "./forumUi";
-import { ThumbsUp, CheckCircle2, Medal, MessageCircle, Quote } from "lucide-react";
+import { ThumbsUp, CheckCircle2, Quote } from "lucide-react";
+import { ForumStatusIcon } from "@/components/ui/ForumStatusIcon";
 import MentionMarkdown from "./MentionMarkdown";
 import { useSession } from "next-auth/react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/Tooltip";
 import ReportButton from "@/components/ReportButton";
 import "katex/dist/katex.min.css";
 import AuthorLevel from "@/components/ui/AuthorLevel";
+import Foxy from "@/components/foxy/Foxy";
 
 interface AnswerListProps {
     answers: any[];
@@ -115,7 +117,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
 
             {updatedAnswers.length === 0 ? (
                 <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-12 text-center">
-                    <MessageCircle className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                    <Foxy pose="reflechit" size={110} className="mx-auto" />
                     <p className="mt-3 font-semibold">Aucune réponse pour l&apos;instant</p>
                     <p className="mt-1 text-sm text-[rgba(26,21,18,0.6)]">Partage ce que tu sais : une piste suffit souvent à débloquer.</p>
                 </div>
@@ -148,11 +150,11 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
                                     >
                                         {isBestAnswer ? (
                                             <>
-                                                <Medal className="h-3.5 w-3.5" /> Meilleure réponse choisie par l&apos;auteur
+                                                <ForumStatusIcon kind="meilleure" className="h-4 w-4" /> Meilleure réponse choisie par l&apos;auteur
                                             </>
                                         ) : (
                                             <>
-                                                <CheckCircle2 className="h-3.5 w-3.5" /> Réponse validée par l&apos;équipe
+                                                <ForumStatusIcon kind="validee" className="h-4 w-4" /> Réponse validée par l&apos;équipe
                                             </>
                                         )}
                                     </div>
@@ -205,7 +207,7 @@ const AnswerList: React.FC<AnswerListProps> = ({ answers, question, onQuote }) =
                                                                 isValidated ? "cursor-not-allowed opacity-50" : "hover:!border-emerald-400 hover:text-emerald-700"
                                                             }`}
                                                         >
-                                                            <CheckCircle2 className="h-3.5 w-3.5" />
+                                                            <ForumStatusIcon kind="validee" className="h-4 w-4" />
                                                             <span className="sr-only sm:not-sr-only">{isValidated ? "Déjà validée" : "Valider cette réponse"}</span>
                                                         </button>
                                                     </TooltipTrigger>

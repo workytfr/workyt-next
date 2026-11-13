@@ -17,15 +17,16 @@ import {
     Coins,
     CheckCircle2,
     Lightbulb,
-    HeartHandshake,
-    MessageCircleQuestion,
+    HeartHandshake
 } from "lucide-react";
+import { ForumStatusIcon } from "@/components/ui/ForumStatusIcon";
 import { educationData, getSubjectIconComponent } from "@/data/educationData";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useForumListRealtime } from "@/hooks/useForumListRealtime";
 import { subjectToSlug } from "@/utils/subjectSlug";
 import QuestionCard, { type ForumQuestion } from "./QuestionCard";
 import { FORUM_CONTAINER, Eyebrow, EntryChoice, SuiviPromoCard, STATUS_META } from "./forumUi";
+import Foxy from "@/components/foxy/Foxy";
 
 interface QuestionsResponse {
     success: boolean;
@@ -341,7 +342,7 @@ export default function ForumPageClient() {
                             </div>
                         ) : (
                             <div className="rounded-3xl border border-dashed border-[rgba(26,21,18,0.18)] bg-white/60 px-6 py-16 text-center">
-                                <MessageCircleQuestion className="mx-auto h-8 w-8 text-[rgba(26,21,18,0.3)]" />
+                                <Foxy pose="cherche" size={120} className="mx-auto" />
                                 <h3 className="font-serif-display mt-4 text-2xl">Aucune question ici… pour l&apos;instant</h3>
                                 <p className="mx-auto mt-2 max-w-md text-sm text-[rgba(26,21,18,0.6)]">
                                     Essaie d&apos;autres mots ou d&apos;autres filtres — ou sois le premier à poser la question.
@@ -567,9 +568,9 @@ function ForumGuide({ open, onClose }: { open: boolean; onClose: () => void }) {
                     <section className={`${block} sm:col-span-2`}>
                         <h3 className="flex items-center gap-2 font-semibold"><CheckCircle2 className="h-4 w-4 text-emerald-600" /> Les statuts</h3>
                         <div className="mt-3 grid grid-cols-1 gap-3 text-sm sm:grid-cols-3">
-                            <p><strong className="text-amber-700">En attente</strong> — attend les réponses de la communauté.</p>
-                            <p><strong className="text-[#2f86b3]">Validée</strong> — une réponse a été validée par l&apos;équipe.</p>
-                            <p><strong className="text-emerald-700">Résolue</strong> — l&apos;auteur a choisi la meilleure réponse.</p>
+                            <p className="flex gap-2"><ForumStatusIcon kind="attente" className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" /><span><strong className="text-amber-700">En attente</strong> — attend les réponses de la communauté.</span></p>
+                            <p className="flex gap-2"><ForumStatusIcon kind="validee" className="mt-0.5 h-5 w-5 shrink-0 text-[#2f86b3]" /><span><strong className="text-[#2f86b3]">Validée</strong> — une réponse a été validée par l&apos;équipe.</span></p>
+                            <p className="flex gap-2"><ForumStatusIcon kind="resolue" className="mt-0.5 h-5 w-5 shrink-0 text-emerald-600" /><span><strong className="text-emerald-700">Résolue</strong> — l&apos;auteur a choisi la meilleure réponse.</span></p>
                         </div>
                     </section>
                     <section className="rounded-2xl bg-[var(--wk-ink)] p-5 text-[var(--wk-paper)] sm:col-span-2">

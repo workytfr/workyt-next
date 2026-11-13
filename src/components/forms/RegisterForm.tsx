@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { signIn } from "next-auth/react";
 import { FaDiscord } from "react-icons/fa";
 import PrivacyConsent from "./PrivacyConsent";
+import Foxy from "@/components/foxy/Foxy";
 
 // Fonction pour normaliser le username côté client
 function normalizeUsername(username: string): string {
@@ -528,6 +529,8 @@ export default function AuthPage() {
 
     return (
         <div className="p-6 flex flex-col space-y-4 bg-white text-black">
+            {/* Foxy accueille : coucou à l'inscription, il réfléchit avec toi pour un mot de passe oublié */}
+            <Foxy pose={isForgotPassword ? "reflechit" : "bonjour"} size={92} eager className="mx-auto -mb-2" />
             {!isForgotPassword && (
                 <div className="flex justify-center space-x-4">
                     <button

@@ -152,7 +152,7 @@ export default function ClanWarRewardModal() {
                                 <div className="mt-4 space-y-2">
                                     {reward.points > 0 && (
                                         <div className="flex items-center gap-2 rounded-2xl bg-white p-3 text-sm">
-                                            <Image src="/badge/points.png" alt="" width={18} height={18} className="object-contain" />
+                                            <Image src="/badge/coin.svg" alt="" width={18} height={18} className="object-contain" />
                                             <span>{reward.points} points de compensation</span>
                                         </div>
                                     )}

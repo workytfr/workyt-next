@@ -42,8 +42,7 @@ const CalendarSchema = new Schema<ICalendar>({
   date: {
     type: Date,
     required: true,
-    unique: true,
-    index: true
+    unique: true // crée déjà l'index : pas de `index: true` ni de schema.index en plus
   },
   reward: {
     type: {
@@ -100,7 +99,6 @@ const CalendarSchema = new Schema<ICalendar>({
 });
 
 // Index pour optimiser les requêtes
-CalendarSchema.index({ date: 1 });
 CalendarSchema.index({ isSpecial: 1 });
 CalendarSchema.index({ theme: 1 });
 

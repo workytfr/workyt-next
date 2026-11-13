@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Image from 'next/image';
-import { Check, Lock, Loader2, Flame, HelpCircle } from 'lucide-react';
+import { Check, Lock, Loader2, HelpCircle } from 'lucide-react';
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import { cn } from '@/lib/utils';
 import type { BoardTheme } from './boardThemes';
 import type { CalendarDay, CellState } from './types';
@@ -64,7 +65,7 @@ export default function BoardCell({
         </span>
         {state === 'claimed' && <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600" />}
         {state === 'missed' && <Lock className="w-3 h-3 text-gray-300" />}
-        {flameMilestone && <Flame className="w-3.5 h-3.5 text-orange-500 adventure-flame" />}
+        {flameMilestone && <FlammeIcon className="w-3.5 h-3.5 text-orange-500 adventure-flame" />}
       </div>
 
       {/* Centre : monstre + récompense ou brouillard */}
@@ -141,14 +142,14 @@ function RewardIcon({ day }: { day: CalendarDay }) {
   if (day.reward.type === 'gems') {
     return (
       <div className="flex items-center gap-0.5">
-        <Image src="/badge/diamond.png" alt="Diamants" width={14} height={14} className="object-contain" />
+        <Image src="/badge/braise.svg" alt="Diamants" width={14} height={14} className="object-contain" />
         <span className="text-[10px] font-bold text-blue-600">{day.reward.amount}</span>
       </div>
     );
   }
   return (
     <div className="flex items-center gap-0.5">
-      <Image src="/badge/points.png" alt="Points" width={14} height={14} className="object-contain" />
+      <Image src="/badge/coin.svg" alt="Points" width={14} height={14} className="object-contain" />
       <span className="text-[10px] font-bold text-gray-600">{day.reward.amount}</span>
     </div>
   );

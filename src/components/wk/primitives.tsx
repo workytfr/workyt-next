@@ -24,18 +24,18 @@ export function Eyebrow({ children, className = "" }: { children: React.ReactNod
 /** Matière avec son icône, en orange */
 export function SubjectLabel({ subject, className = "" }: { subject: string; className?: string }) {
     return (
-        <span className={`inline-flex min-w-0 items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-[var(--wk-accent)] ${className}`}>
+        <span className={`inline-flex min-w-0 items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--wk-accent)] ${className}`}>
             {/* createElement : l'icône vient d'une table de correspondance, elle n'est pas définie pendant le rendu */}
-            {React.createElement(getSubjectIconComponent(subject), { className: "h-3.5 w-3.5 shrink-0" })}
+            {React.createElement(getSubjectIconComponent(subject), { className: "h-5 w-5 shrink-0" })}
             <span className="truncate">{subject}</span>
         </span>
     );
 }
 
-/** Pastille de niveau */
+/** Pastille de niveau. Même hauteur (24 px) que la pastille de statut des fiches, qui se pose à côté. */
 export function LevelChip({ level, className = "" }: { level: string; className?: string }) {
     return (
-        <span className={`shrink-0 rounded-full bg-[var(--wk-paper-2)] px-2 py-0.5 text-[11px] font-semibold text-[rgba(26,21,18,0.7)] ${className}`}>
+        <span className={`inline-flex h-6 shrink-0 items-center rounded-full bg-[var(--wk-paper-2)] px-2.5 text-xs font-semibold text-[rgba(26,21,18,0.7)] ${className}`}>
             {level}
         </span>
     );

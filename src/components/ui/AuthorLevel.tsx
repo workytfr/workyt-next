@@ -12,7 +12,7 @@ export default function AuthorLevel({ points = 0, className = "" }: { points?: n
     const label = `${rank.name} · Niv. ${rank.level} · ${points.toLocaleString("fr-FR")} points`;
     return (
         <span className={`inline-flex shrink-0 items-center ${className}`} title={label}>
-            <RankIcon level={rank.level} color={rank.color} size={14} />
+            <RankIcon level={rank.level} color={rank.color} size={18} />
             <span className="sr-only">{label}</span>
         </span>
     );

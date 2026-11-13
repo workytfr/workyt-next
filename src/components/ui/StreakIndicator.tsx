@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trophy, Check } from 'lucide-react';
 import useSWR from 'swr';
+import { FLAME_PATHS } from "@/components/ui/WkIcons";
 
 interface StreakIndicatorProps {
   userId: string;
@@ -115,7 +116,8 @@ export function FlameIcon({ level, size = 20 }: { level: number; size?: number }
           }}
         >
           <path
-            d="M12 2C6.5 8.5 4 12 4 15.5C4 19.64 7.58 23 12 23C16.42 23 20 19.64 20 15.5C20 12 17.5 8.5 12 2Z"
+            d={FLAME_PATHS.body}
+          transform="scale(0.24)"
             fill={config.color}
           />
         </svg>
@@ -135,16 +137,18 @@ export function FlameIcon({ level, size = 20 }: { level: number; size?: number }
       >
         {/* Flame body */}
         <path
-          d="M12 2C6.5 8.5 4 12 4 15.5C4 19.64 7.58 23 12 23C16.42 23 20 19.64 20 15.5C20 12 17.5 8.5 12 2Z"
+          d={FLAME_PATHS.body}
+          transform="scale(0.24)"
           fill={config.color}
           stroke={level >= 3 ? config.color : 'none'}
-          strokeWidth={level >= 3 ? 0.5 : 0}
+          strokeWidth={level >= 3 ? 2 : 0}
           strokeOpacity={0.5}
         />
         {/* Inner flame highlight */}
         {level >= 1 && (
           <path
-            d="M12 9C9.5 13 8.5 15 8.5 16.5C8.5 18.43 10.07 20 12 20C13.93 20 15.5 18.43 15.5 16.5C15.5 15 14.5 13 12 9Z"
+            d={FLAME_PATHS.core}
+            transform="scale(0.24)"
             fill={level >= 5 ? '#fbbf24' : level >= 3 ? '#fdba74' : '#fef3c7'}
             opacity={level >= 3 ? 0.9 : 0.7}
           />

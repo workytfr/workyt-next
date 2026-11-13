@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Flame, CalendarDays, CircleHelp, BookOpen, ClipboardCheck, AlertCircle } from "lucide-react";
+import { CalendarDays, CircleHelp, BookOpen, ClipboardCheck, AlertCircle } from "lucide-react";
+import { FlammeIcon } from "@/components/ui/WkIcons";
 import { api, formatDate } from "../../_lib/client";
 import { Spinner } from "../ui";
 
@@ -69,7 +70,7 @@ export default function ProgressPanel({ mentorshipId, studentName }: { mentorshi
                 ))}
                 {data.streak && (
                     <span className="wk-chip">
-                        <Flame className="h-3.5 w-3.5 text-[var(--wk-accent)]" /> Série : {data.streak.current} j
+                        <FlammeIcon className="h-3.5 w-3.5 text-[var(--wk-accent)]" /> Série : {data.streak.current} j
                     </span>
                 )}
             </div>
