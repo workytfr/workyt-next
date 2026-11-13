@@ -44,7 +44,7 @@ import {
 const STAFF_ROLES = ["Admin", "Rédacteur", "Correcteur", "Modérateur", "Helpeur"];
 import WorkytLogo from "@/components/ui/WorkytLogo";
 import ProfileCard from "@/components/ui/ProfileCard";
-import { CoursIcon, FicheIcon, ForumIcon } from "@/components/ui/WkIcons";
+import { BlogIcon, CoursIcon, FicheIcon, ForumIcon } from "@/components/ui/WkIcons";
 
 // Chargés à la demande : modales (à l'ouverture) et outils de l'espace connecté
 // (seulement si session). Sinon tout finit dans le chunk du layout, payé par
@@ -498,7 +498,7 @@ export default function Navbar() {
                             }`}
                         >
                             <span className="flex items-center gap-3">
-                                <Newspaper className="h-5 w-5 shrink-0" />
+                                <BlogIcon className="h-6 w-6 shrink-0" />
                                 Blog
                             </span>
                             <ChevronDownIcon className={`h-4 w-4 shrink-0 text-[rgba(26,21,18,0.3)] transition-transform duration-200 ${isBlogOpenMobile ? "rotate-180" : ""}`} />

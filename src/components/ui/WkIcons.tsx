@@ -53,6 +53,11 @@ const GLYPHS = {
         [`M2 14.5V8a6 6 0 0 1 6-6h1.5a6 6 0 0 1 6 6v.5a6 6 0 0 1-6 6Z${spark(8.75, 8.25, 3.2)}`, true],
         ["M22 22h-4.5a4.5 4.5 0 0 1-4.5-4.5 4.5 4.5 0 0 1 4.5-4.5 4.5 4.5 0 0 1 4.5 4.5Z"],
     ],
+    // Le journal du blog : la une, deux lignes d'article et le rabat replié
+    blog: [
+        ["M8.5 3h11A2.5 2.5 0 0 1 22 5.5v13a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 6 18.5v-13A2.5 2.5 0 0 1 8.5 3ZM9 6h10v4H9ZM9 12.5h10v1.6H9ZM9 16h6.5v1.6H9Z", true],
+        ["M2 8h2.6v10.8a1.3 1.3 0 0 1-2.6 0Z"],
+    ],
     // Un crayon et l'étincelle qu'il laisse : à toi de jouer
     exercice: [["M10 2h4v13.5h-4ZM10 16.3h4L12 21ZM10 4.6h4v1.1h-4Z", true, "rotate(45 12 12)"], [spark(19.5, 19.5, 2.8)]],
     // Flamme de série : une langue de feu et son cœur évidé (même dessin que les badges de série)
@@ -85,6 +90,7 @@ export const QuizIcon = make("quiz");
 export const EvaluationIcon = make("evaluation");
 export const ForumIcon = make("forum");
 export const ExerciceIcon = make("exercice");
+export const BlogIcon = make("blog");
 export const FlammeIcon = make("flamme");
 export const ChampignonIcon = make("champignon");
 

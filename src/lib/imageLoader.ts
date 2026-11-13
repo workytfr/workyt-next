@@ -22,12 +22,16 @@ const HOST = "https://s3.youss.dev";
  */
 const NOT_ON_S3 = new Set(["/workytforum.png"]);
 const BUCKET = "workyt-learn";
+/** Version des fichiers servis par le site (badges redessinés le 13/11/2026). */
+const ASSET_VERSION = "2";
 
 type LoaderProps = { src: string; width: number; quality?: number };
 
 export default function youssImageLoader({ src, width, quality }: LoaderProps): string {
     // ?w= : un loader doit utiliser la largeur ; le fichier statique ignore le paramètre.
-    if (/\.svg(?:$|[?#])/i.test(src) || NOT_ON_S3.has(src.split(/[?#]/)[0])) return `${src}${src.includes("?") ? "&" : "?"}w=${width}`;
+    // v= : à incrémenter quand des SVG sont redessinés sous le même nom, sinon le cache
+    // (Cloudflare, navigateur) continue de servir l'ancien dessin.
+    if (/\.svg(?:$|[?#])/i.test(src) || NOT_ON_S3.has(src.split(/[?#]/)[0])) return `${src}${src.includes("?") ? "&" : "?"}v=${ASSET_VERSION}&w=${width}`;
     const resize = `${HOST}/_ydev/image/width=${width},quality=${quality ?? 75},format=auto`;
     if (src.startsWith("/") && !src.startsWith("//") && !src.startsWith("/_next/") && !src.startsWith("/api/")) {
         const local = src.split(/[?#]/)[0].split("/").map((part) => encodeURIComponent(decodeURIComponent(part))).join("/");
