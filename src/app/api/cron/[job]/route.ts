@@ -82,8 +82,14 @@ const JOBS: Record<string, Job> = {
   },
 };
 
-// Une tâche encore en cours dans cette copie du site n'est pas relancée par-dessus
-const running = new Set<string>();
+// Une tâche encore en cours dans cette copie du site n'est pas relancée par-dessus.
+// Le verrou expire : une tâche bloquée (base injoignable) ne doit pas empêcher
+// toutes les suivantes, comme le 14/11/2026 (« déjà en cours » pendant des heures).
+const running = new Map<string, number>();
+const LOCK_TTL_MS = 10 * 60_000;
+// Réponse rendue avant le délai du proxy (60 s) : sinon chaque appel finit en 504
+// et la requête reste ouverte côté serveur. La tâche, elle, continue sa course.
+const RESPONSE_TIMEOUT_MS = 50_000;
 
 function secretFrom(req: NextRequest): string {
   const header = req.headers.get('x-cron-secret');
@@ -115,25 +121,46 @@ async function handle(req: NextRequest, { params }: { params: Promise<{ job: str
   if (!run) {
     return NextResponse.json({ success: false, error: `Tâche inconnue. Tâches : ${Object.keys(JOBS).join(', ')}` }, { status: 404 });
   }
-  if (running.has(job)) {
+  const lockedAt = running.get(job);
+  if (lockedAt && Date.now() - lockedAt < LOCK_TTL_MS) {
     return NextResponse.json({ success: true, skipped: 'déjà en cours' }, { status: 202 });
   }
+  if (lockedAt) console.warn(`[Cron] ${job} : verrou expiré après ${Math.round((Date.now() - lockedAt) / 1000)} s, relance`);
 
-  running.add(job);
   const started = Date.now();
-  try {
-    await connectDB();
-    const result = await run();
-    const ms = Date.now() - started;
-    console.log(`[Cron] ${job} terminé en ${ms} ms`, result);
-    return NextResponse.json({ success: true, job, ms, result });
-  } catch (error) {
-    console.error(`[Cron] ${job} en erreur :`, error);
+  running.set(job, started);
+  const task = (async () => {
+    try {
+      await connectDB();
+      const result = await run();
+      const ms = Date.now() - started;
+      console.log(`[Cron] ${job} terminé en ${ms} ms`, result);
+      return { ok: true as const, ms, result };
+    } catch (error) {
+      console.error(`[Cron] ${job} en erreur :`, error);
+      return { ok: false as const };
+    } finally {
+      // Seulement si c'est bien notre verrou (un passage plus récent a pu le reprendre)
+      if (running.get(job) === started) running.delete(job);
+    }
+  })();
+
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const outcome = await Promise.race([
+    task,
+    new Promise<'timeout'>((resolve) => { timer = setTimeout(() => resolve('timeout'), RESPONSE_TIMEOUT_MS); }),
+  ]);
+  if (timer) clearTimeout(timer);
+
+  if (outcome === 'timeout') {
+    console.warn(`[Cron] ${job} toujours en cours après ${RESPONSE_TIMEOUT_MS / 1000} s`);
+    return NextResponse.json({ success: false, job, error: 'Tâche trop longue, toujours en cours' }, { status: 504 });
+  }
+  if (!outcome.ok) {
     // 500 : le tableau de bord de l'hébergeur signale l'échec
     return NextResponse.json({ success: false, job, error: 'Erreur pendant la tâche' }, { status: 500 });
-  } finally {
-    running.delete(job);
   }
+  return NextResponse.json({ success: true, job, ms: outcome.ms, result: outcome.result });
 }
 
 export const GET = handle;

@@ -58,6 +58,9 @@ async function openConnection(uri: string): Promise<void> {
             socketTimeoutMS: 45000,
             maxPoolSize: 10,
             minPoolSize: 1,
+            // Les 10 connexions occupées : une requête attend au plus 15 s puis
+            // échoue, au lieu de s'empiler sans fin en mémoire quand la base rame.
+            waitQueueTimeoutMS: 15000,
             // Pas de maxIdleTimeMS : fermer les sockets inactives au bout de 30 s
             // obligeait à refaire une poignée de main TLS à presque chaque
             // requête, justement ce qui expire quand la base est chargée.
