@@ -3,7 +3,11 @@
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SparklesCore } from '@/components/ui/sparkles';
+import dynamic from 'next/dynamic';
+
+// Particules (tsparticles, ~50 Ko gzip) : chargées à la première ouverture de la
+// modale, pas avec la page. Elles apparaissent en fondu, le léger délai ne se voit pas.
+const SparklesCore = dynamic(() => import('@/components/ui/sparkles').then((m) => m.SparklesCore), { ssr: false });
 import { cn } from '@/lib/utils';
 import type { BoardTheme } from './boardThemes';
 import type { ClaimResult } from './types';

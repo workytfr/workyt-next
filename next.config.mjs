@@ -122,9 +122,15 @@ const nextConfig = {
             },
         },
     },
-    // Configuration pour le SEO
     experimental: {
-        optimizeCss: true,
+        // Par défaut, Next charge au démarrage le code de TOUTES les routes
+        // (200+ routes API, tableau de bord, pdf.js, googleapis…) avant de servir.
+        // Désactivé : chaque route est chargée à sa première visite. Démarrage plus
+        // rapide et mémoire au repos bien plus basse ; les routes jamais visitées
+        // sur une instance (la plupart des routes admin) ne coûtent plus rien.
+        preloadEntriesOnStart: false,
+        // (`optimizeCss` retiré : il ne s'applique qu'au routeur `pages/`, sans
+        // effet sur ce site en App Router.)
     },
     // Headers de sécurité
     async headers() {
