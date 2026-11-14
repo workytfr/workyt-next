@@ -32,7 +32,7 @@ export default function HeroBackdrop() {
                         "linear-gradient(to bottom, #000 0%, transparent 100%)",
                 }}
             />
-            <div className="wk-grain absolute inset-0" />
+            <div className="wk-grain wk-grain-flat absolute inset-0" />
         </div>
     );
 }

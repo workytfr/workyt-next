@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { BarChart3, Flame, Target, Timer } from "lucide-react";
-import { usePomodoro } from "@/components/pomodoro/PomodoroProvider";
+import { usePomodoro } from "@/components/pomodoro/pomodoroStore";
 
 interface Stats {
     today: { date: string; completed: number; minutes: number };

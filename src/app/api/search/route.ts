@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
-import { escapeRegex } from '@/utils/escapeRegex';
+import { buildIdSlug } from '@/utils/slugify';
+import { getIPFromHeaders } from '@/lib/rateLimit';
+import { buildTextFilter, rankByTitle, tokenize } from '@/lib/searchQuery';
 
 // Simple in-memory cache for search results
 const searchCache = new Map<string, { data: any; timestamp: number }>();
@@ -9,19 +11,25 @@ const MAX_CACHE_SIZE = 100;
 
 // Rate limiting per IP
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT = 15; // max requests
+// La palette cherche pendant la frappe : 15 par minute coupait la recherche
+// (erreur 429) après quelques mots tapés.
+const RATE_LIMIT = 40; // max requests
 const RATE_WINDOW = 60_000; // per minute
 
 function getRateLimitKey(req: NextRequest): string {
-  return req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-    || req.headers.get('x-real-ip')
-    || 'unknown';
+  // Pas le premier élément de X-Forwarded-For : le client le choisit, il
+  // suffisait d'en changer à chaque requête pour contourner la limite.
+  return getIPFromHeaders(req.headers);
 }
 
 function isRateLimited(ip: string): boolean {
   const now = Date.now();
   const entry = rateLimitMap.get(ip);
   if (!entry || now > entry.resetAt) {
+    // Ménage : sans lui, la table gardait une entrée par adresse IP pour toujours
+    if (rateLimitMap.size > 5000) {
+      for (const [key, value] of rateLimitMap) if (now > value.resetAt) rateLimitMap.delete(key);
+    }
     rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_WINDOW });
     return false;
   }
@@ -55,68 +63,100 @@ export async function GET(req: NextRequest) {
 
     await dbConnect();
 
-    // Regex on titles only (short fields = fast) for partial/substring matching
-    // e.g. "concurrence" matches "concurrentiel"
-    const escaped = escapeRegex(query);
-    const titleRegex = new RegExp(escaped, 'i');
+    // Recherche tolérante : accents, pluriels et ordre des mots ignorés,
+    // résultats classés par pertinence (voir lib/searchQuery).
+    const tokens = tokenize(query);
+    if (tokens.length === 0) {
+      return NextResponse.json({ results: [], query, total: 0 });
+    }
 
     const per = category === 'all' ? 4 : limit;
     const wants = (c: string) => category === 'all' || category === c;
+    // On lit plus de candidats que nécessaire, puis on garde les plus pertinents
+    const candidates = Math.min(per * 5, 40);
 
-    // Les quatre sources en même temps (avant : l'une après l'autre)
+    /**
+     * Tous les mots d'abord ; si rien ne correspond, au moins un mot
+     * (« théorème pythagor exercice » trouve quand même Pythagore).
+     */
+    async function findRanked<T extends { title: string; date?: unknown }>(
+      run: (filter: Record<string, unknown>) => Promise<T[]>,
+      fields: string[],
+    ): Promise<T[]> {
+      let rows = await run(buildTextFilter(tokens, fields, 'all'));
+      if (rows.length === 0 && tokens.length > 1) {
+        rows = await run(buildTextFilter(tokens, fields, 'any'));
+      }
+      return rankByTitle(rows, query!, tokens).slice(0, per);
+    }
+
+    // Les quatre sources en même temps
     const [forum, fiches, cours, blog] = await Promise.all([
-      // Questions du forum — sur le titre seulement
+      // Questions du forum : sur le titre seulement
       wants('forum')
         ? import('@/models/Question').then(({ default: Question }) =>
-            Question.find({ title: titleRegex })
-              .select('title slug subject classLevel status createdAt')
-              .sort({ createdAt: -1 })
-              .limit(per)
-              .lean()
-              .then((rows: any[]) => rows.map((q) => ({
-                type: 'forum',
-                id: q._id.toString(),
-                title: q.title,
-                subtitle: `${q.subject} - ${q.classLevel}`,
-                url: q.slug ? `/forum/${q.slug}` : `/forum/${q._id}`,
-                badge: q.status,
-                date: q.createdAt
-              }))))
+            findRanked(
+              (filter) =>
+                Question.find(filter)
+                  .select('title slug subject classLevel status createdAt')
+                  .sort({ createdAt: -1 })
+                  .limit(candidates)
+                  .lean()
+                  .then((rows: any[]) => rows.map((q) => ({
+                    type: 'forum',
+                    id: q._id.toString(),
+                    title: q.title,
+                    subtitle: `${q.subject} - ${q.classLevel}`,
+                    // Adresse canonique (id-slug) : pas de redirection au clic
+                    url: `/forum/${buildIdSlug(q._id.toString(), q.slug || q.title)}`,
+                    badge: q.status,
+                    date: q.createdAt
+                  }))),
+              ['title'],
+            ))
         : [],
-      // Fiches — titre et matière (pas le contenu, trop long)
+      // Fiches : titre et matière (pas le contenu, trop long)
       wants('fiches')
         ? import('@/models/Revision').then(({ default: Revision }) =>
-            Revision.find({ $or: [{ title: titleRegex }, { subject: titleRegex }] })
-              .select('title slug subject level status createdAt')
-              .sort({ createdAt: -1 })
-              .limit(per)
-              .lean()
-              .then((rows: any[]) => rows.map((f) => ({
-                type: 'fiches',
-                id: f._id.toString(),
-                title: f.title,
-                subtitle: `${f.subject} - ${f.level}`,
-                url: f.slug ? `/fiches/${f.slug}` : `/fiches/${f._id}`,
-                badge: f.status,
-                date: f.createdAt
-              }))))
+            findRanked(
+              (filter) =>
+                Revision.find(filter)
+                  .select('title slug subject level status createdAt')
+                  .sort({ createdAt: -1 })
+                  .limit(candidates)
+                  .lean()
+                  .then((rows: any[]) => rows.map((f) => ({
+                    type: 'fiches',
+                    id: f._id.toString(),
+                    title: f.title,
+                    subtitle: `${f.subject} - ${f.level}`,
+                    url: `/fiches/${buildIdSlug(f._id.toString(), f.slug || f.title)}`,
+                    badge: f.status,
+                    date: f.createdAt
+                  }))),
+              ['title', 'subject'],
+            ))
         : [],
-      // Cours publiés — titre et matière
+      // Cours publiés : titre et matière
       wants('cours')
         ? import('@/models/Course').then(({ default: Course }) =>
-            Course.find({ $or: [{ title: titleRegex }, { matiere: titleRegex }], status: 'publie' })
-              .select('title slug description niveau matiere createdAt')
-              .sort({ createdAt: -1 })
-              .limit(per)
-              .lean()
-              .then((rows: any[]) => rows.map((c) => ({
-                type: 'cours',
-                id: c._id.toString(),
-                title: c.title,
-                subtitle: [c.matiere, c.niveau].filter(Boolean).join(' - ') || c.description?.slice(0, 60),
-                url: c.slug ? `/cours/${c.slug}` : `/cours/${c._id}`,
-                date: c.createdAt
-              }))))
+            findRanked(
+              (filter) =>
+                Course.find({ $and: [filter, { status: 'publie' }] })
+                  .select('title slug description niveau matiere createdAt')
+                  .sort({ createdAt: -1 })
+                  .limit(candidates)
+                  .lean()
+                  .then((rows: any[]) => rows.map((c) => ({
+                    type: 'cours',
+                    id: c._id.toString(),
+                    title: c.title,
+                    subtitle: [c.matiere, c.niveau].filter(Boolean).join(' - ') || c.description?.slice(0, 60),
+                    url: `/cours/${buildIdSlug(c._id.toString(), c.slug || c.title)}`,
+                    date: c.createdAt
+                  }))),
+              ['title', 'matiere'],
+            ))
         : [],
       // Articles du blog : API publique du nouveau blog (l'ancienne API WordPress n'existe plus).
       // 2,5 s au plus : un blog lent ne doit pas ralentir toute la recherche.

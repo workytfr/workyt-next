@@ -11,7 +11,7 @@ export default function CtaFinal() {
             <div className="mx-auto max-w-[1200px]">
                 <div className="relative overflow-hidden rounded-[32px] bg-[var(--wk-accent)] px-6 py-14 text-center text-white md:px-16 md:py-20">
                     <div
-                        className="wk-grain pointer-events-none absolute inset-0"
+                        className="wk-grain wk-grain-flat pointer-events-none absolute inset-0"
                         aria-hidden="true"
                     />
                     <div

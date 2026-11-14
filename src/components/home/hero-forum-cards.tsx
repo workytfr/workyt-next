@@ -1,7 +1,10 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+/**
+ * Cartes « Forum · en direct » du hero. Composant serveur : les cartes sont
+ * dans le HTML dès le départ et leur entrée est une animation CSS décalée
+ * (`.wk-card-in`, globals.css). Avant, framer-motion les montait 300 ms après
+ * l'hydratation : la lib partait dans le bundle de l'accueil et la colonne
+ * sautait en hauteur à leur apparition.
+ */
 import { AvatarDisplay } from "@/components/ui/AvatarDisplay";
 import {
   MessageCircle,
@@ -79,25 +82,13 @@ const FORUM_CARDS: ForumCard[] = [
 ];
 
 function ForumCardItem({ card, index }: { card: ForumCard; index: number }) {
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 300 + index * 180);
-    return () => clearTimeout(t);
-  }, [index]);
-
   const tilt = index % 2 === 0 ? 1.2 : -1.4;
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          initial={{ opacity: 0, y: 24, scale: 0.96 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-          transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+    <div className="wk-card-in" style={{ animationDelay: `${300 + index * 180}ms` }}>
+        <div
           style={{ rotate: `${tilt}deg` }}
-          className="group relative rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white/95 p-3.5 shadow-[0_8px_30px_-10px_rgba(26,21,18,0.18)] backdrop-blur-sm transition-transform hover:rotate-0 hover:scale-[1.02]"
+          className="group relative rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white/95 p-3.5 shadow-[0_8px_30px_-10px_rgba(26,21,18,0.18)] backdrop-blur-sm transition-[rotate,transform] hover:scale-[1.02] hover:[rotate:0deg]"
         >
           {/* Header */}
           <div className="flex items-center justify-between">
@@ -148,9 +139,8 @@ function ForumCardItem({ card, index }: { card: ForumCard; index: number }) {
               </p>
             </div>
           </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        </div>
+    </div>
   );
 }
 
@@ -158,11 +148,8 @@ export default function HeroForumCards() {
   return (
     <div className="relative w-full">
       {/* Header "Live activity" */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4 }}
-        className="mb-3 flex items-center justify-between rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white/80 px-4 py-2.5 backdrop-blur"
+      <div
+        className="wk-drop-in mb-3 flex items-center justify-between rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white/80 px-4 py-2.5 backdrop-blur"
       >
         <div className="flex items-center gap-2">
           <span className="relative flex h-2.5 w-2.5">
@@ -177,7 +164,7 @@ export default function HeroForumCards() {
           <SparklesIcon className="h-3 w-3 text-[var(--wk-accent)]" />
           142 en ligne
         </span>
-      </motion.div>
+      </div>
 
       {/* Stacked cards */}
       <div className="flex flex-col gap-3">

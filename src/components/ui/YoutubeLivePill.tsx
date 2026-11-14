@@ -69,14 +69,34 @@ export default function YoutubeLivePill() {
         } catch {}
     }, []);
 
+    // Premier appel une seule fois : avant, l'effet ci-dessous le relançait à
+    // chaque changement de statut, d'où une requête en double.
     useEffect(() => {
-        if (typeof window !== "undefined") {
-            setDismissed(!!sessionStorage.getItem(DISMISS_KEY));
-        }
-        fetchStatus();
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setDismissed(!!sessionStorage.getItem(DISMISS_KEY));
+        void fetchStatus();
+    }, [fetchStatus]);
+
+    useEffect(() => {
         const interval = data.status !== "none" ? POLL_INTERVAL_ACTIVE : POLL_INTERVAL_IDLE;
-        const id = setInterval(fetchStatus, interval);
-        return () => clearInterval(id);
+        // Onglet en arrière-plan : pas d'appel ; au retour, on rattrape
+        // l'appel manqué s'il était dû.
+        let missed = false;
+        const id = setInterval(() => {
+            if (document.hidden) missed = true;
+            else void fetchStatus();
+        }, interval);
+        const onVisible = () => {
+            if (!document.hidden && missed) {
+                missed = false;
+                void fetchStatus();
+            }
+        };
+        document.addEventListener("visibilitychange", onVisible);
+        return () => {
+            clearInterval(id);
+            document.removeEventListener("visibilitychange", onVisible);
+        };
     }, [fetchStatus, data.status]);
 
     useEffect(() => {

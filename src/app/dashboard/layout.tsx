@@ -5,6 +5,9 @@ import { Metadata } from "next";
 import DashboardSidebar from "./_components/DashboardSidebar";
 import DashboardHeader from "./_components/DashboardHeader";
 import { authOptions } from "@/lib/authOptions";
+import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
+import { extractRouterConfig } from "uploadthing/server";
+import { ourFileRouter } from "@/app/api/uploadthing/core";
 import "./styles/dashboard-theme.css";
 
 export const metadata: Metadata = {
@@ -35,6 +38,9 @@ export default async function DashboardLayout({
 
   return (
     <div className="dash-layout">
+      {/* Config des envois Uploadthing injectée dans la page : les boutons d'envoi
+          (uniquement dans le dashboard) n'ont pas à la redemander au serveur. */}
+      <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
       {/* Barre latérale */}
       <DashboardSidebar />
       

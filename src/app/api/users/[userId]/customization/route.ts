@@ -18,19 +18,25 @@ export async function GET(
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    const user = await User.findById(userId);
+    // Utilisateur (seul le badge choisi sert ici) et personnalisation en parallèle :
+    // avant, le document utilisateur entier était lu, puis la personnalisation.
+    const [user, customization] = await Promise.all([
+      User.findById(userId).select('selectedBadge').lean<{ selectedBadge?: string }>(),
+      // customPhoto : seulement l'URL et l'état, jamais la clé R2 (comme la route groupée)
+      ProfileCustomization.findOne({ user: userId })
+        .select('user usernameColor profileImage profileBorder avatarLook customPhoto.url customPhoto.isActive')
+        .lean(),
+    ]);
     if (!user) {
       return NextResponse.json({ error: 'Utilisateur non trouvé' }, { status: 404 });
     }
 
-    const customization = await ProfileCustomization.findOne({ user: userId });
-
     // Recuperer l'icone du badge selectionne
     let selectedBadgeIcon: string | null = null;
     if (user.selectedBadge) {
-      const badge = await Badge.findOne({ slug: user.selectedBadge }).select('icon');
+      const badge = await Badge.findOne({ slug: user.selectedBadge }).select('icon').lean<{ icon?: string }>();
       if (badge) {
-        selectedBadgeIcon = badge.icon;
+        selectedBadgeIcon = badge.icon ?? null;
       }
     }
 

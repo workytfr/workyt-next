@@ -43,7 +43,6 @@ import {
 // Rôles ayant accès au tableau de bord (cf. dashboard/layout.tsx)
 const STAFF_ROLES = ["Admin", "Rédacteur", "Correcteur", "Modérateur", "Helpeur"];
 import WorkytLogo from "@/components/ui/WorkytLogo";
-import ProfileCard from "@/components/ui/ProfileCard";
 import { BlogIcon, CoursIcon, FicheIcon, ForumIcon } from "@/components/ui/WkIcons";
 
 // Chargés à la demande : modales (à l'ouverture) et outils de l'espace connecté
@@ -55,6 +54,13 @@ const QuestsPanel = dynamic(() => import("@/components/quests/QuestsPanel"), { s
 const StatusCluster = dynamic(() => import("@/components/navbar/StatusCluster"), { ssr: false });
 const NotificationBell = dynamic(() => import("@/components/NotificationBell"), { ssr: false });
 const BookmarkBell = dynamic(() => import("@/components/BookmarkBell"), { ssr: false });
+// Carte de profil (points, gemmes, rang) : seulement pour les connectés, donc
+// hors du bundle commun. La session arrive de toute façon après le chargement :
+// le morceau se télécharge pendant ce temps. Emplacement réservé = pas de saut.
+const ProfileCard = dynamic(() => import("@/components/ui/ProfileCard"), {
+    ssr: false,
+    loading: () => <span className="block h-9 w-28 animate-pulse rounded-full bg-[rgba(26,21,18,0.06)]" aria-hidden="true" />,
+});
 
 const navLinks = [
     { href: "/cours", label: "Cours", icon: CoursIcon },

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CROW_LINES, FOX_FLATTERIES, FOX_LINES } from "@/lib/pomodoro/fable";
 import { CrowArt, FoxArt, TreeArt, type CrowMood, type FoxMood } from "./FableArt";
-import type { Outcome, Phase, Status } from "./PomodoroProvider";
+import type { Outcome, Phase, Status } from "./pomodoroStore";
 
 /** Une nouvelle flatterie de Foxy toutes les 90 secondes de focus. */
 const FLATTERY_EVERY_MS = 90_000;

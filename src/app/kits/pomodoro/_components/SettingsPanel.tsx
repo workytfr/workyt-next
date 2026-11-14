@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { usePomodoro } from "@/components/pomodoro/PomodoroProvider";
+import { usePomodoro } from "@/components/pomodoro/pomodoroStore";
 import { PRESETS, SETTINGS_LIMITS, type PomodoroSettings } from "@/lib/pomodoro/settings";
 
 type NumberKey = keyof typeof SETTINGS_LIMITS;

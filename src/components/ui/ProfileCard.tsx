@@ -56,7 +56,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({
         userId ? '/api/user/me/points' : null,
         fetcher,
         {
-            refreshInterval: 30000, // Rafraîchir toutes les 30 secondes
+            refreshInterval: 60000, // Rafraîchir toutes les 60 secondes (et au retour sur l'onglet)
             revalidateOnFocus: true, // Rafraîchir quand la fenêtre reprend le focus
             revalidateOnReconnect: true,
         }

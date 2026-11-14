@@ -100,6 +100,10 @@ const QuizSchema: Schema = new Schema({
 /**
  * Vérification de la présence du modèle pour éviter une réinstanciation
  */
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+QuizSchema.index({ sectionId: 1 });
+
 const Quiz: Model<IQuiz> = mongoose.models.Quiz || mongoose.model<IQuiz>('Quiz', QuizSchema);
 
 export default Quiz;

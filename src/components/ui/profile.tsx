@@ -9,6 +9,7 @@ import { generatedAvatarUri } from "@/lib/blobatar";
 import { sanitizeLook, type AvatarLook } from "@/lib/avatarLook";
 import AnimatedFrame from "@/components/ui/frames/AnimatedFrame";
 import { animatedFrameId } from "@/lib/profileFrames";
+import { fetchCustomization } from "@/lib/customizationClient";
 
 // Interface pour les personnalisations
 interface ProfileCustomization {
@@ -92,12 +93,12 @@ const ProfileAvatar: React.FC<ProfileAvatarProps> = ({
         
         try {
             setLoading(true);
-            const response = await fetch(`/api/users/${userId}/customization`);
-            if (response.ok) {
-                const data = await response.json();
-                if (data.success) {
-                    setCustomization(data.data.customization);
-                }
+            // Regroupé avec les autres avatars de la page et mis en cache 5 min
+            // (voir customizationClient) : avant, chaque carte de cours ou de fiche
+            // envoyait sa propre requête, parfois trois fois pour le même auteur.
+            const data = await fetchCustomization(userId);
+            if (data?.customization) {
+                setCustomization(data.customization as ProfileCustomization);
             }
         } catch (error) {
             console.error('Erreur lors du chargement de la personnalisation:', error);

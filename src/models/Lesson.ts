@@ -41,6 +41,10 @@ const LessonSchema: Schema = new Schema({
 /**
  * Vérification de la présence du modèle pour éviter une réinstanciation
  */
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+LessonSchema.index({ sectionId: 1, order: 1 });
+
 const Lesson: Model<ILesson> = mongoose.models.Lesson || mongoose.model<ILesson>('Lesson', LessonSchema);
 
 export default Lesson;

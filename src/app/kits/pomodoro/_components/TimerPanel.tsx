@@ -2,7 +2,7 @@
 
 import { Pause, Play, RotateCcw, SkipForward } from "lucide-react";
 import FableScene from "@/components/pomodoro/FableScene";
-import { formatClock, phaseLabel, usePomodoro, type Phase } from "@/components/pomodoro/PomodoroProvider";
+import { formatClock, phaseLabel, usePomodoro, type Phase } from "@/components/pomodoro/pomodoroStore";
 import { SUBJECTS } from "@/lib/pomodoro/settings";
 
 const PHASES: Phase[] = ["focus", "short", "long"];

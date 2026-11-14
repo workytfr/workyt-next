@@ -40,6 +40,7 @@ import { PAGE_CONTAINER, Eyebrow, SubjectLabel, LevelChip } from "@/components/w
 import { StatusChip, plainExcerpt, relativeTime } from "@/app/forum/_components/forumUi";
 import { FicheTile } from "@/app/fiches/_components/ficheUi";
 import RankIcon from "@/components/ui/RankIcon";
+import { fetchCustomization } from "@/lib/customizationClient";
 import { FicheIcon, ForumIcon } from "@/components/ui/WkIcons";
 
 export default function UserAccountPage({ params }: { params: Promise<{ id: string }> }) {
@@ -174,10 +175,15 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const [customization, setCustomization] = useState<any>(undefined);
     const hasCustomPhoto = !!customization?.customPhoto?.isActive;
     useEffect(() => {
-        fetch(`/api/users/${id}/customization`)
-            .then((r) => r.json())
-            .then((d) => setCustomization(d?.data?.customization ?? null))
-            .catch(() => setCustomization(null));
+        // Même chargeur que les avatars (regroupé, en cache 5 min) : une seule
+        // requête pour l'avatar du profil et cette vérification.
+        let alive = true;
+        fetchCustomization(id)
+            .then((d) => alive && setCustomization(d?.customization ?? null))
+            .catch(() => alive && setCustomization(null));
+        return () => {
+            alive = false;
+        };
     }, [id]);
     useRankUp(formData.points);
 
@@ -283,7 +289,9 @@ export default function UserAccountPage({ params }: { params: Promise<{ id: stri
     const isAdmin = hasRole(session?.user, "Admin");
 
 
-    if ((loading && !user) || customization === undefined) {
+    // On n'attend plus la personnalisation pour afficher le profil : elle ne
+    // sert qu'à l'avatar et au bouton de signalement, qui arrivent ensuite.
+    if (loading && !user) {
         return (
             <div className="min-h-screen bg-[var(--wk-paper)]">
                 <div className={`${PAGE_CONTAINER} py-10`}>

@@ -59,15 +59,19 @@ export async function GET(req: NextRequest) {
             }
         }
 
-        // Récupération des questions avec pagination et tri
-        const questions = await Question.find(filter)
-            .populate({
-                path: "user",
-                select: "username points image",
-            })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        // Récupération des questions avec pagination et tri. Le total (pour la
+        // pagination) est compté en même temps : un aller-retour vers la base de moins.
+        const [questions, totalQuestions] = await Promise.all([
+            Question.find(filter)
+                .populate({
+                    path: "user",
+                    select: "username points image",
+                })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Question.countDocuments(filter),
+        ]);
 
         // Récupération du nombre de réponses pour chaque question
         const questionIds = questions.map(q => q._id);
@@ -87,9 +91,6 @@ export async function GET(req: NextRequest) {
             ...question.toObject(),
             answerCount: answerCountMap[question._id.toString()] || 0
         }));
-
-        // Nombre total de questions correspondant au filtre
-        const totalQuestions = await Question.countDocuments(filter);
 
         return NextResponse.json({
             success: true,

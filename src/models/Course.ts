@@ -63,6 +63,10 @@ CourseSchema.pre('save', function (next) {
     next();
 });
 
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+CourseSchema.index({ status: 1, createdAt: -1 });
+
 const Course: Model<ICourse> = mongoose.models.Course || mongoose.model<ICourse>("Course", CourseSchema);
 
 export default Course;

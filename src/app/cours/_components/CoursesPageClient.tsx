@@ -9,6 +9,7 @@ import { subjectToSlug } from "@/utils/subjectSlug";
 import CourseCard from "./CourseCard";
 import { CourseListing } from "./types";
 import Foxy from "@/components/foxy/Foxy";
+import { peekList, rememberList } from "@/lib/listCache";
 
 const PAGE_SIZE = 12;
 
@@ -35,12 +36,26 @@ export default function CoursesPageClient() {
         if (subject) params.set("matiere", subject);
         if (level) params.set("niveau", level);
 
-        fetch(`/api/cours?${params}`, { cache: "no-store" })
+        const url = `/api/cours?${params}`;
+        const apply = (data: { courses?: unknown; total?: unknown }) => {
+            setCourses(Array.isArray(data.courses) ? data.courses : []);
+            setTotal(typeof data.total === "number" ? data.total : 0);
+        };
+        // Liste déjà vue pendant la visite : affichée tout de suite, puis rafraîchie
+        const cached = peekList<{ courses?: unknown; total?: unknown }>(url);
+        if (cached) {
+            apply(cached);
+            // Voulu : afficher le cache avant même que la requête parte
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoading(false);
+        }
+
+        fetch(url, { cache: "no-store" })
             .then((r) => r.json())
             .then((data) => {
                 if (!alive) return;
-                setCourses(Array.isArray(data.courses) ? data.courses : []);
-                setTotal(typeof data.total === "number" ? data.total : 0);
+                apply(data);
+                if (Array.isArray(data.courses)) rememberList(url, data);
             })
             .catch((error) => console.error("Erreur lors de la récupération des cours :", error))
             .finally(() => alive && setLoading(false));

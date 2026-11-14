@@ -1,7 +1,7 @@
 "use client";
 
 import { Lock } from "lucide-react";
-import { usePomodoro } from "@/components/pomodoro/PomodoroProvider";
+import { usePomodoro } from "@/components/pomodoro/pomodoroStore";
 import { FABLE_CREDIT, FABLE_TITLE, FABLE_VERSES, POMODOROS_PER_FABLE, VERSES_PER_POMODORO, fableProgress } from "@/lib/pomodoro/fable";
 
 export default function FablePanel() {

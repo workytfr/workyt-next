@@ -3,9 +3,15 @@ import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import User from '@/models/User';
+import { rateLimit, rateLimitResponse, getIPFromHeaders } from '@/lib/rateLimit';
 
 export async function POST(req: Request) {
     try {
+        // 10 essais par quart d'heure et par adresse : empêche de tester des
+        // jetons en boucle (chaque essai coûte une lecture en base).
+        const rl = rateLimit(`reset-update:${getIPFromHeaders(req.headers)}`, 10, 15 * 60_000);
+        if (!rl.success) return rateLimitResponse(rl.retryAfterMs);
+
         const { token, password } = await req.json();
 
         if (typeof token !== 'string' || typeof password !== 'string' || !token || !password) {

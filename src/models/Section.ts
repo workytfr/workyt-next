@@ -47,6 +47,10 @@ SectionSchema.set('toObject', { virtuals: true });
 /**
  * Vérification de la présence du modèle pour éviter une réinstanciation
  */
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+SectionSchema.index({ courseId: 1, order: 1 });
+
 const Section: Model<ISection> =
     mongoose.models.Section || mongoose.model<ISection>('Section', SectionSchema);
 

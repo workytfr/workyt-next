@@ -4,7 +4,6 @@ import React, { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Cookie, Lock, X } from "lucide-react";
 import * as SwitchPrimitives from "@radix-ui/react-switch";
 import {
@@ -42,7 +41,6 @@ function Toggle({ checked, onChange, label }: { checked: boolean; onChange?: (v:
  */
 export default function CookieConsent({ umamiUrl, umamiWebsiteId }: { umamiUrl?: string; umamiWebsiteId?: string }) {
     const pathname = usePathname();
-    const reduceMotion = useReducedMotion();
     const raw = useSyncExternalStore(subscribeConsent, getConsentSnapshot, () => SERVER_SNAPSHOT);
     const hydrated = raw !== SERVER_SNAPSHOT;
     const consent = hydrated ? parseConsent(raw) : null;
@@ -64,6 +62,10 @@ export default function CookieConsent({ umamiUrl, umamiWebsiteId }: { umamiUrl?:
 
     const isPrint = /^\/cours\/[^/]+\/imprimer(\/|$)/.test(pathname ?? "");
     const visible = !isPrint && (panelOpen || (hydrated && !consent));
+
+    // Le bandeau reste monté le temps de son animation de sortie (.wk-consent-out)
+    const [mounted, setMounted] = useState(visible);
+    if (visible && !mounted) setMounted(true);
 
     const decide = (choices: ConsentChoices) => {
         const previous = consent;
@@ -100,18 +102,16 @@ export default function CookieConsent({ umamiUrl, umamiWebsiteId }: { umamiUrl?:
                 <Script id="umami-recorder" src={`${umamiUrl}/recorder.js`} data-website-id={umamiWebsiteId} strategy="lazyOnload" />
             )}
 
-            <AnimatePresence>
-                {visible && (
-                    <motion.div
-                        key="cookie-consent"
+            {mounted && (
+                    <div
                         role="dialog"
                         aria-modal="false"
                         aria-labelledby="cookie-consent-title"
-                        initial={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 24 }}
-                        transition={{ duration: 0.25, ease: "easeOut" }}
-                        className="fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-[540px] rounded-[22px] border border-[rgba(26,21,18,0.1)] bg-[var(--wk-paper)] text-[var(--wk-ink)] shadow-[0_18px_50px_rgba(26,21,18,0.22)] sm:bottom-6 print:hidden"
+                        aria-hidden={!visible || undefined}
+                        onAnimationEnd={(e) => {
+                            if (e.target === e.currentTarget && !visible) setMounted(false);
+                        }}
+                        className={`${visible ? "wk-consent-in" : "wk-consent-out pointer-events-none"} fixed inset-x-3 bottom-3 z-[70] mx-auto max-w-[540px] rounded-[22px] border border-[rgba(26,21,18,0.1)] bg-[var(--wk-paper)] text-[var(--wk-ink)] shadow-[0_18px_50px_rgba(26,21,18,0.22)] sm:bottom-6 print:hidden`}
                     >
                         <button
                             type="button"
@@ -216,9 +216,8 @@ export default function CookieConsent({ umamiUrl, umamiWebsiteId }: { umamiUrl?:
                                 </div>
                             </div>
                         )}
-                    </motion.div>
-                )}
-            </AnimatePresence>
+                    </div>
+            )}
         </>
     );
 }

@@ -79,5 +79,10 @@ QuestionSchema.pre('save', function (next) {
     next();
 });
 
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+QuestionSchema.index({ createdAt: -1 });
+QuestionSchema.index({ user: 1, createdAt: -1 });
+
 const Question = mongoose.models.Question || mongoose.model<IQuestion>('Question', QuestionSchema);
 export default Question;

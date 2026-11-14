@@ -51,6 +51,12 @@
   pointer-events: none;
   z-index: 1;
 }
+/* Variante pour les grands aplats clairs (fond papier, orange) : sans
+   `mix-blend-mode`, le navigateur n'a plus à fusionner toute la zone avec ce
+   qui est dessous à chaque rendu (coûteux au défilement sur mobile). Sur ces
+   fonds, l'écart avec `multiply` est sous 2/255 par canal : invisible. À éviter
+   sur fond sombre, où le grain paraîtrait un peu plus clair. */
+.wk-grain-flat::before { mix-blend-mode: normal; }
 .wk-grain > * { z-index: 2; }
 .wk-grain > *:not(.absolute):not([class*=" absolute"]) { position: relative; }
 
@@ -347,6 +353,52 @@
   animation: wk-rise 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
+/* Cartes du forum de l'accueil : entrée avec léger rebond, en CSS plutôt
+   qu'avec framer-motion (la lib partait dans le bundle de l'accueil). */
+@keyframes wk-card-in {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.wk-card-in { animation: wk-card-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+/* Squelettes de chargement (loading.tsx) : teinte papier et reflet qui
+   balaie la forme, plus lisible qu'un clignotement. */
+@keyframes wk-skel-sweep {
+  from { background-position: 150% 0; }
+  to { background-position: -50% 0; }
+}
+.wk-skel {
+  background-color: rgba(26, 21, 18, 0.06);
+  background-image: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.55) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  animation: wk-skel-sweep 1.6s ease-in-out infinite;
+}
+/* Bandeau cookies : glisse depuis le bas à l'ouverture et à la fermeture.
+   En CSS plutôt qu'avec framer-motion : le bandeau est sur toutes les pages,
+   la lib partait dans le bundle commun pour lui seul. Moins d'animations
+   demandé : simple fondu (jamais `none`, la fermeture attend animationend). */
+@keyframes wk-consent-in {
+  from { opacity: 0; transform: translateY(24px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes wk-consent-out {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(24px); }
+}
+@keyframes wk-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes wk-fade-out { from { opacity: 1; } to { opacity: 0; } }
+.wk-consent-in { animation: wk-consent-in 0.25s ease-out both; }
+.wk-consent-out { animation: wk-consent-out 0.25s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .wk-consent-in { animation-name: wk-fade-in; }
+  .wk-consent-out { animation-name: wk-fade-out; }
+}
+@keyframes wk-drop-in {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.wk-drop-in { animation: wk-drop-in 0.4s ease-out both; }
+
 /* Marqueur maison — trait tracé à la main sous un mot clé.
    Remplace les numéros 01/02/03 : même rôle de repère, mais c'est notre écriture. */
 .wk-underline {
@@ -411,6 +463,9 @@
   .wk-bounce-in,
   .wk-draw,
   .wk-rise,
+  .wk-card-in,
+  .wk-drop-in,
+  .wk-skel,
   .animate-fade-in-up {
     animation: none !important;
   }

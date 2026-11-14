@@ -202,6 +202,8 @@ const FileViewer: React.FC<FileViewerProps> = ({ ficheId, files }) => {
                         <img
                             src={proxyUrl}
                             alt="Fichier attaché"
+                            // Contenu principal de la fiche (élément LCP) : téléchargé en priorité
+                            fetchPriority="high"
                             className={`max-w-full object-contain rounded-md shadow-[0_6px_24px_rgba(26,21,18,0.12)] ${isFullscreen ? "max-h-full" : "max-h-[75vh] cursor-zoom-in"}`}
                             onClick={isFullscreen ? undefined : toggleFullscreen}
                             onError={() => setImageErrorSrc(proxyUrl)}

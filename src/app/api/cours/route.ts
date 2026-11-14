@@ -41,12 +41,16 @@ export async function GET(req: NextRequest) {
             filters.status = "publie";
         }
 
-        // Récupération des cours avec pagination
-        const courses = await Course.find(filters)
-            .lean()
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit);
+        // Récupération des cours avec pagination. Le total ne dépend pas de la
+        // page : compté en même temps (chaque requête est un aller-retour vers la base).
+        const [courses, totalCourses] = await Promise.all([
+            Course.find(filters)
+                .lean()
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit),
+            Course.countDocuments(filters),
+        ]);
 
         // Extraction des auteurs en vérifiant que course.authors existe et est un tableau
         const authorIds = [
@@ -58,15 +62,17 @@ export async function GET(req: NextRequest) {
                 )
             ),
         ];
-        const authors = await User.find({ _id: { $in: authorIds } })
-            .select("_id username image")
-            .lean();
-
-        // Récupération des sections associées aux cours (on sélectionne uniquement courseId et title)
+        // Auteurs et sections (courseId et title uniquement) en parallèle :
+        // les deux ne dépendent que de la liste des cours
         const courseIds = courses.map(course => course._id);
-        const sections = await Section.find({ courseId: { $in: courseIds } })
-            .select("courseId title")
-            .lean();
+        const [authors, sections] = await Promise.all([
+            User.find({ _id: { $in: authorIds } })
+                .select("_id username image")
+                .lean(),
+            Section.find({ courseId: { $in: courseIds } })
+                .select("courseId title")
+                .lean(),
+        ]);
 
         // Association des sections et des auteurs à chaque cours
         const coursesWithDetails = courses.map(course => ({
@@ -78,9 +84,6 @@ export async function GET(req: NextRequest) {
                 (course.authors || []).some(id => id.toString() === author._id.toString())
             ),
         }));
-
-        // Récupération du nombre total de cours correspondant aux filtres (pour la pagination)
-        const totalCourses = await Course.countDocuments(filters);
 
         return NextResponse.json(
             {

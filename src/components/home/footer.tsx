@@ -1,9 +1,9 @@
-"use client";
-
+// Composant serveur : le pied de page n'envoie aucun JavaScript, hormis le
+// bouton « Gérer les cookies » (ConsentSettingsButton).
 import React from 'react';
 import Link from 'next/link';
 import WorkytLogo from '@/components/ui/WorkytLogo';
-import { openConsentPanel } from '@/lib/consent';
+import ConsentSettingsButton from '@/components/consent/ConsentSettingsButton';
 import {
     InstagramLogoIcon,
     TwitterLogoIcon,
@@ -170,13 +170,7 @@ const Footer: React.FC = () => {
                                     </li>
                                 ))}
                                 <li>
-                                    <button
-                                        type="button"
-                                        onClick={openConsentPanel}
-                                        className="text-sm text-[#78716c] hover:text-[#f97316] transition-colors duration-200"
-                                    >
-                                        Gérer les cookies
-                                    </button>
+                                    <ConsentSettingsButton className="text-sm text-[#78716c] hover:text-[#f97316] transition-colors duration-200" />
                                 </li>
                             </ul>
                         </div>

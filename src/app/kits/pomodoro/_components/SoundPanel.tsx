@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Radio, Volume2, X } from "lucide-react";
-import { usePomodoro } from "@/components/pomodoro/PomodoroProvider";
+import { usePomodoro } from "@/components/pomodoro/pomodoroStore";
 import { AMBIENCES } from "@/lib/pomodoro/ambience";
 import { RADIO_STATIONS, type RadioStation } from "@/lib/pomodoro/radio";
 

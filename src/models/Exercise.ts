@@ -52,6 +52,10 @@ const ExerciseSchema: Schema = new Schema({
 /**
  * Vérification de la présence du modèle pour éviter une réinstanciation
  */
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+ExerciseSchema.index({ sectionId: 1 });
+
 const Exercise: Model<IExercise> = mongoose.models.Exercise || mongoose.model<IExercise>('Exercise', ExerciseSchema);
 
 export default Exercise;

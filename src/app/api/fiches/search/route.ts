@@ -57,13 +57,18 @@ export const GET = async (req: NextRequest) => {
             if (endDate) filter.createdAt.$lte = new Date(endDate);
         }
 
-        const fiches = await Revision.find(filter)
-            .populate("author", "username points role _id")
-            .populate("courseId", "title slug")
-            .select("title content likes comments status level subject courseId createdAt files")
-            .sort(sort)
-            .skip(skip)
-            .limit(limit);
+        // Le total (pour la pagination) est compté en même temps que la page :
+        // un aller-retour vers la base de moins.
+        const [fiches, totalResults] = await Promise.all([
+            Revision.find(filter)
+                .populate("author", "username points role _id")
+                .populate("courseId", "title slug")
+                .select("title content likes comments status level subject courseId createdAt files")
+                .sort(sort)
+                .skip(skip)
+                .limit(limit),
+            Revision.countDocuments(filter),
+        ]);
 
         const isImage = (url: string) => /\.(png|jpe?g|webp|gif|avif)(\?|$)/i.test(url);
         const results = await Promise.all(fiches.map(async (fiche) => ({
@@ -86,8 +91,6 @@ export const GET = async (req: NextRequest) => {
             fileCount: fiche.files?.length || 0,
             hasPdf: (fiche.files || []).some((f: string) => /\.pdf(\?|$)/i.test(f)),
         })));
-
-        const totalResults = await Revision.countDocuments(filter);
 
         return NextResponse.json({
             success: true,

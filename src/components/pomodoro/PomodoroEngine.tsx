@@ -1,13 +1,17 @@
 "use client";
 
 /**
- * Pomodoro global : monté dans ClientProviders, il continue de tourner quand
- * l'élève navigue sur le site (et reprend après un rechargement grâce au
- * localStorage). Le temps restant est toujours recalculé depuis une heure de
- * fin absolue : pas de dérive quand l'onglet est en arrière-plan.
+ * Moteur du Pomodoro : il continue de tourner quand l'élève navigue sur le site
+ * (et reprend après un rechargement grâce au localStorage). Le temps restant est
+ * toujours recalculé depuis une heure de fin absolue : pas de dérive quand
+ * l'onglet est en arrière-plan.
+ *
+ * Chargé à la demande par PomodoroGate (page /kits/pomodoro, ou minuteur
+ * sauvegardé en cours) : il publie son état dans pomodoroStore, que lisent la
+ * page et le widget via usePomodoro(). Il affiche aussi le widget flottant.
  */
 
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { toast } from "sonner";
 import {
@@ -17,11 +21,18 @@ import {
     type PomodoroSettings,
 } from "@/lib/pomodoro/settings";
 import { playAmbience, playChime, previewAmbience, setAmbienceVolume, stopAmbience, unlockAudio, type AmbienceKind } from "@/lib/pomodoro/ambience";
-
-export type Phase = "focus" | "short" | "long";
-export type Status = "idle" | "running" | "paused";
-/** Issue du dernier focus : Corvy a gardé son fromage, ou Foxy l'a pris. */
-export type Outcome = "kept" | "stolen" | null;
+import {
+    STATE_KEY,
+    formatClock,
+    phaseLabel,
+    publishPomodoro,
+    type Outcome,
+    type Phase,
+    type PomodoroContextValue,
+    type RadioTrack,
+    type Status,
+} from "./pomodoroStore";
+import PomodoroWidget from "./PomodoroWidget";
 
 interface TimerState {
     phase: Phase;
@@ -40,54 +51,6 @@ interface TimerState {
     subject: string;
 }
 
-interface PomodoroContextValue {
-    hydrated: boolean;
-    isAuthenticated: boolean;
-    settings: PomodoroSettings;
-    updateSettings: (patch: Partial<PomodoroSettings>) => void;
-    phase: Phase;
-    status: Status;
-    remainingMs: number;
-    totalMs: number;
-    cycle: number;
-    outcome: Outcome;
-    subject: string;
-    setSubject: (s: string) => void;
-    start: () => void;
-    pause: () => void;
-    /** Abandon du focus en cours (Foxy prend le fromage) ou fin de la pause */
-    stop: () => void;
-    skip: () => void;
-    selectPhase: (p: Phase) => void;
-    /** Pomodoros réussis au total (avance dans la fable) */
-    fableCount: number;
-    syncFableCount: (serverTotal: number) => void;
-    todayCount: number;
-    /** Change à chaque focus enregistré : les stats se rechargent */
-    statsVersion: number;
-    /** Un focus est en cours : seul moment où l'ambiance et la radio jouent */
-    focusing: boolean;
-    /** Ambiance choisie (elle ne joue que pendant le focus) */
-    ambience: AmbienceKind | null;
-    setAmbience: (k: AmbienceKind | null) => void;
-    volume: number;
-    setVolume: (v: number) => void;
-    /** Radio choisie (lecteur dans PomodoroWidget, joue seulement pendant le focus) */
-    radio: RadioTrack | null;
-    setRadio: (r: Omit<RadioTrack, "resolvedAt"> | null) => void;
-}
-
-export interface RadioTrack {
-    stationId: string;
-    videoId: string;
-    label: string;
-    /** Moment où le direct a été résolu : un direct YouTube peut changer d'identifiant */
-    resolvedAt: number;
-}
-
-const PomodoroContext = createContext<PomodoroContextValue | null>(null);
-
-const STATE_KEY = "wk-pomodoro-state";
 const SETTINGS_KEY = "wk-pomodoro-settings";
 const FABLE_KEY = "wk-pomodoro-fable";
 const TODAY_KEY = "wk-pomodoro-today";
@@ -121,17 +84,6 @@ function todayKey(): string {
     return new Intl.DateTimeFormat("fr-CA").format(new Date());
 }
 
-export function formatClock(ms: number): string {
-    const total = Math.max(0, Math.ceil(ms / 1000));
-    const m = Math.floor(total / 60);
-    const s = total % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-export function phaseLabel(p: Phase): string {
-    return p === "focus" ? "Focus" : p === "short" ? "Pause courte" : "Pause longue";
-}
-
 function readJson<T>(key: string): T | null {
     try {
         const raw = localStorage.getItem(key);
@@ -150,7 +102,7 @@ function notify(enabled: boolean, title: string, body: string) {
     }
 }
 
-export function PomodoroProvider({ children }: { children: React.ReactNode }) {
+export default function PomodoroEngine({ showWidget }: { showWidget: boolean }) {
     const { status: authStatus } = useSession();
     const isAuthenticated = authStatus === "authenticated";
 
@@ -550,11 +502,11 @@ export function PomodoroProvider({ children }: { children: React.ReactNode }) {
         fableCount, syncFableCount, todayCount, statsVersion, focusing, ambience, setAmbience, volume, setVolume, radio, setRadio,
     ]);
 
-    return <PomodoroContext.Provider value={value}>{children}</PomodoroContext.Provider>;
-}
+    // useLayoutEffect : la page et le widget voient le nouvel état avant l'affichage
+    useLayoutEffect(() => {
+        publishPomodoro(value);
+    }, [value]);
+    useEffect(() => () => publishPomodoro(null), []);
 
-export function usePomodoro(): PomodoroContextValue {
-    const ctx = useContext(PomodoroContext);
-    if (!ctx) throw new Error("usePomodoro doit être utilisé dans <PomodoroProvider>");
-    return ctx;
+    return showWidget ? <PomodoroWidget /> : null;
 }

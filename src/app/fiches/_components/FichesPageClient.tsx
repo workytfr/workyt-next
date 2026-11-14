@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import { peekList, rememberList } from "@/lib/listCache";
 import Link from "next/link";
 import { Search, SlidersHorizontal, X, ChevronLeft, ChevronRight, Sparkles, Bookmark, ArrowUpDown } from "lucide-react";
 import ProfileAvatar from "@/components/ui/profile";
@@ -68,18 +69,33 @@ export default function FichesPageClient() {
         const { startDate, endDate } = (PERIODS.find((p) => p.label === period) || PERIODS[0]).range();
         const params = new URLSearchParams({ query, level, subject, startDate, endDate, page: String(page) });
 
-        fetch(`/api/fiches/search?${params}`)
+        const url = `/api/fiches/search?${params}`;
+        type FichesResponse = { success: boolean; data: Fiche[]; pagination?: { totalPages?: number; total?: number } };
+        const apply = (data: FichesResponse) => {
+            setError(null);
+            setFiches(data.data);
+            setTotalPages(data.pagination?.totalPages || 1);
+            setTotal(typeof data.pagination?.total === "number" ? data.pagination.total : null);
+        };
+        // Liste déjà vue pendant la visite : affichée tout de suite, puis rafraîchie
+        const cached = peekList<FichesResponse>(url);
+        if (cached) {
+            apply(cached);
+            // Voulu : afficher le cache avant même que la requête parte
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoading(false);
+        }
+
+        fetch(url)
             .then((r) => r.json())
-            .then((data) => {
+            .then((data: FichesResponse) => {
                 if (!alive) return;
                 if (!data.success) {
                     setError("Erreur lors de la récupération des fiches.");
                     return;
                 }
-                setError(null);
-                setFiches(data.data);
-                setTotalPages(data.pagination?.totalPages || 1);
-                setTotal(typeof data.pagination?.total === "number" ? data.pagination.total : null);
+                apply(data);
+                rememberList(url, data);
             })
             .catch(() => alive && setError("Erreur lors de la récupération des données."))
             .finally(() => alive && setLoading(false));

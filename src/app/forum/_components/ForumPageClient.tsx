@@ -27,6 +27,7 @@ import { subjectToSlug } from "@/utils/subjectSlug";
 import QuestionCard, { type ForumQuestion } from "./QuestionCard";
 import { FORUM_CONTAINER, Eyebrow, EntryChoice, SuiviPromoCard, STATUS_META } from "./forumUi";
 import Foxy from "@/components/foxy/Foxy";
+import { peekList, rememberList } from "@/lib/listCache";
 
 interface QuestionsResponse {
     success: boolean;
@@ -51,11 +52,19 @@ const PAGE_SIZE = 12;
 
 const openAuth = () => window.dispatchEvent(new Event("workyt:open-auth"));
 
-export default function ForumPageClient() {
+export default function ForumPageClient({ initialQuestions }: {
+    /** Dernières questions rendues par le serveur (page 1, sans filtre). */
+    initialQuestions?: ForumQuestion[];
+} = {}) {
     const searchParams = useSearchParams();
     const { data: session } = useSession();
-    const [questions, setQuestions] = useState<ForumQuestion[]>([]);
-    const [loading, setLoading] = useState<boolean>(true);
+    // Sans filtre dans l'URL, la page 1 est exactement ce que le serveur a déjà
+    // rendu : on l'affiche tout de suite au lieu d'un squelette (la requête
+    // ci-dessous la remplace ensuite, avec le total et la pagination).
+    const unfiltered = !searchParams.get("contextType") && !searchParams.get("contextId") && !searchParams.get("courseId");
+    const seed = unfiltered && initialQuestions?.length ? initialQuestions : null;
+    const [questions, setQuestions] = useState<ForumQuestion[]>(seed ?? []);
+    const [loading, setLoading] = useState<boolean>(!seed);
     const [page, setPage] = useState<number>(1);
     const [totalPages, setTotalPages] = useState<number>(1);
     const [totalItems, setTotalItems] = useState<number | null>(null);
@@ -89,13 +98,27 @@ export default function ForumPageClient() {
         if (contextIdFilter) params.set("contextId", contextIdFilter);
         if (courseIdFilter) params.set("courseId", courseIdFilter);
 
-        fetch(`/api/forum/questions?${params}`)
+        const url = `/api/forum/questions?${params}`;
+        const apply = (data: QuestionsResponse) => {
+            setQuestions(data.data);
+            setTotalPages(data.pagination.totalPages);
+            setTotalItems(typeof data.pagination.totalQuestions === "number" ? data.pagination.totalQuestions : null);
+        };
+        // Liste déjà vue pendant la visite : affichée tout de suite, puis rafraîchie
+        const cached = peekList<QuestionsResponse>(url);
+        if (cached) {
+            apply(cached);
+            // Voulu : afficher le cache avant même que la requête parte
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLoading(false);
+        }
+
+        fetch(url)
             .then((r) => r.json())
             .then((data: QuestionsResponse) => {
                 if (!alive || !data.success) return;
-                setQuestions(data.data);
-                setTotalPages(data.pagination.totalPages);
-                setTotalItems(typeof data.pagination.totalQuestions === "number" ? data.pagination.totalQuestions : null);
+                apply(data);
+                rememberList(url, data);
             })
             .catch((error) => console.error("Erreur de récupération des questions", error))
             .finally(() => alive && setLoading(false));

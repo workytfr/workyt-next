@@ -205,16 +205,16 @@ export default function NotificationBell() {
         }
     }, [session?.accessToken, fetchNotifications]);
 
-    // Polling toutes les 30 secondes — suspendu quand l'onglet est en
+    // Polling toutes les 60 secondes — suspendu quand l'onglet est en
     // arrière-plan. La cloche est montée sur toutes les pages : sans ça, un
-    // onglet oublié interroge le serveur 2 fois par minute indéfiniment.
+    // onglet oublié interroge le serveur en boucle indéfiniment.
     useEffect(() => {
         if (!session?.accessToken) return;
 
         let interval: ReturnType<typeof setInterval> | null = null;
         const start = () => {
             if (interval) return;
-            interval = setInterval(fetchNotifications, 30000);
+            interval = setInterval(fetchNotifications, 60000);
         };
         const stop = () => {
             if (!interval) return;

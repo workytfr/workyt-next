@@ -24,5 +24,10 @@ const AnswerSchema: Schema = new Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+AnswerSchema.index({ question: 1, createdAt: 1 });
+AnswerSchema.index({ user: 1, createdAt: -1 });
+
 const Answer = mongoose.models.Answer || mongoose.model<IAnswer>('Answer', AnswerSchema);
 export default Answer;

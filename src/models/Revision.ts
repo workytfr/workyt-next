@@ -124,6 +124,11 @@ RevisionSchema.pre('save', function (next) {
     next();
 });
 
+// Index : sans eux, chaque requête relit toute la collection. Créés par mongoose
+// au démarrage (en arrière-plan côté MongoDB, sans bloquer les lectures).
+RevisionSchema.index({ createdAt: -1 });
+RevisionSchema.index({ author: 1, createdAt: -1 });
+
 const Revision: Model<IRevision> =
     mongoose.models.Revision || mongoose.model<IRevision>('Revision', RevisionSchema);
 

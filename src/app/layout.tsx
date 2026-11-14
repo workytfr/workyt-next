@@ -4,9 +4,7 @@ import Script from "next/script";
 import CookieConsent from "@/components/consent/CookieConsent";
 import { CONSENT_BOOTSTRAP_SCRIPT } from "@/lib/consent";
 import ClientProviders from "@/components/ClientProviders";
-import { NextSSRPlugin } from "@uploadthing/react/next-ssr-plugin";
-import { extractRouterConfig } from "uploadthing/server";
-import { ourFileRouter } from "@/app/api/uploadthing/core";
+import Footer from "@/components/home/footer";
 import { ReactNode } from "react";
 import { Metadata, Viewport } from "next";
 import { Funnel_Display, Montserrat } from "next/font/google";
@@ -66,12 +64,10 @@ export const metadata: Metadata = {
         creator: "@workyt_fr",
         site: "@workyt_fr",
     },
-    alternates: {
-        canonical: "https://workyt.fr",
-        languages: {
-            "fr-FR": "https://workyt.fr",
-        },
-    },
+    // Pas de `alternates.canonical` ici : le layout racine le transmettait à
+    // toutes les pages sans canonical propre (/progression, /adhesion, /clan…),
+    // qui se déclaraient alors comme des copies de l'accueil. Chaque page
+    // indexable pose le sien ; l'accueil le fait dans app/page.tsx.
 };
 
 export const viewport: Viewport = {
@@ -150,8 +146,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
         <Script id="consent-default" strategy="beforeInteractive">
             {CONSENT_BOOTSTRAP_SCRIPT}
         </Script>
-        <NextSSRPlugin routerConfig={extractRouterConfig(ourFileRouter)} />
-        <ClientProviders>
+        <ClientProviders footer={<Footer />}>
             {children}
         </ClientProviders>
         {/* Analytics Umami — afterInteractive pour compter la pageview sans

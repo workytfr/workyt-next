@@ -10,7 +10,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Pause, Play, Radio, Square, X } from "lucide-react";
-import { formatClock, phaseLabel, usePomodoro } from "./PomodoroProvider";
+import { formatClock, phaseLabel, usePomodoro } from "./pomodoroStore";
 import { radioEmbedUrl } from "@/lib/pomodoro/radio";
 
 const POMODORO_PATH = "/kits/pomodoro";

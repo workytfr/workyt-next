@@ -158,7 +158,8 @@ export default function SearchCommandPalette({
       } finally {
         if (!controller.signal.aborted) setLoading(false);
       }
-    }, 400);
+      // 180 ms : assez pour ne pas chercher à chaque touche, sans attente visible
+    }, 180);
 
     return () => {
       clearTimeout(timer);

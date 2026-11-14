@@ -136,7 +136,7 @@ export default async function ForumPage() {
                 dangerouslySetInnerHTML={{ __html: jsonLd(collectionLd) }}
             />
             <Suspense fallback={<ForumServerFallback questions={questions} />}>
-                <ForumPageClient />
+                <ForumPageClient initialQuestions={questions} />
             </Suspense>
         </>
     );
