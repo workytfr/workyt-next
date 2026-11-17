@@ -21,6 +21,7 @@ import {
   emptyRoles,
   supportEffects,
   soldierLosses,
+  surplusLoot,
   type CombatMember,
   type CombatSide,
   type CombatSoldier,
@@ -530,6 +531,21 @@ async function persistSide(
   // Bonus de ressources
   let resourceGain = 0;
   if (outcome === 'win') resourceGain += BONUS_JOURNEE;
+
+  // Pillage : la force en trop sur une porte tombée ce soir ne frappe pas le
+  // donjon, elle remplit le trésor de la garnison (voir clanCombat.surplusLoot).
+  const surplus = outcomesOnEnemy.reduce((s, o) => s + o.surplus, 0);
+  const loot = surplusLoot(surplus);
+  if (loot > 0) {
+    resourceGain += loot;
+    events.push({
+      type: 'gate_damage',
+      amount: loot,
+      message:
+        `💰 Pillage : ${Math.round(surplus)} de force en trop après la chute de la porte, ` +
+        `convertis en ${loot} ⚒️ pour la garnison.`
+    });
+  }
   resourceGain += outcomesOnEnemy.filter((o) => o.justFell).length * BONUS_PORTE;
   if (enemyKeepFell) resourceGain += BONUS_DONJON;
 
