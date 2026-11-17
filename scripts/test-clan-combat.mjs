@@ -53,11 +53,20 @@ function computeDefense(side, rallyBonus = 1) {
   for (const g of GATES) byGate[g] = Math.round(byGate[g]);
   return byGate;
 }
-function resolveGates(assault, defense, gates, defenders, defenderOrder) {
+function resolveGates(assault, defense, gates, defenders, defenderOrder, sapperAssault, ramAssault) {
   return gates.map(g => {
     const a = assault[g.name] ?? 0, d = defense[g.name] ?? 0;
-    const damage = g.fallen ? 0 : Math.max(0, a - d);
-    const overflow = Math.max(0, a - d);
+    const sap = sapperAssault?.[g.name] ?? 0, ram = ramAssault?.[g.name] ?? 0;
+    const raw = gateDamage(a, sap, d, ram);
+    const sansBelier = gateDamage(a, sap, d, 0);
+    const overflow = raw;
+    let damage = 0, keepDamage = 0, surplus = 0;
+    if (g.fallen) keepDamage = sansBelier;
+    else {
+      damage = Math.min(raw, Math.max(0, g.hp));
+      const pvApresBelier = Math.max(0, g.hp - (raw - sansBelier));
+      surplus = Math.max(0, sansBelier - pvApresBelier);
+    }
     const hpAfter = Math.max(0, g.hp - damage);
     const justFell = !g.fallen && hpAfter === 0;
     let woundedUserIds = [];
@@ -68,7 +77,7 @@ function resolveGates(assault, defense, gates, defenders, defenderOrder) {
       const count = Math.min(Math.max(0, onGate.length - 1), Math.ceil(overflow / WOUND_THRESHOLD));
       woundedUserIds = onGate.slice(0, count).map(m => m.userId);
     }
-    return { gate: g.name, assault: a, defense: d, damage, overflow, hpBefore: g.hp, hpAfter, justFell, woundedUserIds };
+    return { gate: g.name, assault: a, defense: d, damage, keepDamage, surplus, overflow, hpBefore: g.hp, hpAfter, justFell, woundedUserIds };
   });
 }
 function applyHealing(healPool, wounded, infirmerie) {
@@ -83,6 +92,8 @@ function dayOutcome(a, b) {
   if (Math.abs(a - b) < 1e-9) return { a: 'draw', b: 'draw' };
   return a > b ? { a: 'win', b: 'loss' } : { a: 'loss', b: 'win' };
 }
+const SURPLUS_RATE = 5, SURPLUS_CAP = 100;
+function surplusLoot(t) { return t > 0 ? Math.min(SURPLUS_CAP, Math.floor(t / SURPLUS_RATE)) : 0; }
 function rallyBonusFor(mine, rival) { return rival - mine >= RALLY_DEFICIT ? RALLY_BONUS : 1; }
 function multiplierFor(rank, roleSize) {
   if (roleSize <= 1) return 1;
@@ -174,6 +185,28 @@ test('la porte tombe et est signalée une seule fois', () => {
   const r2 = resolveGates({ nord: 500, est: 0, sud: 0 }, { nord: 0, est: 0, sud: 0 }, g2, [], null);
   ok(!r2[0].justFell, 'une porte déjà tombée ne retombe pas');
   eq(r2[0].damage, 0, 'une porte tombée ne prend plus de dégâts : ');
+});
+test('le surplus ne frappe PAS le donjon : il devient du butin', () => {
+  const r = resolveGates({ nord: 500, est: 0, sud: 0 }, { nord: 0, est: 0, sud: 0 }, gates(30), [], null);
+  eq(r[0].damage, 30, 'la porte ne compte que ses PV : ');
+  eq(r[0].keepDamage, 0, 'le donjon est épargné ce soir-là : ');
+  eq(r[0].surplus, 470, 'le reste est du surplus : ');
+});
+test('une porte déjà tombée laisse passer vers le donjon', () => {
+  const g = gates(0); g[0].fallen = true;
+  const r = resolveGates({ nord: 200, est: 0, sud: 0 }, { nord: 50, est: 0, sud: 0 }, g, [], null);
+  eq(r[0].keepDamage, 150); eq(r[0].surplus, 0);
+});
+test('butin : 1 ⚒️ pour 5 de surplus, plafonné à 100', () => {
+  eq(surplusLoot(0), 0); eq(surplusLoot(4), 0); eq(surplusLoot(470), 94); eq(surplusLoot(5000), 100);
+});
+test("l'excédent des béliers ne passe pas la brèche", () => {
+  const r = resolveGates({ nord: 0, est: 0, sud: 0 }, { nord: 0, est: 0, sud: 0 }, gates(30), [], null, null, { nord: 200, est: 0, sud: 0 });
+  eq(r[0].damage, 30); eq(r[0].keepDamage, 0); eq(r[0].surplus, 0);
+});
+test('béliers + joueurs : les béliers ouvrent, les joueurs passent', () => {
+  const r = resolveGates({ nord: 100, est: 0, sud: 0 }, { nord: 0, est: 0, sud: 0 }, gates(50), [], null, null, { nord: 40, est: 0, sud: 0 });
+  eq(r[0].damage, 50); eq(r[0].keepDamage, 0); eq(r[0].surplus, 90);
 });
 
 console.log('\nBLESSÉS (correctif du cas 2)');

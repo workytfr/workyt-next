@@ -16,8 +16,11 @@
 const SEED_TIMEOUT_MS = 30_000;
 
 export async function register() {
-    if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-
+    // ⚠️ L'import doit rester DANS ce `if` : webpack compile aussi ce fichier
+    // pour l'edge, et seul un bloc conditionnel est éliminé. Avec un
+    // `return` anticipé, il embarquait mongoose et `crypto` côté edge, et
+    // `next dev` plantait sur toutes les pages (« Can't resolve 'crypto' »).
+    if (process.env.NEXT_RUNTIME === 'nodejs') {
     // Volontairement sans `await` : le serveur répond tout de suite.
     void (async () => {
         let timer: ReturnType<typeof setTimeout> | undefined;
@@ -37,4 +40,5 @@ export async function register() {
             if (timer) clearTimeout(timer);
         }
     })();
+    }
 }

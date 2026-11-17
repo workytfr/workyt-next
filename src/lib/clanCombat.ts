@@ -336,6 +336,11 @@ export interface GateOutcome {
    * restantes. Le camp dominant serait puni de sa domination.
    */
   keepDamage: number;
+  /**
+   * Ce qui dépasse les PV d'une porte qui tombe ce soir-là (hors béliers).
+   * Il ne frappe pas le donjon : il est converti en ⚒️ pour l'assaillant.
+   */
+  surplus: number;
   overflow: number;
   /** Quelqu'un a-t-il frappé ici — joueurs, sapeurs ou béliers ? Décide de
    *  l'usure des unités postées sur cette porte. */
@@ -374,9 +379,29 @@ export function resolveGates(
     // fois. C'est le défaut annoncé sur la fiche de l'unité, et il se paie :
     // un clan tout en béliers ne finit jamais un donjon.
     const raw = gateDamage(a, sap, d, ram);
-    const damage = g.fallen ? 0 : raw;
-    const keepDamage = g.fallen ? gateDamage(a, sap, d, 0) : 0;
+    const sansBelier = gateDamage(a, sap, d, 0);
     const overflow = raw;
+
+    // Porte debout : elle n'encaisse que ses PV restants. Le surplus ne
+    // frappe PAS le donjon le soir même — c'était trop facile : une seule
+    // grosse journée ouvrait la porte ET entamait le donjon. Il devient du
+    // butin (`surplus`), converti en ⚒️ pour la garnison de l'assaillant
+    // (voir clanResolution). Les béliers frappent en premier (ils ouvrent la
+    // porte) et leur excédent ne compte pas : ils ne rapportent rien de plus.
+    //
+    // Porte déjà tombée (un jour précédent) : l'assaut passe par la brèche et
+    // frappe le donjon, comme avant.
+    let damage = 0;
+    let keepDamage = 0;
+    let surplus = 0;
+    if (g.fallen) {
+      keepDamage = sansBelier;
+    } else {
+      damage = Math.min(raw, Math.max(0, g.hp));
+      const belier = raw - sansBelier;
+      const pvApresBelier = Math.max(0, g.hp - belier);
+      surplus = Math.max(0, sansBelier - pvApresBelier);
+    }
 
     const hpAfter = Math.max(0, g.hp - damage);
     const justFell = !g.fallen && hpAfter === 0;
@@ -403,6 +428,7 @@ export function resolveGates(
       defense: d,
       damage,
       keepDamage,
+      surplus,
       overflow,
       attacked: a + sap + ram > 0,
       hpBefore: g.hp,
@@ -648,4 +674,22 @@ export function soldierLosses(
   }
 
   return { worn, destroyed };
+}
+
+/**
+ * Surplus d'assaut → butin pour la garnison.
+ *
+ * Quand une porte tombe avec de la force en trop, ce trop-plein ne frappe pas
+ * le donjon (ce serait trop facile : une seule grosse journée ouvrirait la
+ * porte ET entamerait le donjon). Il est pillé : 1 ⚒️ pour SURPLUS_RATE
+ * points, plafonné à SURPLUS_CAP par journée — au plus l'équivalent d'une
+ * journée gagnée, pour que frapper beaucoup trop fort ne rapporte jamais plus
+ * que gagner.
+ */
+export const SURPLUS_RATE = 5;
+export const SURPLUS_CAP = 100;
+
+export function surplusLoot(totalSurplus: number): number {
+  if (!(totalSurplus > 0)) return 0;
+  return Math.min(SURPLUS_CAP, Math.floor(totalSurplus / SURPLUS_RATE));
 }
