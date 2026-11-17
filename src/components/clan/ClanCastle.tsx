@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import Image from 'next/image';
 import ClanBanner from './ClanBanner';
 import { THEMES, type ClanTheme } from '@/lib/clanThemes';
 import { DecorSky, DecorFront, decorStyles } from './castleDecor';
@@ -207,6 +208,21 @@ function Flame({ x, y, cls, colors = ['#ff6a1a', '#ffb547'] }: { x: number; y: n
   );
 }
 
+/** Un type d'unité posté sur une porte, et combien. */
+export interface TroopStack {
+  key: string;
+  name: string;
+  image?: string;
+  emoji?: string;
+  count: number;
+}
+
+/** Ce qui se tient sur (ou devant) une porte : joueurs et unités. */
+export interface GateTroops {
+  players: number;
+  units: TroopStack[];
+}
+
 interface Props {
   gates: CastleGate[];
   keepHp: number;
@@ -238,6 +254,13 @@ interface Props {
   details?: boolean;
   /** Thème saisonnier : décor seulement, jamais les couleurs des camps */
   theme?: ClanTheme;
+  /**
+   * Troupes dessinées sur le château. `wall` : elles tiennent le chemin de
+   * ronde (ma défense). `siege` : elles se massent au pied de la porte
+   * (mon assaut chez l'ennemi), et la porte prend des coups.
+   */
+  troops?: Partial<Record<string, GateTroops>>;
+  troopPlacement?: 'wall' | 'siege';
   className?: string;
 }
 
@@ -253,6 +276,8 @@ export default function ClanCastle({
   bubbles,
   details = true,
   theme = THEMES.classique,
+  troops,
+  troopPlacement = 'wall',
   className
 }: Props) {
   const team = TEAM[side];
@@ -274,13 +299,20 @@ export default function ClanCastle({
 
   const walls = WALLS;
 
+  const besieged = (gate: string) => {
+    if (troopPlacement !== 'siege') return false;
+    const t = troops?.[gate];
+    return !!t && (t.players > 0 || t.units.length > 0);
+  };
+
   const label =
     `Château ${side === 'ally' ? 'du clan' : 'adverse'} : donjon ` +
     (keepDown ? 'abattu' : `${keepHp} sur ${keepHpMax} points`);
 
   return (
     <div className={className}>
-      <svg viewBox={`0 ${TOP} ${W} ${H - TOP}`} className="w-full overflow-visible" role="img" aria-label={label}>
+      <div className="relative">
+      <svg viewBox={`0 ${TOP} ${W} ${H - TOP}`} className="block w-full overflow-visible" role="img" aria-label={label}>
         <defs>
           <clipPath id={`${uid}-keep`}><path d={keepBody} /></clipPath>
           {walls.map((w, i) => (
@@ -314,10 +346,17 @@ export default function ClanCastle({
             @keyframes ${uid}-flick { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(.82); } }
             .${uid}-flame { animation: ${uid}-flick .5s ease-in-out infinite; transform-box: fill-box; transform-origin: center bottom; }
             .${uid}-gate { transition: transform .18s ease; transform-box: fill-box; transform-origin: center bottom; }
+            @keyframes ${uid}-grow { from { transform: scaleX(0); } }
+            .${uid}-gauge { transform-box: fill-box; transform-origin: left center; animation: ${uid}-grow .8s cubic-bezier(.23,1,.32,1) both; }
+            @keyframes ${uid}-hit { 0%, 55% { transform: scale(.4); opacity: 0; } 65% { transform: scale(1.1); opacity: 1; } 100% { transform: scale(.85); opacity: 0; } }
+            .${uid}-hit { transform-box: fill-box; transform-origin: center; animation: ${uid}-hit 1.9s cubic-bezier(.23,1,.32,1) infinite; }
+            @keyframes ${uid}-shake { 0%, 58%, 100% { transform: translateX(0); } 62% { transform: translateX(-1.5px); } 66% { transform: translateX(1.5px); } 70% { transform: translateX(0); } }
+            .${uid}-shake { animation: ${uid}-shake 1.9s ease-out infinite; }
             .${uid}-gate[role="button"]:hover, .${uid}-gate[role="button"]:focus-visible { transform: translateY(-3px); outline: none; }
             ${decor.decor !== 'none' ? decorStyles(uid) : ''}
             @media (prefers-reduced-motion: reduce) {
-              .${uid}-march, .${uid}-pulse, .${uid}-smoke, .${uid}-flame { animation: none; }
+              .${uid}-march, .${uid}-pulse, .${uid}-smoke, .${uid}-flame, .${uid}-gauge, .${uid}-hit, .${uid}-shake { animation: none; }
+              .${uid}-hit { opacity: 0; }
               .${uid}-gate { transition: none; }
             }
           `}</style>
@@ -546,7 +585,8 @@ export default function ClanCastle({
                 <path d={corbels(bodyX, GH.bodyTop + 7, bodyW, 5)} fill="none" stroke={INK} strokeWidth="2" opacity="0.5" />
               </g>
 
-              {/* ── La porte ── */}
+              {/* ── La porte ── (elle tremble sous les coups quand mes troupes l'assiègent) */}
+              <g className={besieged(g.name) && !fallen ? `${uid}-shake` : undefined}>
               {fallen ? (
                 <g>
                   {/* Baie éventrée : on voit à travers */}
@@ -581,6 +621,20 @@ export default function ClanCastle({
                   <circle cx={cx - 3.5} cy={GROUND - 15} r="1.6" fill={INK} />
                   <circle cx={cx + 3.5} cy={GROUND - 15} r="1.6" fill={INK} />
                 </g>
+              )}
+              </g>
+
+              {/* Étincelle d'impact : la porte prend des coups en ce moment */}
+              {besieged(g.name) && (
+                <path
+                  d={`M${cx},${GROUND - 34} l3,7 l7,-3 l-4,7 l7,3 l-7,3 l4,7 l-7,-3 l-3,7 l-3,-7 l-7,3 l4,-7 l-7,-3 l7,-3 l-4,-7 l7,3 z`}
+                  fill="#ffb547"
+                  stroke={INK}
+                  strokeWidth="1.8"
+                  strokeLinejoin="round"
+                  className={`${uid}-hit`}
+                  style={{ animationDelay: `${i * 300}ms` }}
+                />
               )}
 
               {/* Les deux tourelles, par-dessus les bords du corps */}
@@ -643,7 +697,7 @@ export default function ClanCastle({
               {/* Jauge de PV */}
               <rect x={x + 9} y={GROUND + 12} width={GH.w - 18} height="10" rx="5" fill={PAPER} stroke={INK} strokeWidth="2.5" />
               {pct > 0 && (
-                <rect x={x + 11} y={GROUND + 14} width={Math.max(6, (GH.w - 22) * pct)} height="6" rx="3" fill={GAUGE[st]} />
+                <rect x={x + 11} y={GROUND + 14} width={Math.max(6, (GH.w - 22) * pct)} height="6" rx="3" fill={GAUGE[st]} className={`${uid}-gauge`} style={{ animationDelay: `${i * 90}ms` }} />
               )}
 
               <text
@@ -664,6 +718,31 @@ export default function ClanCastle({
         <GateOrnaments id={decor.decor} uid={uid} states={gates.map(gateState)} />
         <DecorFront id={decor.decor} uid={uid} />
       </svg>
+
+        {/* ── Les troupes, en HTML par-dessus le dessin : les illustrations
+            des unités sont des images, et le compteur doit rester net ── */}
+        {troops && gates.map((g, i) => {
+          const t = troops[g.name];
+          if (!t || (t.players === 0 && t.units.length === 0)) return null;
+          const cx = GH.xs[i] + GH.w / 2;
+          // Sur le mur : debout sur le parapet du châtelet. En siège : au pied
+          // de la porte, comme une troupe qui monte à l'assaut.
+          const anchorY = troopPlacement === 'wall' ? GH.bodyTop - 8 : GROUND + 2;
+          return (
+            <TroopMarker
+              key={g.name}
+              troops={t}
+              mode={troopPlacement}
+              index={i}
+              style={{
+                left: `${(cx / W) * 100}%`,
+                top: `${((anchorY - TOP) / (H - TOP)) * 100}%`
+              }}
+              label={`Porte ${g.name}`}
+            />
+          );
+        })}
+      </div>
 
       {/* ── Les bulles : une par porte, la pointe tournée vers elle ── */}
       {bubbles && (
@@ -735,5 +814,114 @@ export default function ClanCastle({
         </>
       )}
     </div>
+  );
+}
+
+/* ------------------------------------------------------------ troupes */
+
+const TROOP_CSS = `
+@keyframes wk-troop-in { from { opacity: 0; transform: translateY(8px) scale(.9); } }
+@keyframes wk-troop-bob { from { transform: translateY(0); } to { transform: translateY(-2px); } }
+@keyframes wk-troop-charge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(3px); } }
+.wk-troop-in { animation: wk-troop-in .42s cubic-bezier(.23,1,.32,1) both; }
+.wk-troop-wall .wk-troop-unit { animation: wk-troop-bob 1.6s ease-in-out infinite alternate; }
+.wk-troop-siege .wk-troop-unit { animation: wk-troop-charge 1.9s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .wk-troop-in { animation: none; }
+  .wk-troop-unit { animation: none !important; }
+}
+`;
+
+/**
+ * Petite troupe posée sur une porte : une vignette par type d'unité avec
+ * son nombre, et la pastille des joueurs. Au plus trois types visibles, le
+ * reste se résume en « +n » — une tour surchargée ne se lit plus.
+ *
+ * Deux couches : le conteneur se positionne (translate -50 %, -100 %), la
+ * couche intérieure s'anime — une animation de transform sur le conteneur
+ * écraserait son centrage.
+ */
+function TroopMarker({
+  troops, mode, index, style, label
+}: {
+  troops: GateTroops;
+  mode: 'wall' | 'siege';
+  index: number;
+  style: React.CSSProperties;
+  label: string;
+}) {
+  const shown = troops.units.slice(0, 3);
+  const hidden = troops.units.slice(3).reduce((s, u) => s + u.count, 0);
+  const tone = mode === 'wall' ? '#2f86b3' : '#c2272d';
+
+  const desc =
+    `${label} : ` +
+    [
+      troops.players > 0 ? `${troops.players} joueur${troops.players > 1 ? 's' : ''}` : null,
+      ...troops.units.map((u) => `${u.count} × ${u.name}`)
+    ].filter(Boolean).join(', ');
+
+  return (
+    <div
+      className="pointer-events-none absolute -translate-x-1/2 -translate-y-full"
+      style={style}
+      role="img"
+      aria-label={desc}
+    >
+      <style>{TROOP_CSS}</style>
+      <div
+        className={`wk-troop-in wk-troop-${mode} flex items-end gap-0.5`}
+        style={{ animationDelay: `${150 + index * 90}ms` }}
+      >
+        {shown.map((u, k) => (
+          <span key={u.key} className="wk-troop-unit relative inline-flex" style={{ animationDelay: `${k * 230}ms` }}>
+            <span className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-full border-2 border-[var(--wk-ink)] bg-white shadow-[0_2px_0_rgba(26,21,18,0.85)] sm:h-8 sm:w-8">
+              <TroopFace image={u.image} emoji={u.emoji} />
+            </span>
+            {u.count > 1 && (
+              <span className="absolute -bottom-1 -right-1.5 rounded-full bg-[var(--wk-ink)] px-1 text-[9px] font-bold leading-[14px] tabular-nums text-white">
+                ×{u.count}
+              </span>
+            )}
+          </span>
+        ))}
+        {hidden > 0 && (
+          <span className="mb-0.5 rounded-full bg-[var(--wk-ink)] px-1.5 text-[9px] font-bold leading-[16px] text-white">
+            +{hidden}
+          </span>
+        )}
+        {troops.players > 0 && (
+          <span
+            className="wk-troop-unit mb-0.5 ml-0.5 inline-flex items-center gap-0.5 rounded-full border-2 border-[var(--wk-ink)] px-1.5 text-[10px] font-bold leading-[16px] tabular-nums text-white"
+            style={{ backgroundColor: tone, animationDelay: `${shown.length * 230}ms` }}
+          >
+            {troops.players}
+            <svg viewBox="0 0 24 24" className="h-2.5 w-2.5" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21c1-4 4-6 8-6s7 2 8 6" />
+            </svg>
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** Illustration de l'unité ; l'emoji prend le relais si l'image manque. */
+function TroopFace({ image, emoji }: { image?: string; emoji?: string }) {
+  const [broken, setBroken] = React.useState(false);
+  if (!image || broken) return <span className="text-sm leading-none">{emoji ?? '⚔️'}</span>;
+  // next/image, jamais <img> : les illustrations ne sont plus dans public/,
+  // elles vivent sur le S3 et seul le loader d'images (src/lib/imageLoader.ts)
+  // sait les y chercher. Un <img src="/clans/…"> donnait un 404 en production.
+  return (
+    <Image
+      src={image}
+      alt=""
+      width={32}
+      height={32}
+      className="h-full w-full object-contain"
+      onError={() => setBroken(true)}
+    />
   );
 }

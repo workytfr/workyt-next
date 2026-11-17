@@ -10,7 +10,8 @@ import {
   Telescope, Crown, ArrowUpRight, BookOpen, X, Shield, HeartPulse, Sword, History, ChevronDown, Lock
 } from 'lucide-react';
 import ClanBanner from '@/components/clan/ClanBanner';
-import ClanCastle, { gateState, type GateState } from '@/components/clan/ClanCastle';
+import ClanCastle, { gateState, type GateState, type GateTroops } from '@/components/clan/ClanCastle';
+import { SOLDIER_BY_KEY } from '@/lib/clanSoldierCatalog';
 import BattleReportModal from '@/components/clan/BattleReportModal';
 import ClanWarRewardModal from '@/components/clan/ClanWarRewardModal';
 import GarrisonPanel from '@/components/clan/GarrisonPanel';
@@ -46,6 +47,8 @@ interface ClanSide {
   /** Côté rival, avec Éclaireur : où l'ennemi masse son assaut, et sa part */
   pressureGate?: string | null;
   pressureShare?: number | null;
+  /** Autres portes à égalité avec `pressureGate` */
+  pressureTied?: string[];
 }
 interface RankEntry {
   userId: string; username: string; dailyPoints: number;
@@ -98,7 +101,26 @@ interface ClanData {
   history?: { day: number; outcome: 'win' | 'loss' | 'draw' }[];
 }
 
-interface GateDeploy { players: number; soldiers: number; force: number }
+interface GateDeploy { players: number; soldiers: number; force: number; units?: Record<string, number> }
+
+/** Mon dispositif sur une porte → les troupes à dessiner sur le château. */
+function toTroops(deploy?: Record<string, GateDeploy>): Record<string, GateTroops> | undefined {
+  if (!deploy) return undefined;
+  return Object.fromEntries(
+    Object.entries(deploy).map(([gate, d]) => [
+      gate,
+      {
+        players: d.players,
+        units: Object.entries(d.units ?? {})
+          .map(([key, count]) => {
+            const def = SOLDIER_BY_KEY.get(key);
+            return { key, count, name: def?.name ?? key, image: def?.image, emoji: def?.emoji };
+          })
+          .sort((a, b) => b.count - a.count)
+      }
+    ])
+  );
+}
 
 const ROLE_LABEL: Record<string, string> = {
   attaquant: 'Attaquant',
@@ -133,6 +155,21 @@ const ROLE_DESC: Record<string, string> = {
   defenseur: 'Tes points protègent ta porte — mais tu peux être blessé',
   soigneur: "Tes points remettent d'aplomb tes coéquipiers blessés"
 };
+/** Ce que deviennent concrètement les points, rôle par rôle (voir clanCombat). */
+const ROLE_DETAIL: Record<string, string[]> = {
+  attaquant: [
+    '1 point = 1 de force contre la porte visée, multiplié par ta puissance.',
+    "Ce qui dépasse la défense abîme la porte. Si elle tombe, le trop-plein est pillé : 1 ⚒️ pour 5 points (100 max/jour)."
+  ],
+  defenseur: [
+    '1 point = 1 de défense sur ta porte, multiplié par ta puissance.',
+    "Si l'assaut déborde, des défenseurs sont blessés (1 par tranche de 50), jamais le dernier."
+  ],
+  soigneur: [
+    '40 points de soin relèvent un blessé, le plus ancien d’abord.',
+    'Le surplus répare la porte la plus abîmée.'
+  ]
+};
 /** Couleur du rôle sélectionné, dans la palette Workyt. */
 const ROLE_STYLE: Record<string, string> = {
   attaquant: 'border-[#e5484d] bg-[#fdecec] text-[#c2272d]',
@@ -146,6 +183,32 @@ const GATES = ['nord', 'est', 'sud'] as const;
 const WIDE = 'mx-auto w-full max-w-[1800px] px-4 sm:px-6 lg:px-10';
 const CARD = 'rounded-3xl border border-[rgba(26,21,18,0.08)] bg-white';
 const SECTION_TITLE = 'font-serif-display flex items-center gap-2.5 text-2xl leading-none';
+
+/**
+ * Mouvement de la page. Une page qu'on ouvre une ou deux fois par jour : on
+ * peut se permettre une entrée en cascade et un peu de vie sur le champ de
+ * bataille. Les contrôles, eux, répondent en moins de 160 ms.
+ */
+const PAGE_CSS = `
+@keyframes wk-rise-in { from { opacity: 0; transform: translateY(10px); } }
+.wk-rise-in { animation: wk-rise-in .5s cubic-bezier(.23,1,.32,1) both; }
+.wk-stack > * { animation: wk-rise-in .45s cubic-bezier(.23,1,.32,1) both; }
+.wk-stack > *:nth-child(1) { animation-delay: 80ms; }
+.wk-stack > *:nth-child(2) { animation-delay: 140ms; }
+.wk-stack > *:nth-child(3) { animation-delay: 200ms; }
+.wk-stack > *:nth-child(4) { animation-delay: 260ms; }
+.wk-stack > *:nth-child(n+5) { animation-delay: 320ms; }
+@keyframes wk-clash { 0%, 100% { transform: rotate(3deg); } 50% { transform: rotate(-3deg) scale(1.04); } }
+.wk-clash { animation: wk-clash 2.8s cubic-bezier(.77,0,.175,1) infinite; }
+@keyframes wk-bar-in { from { transform: scaleX(0); } }
+.wk-bar-in { transform-origin: left center; animation: wk-bar-in .8s cubic-bezier(.23,1,.32,1) .2s both; }
+.wk-press { transition-property: transform, color, background-color, border-color; transition-duration: .14s; transition-timing-function: ease-out; }
+.wk-press:active:not(:disabled) { transform: scale(.97); }
+@media (prefers-reduced-motion: reduce) {
+  .wk-rise-in, .wk-stack > *, .wk-clash, .wk-bar-in { animation: none; }
+  .wk-press:active:not(:disabled) { transform: none; }
+}
+`;
 
 /** État d'une porte : libellé et couleurs, pour les jauges. */
 const GATE_STATE_META: Record<GateState, { label: string; chip: string; bar: string }> = {
@@ -319,6 +382,7 @@ export default function ClanPage() {
 
   return (
     <div className="min-h-screen bg-[var(--wk-paper)] text-[var(--wk-ink)]">
+      <style>{PAGE_CSS}</style>
       <BattleReportModal />
       <ClanWarRewardModal />
 
@@ -381,7 +445,7 @@ export default function ClanPage() {
 
       <div className={`${WIDE} space-y-6 py-8 md:py-10`}>
         {/* ─── 01 · Le champ de bataille ─── */}
-        <section className={`${CARD} p-5 sm:p-6`} aria-label="Champ de bataille">
+        <section className={`${CARD} wk-rise-in p-5 sm:p-6`} aria-label="Champ de bataille">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className={SECTION_TITLE}>
               <Swords className="h-5 w-5 text-[var(--wk-accent)]" /> Le champ de bataille
@@ -402,13 +466,16 @@ export default function ClanPage() {
                  personne n'a encore marqué. */
               threat={rival?.pressureGate ?? rival?.dailyOrder}
               threatShare={rival?.pressureShare}
+              threatTied={rival?.pressureGate ? rival?.pressureTied : undefined}
               scouted={rival?.scouted}
               deploy={data.deployment?.hold}
+              troops={toTroops(data.deployment?.hold)}
+              troopPlacement="wall"
             />
 
             <div className="flex items-center justify-center gap-3 lg:h-full lg:flex-col lg:justify-center">
               <span className="font-serif-display text-3xl tabular-nums leading-none">{clan.daysWon}</span>
-              <span className="flex h-14 w-14 rotate-3 items-center justify-center rounded-2xl bg-[var(--wk-ink)] text-[var(--wk-accent-2)] shadow-[0_4px_0_var(--wk-accent)]">
+              <span className="wk-clash flex h-14 w-14 items-center justify-center rounded-2xl bg-[var(--wk-ink)] text-[var(--wk-accent-2)] shadow-[0_4px_0_var(--wk-accent)]">
                 <Swords className="h-7 w-7" />
               </span>
               <span className="font-serif-display text-3xl tabular-nums leading-none text-[rgba(26,21,18,0.55)]">{rival?.daysWon ?? 0}</span>
@@ -421,6 +488,8 @@ export default function ClanPage() {
                 enemy
                 highlight={isAttacker ? me?.gate ?? clan.dailyOrder : null}
                 deploy={data.deployment?.attack}
+                troops={toTroops(data.deployment?.attack)}
+                troopPlacement="siege"
                 onGateClick={
                   isAttacker
                     ? (g) => post('gate', '/api/clan/deploy', { action: 'gate', gate: g }, `Tu vises la Porte ${g}`)
@@ -438,7 +507,7 @@ export default function ClanPage() {
         {/* Tout ce qui suit vit à gauche ; le tchat tient la colonne de droite,
             visible pendant qu'on joue (il était en bas de page, donc jamais lu). */}
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px] 2xl:grid-cols-[minmax(0,1fr)_420px] xl:items-start">
-          <div className="order-2 min-w-0 space-y-6 xl:order-1">
+          <div className="wk-stack order-2 min-w-0 space-y-6 xl:order-1">
 
         {/* ─── Rapport de la veille ─── */}
         {data.yesterday && (
@@ -482,7 +551,7 @@ export default function ClanPage() {
                         key={r}
                         onClick={() => post(r, '/api/clan/role', { role: r }, `Rôle : ${ROLE_LABEL[r]}`)}
                         disabled={busy !== null || active || roleLocked}
-                        className={`rounded-2xl border-2 p-3.5 text-left transition disabled:cursor-default ${
+                        className={`wk-press rounded-2xl border-2 p-3.5 text-left disabled:cursor-default ${
                           active
                             ? ROLE_STYLE[r]
                             : roleLocked
@@ -499,6 +568,14 @@ export default function ClanPage() {
                           {active && busy === null && <Check className="h-4 w-4" />}
                         </span>
                         <span className="mt-1 block text-xs leading-snug text-[rgba(26,21,18,0.6)]">{ROLE_DESC[r]}</span>
+                        <span className="mt-2 block space-y-1 border-t border-[rgba(26,21,18,0.08)] pt-2">
+                          {ROLE_DETAIL[r].map((l) => (
+                            <span key={l} className="flex gap-1.5 text-[11px] leading-snug text-[rgba(26,21,18,0.6)]">
+                              <span className="mt-[5px] h-1 w-1 shrink-0 rounded-full bg-current opacity-60" />
+                              {l}
+                            </span>
+                          ))}
+                        </span>
                       </button>
                     );
                   })}
@@ -889,10 +966,12 @@ function ThemeBadge({ theme }: { theme: ClanTheme }) {
 }
 
 function CastleCard({
-  side, mine, enemy, highlight, threat, threatShare, scouted, onGateClick, deploy, theme
+  side, mine, enemy, highlight, threat, threatShare, threatTied, scouted, onGateClick, deploy, theme, troops, troopPlacement
 }: {
   side: ClanSide; mine?: boolean; enemy?: boolean;
   theme: ClanTheme;
+  troops?: Record<string, GateTroops>;
+  troopPlacement?: 'wall' | 'siege';
   /** Mon dispositif sur les portes de CE château (défense chez moi, assaut chez lui) */
   deploy?: Record<string, GateDeploy>;
   highlight?: string | null;
@@ -900,6 +979,7 @@ function CastleCard({
   threat?: string | null;
   /** Part de l'assaut adverse qui tombe sur `threat`, si elle est mesurée */
   threatShare?: number | null;
+  threatTied?: string[];
   scouted?: boolean;
   onGateClick?: (g: string) => void;
 }) {
@@ -940,6 +1020,8 @@ function CastleCard({
           onGateClick={onGateClick}
           details={false}
           theme={theme}
+          troops={troops}
+          troopPlacement={troopPlacement}
           bubbles={Object.fromEntries(
             side.gates.map((g) => [
               g.name,
@@ -968,17 +1050,25 @@ function CastleCard({
           </div>
           <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-[rgba(26,21,18,0.08)]">
             <div
-              className="h-full rounded-full transition-[width] duration-500"
+              className="wk-bar-in h-full rounded-full transition-[width] duration-500"
               style={{ width: `${keepPct}%`, backgroundColor: keepPct > 50 ? '#7ed957' : keepPct > 20 ? '#ffb547' : '#e5484d' }}
             />
           </div>
           <p className="mt-1 text-[11px] text-[rgba(26,21,18,0.5)]">
-            Les coups ne l&apos;atteignent qu&apos;une fois une porte tombée.
+            Il ne prend que les coups portés sur une porte <strong className="font-semibold">déjà tombée</strong> (une brèche des jours précédents).
           </p>
         </div>
 
         {/* Légendes : à quoi correspond ce qu'on voit */}
         <div className="space-y-1.5 border-t border-[rgba(26,21,18,0.06)] pt-3">
+          {troops && Object.values(troops).some((t) => t.players > 0 || t.units.length > 0) && (
+            <p className="flex items-center gap-1.5 text-[11px] text-[rgba(26,21,18,0.6)]">
+              <Users className="h-3.5 w-3.5 shrink-0" />
+              {troopPlacement === 'wall'
+                ? 'Sur les remparts : tes défenseurs et les unités postées en défense'
+                : 'Au pied des portes : tes attaquants et les unités envoyées à l’assaut'}
+            </p>
+          )}
           {highlight && (
             <p className="flex items-center gap-1.5 text-[11px] text-[rgba(26,21,18,0.6)]">
               <span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm border-2 border-dashed border-[var(--wk-accent)]" />
@@ -993,7 +1083,13 @@ function CastleCard({
             threat ? (
               <p className="flex items-start gap-1.5 text-[11px] text-[#c2272d]">
                 <Telescope className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                {typeof threatShare === 'number' ? (
+                {typeof threatShare === 'number' && threatTied && threatTied.length > 0 ? (
+                  <span>
+                    L&apos;ennemi partage son assaut à égalité entre les portes{' '}
+                    <strong className="font-bold capitalize">{[threat, ...threatTied].join(' et ')}</strong>{' '}
+                    ({threatShare} % chacune)
+                  </span>
+                ) : typeof threatShare === 'number' ? (
                   <span>
                     L&apos;ennemi masse <strong className="font-bold">{threatShare} %</strong> de son assaut sur la
                     porte <strong className="font-bold capitalize">{threat}</strong>
@@ -1055,10 +1151,15 @@ function RewardsPanel({
         <span className="text-sm text-[rgba(26,21,18,0.55)]">
           {chestCount} coffre{chestCount > 1 ? 's' : ''} au rang {tierName ?? `n°${tier}`} · dimanche à minuit
         </span>
-        <ChevronDown className={`ml-auto h-5 w-5 shrink-0 text-[rgba(26,21,18,0.45)] transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`ml-auto h-5 w-5 shrink-0 text-[rgba(26,21,18,0.45)] transition-transform duration-300 ${open ? 'rotate-180' : ''}`} />
       </button>
 
-      {open && (
+      <div
+        className="grid transition-[grid-template-rows] duration-300 [transition-timing-function:cubic-bezier(0.23,1,0.32,1)]"
+        style={{ gridTemplateRows: open ? '1fr' : '0fr' }}
+        aria-hidden={!open}
+      >
+        <div className="min-h-0 overflow-hidden">
         <div className="border-t border-[rgba(26,21,18,0.06)] p-5 sm:p-6">
           <p className="text-sm text-[rgba(26,21,18,0.62)]">
             Distribué <strong>dimanche à minuit</strong>, au rang <strong>{tierName ?? `n°${tier}`}</strong>.
@@ -1090,7 +1191,8 @@ function RewardsPanel({
             contributeur du clan perdant est le seul à <strong>conserver son rang</strong>.
           </p>
         </div>
-      )}
+        </div>
+      </div>
     </section>
   );
 }
@@ -1189,7 +1291,7 @@ function GateChip({
     <button
       onClick={onClick}
       disabled={busy || active}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold capitalize transition disabled:cursor-default ${
+      className={`wk-press inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm font-semibold capitalize disabled:cursor-default ${
         active
           ? 'border-transparent bg-[var(--wk-ink)] text-[var(--wk-paper)]'
           : 'border-[rgba(26,21,18,0.12)] bg-white text-[rgba(26,21,18,0.7)] hover:border-[var(--wk-accent)] hover:text-[var(--wk-ink)]'

@@ -68,6 +68,126 @@ export const SOLDIER_CATALOG: SoldierDef[] = [
 
 export const SOLDIER_BY_KEY = new Map(SOLDIER_CATALOG.map((s) => [s.key, s]));
 
+/** Où poster une unité pour qu'elle serve. */
+export type UnitPlacement = 'porte' | 'defense' | 'partout';
+
+export interface UnitGuide {
+  /** Ce qu'elle apporte, en une phrase lisible par un débutant */
+  headline: string;
+  /** Effets concrets, ligne par ligne */
+  lines: string[];
+  placement: UnitPlacement;
+  /** Où la poster, dit simplement */
+  where: string;
+}
+
+/**
+ * Ce que fait réellement chaque unité, en clair.
+ *
+ * ⚠️ Ces textes décrivent le CALCUL (clanCombat.ts) : si une règle change là-bas,
+ * elle change ici. Une fiche qui promet autre chose que la résolution de minuit
+ * est pire que pas de fiche.
+ */
+const GUIDES: Record<string, Omit<UnitGuide, 'placement' | 'where'> & Partial<Pick<UnitGuide, 'placement' | 'where'>>> = {
+  milicien: {
+    headline: 'Le soldat à tout faire : correct partout, excellent nulle part.',
+    lines: ["À l'assaut : +10 de force contre la porte visée.", 'En défense : +10 de défense sur ta porte.']
+  },
+  archer: {
+    headline: "Une lame, pas un bouclier : à envoyer à l'assaut.",
+    lines: ["À l'assaut : +25 de force.", 'En défense : seulement +5. Mauvais choix pour tenir un mur.']
+  },
+  piquier: {
+    headline: "Un mur, pas une lame : à poster en défense.",
+    lines: ['En défense : +25 de défense sur ta porte.', "À l'assaut : seulement +5."]
+  },
+  chevalier: {
+    headline: "L'élite : aussi bon pour frapper que pour tenir.",
+    lines: ["À l'assaut : +30 de force.", 'En défense : +30 de défense.']
+  },
+  baliste: {
+    headline: "La grosse artillerie d'assaut, fragile au rempart.",
+    lines: ["À l'assaut : +45 de force.", 'En défense : +10 seulement.']
+  },
+  belier: {
+    headline: "Il enfonce les portes… et s'arrête là.",
+    lines: [
+      "À l'assaut : +60 de force, mais UNIQUEMENT sur une porte encore debout.",
+      "Une fois la porte tombée, il ne passe pas la brèche : il ne touche jamais le donjon.",
+      'En défense : ne sert à rien (0).'
+    ]
+  },
+  sapeur: {
+    headline: 'Il mine les murs : la défense adverse ne compte qu’à moitié contre lui.',
+    lines: [
+      "À l'assaut : +50 de force, et la défense de la porte visée est divisée par 2 face à lui.",
+      'En défense : +5 seulement.'
+    ]
+  },
+  eclaireur: {
+    headline: "Il espionne l'ennemi : tu vois où il va frapper.",
+    lines: [
+      "Tant qu'il est dans ta garnison, ton château affiche en direct la porte où l'ennemi masse son assaut, et quelle part de sa force y part.",
+      'Tu peux ainsi renforcer la bonne porte avant minuit.'
+    ],
+    placement: 'partout',
+    where: 'Laisse-le à la caserne : il travaille quand même, sans s’user.'
+  },
+  infirmier: {
+    headline: 'Il relève un joueur blessé chaque nuit.',
+    lines: [
+      'Un défenseur blessé ne compte qu’à moitié. Chaque nuit, l’Infirmier remet sur pied le blessé le plus ancien.',
+      "Utile surtout quand personne ne joue Soigneur dans le clan."
+    ],
+    placement: 'partout',
+    where: 'Laisse-le à la caserne : il soigne quand même, sans s’user.'
+  },
+  medecin: {
+    headline: 'Il répare une unité usée chaque nuit.',
+    lines: [
+      'Chaque combat use une unité de 25 % (elle disparaît au 4e).',
+      'Chaque nuit, le Médecin remet à 100 % l’unité la plus abîmée.'
+    ],
+    placement: 'partout',
+    where: 'Laisse-le à la caserne : il soigne quand même, sans s’user.'
+  },
+  forgeron: {
+    headline: 'Il répare les remparts : +40 PV par nuit sur sa porte.',
+    lines: [
+      'Chaque nuit, il rend 40 PV à la porte où il est posté (jamais au-delà du maximum).',
+      'Une porte tombée ne se répare pas.',
+      "Il s'use si sa porte est attaquée, et disparaît si elle tombe."
+    ],
+    placement: 'defense',
+    where: 'Poste-le en « Défense » sur la porte à réparer. À la caserne, il ne fait rien.'
+  },
+  etendard: {
+    headline: 'Il galvanise les unités de sa porte : +10 %.',
+    lines: [
+      "+10 % d'attaque ou de défense aux UNITÉS postées sur la même porte, dans la même posture (assaut ou défense).",
+      "Ne booste pas les joueurs, seulement les unités. Il s'use comme elles."
+    ],
+    placement: 'porte',
+    where: 'Poste-le sur la même porte et la même posture que tes unités. À la caserne, il ne fait rien.'
+  }
+};
+
+export function unitGuide(key: string): UnitGuide {
+  const def = SOLDIER_BY_KEY.get(key);
+  const g = GUIDES[key];
+  const combat = def?.kind !== 'soutien';
+  return {
+    headline: g?.headline ?? def?.description ?? '',
+    lines: g?.lines ?? [],
+    placement: g?.placement ?? 'porte',
+    where:
+      g?.where ??
+      (combat
+        ? "Sur une porte : « Assaut » pour frapper la porte ennemie du même nom, « Défense » pour tenir la tienne."
+        : 'Sur une porte.')
+  };
+}
+
 /** Une unité par joueur × 2 — le vrai régulateur de l'économie. */
 export const GARRISON_PER_MEMBER = 2;
 /**

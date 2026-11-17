@@ -596,7 +596,7 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
    * Ce n'est pas une prédiction : les joueurs peuvent encore changer de porte
    * jusqu'à minuit. C'est un état de la journée à l'instant de la lecture.
    */
-  let pressure: { gate: string; share: number } | null = null;
+  let pressure: { gate: string; share: number; tied: string[] } | null = null;
   if (hasScout && rival) {
     const { loadSide } = await import('@/lib/clanResolution');
     const { computeAssault, GATES } = await import('@/lib/clanCombat');
@@ -614,7 +614,10 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
 
     // Rien d'engagé encore ce matin : on ne montre pas une porte au hasard
     if (total > 0 && top.force > 0) {
-      pressure = { gate: top.gate, share: Math.round((top.force / total) * 100) };
+      // Égalité : on nomme toutes les portes ex aequo, sinon l'Éclaireur
+      // désignait la première au hasard de l'ordre nord/est/sud.
+      const tied = byGate.filter((x) => x.gate !== top.gate && x.force === top.force).map((x) => x.gate);
+      pressure = { gate: top.gate, share: Math.round((top.force / total) * 100), tied };
     }
   }
 
@@ -637,7 +640,8 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
     const assault = computeAssault(mySide, enemyGates);
     const defense = computeDefense(mySide);
 
-    const empty = () => ({ players: 0, soldiers: 0, force: 0 });
+    // `units` : le détail par type, pour dessiner les troupes sur les tours.
+    const empty = () => ({ players: 0, soldiers: 0, force: 0, units: {} as Record<string, number> });
     const attack = Object.fromEntries(GATES.map((g) => [g, empty()])) as Record<GateName, ReturnType<typeof empty>>;
     const hold = Object.fromEntries(GATES.map((g) => [g, empty()])) as Record<GateName, ReturnType<typeof empty>>;
 
@@ -650,7 +654,9 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
     }
     for (const u of mySide.soldiers ?? []) {
       if (!u.gate || !u.stance) continue;
-      (u.stance === 'assaut' ? attack : hold)[u.gate].soldiers++;
+      const slot = (u.stance === 'assaut' ? attack : hold)[u.gate];
+      slot.soldiers++;
+      slot.units[u.type] = (slot.units[u.type] ?? 0) + 1;
     }
     for (const g of GATES) {
       attack[g].force = assault.byGate[g] + assault.sapperByGate[g] + assault.ramByGate[g];
@@ -778,6 +784,7 @@ export async function getMyClan(userId: string, now: Date = new Date()) {
       /** Porte où l'ennemi concentre son assaut, et la part qu'elle encaisse */
       pressureGate: pressure?.gate ?? null,
       pressureShare: pressure?.share ?? null,
+      pressureTied: pressure?.tied ?? [],
       scouted: hasScout
     },
     members: members.map((m) => ({
