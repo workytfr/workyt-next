@@ -11,13 +11,17 @@ import {
     SelectValue,
 } from "@/components/ui/Select";
 import Image from "next/image";
-import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "katex/dist/katex.min.css";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
 import { useSession, signIn } from "next-auth/react";
 import { Loader2 } from "lucide-react";
 import { UploadButton } from "@/utils/uploadthing";
+import dynamic from "next/dynamic";
+
+// Éditeur Markdown au style Workyt, chargé à la demande (Tiptap + KaTeX)
+const MarkdownEditor = dynamic(() => import("@/components/ui/MarkdownEditor"), {
+  ssr: false,
+  loading: () => <div className="h-[203px] animate-pulse rounded-[14px] border border-[#e6e0d6] bg-white" />,
+});
 
 interface ICourse {
     _id: string;
@@ -239,30 +243,28 @@ export default function ExerciseForm({ exercise, onSuccess, lockedSectionId, loc
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             />
 
-            {/* 📌 Contenu de l'exercice */}
-            <div data-color-mode="light">
-            <MDEditor
-                value={formData.content}
-                onChange={(value) => setFormData({ ...formData, content: value || "" })}
-                highlightEnable={false}
-                previewOptions={{
-                    remarkPlugins: [remarkMath],
-                    rehypePlugins: [rehypeKatex],
-                }}
-            />
+            {/* Énoncé — Markdown + LaTeX, comme sur la page de l'exercice */}
+            <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Énoncé</label>
+                <MarkdownEditor
+                    value={formData.content}
+                    onChange={(value) => setFormData({ ...formData, content: value })}
+                    placeholder="Écris l'énoncé. Le bouton Σ insère une formule."
+                    ariaLabel="Énoncé de l'exercice"
+                    minHeight={200}
+                />
             </div>
 
-            {/* 📌 Texte de correction */}
-            <div data-color-mode="light">
-            <MDEditor
-                value={formData.correctionText}
-                onChange={(value) => setFormData({ ...formData, correctionText: value || "" })}
-                highlightEnable={false}
-                previewOptions={{
-                    remarkPlugins: [remarkMath],
-                    rehypePlugins: [rehypeKatex],
-                }}
-            />
+            {/* Correction */}
+            <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">Correction</label>
+                <MarkdownEditor
+                    value={formData.correctionText}
+                    onChange={(value) => setFormData({ ...formData, correctionText: value })}
+                    placeholder="Écris la correction détaillée."
+                    ariaLabel="Correction de l'exercice"
+                    minHeight={200}
+                />
             </div>
 
             {/* 📌 Sélection de la difficulté */}

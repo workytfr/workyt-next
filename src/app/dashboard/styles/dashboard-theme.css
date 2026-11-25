@@ -74,7 +74,7 @@
   --dash-shadow-lg: 0 12px 24px -6px rgba(26, 21, 18, 0.1), 0 4px 8px -4px rgba(26, 21, 18, 0.05);
 
   /* Transitions */
-  --dash-transition: all 0.15s ease-in-out;
+  --dash-transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 }
 
 /* ==========================================
@@ -106,43 +106,41 @@
 
 /* ==========================================
    SIDEBAR — cadre encre
+   En-tête et pied fixes : seule la liste défile. Avant, toute la barre
+   défilait d'un bloc et le compte disparaissait sous le pli.
    ========================================== */
 
 .dash-sidebar {
   width: 260px;
   background: var(--dash-ink);
   color: var(--dash-on-ink);
-  border-right: 1px solid var(--dash-ink);
   height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
   position: fixed;
   left: 0;
   top: 0;
   z-index: 40;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .dash-sidebar-header {
-  padding: var(--dash-gap-lg) var(--dash-gap-xl);
+  flex-shrink: 0;
+  height: 64px; /* aligné sur l'en-tête de la page */
+  padding: 0 0.75rem 0 1.25rem;
   border-bottom: 1px solid var(--dash-on-ink-border);
   display: flex;
   align-items: center;
-  gap: var(--dash-gap-md);
+  gap: var(--dash-gap-sm);
 }
 
-.dash-sidebar-logo {
-  width: 32px;
-  height: 32px;
-  background: var(--dash-accent);
-  border-radius: var(--dash-radius-md);
+.dash-sidebar-brand {
   display: flex;
+  min-width: 0;
+  flex: 1;
   align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: 600;
-  font-size: 14px;
+  gap: var(--dash-gap-md);
+  border-radius: var(--dash-radius-md);
 }
 
 .dash-sidebar-title {
@@ -156,20 +154,45 @@
 
 .dash-sidebar-title small {
   font-family: var(--dash-font);
-  font-size: 0.6875rem;
+  font-size: 0.625rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   color: var(--dash-accent);
+}
+
+.dash-sidebar-collapse,
+.dash-sidebar-close {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--dash-radius-md);
+  color: var(--dash-on-ink-tertiary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.dash-sidebar-collapse:hover,
+.dash-sidebar-close:hover {
+  color: var(--dash-on-ink);
+  background: rgba(253, 250, 244, 0.08);
 }
 
 .dash-sidebar-nav {
   flex: 1;
-  padding: var(--dash-gap-md) 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: var(--dash-gap-md) 0 var(--dash-gap-sm);
+  scrollbar-color: rgba(253, 250, 244, 0.18) transparent;
+}
+.dash-sidebar-nav.dash-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(253, 250, 244, 0.18);
 }
 
 .dash-sidebar-section {
-  margin-bottom: var(--dash-gap-lg);
+  margin-bottom: var(--dash-gap-md);
 }
 
 .dash-sidebar-section-title {
@@ -178,26 +201,65 @@
   color: var(--dash-on-ink-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  padding: 0 var(--dash-gap-xl);
-  margin-bottom: var(--dash-gap-sm);
+  padding: 0 1.25rem;
 }
 
+.dash-sidebar-group-toggle {
+  display: flex;
+  width: 100%;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  transition: color 0.15s ease;
+}
+.dash-sidebar-group-toggle:hover:not(:disabled) {
+  color: var(--dash-on-ink);
+}
+.dash-sidebar-group-toggle:disabled {
+  cursor: default;
+}
+
+.dash-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 0.625rem;
+}
+
+/* Une ligne = 36px. À 48px, la liste d'un admin (20 entrées) ne tenait
+   pas dans l'écran et il fallait défiler pour atteindre « Communauté ». */
 .dash-sidebar-item {
   display: flex;
   align-items: center;
-  gap: var(--dash-gap-md);
-  padding: 0.625rem var(--dash-gap-xl);
-  font-size: 0.9375rem;
+  gap: 0.625rem;
+  min-height: 2.25rem;
+  padding: 0 0.625rem;
+  font-size: 0.875rem;
+  line-height: 1.25;
   color: var(--dash-on-ink-secondary);
+  border-radius: var(--dash-radius-md);
   cursor: pointer;
-  transition: var(--dash-transition);
-  margin: 0 var(--dash-gap-sm);
-  border-radius: 999px;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.dash-sidebar-item.has-toggle {
+  padding-right: 2.25rem;
 }
 
-.dash-sidebar-item:hover {
-  background: rgba(253, 250, 244, 0.07);
-  color: var(--dash-on-ink);
+@media (hover: hover) and (pointer: fine) {
+  .dash-sidebar-item:hover {
+    background: rgba(253, 250, 244, 0.07);
+    color: var(--dash-on-ink);
+  }
+}
+.dash-sidebar-item:focus-visible,
+.dash-sidebar-subtoggle:focus-visible,
+.dash-sidebar-user:focus-visible,
+.dash-sidebar-brand:focus-visible,
+.dash-sidebar-collapse:focus-visible,
+.dash-sidebar-group-toggle:focus-visible {
+  outline: 2px solid var(--dash-accent);
+  outline-offset: -2px;
 }
 
 .dash-sidebar-item.active {
@@ -205,40 +267,148 @@
   color: var(--dash-on-ink);
   font-weight: 600;
 }
-
-.dash-sidebar-item.active .dash-sidebar-icon {
+/* On est dans un sous-menu : la section reste repérable, sans double surlignage */
+.dash-sidebar-item.in-section {
+  color: var(--dash-on-ink);
+}
+.dash-sidebar-item.active .dash-sidebar-icon,
+.dash-sidebar-item.in-section .dash-sidebar-icon {
   color: var(--dash-accent);
 }
 
 .dash-sidebar-icon {
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
+.dash-sidebar-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-sidebar-subtoggle {
+  position: absolute;
+  right: 0.25rem;
+  top: 0.25rem;
+  display: flex;
+  width: 1.75rem;
+  height: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--dash-on-ink-tertiary);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.dash-sidebar-subtoggle:hover {
+  background: rgba(253, 250, 244, 0.1);
+  color: var(--dash-on-ink);
+}
+
+/* Sous-pages : un filet les rattache à l'icône du parent */
+.dash-sidebar-children {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 2px 0 4px 1.1875rem;
+  padding-left: 0.5rem;
+  border-left: 1px solid var(--dash-on-ink-border);
+}
+.dash-sidebar-child {
+  min-height: 2rem;
+  font-size: 0.8125rem;
+}
+
 .dash-sidebar-footer {
-  padding: var(--dash-gap-md) var(--dash-gap-xl);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--dash-gap-sm) 0.625rem;
   border-top: 1px solid var(--dash-on-ink-border);
 }
 
-.dash-sidebar .dash-scrollbar::-webkit-scrollbar-thumb,
-.dash-sidebar.dash-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(253, 250, 244, 0.18);
+.dash-sidebar-user {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.375rem;
+  border-radius: 12px;
+  transition: background-color 0.15s ease;
+}
+.dash-sidebar-user:hover,
+.dash-sidebar-user[aria-expanded="true"] {
+  background: rgba(253, 250, 244, 0.07);
+}
+
+/* L'avatar « small » fait 48px : ramené à 36px dans la barre */
+.dash-sidebar-avatar {
+  display: grid;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  place-items: center;
+}
+.dash-sidebar-avatar > * {
+  transform: scale(0.75);
+}
+
+.dash-sidebar-usermenu {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  z-index: 60;
+  width: 15rem;
+  padding: 0.25rem;
+  background: #ffffff;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  box-shadow: var(--dash-shadow-lg);
+  transform-origin: bottom left;
+  animation: dash-pop-in 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Entrée de menu sur fond clair (menu du compte, recherche de pages) */
+.dash-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--dash-radius-md);
+  font-size: 0.875rem;
+  color: var(--dash-text);
+  transition: background-color 0.12s ease;
+}
+.dash-menu-item:hover,
+.dash-menu-item.is-highlighted {
+  background: var(--dash-bg-secondary);
+}
+
+@keyframes dash-pop-in {
+  from { opacity: 0; transform: scale(0.97); }
+}
+
+.dash-sidebar-overlay {
+  display: none;
 }
 
 /* ==========================================
-   HEADER
+   HEADER — pleine largeur, collé en haut
    ========================================== */
 
 .dash-header {
   height: 64px;
-  background: rgba(253, 250, 244, 0.9);
+  background: rgba(253, 250, 244, 0.92);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--dash-border);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 var(--dash-gap-xl);
+  gap: var(--dash-gap-lg);
+  padding: 0 var(--dash-gap-2xl);
   position: sticky;
   top: 0;
   z-index: 30;
@@ -246,17 +416,60 @@
 
 .dash-header-left {
   display: flex;
+  min-width: 0;
   align-items: center;
-  gap: var(--dash-gap-lg);
+  gap: var(--dash-gap-md);
 }
 
-.dash-header-title {
-  font-size: 1.25rem;
+.dash-header-menu {
+  display: none;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  margin-left: -0.5rem;
+  border-radius: var(--dash-radius-md);
+  color: var(--dash-text);
+  transition: background-color 0.15s ease, transform 0.12s ease-out;
+}
+.dash-header-menu:hover { background: var(--dash-bg-secondary); }
+.dash-header-menu:active { transform: scale(0.96); }
+
+.dash-breadcrumb,
+.dash-breadcrumb-step {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 0.375rem;
+}
+.dash-breadcrumb-root,
+.dash-breadcrumb-link {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  color: var(--dash-text-secondary);
+  transition: color 0.15s ease;
+}
+.dash-breadcrumb-root:hover,
+.dash-breadcrumb-link:hover {
+  color: var(--dash-text);
+}
+/* Seul élément du fil : la vue d'ensemble, la racine fait office de titre */
+.dash-breadcrumb-root:only-child,
+.dash-breadcrumb-current {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--dash-font-display);
+  font-size: 1.0625rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
   color: var(--dash-text);
 }
 
 .dash-header-right {
   display: flex;
+  flex-shrink: 0;
   align-items: center;
   gap: var(--dash-gap-md);
 }
@@ -266,16 +479,19 @@
 }
 
 .dash-header-search input {
-  width: 280px;
-  padding: 0.5rem 1rem 0.5rem 2.5rem;
-  font-size: 0.9375rem;
+  width: 260px;
+  height: 2.25rem;
+  padding: 0 3.75rem 0 2.25rem;
+  font-size: 0.875rem;
   border: 1px solid var(--dash-border);
   border-radius: 999px;
   background: var(--dash-bg);
   color: var(--dash-text);
-  transition: var(--dash-transition);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
-
+.dash-header-search input::placeholder {
+  color: var(--dash-text-tertiary);
+}
 .dash-header-search input:focus {
   outline: none;
   border-color: var(--dash-accent);
@@ -288,6 +504,40 @@
   top: 50%;
   transform: translateY(-50%);
   color: var(--dash-text-tertiary);
+  pointer-events: none;
+}
+
+.dash-header-kbd {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 0.125rem 0.375rem;
+  font-family: var(--dash-font-mono);
+  font-size: 0.625rem;
+  line-height: 1.4;
+  color: var(--dash-text-tertiary);
+  background: var(--dash-paper);
+  border: 1px solid var(--dash-border);
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.dash-header-results {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 50;
+  width: 20rem;
+  max-height: min(24rem, 70vh);
+  overflow-y: auto;
+  padding: 0.25rem;
+  background: #ffffff;
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  box-shadow: var(--dash-shadow-lg);
+  transform-origin: top right;
+  animation: dash-pop-in 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 /* ==========================================
@@ -296,9 +546,19 @@
 
 .dash-main {
   margin-left: 260px;
-  min-height: calc(100vh - 64px);
+  min-height: 100vh;
   background: var(--dash-paper);
-  padding: var(--dash-gap-2xl);
+}
+
+.dash-content {
+  padding: var(--dash-gap-xl) var(--dash-gap-2xl) var(--dash-gap-2xl);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-sidebar-usermenu,
+  .dash-header-results {
+    animation: none;
+  }
 }
 
 .dash-main-header {
@@ -981,21 +1241,71 @@
    ========================================== */
 
 @media (max-width: 1024px) {
+  /* Sous 1024px la barre est un tiroir, ouvert depuis l'en-tête */
   .dash-sidebar {
+    width: min(300px, 86vw);
+    z-index: 50;
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    box-shadow: none;
   }
-  
   .dash-sidebar.open {
     transform: translateX(0);
+    box-shadow: 0 0 48px rgba(26, 21, 18, 0.35);
   }
-  
+  .dash-sidebar-close {
+    display: inline-flex;
+  }
+
+  .dash-sidebar-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 45;
+    background: rgba(26, 21, 18, 0.45);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .dash-sidebar-overlay.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .dash-header-menu {
+    display: inline-flex;
+  }
+
   .dash-main {
     margin-left: 0;
   }
-  
+
   .dash-course-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  .dash-header {
+    padding: 0 var(--dash-gap-lg);
+  }
+  .dash-content {
+    padding: var(--dash-gap-lg);
+  }
+  /* Place comptée : seul le nom de la page reste, la recherche passe par le menu */
+  .dash-header-search,
+  .dash-breadcrumb-root:not(:only-child),
+  .dash-breadcrumb-step:not(:last-child) {
+    display: none;
+  }
+  .dash-breadcrumb-step > svg {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-sidebar {
+    transition: none;
   }
 }
 
@@ -1234,47 +1544,11 @@
 }
 
 /* ==========================================
-   SIDEBAR — groupes repliables et barre « icônes seules »
+   SIDEBAR — barre « icônes seules » (grand écran)
+   Le repli est instantané : animer `width` et `margin-left` recalculait la
+   mise en page de toute la page à chaque image.
    ========================================== */
 
-.dash-sidebar,
-.dash-main {
-  transition: width 0.2s ease, margin-left 0.2s ease;
-}
-
-.dash-sidebar-group-toggle {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
-  background: none;
-  border: 0;
-  cursor: pointer;
-  text-align: left;
-}
-.dash-sidebar-group-toggle:hover:not(:disabled) {
-  color: var(--dash-on-ink);
-}
-.dash-sidebar-group-toggle:disabled {
-  cursor: default;
-}
-
-.dash-sidebar-collapse {
-  display: none;
-  margin-left: auto;
-  padding: 0.375rem;
-  border-radius: 999px;
-  color: var(--dash-on-ink-tertiary);
-  transition: var(--dash-transition);
-}
-.dash-sidebar-collapse:hover {
-  color: var(--dash-on-ink);
-  background: rgba(253, 250, 244, 0.07);
-}
-
-/* Le repli n'existe que sur grand écran ; sur mobile la barre est un tiroir */
 @media (min-width: 1025px) {
   .dash-sidebar-collapse {
     display: inline-flex;
@@ -1289,10 +1563,13 @@
   }
   .dash-sidebar.is-collapsed .dash-sidebar-header {
     flex-direction: column;
-    padding: var(--dash-gap-lg) 0;
+    justify-content: center;
+    height: auto;
+    gap: 0.25rem;
+    padding: 0.75rem 0;
   }
-  .dash-sidebar.is-collapsed .dash-sidebar-collapse {
-    margin-left: 0;
+  .dash-sidebar.is-collapsed .dash-sidebar-brand {
+    flex: none;
   }
   .dash-sidebar.is-collapsed .dash-sidebar-title,
   .dash-sidebar.is-collapsed .dash-sidebar-label,
@@ -1304,15 +1581,20 @@
     border-top: 1px solid var(--dash-on-ink-border);
     padding-top: var(--dash-gap-md);
   }
-  .dash-sidebar.is-collapsed .dash-sidebar-item {
-    justify-content: center;
-    padding: 0.625rem 0;
-  }
+  .dash-sidebar.is-collapsed .dash-sidebar-list,
   .dash-sidebar.is-collapsed .dash-sidebar-footer {
-    display: flex;
-    justify-content: center;
+    align-items: center;
     padding-left: 0;
     padding-right: 0;
+  }
+  .dash-sidebar.is-collapsed .dash-sidebar-item {
+    width: 2.5rem;
+    min-height: 2.5rem;
+    justify-content: center;
+    padding: 0;
+  }
+  .dash-sidebar.is-collapsed .dash-sidebar-user {
+    width: auto;
   }
 }
 

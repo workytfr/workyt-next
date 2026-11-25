@@ -1,142 +1,36 @@
 "use client";
 
-import { hasRole } from "@/lib/userRoles";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
+import dynamic from "next/dynamic";
 import { cn } from "@/lib/utils";
 import ProfileAvatar from "@/components/ui/profile";
 import {
-  Home,
-  BookOpen,
-  FileText,
-  Users,
-  Settings,
-  Library,
-  CircleDot,
-  Award,
-  Layers,
-  Store,
-  Shield,
-  Menu,
-  GraduationCap,
-  X,
-  Plus,
-  Upload,
-  BarChart3,
-  FileCheck,
-  HelpCircle,
-  Radio,
-  KanbanSquare,
-  IdCard,
-  CalendarClock,
-  HeartHandshake,
   ChevronDown,
+  ChevronsUpDown,
+  ExternalLink,
+  HelpCircle,
+  LogOut,
   PanelLeftClose,
   PanelLeftOpen,
+  User,
+  X,
 } from "lucide-react";
-import TutorialModal from "./TutorialModal";
+import { findActive, visibleGroups, type NavItem } from "./dashboardNav";
 import "../styles/dashboard-theme.css";
 
-interface NavChild {
-  name: string;
-  href: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  external?: boolean;
-}
-
-interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  children?: NavChild[];
-  roles?: string[];
-  adminOnly?: boolean;
-  moderatorOnly?: boolean;
-}
-
-// Navigation items avec leurs permissions
-const navItems: NavItem[] = [
-  { name: "Dashboard", href: "/dashboard", icon: Home },
-  { name: "Kanban", href: "/dashboard/kanban", icon: KanbanSquare },
-  {
-    name: "Suivis",
-    href: "/dashboard/suivis",
-    icon: HeartHandshake,
-    roles: ["Helpeur", "Modérateur", "Admin"],
-  },
-  {
-    name: "Cours",
-    href: "/dashboard/cours",
-    icon: BookOpen,
-    children: [
-      { name: "Tous les cours", href: "/dashboard/cours" },
-      { name: "Créer un cours", href: "/dashboard/cours/nouveau", icon: Plus },
-      { name: "Importer un cours", href: "/dashboard/cours/importer", icon: Upload },
-    ],
-  },
-  { name: "Sections", href: "/dashboard/sections", icon: Layers },
-  { name: "Leçons", href: "/dashboard/lessons", icon: FileText },
-  { name: "Quiz", href: "/dashboard/quizzes", icon: CircleDot },
-  {
-    name: "Quiz du jour",
-    href: "/dashboard/daily-quiz",
-    icon: CalendarClock,
-    roles: ["Admin", "Rédacteur", "Correcteur", "Helpeur"],
-  },
-  { name: "Exercices", href: "/dashboard/exercises", icon: Library },
-  {
-    name: "Évaluations",
-    href: "/dashboard/evaluations",
-    icon: FileCheck,
-    roles: ["Correcteur", "Helpeur", "Rédacteur", "Admin", "Modérateur"],
-    children: [
-      { name: "Corrections", href: "/dashboard/evaluations" },
-      { name: "Banque", href: "/dashboard/evaluations/manage" },
-    ],
-  },
-  { name: "Certificats", href: "/dashboard/certificates", icon: Award },
-  { name: "Programmes", href: "/dashboard/curriculum", icon: GraduationCap, adminOnly: true },
-  { name: "Partenaires", href: "/dashboard/partners", icon: Store, adminOnly: true },
-  { name: "Lives", href: "/dashboard/lives", icon: Radio, adminOnly: true },
-  { name: "Adhérents", href: "/dashboard/adherents", icon: IdCard, adminOnly: true },
-  { name: "Utilisateurs", href: "/dashboard/users", icon: Users, adminOnly: true },
-  { name: "Modération", href: "/dashboard/moderation", icon: Shield, moderatorOnly: true },
-  { name: "Rôles", href: "/dashboard/roles", icon: Shield, adminOnly: true },
-  { name: "Bénévoles", href: "/dashboard/statistiques", icon: BarChart3, adminOnly: true },
-  { name: "Paramètres", href: "/dashboard/settings", icon: Settings },
-];
-
-// Groupement pour l'affichage : un groupe = une tâche, pas plus de 5 liens.
-// « Paramètres » n'est dans aucun groupe : il est en bas, avec le guide.
-const navGroups = [
-  {
-    title: "Général",
-    items: ["Dashboard", "Kanban", "Suivis"],
-  },
-  {
-    title: "Contenu",
-    items: ["Cours", "Sections", "Leçons", "Exercices"],
-  },
-  {
-    title: "Quiz & évaluations",
-    items: ["Quiz", "Quiz du jour", "Évaluations", "Certificats"],
-  },
-  {
-    title: "Communauté",
-    items: ["Utilisateurs", "Adhérents", "Bénévoles", "Rôles", "Modération"],
-  },
-  {
-    title: "Site",
-    items: ["Programmes", "Partenaires", "Lives"],
-  },
-];
+// Le guide (1 400 lignes, framer-motion) ne se charge qu'à l'ouverture
+const TutorialModal = dynamic(() => import("./TutorialModal"), { ssr: false });
 
 // Préférences d'affichage, propres à chaque navigateur
 const COLLAPSED_KEY = "dash-sidebar-collapsed";
 const CLOSED_GROUPS_KEY = "dash-sidebar-closed-groups";
+
+/** L'en-tête ouvre le tiroir mobile par cet évènement (pas de contexte à câbler) */
+export const TOGGLE_SIDEBAR_EVENT = "dash:toggle-sidebar";
 
 function readPref<T>(key: string, fallback: T): T {
   try {
@@ -155,111 +49,97 @@ function writePref(key: string, value: unknown) {
   }
 }
 
-interface NavItemProps {
+interface NavRowProps {
   item: NavItem;
-  isActive: boolean;
-  isExpanded?: boolean;
-  onToggle?: () => void;
+  /** Page ouverte = cette entrée elle-même (et non un de ses enfants) */
+  isCurrent: boolean;
+  /** Page ouverte = cette entrée ou l'un de ses enfants */
+  inSection: boolean;
+  activeChildHref?: string;
+  isExpanded: boolean;
+  onToggle: () => void;
   /** Barre repliée : icône seule, le nom apparaît au survol */
-  railMode?: boolean;
+  railMode: boolean;
 }
 
-function NavItem({ item, isActive, isExpanded, onToggle, railMode }: NavItemProps) {
+function NavRow({ item, isCurrent, inSection, activeChildHref, isExpanded, onToggle, railMode }: NavRowProps) {
   const Icon = item.icon;
-  // Barre repliée : pas de sous-menu, l'icône mène directement à la page
-  const hasChildren = !railMode && item.children && item.children.length > 0;
+  const hasChildren = !railMode && !!item.children?.length;
 
   return (
-    <div>
-      {hasChildren ? (
-        <>
-          <button
-            type="button"
-            onClick={onToggle}
-            className={cn(
-              "dash-sidebar-item w-full",
-              isActive && "active"
-            )}
-          >
-            <Icon className="dash-sidebar-icon" />
-            <span className="flex-1 text-left">{item.name}</span>
-            <svg
-              className={cn(
-                "w-4 h-4 transition-transform duration-200",
-                isExpanded && "rotate-180"
-              )}
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-          {isExpanded && (
-            <div className="ml-4 mt-1 space-y-1">
-              {item.children?.map((child) => (
-                <Link
-                  key={child.href}
-                  href={child.href}
-                  className={cn(
-                    "dash-sidebar-item text-sm",
-                    child.external && "text-[#ff6a1a] hover:text-[#ffb547]"
-                  )}
-                >
-                  {child.icon && <child.icon className="w-4 h-4" />}
-                  <span>{child.name}</span>
-                  {child.external && (
-                    <svg
-                      className="w-3 h-3 ml-auto"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                      />
-                    </svg>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
-        </>
-      ) : (
+    <li>
+      <div className="relative">
+        {/* Le nom mène toujours à la page ; le chevron, lui, ne fait que
+            déplier. Avant, « Cours » était un simple bouton : pour ouvrir la
+            liste des cours il fallait déplier puis cliquer « Tous les cours ». */}
         <Link
           href={item.href}
           title={railMode ? item.name : undefined}
           aria-label={railMode ? item.name : undefined}
-          className={cn("dash-sidebar-item", isActive && "active")}
+          aria-current={isCurrent ? "page" : undefined}
+          className={cn(
+            "dash-sidebar-item",
+            isCurrent && "active",
+            inSection && !isCurrent && "in-section",
+            hasChildren && "has-toggle"
+          )}
         >
           <Icon className="dash-sidebar-icon" />
           <span className="dash-sidebar-label">{item.name}</span>
         </Link>
+        {hasChildren && (
+          <button
+            type="button"
+            onClick={onToggle}
+            aria-expanded={isExpanded}
+            aria-label={isExpanded ? `Replier ${item.name}` : `Déplier ${item.name}`}
+            className="dash-sidebar-subtoggle"
+          >
+            <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isExpanded && "rotate-180")} />
+          </button>
+        )}
+      </div>
+
+      {hasChildren && isExpanded && (
+        <ul className="dash-sidebar-children">
+          {item.children!.map((child) => {
+            const active = child.href === activeChildHref;
+            return (
+              <li key={child.href}>
+                <Link
+                  href={child.href}
+                  aria-current={active ? "page" : undefined}
+                  className={cn("dash-sidebar-item dash-sidebar-child", active && "active")}
+                >
+                  {child.icon && <child.icon className="h-4 w-4 shrink-0" />}
+                  <span>{child.name}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
       )}
-    </div>
+    </li>
   );
 }
 
 export default function DashboardSidebar() {
   const pathname = usePathname();
-  const { data: session } = useSession();
-  const [expandedItems, setExpandedItems] = useState<string[]>(["Cours"]);
+  const { data: session, status } = useSession();
+  // Sous-menus : ouverts d'office quand on est dans la section, sinon au choix
+  const [manualOpen, setManualOpen] = useState<Record<string, boolean>>({});
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [tutorialOpen, setTutorialOpen] = useState(false);
+  const [tutorialMounted, setTutorialMounted] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   // Barre repliée (icônes seules) et groupes fermés : relus depuis le navigateur
   const [collapsed, setCollapsed] = useState(false);
   const [closedGroups, setClosedGroups] = useState<string[]>([]);
   const [prefsLoaded, setPrefsLoaded] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const user = session?.user;
+  if (tutorialOpen && !tutorialMounted) setTutorialMounted(true);
 
   // localStorage n'existe qu'après le montage (pas côté serveur)
   useEffect(() => {
@@ -283,10 +163,46 @@ export default function DashboardSidebar() {
     });
   };
 
-  // Fermer le menu mobile lors du changement de page
+  // Tiroir mobile : ouvert depuis l'en-tête, refermé au changement de page
   useEffect(() => {
+    const toggle = () => setIsMobileMenuOpen((open) => !open);
+    window.addEventListener(TOGGLE_SIDEBAR_EVENT, toggle);
+    return () => window.removeEventListener(TOGGLE_SIDEBAR_EVENT, toggle);
+  }, []);
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- la navigation referme les menus
     setIsMobileMenuOpen(false);
+    setUserMenuOpen(false);
   }, [pathname]);
+
+  // Tiroir ouvert : la page derrière ne défile plus, Échap referme
+  useEffect(() => {
+    if (!isMobileMenuOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setIsMobileMenuOpen(false);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [isMobileMenuOpen]);
+
+  // Menu du compte : clic dehors ou Échap
+  useEffect(() => {
+    if (!userMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) setUserMenuOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setUserMenuOpen(false);
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [userMenuOpen]);
 
   // Forcer le mode clair
   useEffect(() => {
@@ -295,84 +211,34 @@ export default function DashboardSidebar() {
     document.body.style.color = "#1a1512";
   }, []);
 
-  // Filtrer les éléments selon le rôle
-  const filteredNavItems = navItems.filter((item) => {
-    if (item.roles && !hasRole(user, ...item.roles)) {
-      return false;
-    }
-    if (item.adminOnly && !hasRole(user, "Admin")) {
-      return false;
-    }
-    if (
-      item.moderatorOnly &&
-      !hasRole(user, "Admin", "Modérateur")
-    ) {
-      return false;
-    }
-    return true;
-  });
-
-  const toggleExpanded = (name: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]
-    );
-  };
+  const groups = visibleGroups(user);
+  const active = findActive(pathname, groups);
 
   // Sur mobile, la barre ouverte est un tiroir : toujours en version complète
   const railMode = collapsed && !isMobileMenuOpen;
-  const settingsItem = filteredNavItems.find((item) => item.name === "Paramètres");
-
-  const isItemActive = (item: NavItem) => {
-    if (pathname === item.href) return true;
-    if (item.children) {
-      return item.children.some((child) => pathname === child.href);
-    }
-    return false;
-  };
 
   return (
     <>
-      {/* Bouton menu mobile */}
-      <button
-        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        className="fixed top-4 left-4 z-50 p-2 bg-white border border-[#e6e0d6] rounded-lg shadow-sm lg:hidden"
-      >
-        {isMobileMenuOpen ? (
-          <X className="w-5 h-5 text-[#1a1512]" />
-        ) : (
-          <Menu className="w-5 h-5 text-[#1a1512]" />
-        )}
-      </button>
+      {/* Voile du tiroir mobile */}
+      <div
+        className={cn("dash-sidebar-overlay", isMobileMenuOpen && "open")}
+        onClick={() => setIsMobileMenuOpen(false)}
+        aria-hidden="true"
+      />
 
-      {/* Overlay mobile */}
-      {isMobileMenuOpen && (
-        <div
-          className="fixed inset-0 bg-black/20 z-40 lg:hidden"
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-      )}
-
-      {/* Sidebar */}
       <aside
-        className={cn(
-          "dash-sidebar dash-scrollbar",
-          isMobileMenuOpen && "open",
-          railMode && "is-collapsed"
-        )}
+        className={cn("dash-sidebar", isMobileMenuOpen && "open", railMode && "is-collapsed")}
+        aria-label="Navigation du tableau de bord"
       >
-        {/* Header */}
+        {/* En-tête : fixe, seule la liste défile */}
         <div className="dash-sidebar-header">
-          <div className="dash-sidebar-logo flex items-center justify-center overflow-hidden !bg-transparent p-0 shrink-0">
-            <Image
-              src="/workyt_square.svg"
-              alt="Workyt"
-              width={32}
-              height={32}
-              className="w-8 h-8 object-contain"
-            />
-          </div>
-          <span className="dash-sidebar-title">workyt<small>Tableau de bord</small></span>
-          {/* Replier / déplier (grand écran uniquement : sur mobile la barre est un tiroir) */}
+          <Link href="/dashboard" className="dash-sidebar-brand" aria-label="Tableau de bord — vue d'ensemble">
+            <Image src="/workyt_square.svg" alt="" width={32} height={32} className="h-8 w-8 shrink-0 object-contain" />
+            <span className="dash-sidebar-title">
+              workyt<small>Tableau de bord</small>
+            </span>
+          </Link>
+          {/* Replier / déplier (grand écran) */}
           <button
             type="button"
             onClick={() => setCollapsed((c) => !c)}
@@ -381,98 +247,142 @@ export default function DashboardSidebar() {
             aria-label={collapsed ? "Déplier le menu" : "Replier le menu"}
             aria-expanded={!collapsed}
           >
-            {collapsed ? <PanelLeftOpen className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+          </button>
+          {/* Fermer (tiroir mobile) */}
+          <button
+            type="button"
+            onClick={() => setIsMobileMenuOpen(false)}
+            className="dash-sidebar-close"
+            aria-label="Fermer le menu"
+          >
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Navigation */}
-        <nav className="dash-sidebar-nav">
-          {navGroups.map((group) => {
-            // Filtrer les items du groupe selon les permissions
-            const groupItems = group.items
-              .map((name) => filteredNavItems.find((item) => item.name === name))
-              .filter(Boolean) as NavItem[];
-
-            if (groupItems.length === 0) return null;
-
+        <nav className="dash-sidebar-nav dash-scrollbar">
+          {groups.map((group) => {
             // Le groupe de la page ouverte reste toujours visible
-            const hasActive = groupItems.some(isItemActive);
+            const hasActive = group.items.some((item) => item === active?.item);
             const isOpen = railMode || hasActive || !closedGroups.includes(group.title);
 
             return (
               <div key={group.title} className="dash-sidebar-section">
                 <button
                   type="button"
-                  onClick={() => !hasActive && toggleGroup(group.title)}
+                  onClick={() => toggleGroup(group.title)}
                   className="dash-sidebar-section-title dash-sidebar-group-toggle"
                   aria-expanded={isOpen}
+                  // Replier le groupe où l'on se trouve n'aurait aucun effet visible
                   disabled={hasActive}
                 >
                   <span>{group.title}</span>
                   {!hasActive && (
-                    <ChevronDown className={cn("w-3.5 h-3.5 transition-transform", !isOpen && "-rotate-90")} />
+                    <ChevronDown className={cn("h-3.5 w-3.5 transition-transform duration-200", !isOpen && "-rotate-90")} />
                   )}
                 </button>
                 {isOpen && (
-                  <div className="space-y-1 px-2">
-                    {groupItems.map((item) => (
-                      <NavItem
-                        key={item.href}
-                        item={item}
-                        isActive={isItemActive(item)}
-                        isExpanded={expandedItems.includes(item.name)}
-                        onToggle={() => toggleExpanded(item.name)}
-                        railMode={railMode}
-                      />
-                    ))}
-                  </div>
+                  <ul className="dash-sidebar-list">
+                    {group.items.map((item) => {
+                      const inSection = item === active?.item;
+                      return (
+                        <NavRow
+                          key={item.href}
+                          item={item}
+                          inSection={inSection}
+                          isCurrent={inSection && !active?.child}
+                          activeChildHref={inSection ? active?.child?.href : undefined}
+                          isExpanded={manualOpen[item.href] ?? inSection}
+                          onToggle={() =>
+                            setManualOpen((prev) => ({ ...prev, [item.href]: !(prev[item.href] ?? inSection) }))
+                          }
+                          railMode={railMode}
+                        />
+                      );
+                    })}
+                  </ul>
                 )}
               </div>
             );
           })}
         </nav>
 
-        {/* Paramètres + guide, toujours en bas */}
-        <div className="px-2 pb-2 space-y-1">
-          {settingsItem && (
-            <NavItem item={settingsItem} isActive={isItemActive(settingsItem)} railMode={railMode} />
-          )}
+        {/* Pied : guide + compte, toujours visibles */}
+        <div className="dash-sidebar-footer">
           <button
             type="button"
             onClick={() => setTutorialOpen(true)}
             title={railMode ? "Guide de démarrage" : undefined}
             aria-label="Guide de démarrage"
-            className="dash-sidebar-item w-full group"
+            className="dash-sidebar-item w-full"
           >
-            <HelpCircle className="dash-sidebar-icon group-hover:text-[#ff6a1a] transition-colors" />
+            <HelpCircle className="dash-sidebar-icon" />
             <span className="dash-sidebar-label">Guide de démarrage</span>
           </button>
-        </div>
 
-        {/* Footer avec utilisateur - ProfileAvatar */}
-        <div className="dash-sidebar-footer">
-          <div className="flex items-center gap-3">
-            <ProfileAvatar
-              username={user?.username || "Utilisateur"}
-              image={user?.image || undefined}
-              userId={user?.id}
-              role={user?.role}
-              size="small"
-              showPoints={false}
-            />
-            <div className="dash-sidebar-label flex-1 min-w-0">
-              <p className="text-sm font-medium text-[#fdfaf4] truncate">
-                {user?.username || "Utilisateur"}
-              </p>
-              <p className="text-xs text-[rgba(253,250,244,0.5)]">
-                {user?.role || "Rédacteur"}
-              </p>
-            </div>
+          <div ref={userMenuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setUserMenuOpen((open) => !open)}
+              aria-expanded={userMenuOpen}
+              aria-haspopup="menu"
+              aria-label="Mon compte"
+              className="dash-sidebar-user"
+            >
+              {status === "loading" || !user ? (
+                // Session en cours de lecture : pas de faux « Utilisateur · Rédacteur »
+                <>
+                  <span className="h-9 w-9 shrink-0 animate-pulse rounded-full bg-[rgba(253,250,244,0.1)]" />
+                  <span className="dash-sidebar-label h-3 w-24 animate-pulse rounded bg-[rgba(253,250,244,0.1)]" />
+                </>
+              ) : (
+                <>
+                  <span className="dash-sidebar-avatar">
+                    <ProfileAvatar
+                      username={user.username}
+                      image={user.image || undefined}
+                      userId={user.id}
+                      role={user.role}
+                      size="small"
+                    />
+                  </span>
+                  <span className="dash-sidebar-label min-w-0 flex-1 text-left">
+                    <span className="block truncate text-sm font-semibold text-[#fdfaf4]">{user.username}</span>
+                    <span className="block truncate text-xs text-[rgba(253,250,244,0.5)]">{user.role}</span>
+                  </span>
+                  <ChevronsUpDown className="dash-sidebar-label h-4 w-4 shrink-0 text-[rgba(253,250,244,0.4)]" />
+                </>
+              )}
+            </button>
+
+            {userMenuOpen && user && (
+              <div role="menu" className="dash-sidebar-usermenu">
+                {user.email && <p className="truncate px-3 pb-1.5 pt-2 text-xs text-[#97938e]">{user.email}</p>}
+                <Link href={`/compte/${user.id}`} role="menuitem" className="dash-menu-item">
+                  <User className="h-4 w-4 text-[#6b625c]" />
+                  Mon profil
+                </Link>
+                <Link href="/" role="menuitem" className="dash-menu-item">
+                  <ExternalLink className="h-4 w-4 text-[#6b625c]" />
+                  Retour au site
+                </Link>
+                <div className="my-1 h-px bg-[#f0e9dc]" />
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="dash-menu-item w-full text-[#c2272d] hover:!bg-[#fdecec]"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Déconnexion
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
-      <TutorialModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />
+      {tutorialMounted && <TutorialModal open={tutorialOpen} onClose={() => setTutorialOpen(false)} />}
     </>
   );
 }

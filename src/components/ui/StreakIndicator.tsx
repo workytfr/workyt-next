@@ -249,7 +249,7 @@ const StreakIndicator: React.FC<StreakIndicatorProps> = ({ userId, className = '
       const rect = btnRef.current.getBoundingClientRect();
       setPanelPos({
         top: rect.bottom + 8,
-        right: window.innerWidth - rect.right,
+        right: Math.max(12, Math.min(window.innerWidth - rect.right, window.innerWidth - 332)),
       });
     }
     setIsOpen(!isOpen);
@@ -350,18 +350,20 @@ const StreakIndicator: React.FC<StreakIndicatorProps> = ({ userId, className = '
       <button
         ref={btnRef}
         onClick={handleToggle}
-        className="flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-gray-50/50 transition-colors"
+        aria-expanded={isOpen}
+        aria-label={`Série de ${currentStreak} jour${currentStreak > 1 ? 's' : ''}`}
+        className="wk-nav-btn !gap-1 !px-2"
         title={`Streak: ${currentStreak} jour${currentStreak > 1 ? 's' : ''} | Record: ${longestStreak} | ${config.label}`}
       >
         <FlameIcon level={level} size={20} />
-        <span className={`text-sm font-medium ${config.textClass}`}>{currentStreak}</span>
+        <span className={`text-sm font-semibold tabular-nums ${config.textClass}`}>{currentStreak}</span>
       </button>
 
       {/* Dropdown panel - fixed to viewport */}
       {isOpen && (
         <div
           ref={panelRef}
-          className="fixed w-80 bg-white border border-gray-100 rounded-xl shadow-xl z-[200] p-4 max-h-[70vh] overflow-y-auto"
+          className="wk-pop fixed z-[200] max-h-[70vh] w-[min(20rem,calc(100vw-1.5rem))] overflow-y-auto rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white p-4 shadow-[0_18px_48px_rgba(26,21,18,0.14)]"
           style={{ top: panelPos.top, right: panelPos.right }}
         >
           {/* Header */}

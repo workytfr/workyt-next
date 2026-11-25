@@ -1,153 +1,190 @@
 "use client";
 
-import { useState } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import {
-  Search,
-  Bell,
-  ChevronDown,
-  LogOut,
-  User,
-  Home,
-  ExternalLink,
-} from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
+import { ChevronRight, ExternalLink, Menu, Search } from "lucide-react";
 import Link from "next/link";
-import ProfileAvatar from "@/components/ui/profile";
+import { cn } from "@/lib/utils";
+import { breadcrumb, flatPages, visibleGroups } from "./dashboardNav";
+import { TOGGLE_SIDEBAR_EVENT } from "./DashboardSidebar";
 import "../styles/dashboard-theme.css";
 
+// Recherche sans accents ni casse : « evaluations » trouve « Évaluations »
+const fold = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+
+/**
+ * En-tête du tableau de bord.
+ *
+ * — Fil d'Ariane : dit où l'on est (avant : « Tableau de bord » sur toutes les
+ *   pages, dans un second <h1> à côté de celui de la page).
+ * — Recherche : saute à une page du tableau de bord. L'ancienne envoyait vers
+ *   /dashboard/cours?search=…, paramètre que la page ne lisait pas.
+ * — Le compte et la déconnexion vivent dans la barre latérale : ils étaient
+ *   affichés deux fois. La cloche, elle, n'ouvrait rien et affichait une
+ *   pastille permanente : retirée.
+ */
 export default function DashboardHeader() {
   const { data: session } = useSession();
+  const pathname = usePathname();
   const router = useRouter();
-  const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(0);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchQuery.trim()) {
-      router.push(`/dashboard/cours?search=${encodeURIComponent(searchQuery)}`);
+  const crumbs = breadcrumb(pathname);
+  const pages = useMemo(() => flatPages(visibleGroups(session?.user)), [session?.user]);
+  const results = useMemo(() => {
+    const q = fold(query.trim());
+    if (!q) return pages;
+    return pages.filter((p) => fold(p.name).includes(q) || fold(p.group).includes(q));
+  }, [pages, query]);
+
+  // Ctrl/⌘ K : la recherche, depuis n'importe où dans le tableau de bord
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        inputRef.current?.focus();
+        inputRef.current?.select();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [open]);
+
+  const go = (href: string) => {
+    setOpen(false);
+    setQuery("");
+    inputRef.current?.blur();
+    router.push(href);
+  };
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      setOpen(true);
+      if (!results.length) return;
+      const step = e.key === "ArrowDown" ? 1 : -1;
+      setHighlighted((h) => (h + step + results.length) % results.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const target = results[Math.min(highlighted, results.length - 1)];
+      if (target) go(target.href);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      inputRef.current?.blur();
     }
   };
 
-  const user = session?.user;
-
   return (
     <header className="dash-header">
-      {/* Partie gauche - Titre et retour */}
       <div className="dash-header-left">
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-[#6b625c] hover:text-[#1a1512] transition-colors"
+        {/* Ouvre la barre latérale (tiroir) sous 1024px */}
+        <button
+          type="button"
+          onClick={() => window.dispatchEvent(new Event(TOGGLE_SIDEBAR_EVENT))}
+          className="dash-header-menu"
+          aria-label="Ouvrir le menu"
         >
-          <Home className="w-4 h-4" />
-          <span className="text-sm font-medium hidden sm:inline">Accueil</span>
-        </Link>
-        <span className="text-[#e6e0d6]">|</span>
-        <h1 className="dash-header-title">Tableau de bord</h1>
+          <Menu className="h-5 w-5" />
+        </button>
+
+        <nav aria-label="Fil d'Ariane" className="dash-breadcrumb">
+          <Link href="/dashboard" className="dash-breadcrumb-root">
+            Tableau de bord
+          </Link>
+          {crumbs.map((crumb, i) => {
+            // La vue d'ensemble EST la racine : pas de « Tableau de bord › Vue d'ensemble »
+            if (pathname === "/dashboard") return null;
+            const last = i === crumbs.length - 1;
+            return (
+              <span key={crumb.name} className="dash-breadcrumb-step">
+                <ChevronRight className="h-3.5 w-3.5 shrink-0 text-[#c9c3bb]" aria-hidden="true" />
+                {crumb.href && !last ? (
+                  <Link href={crumb.href} className="dash-breadcrumb-link">
+                    {crumb.name}
+                  </Link>
+                ) : (
+                  <span className="dash-breadcrumb-current" aria-current="page">
+                    {crumb.name}
+                  </span>
+                )}
+              </span>
+            );
+          })}
+        </nav>
       </div>
 
-      {/* Partie droite - Recherche, notifications, profil */}
       <div className="dash-header-right">
-        {/* Barre de recherche */}
-        <form onSubmit={handleSearch} className="dash-header-search hidden md:block">
-          <Search className="dash-header-search-icon w-4 h-4" />
+        <div ref={boxRef} className="dash-header-search">
+          <Search className="dash-header-search-icon h-4 w-4" aria-hidden="true" />
           <input
+            ref={inputRef}
             type="text"
-            placeholder="Rechercher un cours..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            role="combobox"
+            aria-expanded={open}
+            aria-controls="dash-page-search"
+            aria-autocomplete="list"
+            aria-label="Aller à une page du tableau de bord"
+            placeholder="Aller à…"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setHighlighted(0);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={onKeyDown}
           />
-        </form>
+          <kbd className="dash-header-kbd" aria-hidden="true">Ctrl K</kbd>
 
-        {/* Bouton voir le site */}
+          {open && (
+            <div id="dash-page-search" role="listbox" className="dash-header-results dash-scrollbar">
+              {results.length === 0 ? (
+                <p className="px-3 py-2.5 text-sm text-[#97938e]">Aucune page ne correspond.</p>
+              ) : (
+                results.map((page, i) => (
+                  <button
+                    key={page.href}
+                    type="button"
+                    role="option"
+                    aria-selected={i === highlighted}
+                    onMouseEnter={() => setHighlighted(i)}
+                    onClick={() => go(page.href)}
+                    className={cn("dash-menu-item w-full", i === highlighted && "is-highlighted")}
+                  >
+                    <page.icon className="h-4 w-4 shrink-0 text-[#6b625c]" />
+                    <span className="min-w-0 flex-1 truncate text-left">{page.name}</span>
+                    <span className="shrink-0 text-xs text-[#97938e]">{page.group}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          )}
+        </div>
+
         <Link
           href="/"
           target="_blank"
-          className="dash-button dash-button-secondary dash-button-sm hidden sm:flex"
+          rel="noopener noreferrer"
+          className="dash-button dash-button-secondary dash-button-sm"
+          aria-label="Voir le site (nouvel onglet)"
         >
-          <ExternalLink className="w-4 h-4" />
-          Voir le site
+          <ExternalLink className="h-4 w-4" />
+          <span className="hidden sm:inline">Voir le site</span>
         </Link>
-
-        {/* Notifications */}
-        <button className="relative p-2 text-[#6b625c] hover:text-[#1a1512] hover:bg-[#f5efe3] rounded-lg transition-colors">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#ff6a1a] rounded-full"></span>
-        </button>
-
-        {/* Menu utilisateur avec ProfileAvatar */}
-        <div className="relative">
-          <button
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-[#f5efe3] transition-colors"
-          >
-            <ProfileAvatar
-              username={user?.username || "Utilisateur"}
-              image={user?.image || undefined}
-              userId={user?.id}
-              role={user?.role}
-              size="small"
-              showPoints={false}
-            />
-            <div className="hidden sm:block text-left">
-              <p className="text-sm font-medium text-[#1a1512] leading-tight">
-                {user?.username || "Utilisateur"}
-              </p>
-              <p className="text-xs text-[#97938e] leading-tight">
-                {user?.role || "Rédacteur"}
-              </p>
-            </div>
-            <ChevronDown className="w-4 h-4 text-[#6b625c]" />
-          </button>
-
-          {/* Dropdown menu */}
-          {showUserMenu && (
-            <>
-              <div
-                className="fixed inset-0 z-40"
-                onClick={() => setShowUserMenu(false)}
-              />
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-[#e6e0d6] rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="p-4 border-b border-[#e6e0d6] bg-[#f5efe3]">
-                  <div className="flex items-center gap-3">
-                    <ProfileAvatar
-                      username={user?.username || "Utilisateur"}
-                      image={user?.image || undefined}
-                      userId={user?.id}
-                      role={user?.role}
-                      size="small"
-                      showPoints={false}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-[#1a1512] truncate">
-                        {user?.username || "Utilisateur"}
-                      </p>
-                      <p className="text-xs text-[#97938e] truncate">
-                        {user?.email || ""}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="p-1">
-                  <Link
-                    href={`/compte/${user?.id}`}
-                    className="flex items-center gap-2 px-3 py-2 text-sm text-[#1a1512] hover:bg-[#f5efe3] rounded-lg transition-colors"
-                  >
-                    <User className="w-4 h-4 text-[#6b625c]" />
-                    Mon profil
-                  </Link>
-                  <button
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    Déconnexion
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
-        </div>
       </div>
     </header>
   );

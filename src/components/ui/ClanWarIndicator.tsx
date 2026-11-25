@@ -71,7 +71,7 @@ export default function ClanWarIndicator({ userId }: { userId?: string }) {
   const toggle = () => {
     if (!open && btnRef.current) {
       const r = btnRef.current.getBoundingClientRect();
-      setPos({ top: r.bottom + 8, right: window.innerWidth - r.right });
+      setPos({ top: r.bottom + 8, right: Math.max(12, Math.min(window.innerWidth - r.right, window.innerWidth - 300)) });
     }
     setOpen(!open);
   };
@@ -83,17 +83,18 @@ export default function ClanWarIndicator({ userId }: { userId?: string }) {
         onClick={toggle}
         title={`Guerre des Clans · Jour ${status.day}/7 · ${status.clanName} ${status.daysWon}-${status.rivalDaysWon} ${status.rivalName ?? ''}`}
         aria-label="Guerre des Clans"
-        className="relative flex items-center gap-1 rounded-lg px-2 py-1 transition-colors hover:bg-orange-50"
+        aria-expanded={open}
+        className="wk-nav-btn !gap-1 !px-2"
       >
         <Swords
           className={`h-5 w-5 ${winning ? 'text-emerald-600' : losing ? 'text-red-500' : 'text-orange-500'}`}
         />
-        <span className="text-sm font-bold tabular-nums text-gray-700">
+        <span className="text-sm font-bold tabular-nums text-[var(--wk-ink)]">
           {status.daysWon}-{status.rivalDaysWon}
         </span>
         {status.me.wounded && (
           <span
-            className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full bg-rose-500 ring-2 ring-white"
+            className="absolute right-1 top-1 h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"
             title="Tu es blessé"
           />
         )}
@@ -102,7 +103,7 @@ export default function ClanWarIndicator({ userId }: { userId?: string }) {
       {open && (
         <div
           ref={panelRef}
-          className="fixed z-[200] w-72 rounded-xl border border-gray-100 bg-white p-4 shadow-xl"
+          className="wk-pop fixed z-[200] w-[min(18rem,calc(100vw-1.5rem))] rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white p-4 shadow-[0_18px_48px_rgba(26,21,18,0.14)]"
           style={{ top: pos.top, right: pos.right }}
         >
           <div className="mb-3">

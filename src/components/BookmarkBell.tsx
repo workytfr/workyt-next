@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { Bookmark, ChevronLeft, ChevronRight, FileText, MessageSquare, BookOpen, Dumbbell } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/Badge";
+import { FavoriIcon } from "@/components/ui/WkIcons";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
 import Link from "next/link";
@@ -98,7 +98,7 @@ export default function BookmarkBell() {
                 const rect = btnRef.current.getBoundingClientRect();
                 setPanelPos({
                     top: rect.bottom + 8,
-                    right: window.innerWidth - rect.right,
+                    right: Math.max(12, Math.min(window.innerWidth - rect.right, window.innerWidth - 332)),
                 });
             }
             fetchBookmarks(1);
@@ -142,31 +142,29 @@ export default function BookmarkBell() {
 
     return (
         <div ref={bellRef}>
-            <Button
+            {/* Pas de compteur sur le bouton : le total des favoris n'est pas
+                une nouvelle, il encombrait la barre. Il reste dans le panneau. */}
+            <button
                 ref={btnRef}
-                variant="ghost"
-                size="sm"
-                className="relative"
+                aria-expanded={isOpen}
+                aria-label="Mes favoris"
+                title="Mes favoris"
+                className="wk-nav-btn"
                 onClick={handleOpen}
             >
-                <Bookmark className="h-5 w-5" />
-                {totalCount > 0 && (
-                    <Badge
-                        variant="secondary"
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs bg-orange-100 text-orange-600"
-                    >
-                        {totalCount > 99 ? "99+" : totalCount}
-                    </Badge>
-                )}
-            </Button>
+                <FavoriIcon className="h-5 w-5" />
+            </button>
 
             {isOpen && (
                 <div
-                    className="fixed w-80 bg-white border border-gray-100 rounded-xl shadow-xl z-[200]"
+                    className="wk-pop fixed z-[200] w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white shadow-[0_18px_48px_rgba(26,21,18,0.14)]"
                     style={{ top: panelPos.top, right: panelPos.right }}
                 >
                     <div className="flex items-center justify-between p-3 border-b border-gray-100">
-                        <h3 className="font-semibold text-sm">Mes favoris</h3>
+                        <h3 className="font-semibold text-sm">
+                            Mes favoris
+                            {totalCount > 0 && <span className="ml-1.5 font-medium tabular-nums text-gray-400">{totalCount}</span>}
+                        </h3>
                         <Link
                             href="/fiches/favoris"
                             onClick={() => setIsOpen(false)}

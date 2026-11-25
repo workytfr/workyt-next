@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs><clipPath id="mark-clip"><circle cx="100.0" cy="100.0" r="90.0"/></clipPath></defs>
+  <circle cx="100.0" cy="100.0" r="90.0" fill="#24103A"/>
+  <g clip-path="url(#mark-clip)">
+    <polygon points="0.00,100.00 0.00,200.00 146.00,200.00 146.00,136.00 190.00,100.00" fill="#E32C0C"/>
+    <polygon points="10.00,100.00 60.00,64.00 86.00,11.10 114.00,52.00 190.00,100.00" fill="#F5610C"/>
+    <polygon points="86.32,26.10 72.80,53.62 100.88,47.38" fill="#FF9A3C"/>
+    <polygon points="112.00,100.00 190.00,100.00 146.00,136.00" fill="#FFE7CF"/>
+    <polygon points="146.00,136.00 146.00,200.00 106.00,200.00" fill="#FFE7CF"/>
+    <polygon points="164.00,83.58 190.00,100.00 164.00,121.27" fill="#24103A"/>
+  </g>
+  <circle cx="128.0" cy="80.0" r="11.0" fill="#FFE7CF"/>
+  <circle cx="128.0" cy="80.0" r="5.5" fill="#24103A"/></svg>

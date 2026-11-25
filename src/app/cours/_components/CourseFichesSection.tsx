@@ -7,12 +7,18 @@ import Link from "next/link";
 import { Plus, ChevronRight, Heart, X, Upload, Loader2, Lock } from "lucide-react";
 import { FicheIcon } from "@/components/ui/WkIcons";
 import { motion } from "framer-motion";
-import MDEditor from "@uiw/react-md-editor/nohighlight";
 import TimeAgo from "@/components/ui/TimeAgo";
 import { buildIdSlug } from "@/utils/slugify";
 import ProfileAvatar from "@/components/ui/profile";
 import { canSubmitFicheForCourse, getFicheSubmissionBlockedReason } from "@/data/educationData";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/Tooltip";
+import dynamic from "next/dynamic";
+
+// Éditeur Markdown au style Workyt, chargé à la demande (Tiptap + KaTeX)
+const MarkdownEditor = dynamic(() => import("@/components/ui/MarkdownEditor"), {
+  ssr: false,
+  loading: () => <div className="h-[203px] animate-pulse rounded-[14px] border border-[#e6e0d6] bg-white" />,
+});
 
 interface FichePreview {
     _id: string;
@@ -337,14 +343,13 @@ function CreateFicheModal({
                         <label className="block text-sm font-medium text-[#1a1512] mb-1.5">
                             Contenu (optionnel)
                         </label>
-                        <div data-color-mode="light">
-                            <MDEditor
-                                value={content}
-                                onChange={setContent}
-                                height={200}
-                                highlightEnable={false}
-                            />
-                        </div>
+                        <MarkdownEditor
+                            value={content ?? ""}
+                            onChange={setContent}
+                            placeholder="Écris ta fiche ici…"
+                            ariaLabel="Contenu de la fiche"
+                            minHeight={180}
+                        />
                     </div>
 
                     {/* Matière et niveau */}
