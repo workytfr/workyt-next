@@ -6,13 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import Image from "next/image";
 import { educationData } from "@/data/educationData";
-import MDEditor from "@uiw/react-md-editor/nohighlight";
 import "katex/dist/katex.min.css";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
 import { useSession, signIn } from "next-auth/react";
 import SectionManager from "./SectionManager";
 import { UploadButton } from "@/utils/uploadthing";
+import dynamic from "next/dynamic";
+
+// Éditeur Markdown au style Workyt, chargé à la demande (Tiptap + KaTeX)
+const MarkdownEditor = dynamic(() => import("@/components/ui/MarkdownEditor"), {
+  ssr: false,
+  loading: () => <div className="h-[203px] animate-pulse rounded-[14px] border border-[#e6e0d6] bg-white" />,
+});
 
 interface CourseFormProps {
     course?: any;
@@ -124,20 +128,12 @@ export default function CourseForm({ course, onSuccess, onError }: CourseFormPro
             />
 
             <label className="block text-sm font-medium text-gray-700">Description du cours</label>
-            <div className="border rounded-md" data-color-mode="light">
-                <MDEditor
-                    value={formData.description}
-                    onChange={(value) => setFormData({ ...formData, description: value || "" })}
-                    previewOptions={{
-                        remarkPlugins: [remarkMath],
-                        rehypePlugins: [rehypeKatex],
-                    }}
-                    height={200}
-                    onError={(error) => {
-                        console.error("Erreur de l'éditeur MD:", error);
-                    }}
-                />
-            </div>
+            <MarkdownEditor
+                value={formData.description}
+                onChange={(value) => setFormData({ ...formData, description: value })}
+                ariaLabel="Description du cours"
+                minHeight={160}
+            />
 
             <label className="block text-sm font-medium text-gray-700">Niveau scolaire</label>
             <Select onValueChange={(value) => setFormData({ ...formData, niveau: value })} value={formData.niveau}>

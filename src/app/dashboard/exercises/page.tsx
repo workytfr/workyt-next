@@ -4,7 +4,7 @@ import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect, useCallback, Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
 import { Pencil, Trash2, Plus, Eye, Loader2, FileText } from "lucide-react";
 import {
@@ -181,6 +181,7 @@ export default function ExercisePage() {
                                 <DialogTitle>
                                     {selectedExercise ? "Modifier l'exercice" : "Ajouter un nouvel exercice"}
                                 </DialogTitle>
+                            <DialogDescription className="sr-only">Renseigne le cours, l'énoncé et la correction de l'exercice.</DialogDescription>
                             </DialogHeader>
                             <ExerciseForm
                                 exercise={selectedExercise}

@@ -24,14 +24,17 @@ import CreationGuide from "./_components/CreationGuide";
 import { educationData } from "@/data/educationData";
 import { UploadButton } from "@/utils/uploadthing";
 import Image from "next/image";
-import MDEditor from "@uiw/react-md-editor/nohighlight";
-import "@uiw/react-md-editor/markdown-editor.css";
-import "katex/dist/katex.min.css";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
 import RichTextEditor from "@/components/ui/RichTextEditorClientWrapper";
 import RequiredMark from "@/components/ui/RequiredMark";
 import "../../styles/dashboard-theme.css";
+import CourseDescription from "@/app/cours/_components/CourseDescription";
+import dynamic from "next/dynamic";
+
+// Éditeur Markdown au style Workyt, chargé à la demande (Tiptap + KaTeX)
+const MarkdownEditor = dynamic(() => import("@/components/ui/MarkdownEditor"), {
+  ssr: false,
+  loading: () => <div className="h-[203px] animate-pulse rounded-[14px] border border-[#e6e0d6] bg-white" />,
+});
 
 // Types
 interface Section {
@@ -472,19 +475,13 @@ export default function CreateCoursePage() {
 
             <div className="dash-form-group">
               <label className="dash-label">Description <RequiredMark /></label>
-              <div className="border border-[#e6e0d6] rounded-lg overflow-hidden" data-color-mode="light">
-                <MDEditor
-                  value={courseData.description}
-                  onChange={(value) =>
-                    setCourseData({ ...courseData, description: value || "" })
-                  }
-                  height={320}
-                  previewOptions={{
-                    remarkPlugins: [remarkMath],
-                    rehypePlugins: [rehypeKatex],
-                  }}
-                />
-              </div>
+              <MarkdownEditor
+                value={courseData.description}
+                onChange={(value) => setCourseData({ ...courseData, description: value })}
+                placeholder="Ex. : Comprendre ce qu'est une fonction affine, savoir la représenter et l'utiliser."
+                ariaLabel="Description du cours"
+                minHeight={180}
+              />
               <p className="text-sm text-[#97938e] mt-2">
                 Ce que l&apos;élève saura faire à la fin du cours, en une ou deux phrases.
               </p>
@@ -788,13 +785,7 @@ export default function CreateCoursePage() {
                   {courseData.title}
                 </h2>
                 {courseData.description && (
-                  <div className="prose prose-sm max-w-none text-[#6b625c] mb-6" data-color-mode="light">
-                    <MDEditor.Markdown
-                      source={courseData.description}
-                      remarkPlugins={[remarkMath]}
-                      rehypePlugins={[rehypeKatex]}
-                    />
-                  </div>
+                  <CourseDescription content={courseData.description} className="!prose-sm mb-6 !text-[#6b625c]" />
                 )}
 
                 <div className="border-t border-[#e6e0d6] pt-4">

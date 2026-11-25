@@ -9,7 +9,10 @@ import { ensureMathlive, isMathliveLoaded } from "@/lib/ensureMathlive";
 function MathView({ node, updateAttributes, selected }: NodeViewProps) {
     const inline = node.attrs.inline as boolean;
     const latex = (node.attrs.latex as string) || "";
-    const [editing, setEditing] = useState(false);
+    // Formule tout juste insérée (encore vide) : on ouvre la saisie d'emblée.
+    // Sinon elle s'affichait comme un carré vide et ce qu'on tapait partait
+    // en texte normal, à côté.
+    const [editing, setEditing] = useState(latex === "");
     const [ready, setReady] = useState(isMathliveLoaded);
     const fieldRef = useRef<HTMLElement | null>(null);
 

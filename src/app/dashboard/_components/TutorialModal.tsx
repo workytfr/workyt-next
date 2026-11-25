@@ -1278,9 +1278,9 @@ const TRACKS: TTrack[] = [
             },
             {
                 icon: <FileText className="w-9 h-9 text-orange-500" />,
-                title: "Rédiger l'énoncé avec MDEditor",
-                desc: "L'éditeur d'exercice est un MDEditor (Markdown + LaTeX). La barre d'outils offre titres, gras/italique, listes, liens, images et code. Basculez entre l'onglet Éditer et l'onglet Aperçu pour voir le rendu final.",
-                tip: "Utilisez $formule$ pour les formules inline et $$formule$$ pour les blocs centrés — ils sont rendus en LaTeX dans l'aperçu.",
+                title: "Rédiger l'énoncé",
+                desc: "Tu écris directement le rendu final : pas de code à taper, pas d'onglet d'aperçu. La barre d'outils offre titres, gras, italique, listes, liens, tableaux et code.",
+                tip: "Le bouton Σ insère une formule dans le texte, le bouton Σ encadré une formule centrée. Clique sur une formule pour la modifier.",
                 demo: <ExerciceEnoncéDemo />,
             },
             {
