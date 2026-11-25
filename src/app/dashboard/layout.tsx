@@ -47,7 +47,7 @@ export default async function DashboardLayout({
       {/* Contenu principal */}
       <div className="dash-main">
         <DashboardHeader />
-        <main className="pt-6">
+        <main className="dash-content">
           {children}
         </main>
       </div>

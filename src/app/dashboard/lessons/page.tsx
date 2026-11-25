@@ -4,7 +4,7 @@ import { hasRole } from "@/lib/userRoles";
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/Table";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/Badge";
 import { Pencil, Trash2, Plus, Loader2, Download, BookOpen, FileText, Video, Users, Calendar, Volume2, VolumeX } from "lucide-react";
 import { useSession } from "next-auth/react";
@@ -357,6 +357,10 @@ export default function LessonsPage() {
                                 <DialogTitle>
                                     {selectedLesson ? "Modifier la leçon" : "Ajouter une nouvelle leçon"}
                                 </DialogTitle>
+                                {/* Lue par les lecteurs d'écran ; sans elle, Radix signale un dialogue sans description */}
+                                <DialogDescription className="sr-only">
+                                    Choisis le cours et la section, écris la leçon, puis enregistre.
+                                </DialogDescription>
                             </DialogHeader>
                             <LessonForm
                                 lesson={selectedLesson}

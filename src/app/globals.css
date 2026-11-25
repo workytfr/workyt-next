@@ -1871,160 +1871,6 @@ html, body {
   100% { transform: translateY(-7px) translateX(-2px) scale(0); opacity: 0; }
 }
 
-/* ==========================================
-   @uiw/react-md-editor — Force light mode + fix cursor alignment
-   Placé EN FIN de fichier pour garantir la priorité CSS maximale.
-   ========================================== */
-
-/* 1. Force light mode via CSS variables */
-.w-md-editor,
-.w-md-editor[data-color-mode="dark"],
-[data-color-mode="dark"] .w-md-editor {
-  --color-canvas-default: #ffffff !important;
-  --color-canvas-subtle: #f6f8fa !important;
-  --color-border-default: #d0d7de !important;
-  --color-border-muted: #d8dee4 !important;
-  --color-fg-default: #24292f !important;
-  --color-fg-muted: #57606a !important;
-  --color-neutral-muted: rgba(175, 184, 193, 0.2) !important;
-  --color-accent-fg: #0969da !important;
-  --color-accent-emphasis: #0969da !important;
-  --color-attention-subtle: #fff8c5 !important;
-  --color-danger-fg: #cf222e !important;
-  --color-prettylights-syntax-comment: #6e7781 !important;
-  --color-prettylights-syntax-constant: #0550ae !important;
-  --color-prettylights-syntax-entity: #8250df !important;
-  --color-prettylights-syntax-storage-modifier-import: #24292f !important;
-  --color-prettylights-syntax-entity-tag: #116329 !important;
-  --color-prettylights-syntax-keyword: #cf222e !important;
-  --color-prettylights-syntax-string: #0a3069 !important;
-  --color-prettylights-syntax-variable: #953800 !important;
-  --color-prettylights-syntax-markup-heading: #0550ae !important;
-  color: #24292f !important;
-  background-color: #ffffff !important;
-}
-
-/* 2. Toolbar light */
-.w-md-editor .w-md-editor-toolbar,
-.w-md-editor-toolbar {
-  background-color: #f6f8fa !important;
-  border-color: #d0d7de !important;
-}
-.w-md-editor-toolbar li > button,
-.w-md-editor .w-md-editor-toolbar li > button {
-  color: #57606a !important;
-}
-
-/* 3. Preview pane light — both .w-md-editor-preview AND .wmde-markdown */
-.w-md-editor-preview,
-.w-md-editor .w-md-editor-preview,
-.wmde-markdown,
-.w-md-editor .wmde-markdown,
-.wmde-markdown-color,
-.w-md-editor .wmde-markdown-color {
-  background-color: #ffffff !important;
-  color: #24292f !important;
-}
-.wmde-markdown h1,
-.wmde-markdown h2,
-.wmde-markdown h3,
-.wmde-markdown h4,
-.wmde-markdown h5,
-.wmde-markdown h6,
-.wmde-markdown p,
-.wmde-markdown li,
-.wmde-markdown td,
-.wmde-markdown th,
-.wmde-markdown blockquote,
-.wmde-markdown a {
-  color: #24292f !important;
-}
-.wmde-markdown code {
-  background-color: rgba(175, 184, 193, 0.2) !important;
-  color: #24292f !important;
-}
-.wmde-markdown pre {
-  background-color: #f6f8fa !important;
-}
-.wmde-markdown pre code {
-  color: #24292f !important;
-  background-color: transparent !important;
-}
-.wmde-markdown hr {
-  border-color: #d0d7de !important;
-  background-color: #d0d7de !important;
-}
-.wmde-markdown table tr {
-  background-color: #ffffff !important;
-  border-color: #d0d7de !important;
-}
-.wmde-markdown table tr:nth-child(2n) {
-  background-color: #f6f8fa !important;
-}
-.wmde-markdown table th,
-.wmde-markdown table td {
-  border-color: #d0d7de !important;
-}
-.wmde-markdown blockquote {
-  border-left-color: #d0d7de !important;
-}
-
-/* 4. Override prefers-color-scheme dark for the editor */
-@media (prefers-color-scheme: dark) {
-  .w-md-editor,
-  .w-md-editor[data-color-mode="dark"],
-  [data-color-mode="dark"] .w-md-editor {
-    --color-canvas-default: #ffffff !important;
-    --color-canvas-subtle: #f6f8fa !important;
-    --color-border-default: #d0d7de !important;
-    --color-border-muted: #d8dee4 !important;
-    --color-fg-default: #24292f !important;
-    --color-fg-muted: #57606a !important;
-    --color-neutral-muted: rgba(175, 184, 193, 0.2) !important;
-    color: #24292f !important;
-    background-color: #ffffff !important;
-  }
-  .w-md-editor-preview,
-  .wmde-markdown,
-  .wmde-markdown-color {
-    background-color: #ffffff !important;
-    color: #24292f !important;
-  }
-}
-
-/* 5. Fix cursor/text alignment — textarea and pre/code overlay MUST share
-   the exact same font, size, line-height. The textarea selector is made
-   highly specific to beat the @layer base { textarea { font-family: ... } } rule. */
-.w-md-editor .w-md-editor-text-pre,
-.w-md-editor .w-md-editor-text-input,
-.w-md-editor .w-md-editor-text > .w-md-editor-text-pre,
-.w-md-editor .w-md-editor-text-pre > code,
-.w-md-editor textarea.w-md-editor-text-input,
-.w-md-editor-text textarea,
-.w-md-editor textarea {
-  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace !important;
-  font-size: 14px !important;
-  line-height: 1.6 !important;
-  letter-spacing: normal !important;
-  font-weight: 400 !important;
-  font-style: normal !important;
-  font-variant: normal !important;
-  text-transform: none !important;
-  word-spacing: normal !important;
-  text-indent: 0 !important;
-  -webkit-text-fill-color: inherit !important;
-}
-
-/* 6. Content area light background */
-.w-md-editor-content,
-.w-md-editor .w-md-editor-content {
-  background-color: #ffffff !important;
-}
-.w-md-editor-input,
-.w-md-editor .w-md-editor-input {
-  background-color: #ffffff !important;
-  color: #24292f !important;
-}
 /* ===== Plateau de l'Aventure ===== */
 
 /* Lueur pulsante de la case du jour */
@@ -2170,3 +2016,92 @@ html, body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── Barre de navigation ───────────────────────────────────────────────
+   Un seul gabarit pour tout ce qui vit dans la barre (liens, recherche,
+   série, champignons, guerre, favoris, notifications) : même hauteur, même
+   rayon, même survol. Avant, chaque indicateur avait le sien (rounded-lg,
+   hover gris, Button shadcn…) et la barre se lisait comme un patchwork. */
+.wk-nav-btn {
+  position: relative;
+  display: inline-flex;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.875rem;
+  padding: 0 0.625rem;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: rgba(26, 21, 18, 0.62);
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.wk-nav-btn:active { transform: scale(0.96); }
+.wk-nav-btn:focus-visible {
+  outline: 2px solid rgba(255, 106, 26, 0.55);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .wk-nav-btn:hover {
+    background-color: var(--wk-paper);
+    color: var(--wk-ink);
+  }
+}
+.wk-nav-btn[aria-current="page"],
+.wk-nav-btn[aria-expanded="true"] {
+  background-color: var(--wk-paper-2);
+  color: var(--wk-ink);
+}
+/* L'icône du lien actif prend la couleur de la marque */
+.wk-nav-btn[aria-current="page"] > svg:first-child { color: var(--wk-accent); }
+
+/* Pastille de compteur (notifications) */
+.wk-nav-count {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  display: flex;
+  height: 1.125rem;
+  min-width: 1.125rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--wk-accent);
+  padding: 0 0.3rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  box-shadow: 0 0 0 2px #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Séparateur court entre deux groupes de la barre */
+.wk-nav-sep {
+  height: 1.5rem;
+  width: 1px;
+  flex-shrink: 0;
+  background: rgba(26, 21, 18, 0.1);
+}
+
+/* Menus déroulants de la barre : ils naissent de leur déclencheur.
+   Keyframes et non transition : ils sont démontés à la fermeture, et la
+   sortie est volontairement instantanée (on veut retrouver la page). */
+.wk-pop {
+  transform-origin: var(--wk-origin, top right);
+  animation: wk-pop-in 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes wk-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-pop { animation-name: wk-fade-in; }
+  .wk-nav-btn:active { transform: none; }
+}
+@keyframes wk-fade-in { from { opacity: 0; } }

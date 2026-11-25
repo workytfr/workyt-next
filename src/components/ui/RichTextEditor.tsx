@@ -25,6 +25,7 @@ import '@/app/cours/_components/styles/notion-theme.css';
 import { CustomBlock } from './CustomBlock';
 import { SlashCommand } from './editor/SlashCommand';
 import MenuBar from './MenuBarEditor';
+import './editor/editor-toolbar.css';
 
 interface RichTextEditorProps {
     content: string;
@@ -61,6 +62,11 @@ export default function RichTextEditor({ content, onChange, fullHeight = false, 
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
+                // Remplacés plus bas par Heading (6 niveaux) et CodeBlockLowlight :
+                // les laisser actifs ici les déclarait deux fois (avertissement
+                // Tiptap « Duplicate extension names »).
+                heading: false,
+                codeBlock: false,
                 bulletList: { HTMLAttributes: { class: 'list-disc ml-3' } },
                 orderedList: { HTMLAttributes: { class: 'list-decimal ml-3' } },
             }),
@@ -96,8 +102,18 @@ export default function RichTextEditor({ content, onChange, fullHeight = false, 
                 includeChildren: true,
                 placeholder: ({ editor, node, pos }) => {
                     if (node.type.name === 'heading') return 'Titre';
-                    const parent = editor.state.doc.resolve(pos).parent;
-                    if (parent.type.name === 'customBlock') return 'Écris le contenu du bloc…';
+                    // `pos` est une position du NOUVEAU document, alors que
+                    // `editor.state` est encore l'ancien pendant la transaction :
+                    // insérer un tableau depuis la barre levait « Position out
+                    // of range » et rien n'était inséré.
+                    const doc = editor.state.doc;
+                    if (pos <= doc.content.size) {
+                        try {
+                            if (doc.resolve(pos).parent.type.name === 'customBlock') return 'Écris le contenu du bloc…';
+                        } catch {
+                            /* position entre deux états : texte d'aide par défaut */
+                        }
+                    }
                     return 'Écris ici, ou tape « / » pour insérer un bloc';
                 },
             }),
@@ -109,7 +125,7 @@ export default function RichTextEditor({ content, onChange, fullHeight = false, 
                 // Mêmes classes que la leçon publiée (LessonReader) : ce qu'on écrit ressemble à la leçon publiée
                 class: fullHeight
                     ? 'ProseMirror wk-editor-page prose prose-lg max-w-none notion-lesson-content outline-none'
-                    : 'ProseMirror wk-editor-compact prose prose-sm max-w-none min-h-[156px] border rounded-md bg-white py-2 px-3',
+                    : 'ProseMirror wk-editor-compact prose prose-sm max-w-none min-h-[156px] px-4 py-3 outline-none',
             },
         },
         onUpdate: ({ editor }) => {
@@ -269,12 +285,12 @@ export default function RichTextEditor({ content, onChange, fullHeight = false, 
 
             {fullHeight ? (
                 <div className="flex flex-col h-full min-h-0">
-                    <div className="sticky top-0 z-10 bg-[#fdfaf4] border-b border-[#e6e0d6] shrink-0 flex items-start gap-2 pr-2">
+                    <div className="sticky top-0 z-10 flex shrink-0 items-start gap-2 border-b border-[#e6e0d6] bg-[#fdfaf4] px-2">
                         <div className="flex-1 min-w-0">
                             <MenuBar editor={editor} hideImage={hideImage} />
                         </div>
                         {/* Pleine largeur pour écrire ; largeur élève pour vérifier les retours à la ligne */}
-                        <div className="mt-1 hidden md:flex shrink-0 rounded-full border border-[#e6e0d6] bg-white p-0.5 text-xs" role="group" aria-label="Largeur de la page">
+                        <div className="mt-1.5 hidden shrink-0 rounded-full border border-[#e6e0d6] bg-white p-0.5 text-xs lg:flex" role="group" aria-label="Largeur de la page">
                             {([
                                 { value: true, label: 'Pleine largeur', icon: <Maximize2 className="size-3.5" /> },
                                 { value: false, label: 'Largeur élève', icon: <BookOpen className="size-3.5" /> },
@@ -284,12 +300,13 @@ export default function RichTextEditor({ content, onChange, fullHeight = false, 
                                     type="button"
                                     onClick={() => setWide(opt.value)}
                                     aria-pressed={wide === opt.value}
-                                    className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-colors ${
+                                    title={opt.label}
+                                    className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 font-medium transition-colors ${
                                         wide === opt.value ? 'bg-[#1a1512] text-[#fdfaf4]' : 'text-[#6b625c] hover:text-[#1a1512]'
                                     }`}
                                 >
                                     {opt.icon}
-                                    {opt.label}
+                                    <span className="hidden xl:inline">{opt.label}</span>
                                 </button>
                             ))}
                         </div>
@@ -314,7 +331,7 @@ export default function RichTextEditor({ content, onChange, fullHeight = false, 
                     </div>
                 </div>
             ) : (
-                <div>
+                <div className="wk-editor-field">
                     <MenuBar editor={editor} hideImage={hideImage} />
                     <EditorContent editor={editor} />
                 </div>

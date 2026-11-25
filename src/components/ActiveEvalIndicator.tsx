@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Clock } from "lucide-react";
+import { ChronometreIcon } from "@/components/ui/WkIcons";
 
 interface ActiveEval {
     drawId: string;
@@ -17,7 +17,7 @@ interface ActiveEval {
  * Visible uniquement si l'élève a une éval chronométrée en cours → permet de la
  * reprendre depuis n'importe quelle page, sans repasser par le cours.
  */
-export default function ActiveEvalIndicator() {
+export default function ActiveEvalIndicator({ onVisibleChange }: { onVisibleChange?: (visible: boolean) => void } = {}) {
     const { data: session } = useSession();
     const pathname = usePathname();
     const [active, setActive] = useState<ActiveEval | null>(null);
@@ -58,7 +58,14 @@ export default function ActiveEvalIndicator() {
     }, [active]);
 
     // Inutile sur la page de l'épreuve elle-même.
-    if (!active || remaining <= 0 || pathname?.startsWith(`/evaluation/${active.drawId}`)) return null;
+    const visible = !!active && remaining > 0 && !pathname?.startsWith(`/evaluation/${active.drawId}`);
+
+    // La barre mobile fait de la place au chrono (cf. StatusCluster)
+    useEffect(() => {
+        onVisibleChange?.(visible);
+    }, [visible, onVisibleChange]);
+
+    if (!visible || !active) return null;
 
     const m = Math.floor(remaining / 60000);
     const s = Math.floor((remaining % 60000) / 1000);
@@ -67,18 +74,18 @@ export default function ActiveEvalIndicator() {
     return (
         <Link
             href={`/evaluation/${active.drawId}`}
-            title={`Évaluation en cours : ${active.title}`}
-            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors ${
+            title={`Évaluation en cours : ${active.title} — reprendre`}
+            aria-label={`Reprendre l'évaluation ${active.title}`}
+            className={`flex h-9 shrink-0 items-center gap-1 rounded-xl px-2 text-xs font-semibold sm:gap-1.5 sm:px-2.5 sm:text-sm transition-[background-color,transform] duration-150 active:scale-[0.96] ${
                 critical
                     ? "bg-red-100 text-red-700 hover:bg-red-200 animate-pulse"
                     : "bg-orange-100 text-orange-700 hover:bg-orange-200"
             }`}
         >
-            <Clock className="h-3.5 w-3.5 shrink-0" />
+            <ChronometreIcon className="h-4 w-4 shrink-0" />
             <span className="font-mono tabular-nums">
                 {String(m).padStart(2, "0")}:{String(s).padStart(2, "0")}
             </span>
-            <span className="hidden sm:inline">· Reprendre</span>
         </Link>
     );
 }

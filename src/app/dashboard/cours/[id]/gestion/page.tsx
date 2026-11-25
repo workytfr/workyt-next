@@ -29,11 +29,7 @@ import {
   Users,
   Search,
 } from "lucide-react";
-import MDEditor from "@uiw/react-md-editor/nohighlight";
-import "@uiw/react-md-editor/markdown-editor.css";
 import "katex/dist/katex.min.css";
-import rehypeKatex from "rehype-katex";
-import remarkMath from "remark-math";
 import {
   DndContext,
   closestCenter,
@@ -71,6 +67,13 @@ import { useConfirm } from "@/app/dashboard/_components/useConfirm";
 import { getRoleIconPath } from "@/lib/roleIcon";
 import { educationData } from "@/data/educationData";
 import "../../../styles/dashboard-theme.css";
+import dynamic from "next/dynamic";
+
+// Éditeur Markdown au style Workyt, chargé à la demande (Tiptap + KaTeX)
+const MarkdownEditor = dynamic(() => import("@/components/ui/MarkdownEditor"), {
+  ssr: false,
+  loading: () => <div className="h-[203px] animate-pulse rounded-[14px] border border-[#e6e0d6] bg-white" />,
+});
 
 // Types
 interface Course {
@@ -1201,19 +1204,12 @@ export default function CourseManagementPage() {
               </div>
               <div>
                 <label className="dash-label">Description</label>
-                <div data-color-mode="light">
-                <MDEditor
+                <MarkdownEditor
                   value={editedCourse.description}
-                  onChange={(value) =>
-                    setEditedCourse({ ...editedCourse, description: value || "" })
-                  }
-                  height={150}
-                  previewOptions={{
-                    remarkPlugins: [remarkMath],
-                    rehypePlugins: [rehypeKatex],
-                  }}
+                  onChange={(value) => setEditedCourse({ ...editedCourse, description: value })}
+                  ariaLabel="Description du cours"
+                  minHeight={140}
                 />
-                </div>
               </div>
 
               {/* Image de couverture */}
