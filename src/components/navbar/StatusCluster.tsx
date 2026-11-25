@@ -2,34 +2,40 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { TrendingUp, Sparkles } from "lucide-react";
+import useSWR from "swr";
 import StreakIndicator from "@/components/ui/StreakIndicator";
 import MushroomIndicator from "@/components/ui/MushroomIndicator";
 import ClanWarIndicator from "@/components/ui/ClanWarIndicator";
 import ActiveEvalIndicator from "@/components/ActiveEvalIndicator";
+import { ProgressionIcon } from "@/components/ui/WkIcons";
+
+const fetcher = (url: string) => fetch(url).then((r) => r.json());
 
 /**
- * Couche gamifiée de la navbar — une seule barre.
+ * Couche gamifiée de la navbar — tout reste dans la barre.
  *
- * Elle vivait avant dans le conteneur `hidden lg:flex` : sous 1024px les
- * indicateurs n'étaient pas masqués, ils n'existaient pas dans le DOM, et le
- * drawer ne les reprenait pas. Le différenciateur du produit était donc
- * invisible pour la majeure partie du trafic.
+ *   — à partir de `md`, les indicateurs sont alignés en clair ;
+ *   — en dessous, un seul bouton ouvre un panneau qui les contient : une
+ *     cible tactile au lieu de quatre. À 390px, la guerre des clans en
+ *     clair poussait le bouton du menu hors de l'écran ; elle rejoint donc
+ *     le panneau, et une pastille sur le bouton signale qu'elle est en cours.
  *
- * La corriger par une deuxième rangée sous la pilule se lisait comme deux
- * navbars superposées. Ici tout reste dans la pilule :
- *   — au-dessus de `md`, les indicateurs sont alignés en clair ;
- *   — en dessous, un seul bouton compact ouvre un panneau qui les contient,
- *     ce qui coûte une cible tactile au lieu de quatre.
- *
- * La guerre des clans échappe volontairement à ce repli : c'est une
- * information à durée limitée, elle reste visible sans interaction. Le
- * composant ne rend rien hors période, elle ne coûte donc aucune place le
- * reste du temps.
+ * L'évaluation en cours échappe au repli : c'est un compte à rebours, il
+ * doit rester visible sans interaction. Le composant ne rend rien hors
+ * épreuve, il ne coûte donc aucune place le reste du temps.
  */
 export default function StatusCluster({ userId }: { userId: string }) {
     const [open, setOpen] = useState(false);
+    // Épreuve en cours : sous sm, le chrono prend la place du bouton
+    const [evalOn, setEvalOn] = useState(false);
     const panelRef = useRef<HTMLDivElement>(null);
+
+    // Même clé que ClanWarIndicator : SWR déduplique, aucune requête en plus.
+    const { data: clan } = useSWR(userId ? "/api/clan/status" : null, fetcher, {
+        refreshInterval: 300_000,
+        revalidateOnFocus: false,
+    });
+    const warOn = !!clan?.data;
 
     useEffect(() => {
         if (!open) return;
@@ -54,80 +60,65 @@ export default function StatusCluster({ userId }: { userId: string }) {
     return (
         <>
             {/* ---------- md et plus : tout en clair ---------- */}
-            <div className="hidden items-center gap-1 rounded-full bg-[rgba(26,21,18,0.04)] px-2 py-1 md:flex">
+            <div className="hidden items-center gap-0.5 md:flex">
                 <StreakIndicator userId={userId} />
-                <Separator />
                 <MushroomIndicator userId={userId} />
-                <Separator />
-                <ProgressionLink />
+                <ClanWarIndicator userId={userId} />
+                <Link
+                    href="/progression"
+                    title="Ma progression"
+                    aria-label="Ma progression"
+                    className="wk-nav-btn lg:max-xl:!hidden"
+                >
+                    <ProgressionIcon className="h-5 w-5 text-emerald-600" />
+                </Link>
             </div>
 
-            {/* ---------- Toujours visible : la guerre en cours ---------- */}
-            <ClanWarIndicator userId={userId} />
-            <ActiveEvalIndicator />
+            {/* ---------- Toujours visible : l'épreuve en cours ---------- */}
+            <ActiveEvalIndicator onVisibleChange={setEvalOn} />
 
             {/* ---------- Sous md : un bouton, un panneau ---------- */}
-            <div ref={panelRef} className="relative md:hidden">
+            <div ref={panelRef} className={`relative md:hidden ${evalOn ? "max-sm:hidden" : ""}`}>
                 <button
                     onClick={() => setOpen((v) => !v)}
                     aria-expanded={open}
                     aria-haspopup="true"
-                    aria-label="Ma progression"
-                    className={`flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full transition-colors touch-manipulation ${
-                        open
-                            ? "bg-[rgba(255,106,26,0.12)] text-[var(--wk-accent)]"
-                            : "text-[rgba(26,21,18,0.6)] active:bg-[rgba(26,21,18,0.08)]"
-                    }`}
+                    aria-label={warOn ? "Ma progression — guerre des clans en cours" : "Ma progression"}
+                    className="wk-nav-btn !h-11 !w-10 !min-w-0 !px-0 sm:!w-11"
                 >
-                    <Sparkles className="h-5 w-5" />
+                    <ProgressionIcon className="h-5 w-5 text-emerald-600" />
+                    {warOn && (
+                        <span
+                            className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[var(--wk-accent)] ring-2 ring-white"
+                            aria-hidden="true"
+                        />
+                    )}
                 </button>
 
                 {open && (
                     <div
-                        className="absolute right-0 top-full z-[200] mt-2 w-[248px] rounded-2xl border border-[rgba(26,21,18,0.1)] bg-white p-3 shadow-xl"
+                        className="wk-pop fixed right-3 top-[calc(env(safe-area-inset-top,0px)+4.875rem)] sm:top-[calc(env(safe-area-inset-top,0px)+5.625rem)] z-[200] w-[min(18rem,calc(100vw-1.5rem))] rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white p-2 shadow-[0_18px_48px_rgba(26,21,18,0.14)]"
                         role="menu"
                     >
-                        <div className="font-mono-ui mb-2 px-1 text-[10px] uppercase tracking-[0.16em] text-[rgba(26,21,18,0.45)]">
+                        <div className="font-mono-ui px-2 pb-1.5 pt-1 text-[10px] uppercase tracking-[0.16em] text-[rgba(26,21,18,0.45)]">
                             Ma progression
                         </div>
-                        <div className="flex items-center justify-between gap-2 rounded-xl bg-[rgba(26,21,18,0.04)] px-2 py-1.5">
+                        <div className="flex flex-wrap items-center gap-0.5 rounded-xl bg-[var(--wk-paper)] p-1">
                             <StreakIndicator userId={userId} />
-                            <Separator />
                             <MushroomIndicator userId={userId} />
+                            <ClanWarIndicator userId={userId} />
                         </div>
                         <Link
                             href="/progression"
                             onClick={() => setOpen(false)}
-                            className="mt-2 flex items-center gap-2.5 rounded-xl px-2 py-2.5 text-sm font-medium text-[var(--wk-ink)] transition-colors active:bg-[rgba(26,21,18,0.05)]"
+                            className="mt-1 flex min-h-[44px] items-center gap-2.5 rounded-xl px-2.5 text-sm font-medium text-[var(--wk-ink)] transition-colors active:bg-[var(--wk-paper-2)]"
                         >
-                            <TrendingUp className="h-4 w-4 text-emerald-600" />
+                            <ProgressionIcon className="h-[18px] w-[18px] text-emerald-600" />
                             Voir ma progression
                         </Link>
                     </div>
                 )}
             </div>
         </>
-    );
-}
-
-function Separator() {
-    return (
-        <span
-            className="h-4 w-px shrink-0 bg-[rgba(26,21,18,0.15)]"
-            aria-hidden="true"
-        />
-    );
-}
-
-function ProgressionLink() {
-    return (
-        <Link
-            href="/progression"
-            title="Ma progression"
-            aria-label="Ma progression"
-            className="flex items-center justify-center rounded-full p-1 text-emerald-600 transition hover:bg-emerald-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-500"
-        >
-            <TrendingUp className="h-4 w-4" />
-        </Link>
     );
 }

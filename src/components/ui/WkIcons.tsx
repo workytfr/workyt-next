@@ -4,15 +4,27 @@
  * size, color) ; strokeWidth est accepté et ignoré.
  */
 export {
+    ActualitesIcon,
     BlogIcon,
     ChampignonIcon,
+    ChronometreIcon,
+    ConseilsMethodesIcon,
     CoursIcon,
+    CultureIcon,
+    DiplomeIcon,
+    EleveIcon,
     EvaluationIcon,
     ExerciceIcon,
+    FavoriIcon,
     FicheIcon,
     FlammeIcon,
     ForumIcon,
+    MedailleIcon,
+    ObjectifIcon,
+    OrientationScolaireIcon,
+    ProgressionIcon,
     QuizIcon,
+    TableauIcon,
     type IconProps as WkIconProps,
     type WorkytIcon as WkIconComponent,
 } from "workyt-icons/react";

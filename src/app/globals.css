@@ -2170,3 +2170,92 @@ html, body {
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ─── Barre de navigation ───────────────────────────────────────────────
+   Un seul gabarit pour tout ce qui vit dans la barre (liens, recherche,
+   série, champignons, guerre, favoris, notifications) : même hauteur, même
+   rayon, même survol. Avant, chaque indicateur avait le sien (rounded-lg,
+   hover gris, Button shadcn…) et la barre se lisait comme un patchwork. */
+.wk-nav-btn {
+  position: relative;
+  display: inline-flex;
+  height: 2.5rem;
+  min-width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.875rem;
+  padding: 0 0.625rem;
+  white-space: nowrap;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: rgba(26, 21, 18, 0.62);
+  transition: background-color 150ms ease, color 150ms ease, transform 120ms ease-out;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.wk-nav-btn:active { transform: scale(0.96); }
+.wk-nav-btn:focus-visible {
+  outline: 2px solid rgba(255, 106, 26, 0.55);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .wk-nav-btn:hover {
+    background-color: var(--wk-paper);
+    color: var(--wk-ink);
+  }
+}
+.wk-nav-btn[aria-current="page"],
+.wk-nav-btn[aria-expanded="true"] {
+  background-color: var(--wk-paper-2);
+  color: var(--wk-ink);
+}
+/* L'icône du lien actif prend la couleur de la marque */
+.wk-nav-btn[aria-current="page"] > svg:first-child { color: var(--wk-accent); }
+
+/* Pastille de compteur (notifications) */
+.wk-nav-count {
+  position: absolute;
+  top: 0.125rem;
+  right: 0.125rem;
+  display: flex;
+  height: 1.125rem;
+  min-width: 1.125rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--wk-accent);
+  padding: 0 0.3rem;
+  font-size: 0.625rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+  box-shadow: 0 0 0 2px #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Séparateur court entre deux groupes de la barre */
+.wk-nav-sep {
+  height: 1.5rem;
+  width: 1px;
+  flex-shrink: 0;
+  background: rgba(26, 21, 18, 0.1);
+}
+
+/* Menus déroulants de la barre : ils naissent de leur déclencheur.
+   Keyframes et non transition : ils sont démontés à la fermeture, et la
+   sortie est volontairement instantanée (on veut retrouver la page). */
+.wk-pop {
+  transform-origin: var(--wk-origin, top right);
+  animation: wk-pop-in 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+@keyframes wk-pop-in {
+  from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wk-pop { animation-name: wk-fade-in; }
+  .wk-nav-btn:active { transform: none; }
+}
+@keyframes wk-fade-in { from { opacity: 0; } }

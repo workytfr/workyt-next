@@ -5,7 +5,6 @@ import { Bell, BellRing, Trash2, LayoutGrid } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/Badge';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import {
@@ -261,42 +260,35 @@ export default function NotificationBell() {
 
     if (!session) return null;
 
+    const unread = notifications?.unreadCount ?? 0;
+
     return (
         <div ref={bellRef}>
-            <Button
+            <button
                 ref={btnRef}
-                variant="ghost"
-                size="sm"
-                className="relative"
+                aria-expanded={isOpen}
+                aria-label={unread > 0 ? `Notifications, ${unread} non lue${unread > 1 ? 's' : ''}` : 'Notifications'}
+                className="wk-nav-btn max-lg:!h-11 max-lg:!w-10 max-lg:!min-w-0 max-lg:!px-0 sm:max-lg:!w-11"
                 onClick={() => {
                     if (!isOpen && btnRef.current) {
                         const rect = btnRef.current.getBoundingClientRect();
                         setPanelPos({
                             top: rect.bottom + 8,
-                            right: window.innerWidth - rect.right,
+                            right: Math.max(12, Math.min(window.innerWidth - rect.right, window.innerWidth - 332)),
                         });
                     }
                     setIsOpen(!isOpen);
                 }}
             >
-                {(notifications?.unreadCount ?? 0) > 0 ? (
-                    <BellRing className="h-5 w-5" />
-                ) : (
-                    <Bell className="h-5 w-5" />
+                {unread > 0 ? <BellRing className="h-5 w-5" /> : <Bell className="h-5 w-5" />}
+                {unread > 0 && (
+                    <span className="wk-nav-count" aria-hidden="true">{unread > 9 ? '9+' : unread}</span>
                 )}
-                {(notifications?.unreadCount ?? 0) > 0 && (
-                    <Badge
-                        variant="destructive"
-                        className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs"
-                    >
-                        {(notifications?.unreadCount ?? 0) > 9 ? '9+' : notifications?.unreadCount}
-                    </Badge>
-                )}
-            </Button>
+            </button>
 
             {isOpen && (
                 <div
-                    className="fixed w-80 bg-white border border-gray-100 rounded-xl shadow-xl z-[200]"
+                    className="wk-pop fixed z-[200] w-[min(20rem,calc(100vw-1.5rem))] rounded-2xl border border-[rgba(26,21,18,0.08)] bg-white shadow-[0_18px_48px_rgba(26,21,18,0.14)]"
                     style={{ top: panelPos.top, right: panelPos.right }}
                 >
                     <div className="flex items-center justify-between p-3 border-b border-gray-100">
