@@ -4,10 +4,34 @@ import { useEffect } from "react";
 import Link from "next/link";
 import Foxy from "@/components/foxy/Foxy";
 
+/**
+ * Morceau de JS introuvable : l'onglet a été ouvert avant un déploiement et
+ * réclame des fichiers que le nouveau build n'a plus (fréquent sur téléphone,
+ * où l'onglet reste des jours en arrière-plan). Seul un rechargement complet
+ * répare : `retry()` redemanderait le même fichier disparu.
+ */
+function isStaleBuildError(error: Error) {
+    const text = `${error?.name ?? ""} ${error?.message ?? ""}`;
+    return /ChunkLoadError|Loading (CSS )?chunk|dynamically imported module|Importing a module script failed|error loading dynamically imported module/i.test(text);
+}
+
+const RELOAD_KEY = "wk-stale-build-reload";
+
 /** Erreur inattendue dans une page : Foxy s'excuse et propose de réessayer. */
 export default function Error({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
     useEffect(() => {
         console.error(error);
+        if (!isStaleBuildError(error)) return;
+        // Un seul rechargement par minute : si le fichier manque vraiment, on
+        // affiche la page d'erreur au lieu de boucler.
+        try {
+            const last = Number(sessionStorage.getItem(RELOAD_KEY) || 0);
+            if (Date.now() - last < 60_000) return;
+            sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
+        } catch {
+            // Stockage bloqué (navigation privée) : on recharge quand même une fois.
+        }
+        window.location.reload();
     }, [error]);
 
     return (

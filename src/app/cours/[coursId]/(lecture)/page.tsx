@@ -46,15 +46,12 @@ export async function generateStaticParams() {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-    try {
+    // Pas de try/catch ici : si la base ne répond pas, la page doit échouer
+    // (5xx, Google repasse plus tard, l'ancienne version en cache reste servie)
+    // plutôt que renvoyer une 200 titrée « Erreur » sans canonique, que Google
+    // classait en « page en double sans URL canonique ».
+    {
         const { coursId: coursIdSlug } = await params;
-
-        await Promise.race([
-            dbConnect(),
-            new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('Timeout de connexion DB')), 5000)
-            )
-        ]);
 
         const result = await findCourse(coursIdSlug);
 
@@ -128,12 +125,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
             alternates: {
                 canonical: canonicalUrl,
             },
-        };
-    } catch (error) {
-        console.error("Erreur dans generateMetadata :", error);
-        return {
-            title: "Erreur",
-            description: "Une erreur s'est produite lors de la récupération des métadonnées.",
         };
     }
 }
