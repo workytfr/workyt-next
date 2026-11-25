@@ -78,3 +78,13 @@ backups/
 
 # Empreintes des images de public/ déjà envoyées sur le S3 de Youss
 scripts/.public-s3-manifest.json
+
+# Outils et assistants locaux : propres à chaque poste, non versionnés
+.claude/
+.qoder/
+claude-seo/
+
+# Brouillons et scripts d'analyse ponctuels
+*.tmp.ts
+*.tmp.mjs
+seo_audit*.py
